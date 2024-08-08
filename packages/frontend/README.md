@@ -9,6 +9,13 @@ npm install
 ```
 npm run dev
 ```
+### Docker file 
+```
+sudo docker build -t frontend -f dockerfile.dev .
+```
+
+```
+sudo docker run 
 
 # React + Vite
 
