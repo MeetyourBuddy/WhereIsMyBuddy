@@ -24,12 +24,14 @@
   "author": "Preeti Sharma",
   "license": "ISC",
   "dependencies": {
+    "@lucia-auth/adapter-mongodb": "^1.0.3",
     "app-root-path": "^3.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "lint-staged": "^15.2.9",
-    "mongoose": "^8.5.1",
+    "lucia": "^3.2.0",
+    "mongoose": "^8.5.4",
     "morgan": "^1.10.0",
     "winston": "^3.13.1"
   },
