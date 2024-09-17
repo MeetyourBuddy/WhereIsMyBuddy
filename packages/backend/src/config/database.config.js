@@ -1,3 +1,5 @@
+// handles connection to the MongoDB database using Mongoose
+
 const mongoose = require('mongoose');
 const config = require('./server.config');
 const logger = require('../utils/logger');

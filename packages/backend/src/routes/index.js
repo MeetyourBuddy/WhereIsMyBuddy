@@ -2,6 +2,7 @@ const express = require('express');
 const homeRoute = require('./home-route');
 const authRoute = require('./auth-route');
 const bodyParser = require('body-parser');
+const protectedRoute = require('./protected');
 
 const router = express.Router();
 
@@ -19,6 +20,10 @@ const defaultRoutes = [
   {
     path: '/auth',
     route: authRoute
+  },
+  {
+    path: '/protected',
+    route: protectedRoute
   }
 ];
 

@@ -1,3 +1,5 @@
+//app configurations
+
 require('dotenv').config();
 
 let url;
@@ -22,5 +24,8 @@ module.exports = {
   },
   api: {
     prefix: '/api/v1'
+  },
+  session: {
+    secret: process.env.SESSION_SECRET || 'your-secret-key'
   }
 };
