@@ -12,8 +12,12 @@ module.exports = {
     extend: {
       colors: {
         'signin-blue': '#162D3A',
-        'google-button': '#F3F9FA'
+        'google-button': '#F3F9FA',
+        'not-found': '#565872'
       }
+    },
+    fontFamily: {
+      rub: ['Rubik']
     }
   },
   darkMode: 'class',

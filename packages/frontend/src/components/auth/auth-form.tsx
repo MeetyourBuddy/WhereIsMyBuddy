@@ -1,94 +1,107 @@
-import { Input } from '@nextui-org/input';
-import { Button } from '@nextui-org/react';
-import Google_svg from '../common/icons/Google_logo';
-import Discord_svg from '../common/icons/Discord_logo';
+import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signinSchema } from '@/lib/validation/auth-schema';
-interface AuthFormInputs {
-  email: string;
-  password: string;
-}
+import { Input, Button } from '@nextui-org/react';
+import Google_svg from '../common/icons/Google_logo';
+import Discord_svg from '../common/icons/Discord_logo';
+import { useLocation } from 'react-router-dom';
+import { authValidationSchema } from '../../libs/validation/auth-validation';
 
 const AuthForm = () => {
+  const { pathname } = useLocation();
+  const isSignup = pathname === '/signup';
+
   const {
     control,
     handleSubmit,
     formState: { errors }
-  } = useForm<AuthFormInputs>({
-    resolver: zodResolver(signinSchema),
-    defaultValues: {
-      email: '',
-      password: ''
-    }
+  } = useForm({
+    resolver: zodResolver(authValidationSchema)
   });
 
-  const onSubmit = (data: AuthFormInputs) => {
+  const onSubmit = (data: any) => {
     console.log(data);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex min-w-[388px] flex-col space-y-6">
+      {isSignup && (
+        <div>
+          <Controller
+            name="name"
+            control={control}
+            defaultValue=""
+            render={({ field, fieldState: { error } }) => (
+              <Input
+                {...field}
+                isRequired
+                label="Name"
+                variant="bordered"
+                radius="sm"
+                placeholder="John"
+                labelPlacement="outside"
+                isInvalid={!!error}
+                errorMessage={error && error.message}
+              />
+            )}
+          />
+        </div>
+      )}
       <div>
-        <label className="text-base">Email</label>
         <Controller
           name="email"
           control={control}
-          rules={{
-            required: 'Email is required',
-            pattern: {
-              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: 'Enter a valid email'
-            }
-          }}
-          render={({ field }) => (
+          defaultValue=""
+          render={({ field, fieldState: { error } }) => (
             <Input
               {...field}
+              isRequired
+              label="Email"
               variant="bordered"
               radius="sm"
-              type="email"
               placeholder="Example@gmail.com"
-              isInvalid={!!errors.email}
+              labelPlacement="outside"
+              isInvalid={!!error}
+              errorMessage={error && error.message}
             />
           )}
         />
-        {errors.email && <span className="text-sm text-red-500">{errors.email.message}</span>}
       </div>
 
       <div>
-        <label className="text-base">Password</label>
         <Controller
           name="password"
           control={control}
-          rules={{
-            required: 'Password is required',
-            minLength: {
-              value: 8,
-              message: 'Password must be at least 8 characters long'
-            }
-          }}
-          render={({ field }) => (
+          defaultValue=""
+          render={({ field, fieldState: { error } }) => (
             <Input
               {...field}
+              isRequired
+              label="Password"
+              type="password"
               variant="bordered"
               radius="sm"
-              type="password"
               placeholder="At least 8 characters"
-              isInvalid={!!errors.password}
+              labelPlacement="outside"
+              isInvalid={!!error}
+              errorMessage={error && error.message}
             />
           )}
         />
-        {errors.password && <span className="text-sm text-red-500">{errors.password.message}</span>}
       </div>
-
-      <a href="#" className="mb-3 text-right text-sm text-blue-600">
-        Forgot Password?
-      </a>
-
-      <Button type="submit" radius="sm" className="rounded-lg bg-signin-blue text-white" size="md">
-        Sign in
+      {!isSignup && (
+        <div className="mb-3 text-right text-sm text-blue-600">
+          <a href="/forgot-password">Forgot Password?</a>
+        </div>
+      )}
+      <Button
+        type="submit"
+        radius="sm"
+        className="text-md rounded-lg bg-signin-blue text-white"
+        size="md"
+      >
+        {isSignup ? 'Sign up' : 'Sign in'}
       </Button>
-
       <div className="inline-flex items-center justify-center">
         <hr className="h-px w-full border-0 bg-gray-200 dark:bg-gray-700" />
         <span className="mx-4 my-4 text-sm">Or</span>
@@ -97,7 +110,7 @@ const AuthForm = () => {
 
       <div className="flex flex-col items-center space-y-6">
         <Button
-          className="w-full bg-google-button hover:bg-secondary-50"
+          className="text-md w-full bg-google-button hover:bg-secondary-50"
           radius="sm"
           startContent={<Google_svg />}
           size="md"
@@ -106,7 +119,7 @@ const AuthForm = () => {
         </Button>
 
         <Button
-          className="w-full bg-google-button hover:bg-secondary-50"
+          className="text-md w-full bg-google-button hover:bg-secondary-50"
           radius="sm"
           startContent={<Discord_svg />}
           size="md"
@@ -115,9 +128,9 @@ const AuthForm = () => {
         </Button>
 
         <p className="pt-[24px]">
-          Don't have an account?{' '}
-          <a href="/signup" className="text-blue-600">
-            Sign up
+          Don't you have an account?{' '}
+          <a href={isSignup ? '/signin' : '/signup'} className="text-blue-600">
+            {isSignup ? 'Sign in' : 'Sign up'}
           </a>
         </p>
       </div>

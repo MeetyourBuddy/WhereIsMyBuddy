@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Image } from '@nextui-org/react';
-import Logo_svg from '../common/icons/Logo_svg';
+import Logo_svg from '../components/common/icons/Logo_svg';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -9,10 +9,10 @@ interface AuthLayoutProps {
 
 const AuthLayout = ({ children, imageSrc }: AuthLayoutProps) => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white">
-      <div className="m-8 flex h-full w-full max-w-[1200px] flex-row">
+    <div className="flex min-h-screen items-center justify-center bg-[url('/background/background-with-spline.png')] bg-cover bg-center">
+      <div className="flex h-full w-full max-w-[1200px] flex-row rounded-xl bg-white p-4 shadow-xl shadow-gray-300">
         <div className="flex h-full basis-1/2 flex-col items-center justify-center">
-          <div className="mb-[110px]">
+          <div className="mb-[80px]">
             <Logo_svg />
           </div>
           <div>{children}</div>
