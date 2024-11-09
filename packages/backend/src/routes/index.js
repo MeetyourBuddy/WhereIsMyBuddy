@@ -1,8 +1,8 @@
-const express = require('express');
-const homeRoute = require('./home-route');
-const authRoute = require('./auth-route');
-const bodyParser = require('body-parser');
-const protectedRoute = require('./protected');
+import express from 'express';
+import homeRoute from './home-route.js';
+import authRoute from './auth-route.js';
+// import protectedRoute from './protected.js';
+import bodyParser from 'body-parser';
 
 const router = express.Router();
 
@@ -20,15 +20,15 @@ const defaultRoutes = [
   {
     path: '/auth',
     route: authRoute
-  },
-  {
-    path: '/protected',
-    route: protectedRoute
   }
+  // {
+  //   path: '/protected',
+  //   route: protectedRoute
+  // }
 ];
 
 defaultRoutes.forEach((route) => {
   router.use(route.path, route.route);
 });
 
-module.exports = router;
+export default router;

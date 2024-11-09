@@ -1,8 +1,8 @@
 // handles connection to the MongoDB database using Mongoose
 
-const mongoose = require('mongoose');
-const config = require('./server.config');
-const logger = require('../utils/logger');
+import mongoose from 'mongoose';
+import config from './server.config.js';
+import logger from '../utils/logger.js';
 
 const connectToDatabase = async () => {
   try {
@@ -16,4 +16,4 @@ const connectToDatabase = async () => {
   }
 };
 
-module.exports = connectToDatabase;
+export default connectToDatabase;

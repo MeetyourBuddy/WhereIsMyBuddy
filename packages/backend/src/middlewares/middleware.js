@@ -1,7 +1,7 @@
-const logger = require('../utils/logger');
-const session = require('express-session');
-const MongoStore = require('connect-mongo'); //used for storing session data in MongoDB
-const config = require('../config/server.config');
+import logger from '../utils/logger.js';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
+import config from '../config/server.config.js';
 
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' });
@@ -34,8 +34,4 @@ const sessionMiddleware = session({
   })
 });
 
-module.exports = {
-  unknownEndpoint,
-  errorHandler,
-  sessionMiddleware
-};
+export { unknownEndpoint, errorHandler, sessionMiddleware };

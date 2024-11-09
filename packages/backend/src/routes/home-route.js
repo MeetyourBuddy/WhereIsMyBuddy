@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import home from '../controllers/home-controller.js';
+
 const router = express.Router();
-const homeController = require('../controller/home-controller');
 
 /**
  * @swagger
@@ -40,6 +41,6 @@ const homeController = require('../controller/home-controller');
  *        description: Server Error
  */
 
-router.get('/', homeController.home);
+router.get('/', home);
 
-module.exports = router;
+export default router;

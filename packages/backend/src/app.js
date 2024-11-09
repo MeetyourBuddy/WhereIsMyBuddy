@@ -1,11 +1,12 @@
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-const logger = require('./utils/logger');
-const middleware = require('./middlewares/middleware');
-const serverConfig = require('./config/server.config');
-const routes = require('./routes');
-const swaggerDocs = require('./swagger-ui/swagger');
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import logger from './utils/logger.js';
+import { unknownEndpoint, errorHandler, sessionMiddleware } from './middlewares/middleware.js';
+import serverConfig from './config/server.config.js';
+import routes from './routes/index.js';
+import swaggerDocs from './swagger-ui/swagger.js';
+import { luciaMiddleware } from './auth.js';
 
 const app = express();
 
@@ -15,20 +16,17 @@ app.use(express.json());
 app.use(morgan('combined', { stream: logger.stream }));
 
 // Error handling middleware
-app.use(middleware.unknownEndpoint);
-app.use(middleware.errorHandler);
-app.use(middleware.sessionMiddleware);
+app.use(unknownEndpoint);
+app.use(errorHandler);
+app.use(sessionMiddleware);
 
-//v1 api routes
+// Apply Lucia middleware
+app.use(luciaMiddleware());
+
+// API routes
 app.use('/api/v1', routes);
 
-// sawgger ui docs
+// Swagger UI docs
 swaggerDocs(app);
 
-//v1 api routes
-app.use('/api/v1', routes);
-
-// sawgger ui docs
-swaggerDocs(app);
-
-module.exports = app;
+export default app;

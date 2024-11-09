@@ -1,6 +1,5 @@
 import { Button } from '@nextui-org/react';
 import { Input } from '@nextui-org/react';
-import React from 'react';
 import Google_svg from '../common/icons/Google_logo';
 import Discord_svg from '../common/icons/Discord_logo';
 
@@ -62,7 +61,7 @@ const Signupform = () => {
         </Button>
         <p className="pt-[10px]">
           Already have an account?{' '}
-          <a href="#" className="text-blue-600">
+          <a href="/signin" className="text-blue-600">
             Sign In
           </a>
         </p>

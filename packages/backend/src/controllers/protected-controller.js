@@ -1,4 +1,5 @@
 // Function to handle requests to protected routes
+
 const getProtected = async (req, res) => {
   // Access session and user data from req.session
   const session = req.session;
@@ -13,6 +14,4 @@ const getProtected = async (req, res) => {
   res.status(200).json({ message: `Welcome, user ${user._id}` });
 };
 
-module.exports = {
-  getProtected
-};
+export { getProtected };

@@ -1,12 +1,16 @@
-const app = require('./app');
-const logger = require('./utils/logger');
-const serverConfig = require('./config/server.config');
-const connectToDatabase = require('./config/database.config');
+import app from './app.js';
+import logger from './utils/logger.js';
+import serverConfig from './config/server.config.js';
+import connectToDatabase from './config/database.config.js';
+import { initializeLucia } from './auth.js';
 
 const startServer = async () => {
   try {
     // Connect to the database
     await connectToDatabase();
+
+    // Initialize Lucia
+    await initializeLucia();
 
     // Start the server
     app.listen(serverConfig.port, () => {

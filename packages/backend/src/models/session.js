@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // Define the Session model schema
 const sessionSchema = new mongoose.Schema(

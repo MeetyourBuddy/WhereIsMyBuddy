@@ -1,26 +1,22 @@
 /* eslint-disable no-unused-vars */
-const express = require('express');
-const mongoose = require('mongoose'); // Use require instead of import
-const { Lucia } = require('lucia');
-const { MongodbAdapter } = require('@lucia-auth/adapter-mongodb');
-const connectToDatabase = require('./config/database.config'); // Use require instead of import
+import mongoose from 'mongoose';
+import { Lucia } from 'lucia';
+import { MongodbAdapter } from '@lucia-auth/adapter-mongodb';
+import connectToDatabase from './config/database.config.js';
 
-const app = express();
+let lucia;
 
-(async function initialize() {
+export async function initializeLucia() {
+  if (lucia) return lucia; // Skip initialization if already done
+
   try {
-    // Connect to MongoDB
     await connectToDatabase();
 
-    // Define the User and Session models
     const User = mongoose.model(
       'User',
       new mongoose.Schema(
         {
-          _id: {
-            type: String,
-            required: true
-          }
+          _id: { type: String, required: true }
         },
         { _id: false }
       )
@@ -30,30 +26,20 @@ const app = express();
       'Session',
       new mongoose.Schema(
         {
-          _id: {
-            type: String,
-            required: true
-          },
-          user_id: {
-            type: String,
-            required: true
-          },
-          expires_at: {
-            type: Date,
-            required: true
-          }
+          _id: { type: String, required: true },
+          user_id: { type: String, required: true },
+          expires_at: { type: Date, required: true }
         },
         { _id: false }
       )
     );
 
-    // Initialize Lucia with the adapter
     const adapter = new MongodbAdapter(
       mongoose.connection.collection('sessions'),
       mongoose.connection.collection('users')
     );
 
-    const lucia = new Lucia(adapter, {
+    lucia = new Lucia(adapter, {
       sessionCookie: {
         expires: false,
         attributes: {
@@ -62,13 +48,18 @@ const app = express();
       }
     });
 
-    // Middleware to handle Lucia authentication
-    module.exports.luciaMiddleware = function () {
-      return lucia.middleware();
-    };
-
-    module.exports.lucia = lucia;
+    return lucia;
   } catch (error) {
-    console.error('Error initializing app:', error);
+    console.error('Error initializing Lucia:', error);
+    throw error;
   }
-})();
+}
+
+export function luciaMiddleware() {
+  if (!lucia) {
+    throw new Error('Lucia is not initialized');
+  }
+  return lucia.middleware();
+}
+
+export { lucia };

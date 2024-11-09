@@ -1,7 +1,6 @@
-import React from 'react';
 import AuthLayout from '../../components/layouts/auth-layout';
 import PageIntro from '../../components/auth/page-intro';
-import ChangePasswordForm from '../../components/auth/change-passwrod';
+import ChangePasswordForm from '../../components/auth/change-password';
 
 const ChangePassword = () => {
   return (

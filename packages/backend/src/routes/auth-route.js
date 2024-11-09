@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { lucia } from '../auth.js';
+
 const router = express.Router();
-const { lucia } = require('../auth.js');
 
 // Register route
 router.post('/register', async (req, res) => {
@@ -36,4 +37,4 @@ router.post('/logout', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

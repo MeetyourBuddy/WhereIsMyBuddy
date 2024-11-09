@@ -1,6 +1,6 @@
-const winston = require('winston');
-const appRoot = require('app-root-path');
-const path = require('path');
+import winston from 'winston';
+import appRoot from 'app-root-path';
+import path from 'path';
 
 const options = {
   file: {
@@ -33,4 +33,4 @@ logger.stream = {
   }
 };
 
-module.exports = logger;
+export default logger;

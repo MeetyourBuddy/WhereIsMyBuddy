@@ -1,6 +1,4 @@
-//app configurations
-
-require('dotenv').config();
+import 'dotenv/config';
 
 let url;
 
@@ -12,7 +10,7 @@ if (process.env.NODE_ENV === 'test') {
 }
 
 // SERVER CONFIG
-module.exports = {
+const config = {
   port: parseInt(process.env.PORT, 10) || 3000,
   environment: process.env.NODE_ENV || 'development',
   database: {
@@ -29,3 +27,5 @@ module.exports = {
     secret: process.env.SESSION_SECRET || 'your-secret-key'
   }
 };
+
+export default config;

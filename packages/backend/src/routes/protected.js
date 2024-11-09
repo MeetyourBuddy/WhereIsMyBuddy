@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+// import { luciaMiddleware } from '../auth.js';
+import { getProtected } from '../controllers/protected-controller.js';
+
 const router = express.Router();
-const { luciaMiddleware } = require('../auth.js');
-const protectedController = require('../controllers/protected-controller');
 
 /**
  * @swagger
@@ -15,6 +16,6 @@ const protectedController = require('../controllers/protected-controller');
  *       401:
  *         description: Not authenticated
  */
-router.get('/', luciaMiddleware(), protectedController.getProtected);
+router.get('/', getProtected());
 
-module.exports = router;
+export default router;

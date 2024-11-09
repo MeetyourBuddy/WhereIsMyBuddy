@@ -1,8 +1,5 @@
-import React from 'react';
 import { Input } from '@nextui-org/input';
 import { Button } from '@nextui-org/react';
-import Google_svg from '../common/icons/Google_logo';
-import Discord_svg from '../common/icons/Discord_logo';
 
 const ChangePasswordForm = () => {
   return (

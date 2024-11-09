@@ -1,4 +1,3 @@
-import React from 'react';
 import { Input } from '@nextui-org/input';
 import { Button } from '@nextui-org/react';
 

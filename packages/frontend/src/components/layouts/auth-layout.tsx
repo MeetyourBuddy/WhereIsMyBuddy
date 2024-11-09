@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { Image } from '@nextui-org/react';
 import Logo_svg from '../common/icons/Logo_svg';
 

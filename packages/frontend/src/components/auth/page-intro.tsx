@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface PageIntroProps {
   title: string;
   description: string;
