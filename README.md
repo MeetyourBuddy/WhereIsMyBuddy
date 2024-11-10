@@ -1,133 +1,99 @@
-# WhereIsMyBuddy
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
 
-A buddy finder app to help you find/create a community of like minded people seeking to collaborate and learn together.
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-## Getting Started
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-Follow these steps to set up and run the project:
+## Description
 
-### Prerequisites
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-- Node.js (v14.x or higher)
-- npm (v6.x or higher) or yarn (v1.x or higher)
-
-### Installation
-
-#### 1. Install Root Package
-
-To set up the root package, install dependencies, and configure Husky pre-commit hooks and the Lerna build system:
-
-```bash
-npm install
-# or
-yarn install
-```
-
-This will install all necessary dependencies and set up the Husky pre-commit hooks.
-
-#### 2. Frontend Setup
-
-Navigate to './packages/frontend/' directory and install the dependencies
-
-```bash
-cd ./packages/frontend
-npm install
-# or
-yarn install
-```
-
-To run the development server:
+## Project setup
 
 ```bash
-npm run dev
-# or
-yarn dev
+$ npm install
 ```
 
-#### 3. Backend Setup
-
-Navigate to the './packages/backend/' and install dependencies:
+## Compile and run the project
 
 ```bash
-cd ./packages/backend
-npm install
-# or
-yarn install
+# development
+$ npm run start
+
+# watch mode
+$ npm run start:dev
+
+# production mode
+$ npm run start:prod
 ```
 
-To run development server:
+## Run tests
 
 ```bash
-npm run dev
-# or
-yarn dev
-```
-#### 4. Husky hooks
-4.1 In case you are unable to execute husky hooks
+# unit tests
+$ npm run test
 
-**For macOS and Linux:**
+# e2e tests
+$ npm run test:e2e
+
+# test coverage
+$ npm run test:cov
+```
+
+## Deployment
+
+When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+
+If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+
 ```bash
-chmod ug+x .husky/*
-chmod ug+x .git/hooks/*
-```
-**For windows:**
-Windows doesn’t have the chmod command, but you typically don’t need to manually change file permissions. If you encounter issues, try:
-```bash
-git config core.fileMode false
+$ npm install -g mau
+$ mau deploy
 ```
 
-4.2 In case of the warning message "husky - '~/.huskyrc' is DEPRECATED"
+With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
-**For macOS and Linux:**
-```bash
-mkdir -p ~/.config/husky
-mv ~/.huskyrc ~/.config/husky/init.sh
-npm install -g npm
-```
-**For windows:**
-No equivalent steps are necessary. Ensure your Node.js and npm are up-to-date.
+## Resources
 
-4.3 In case of error message "TypeError: args.at is not a function"
+Check out a few resources that may come in handy when working with NestJS:
 
-Usually indicates an issue with the compatibility between the Node.js version and the JavaScript code you are trying to run.
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
+- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
+- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
+- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
+- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
 
-Install NVM if you do not have it already:
-**For macOS and Linux:**
-```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-```
-Install the latest LTS version of Node.js and set the installed version as the default:
-```bash
-nvm install --lts
-nvm use --lts
-nvm alias default lts/*
-```
-**For windows:**
-Install NVM for Windows from [here](https://github.com/coreybutler/nvm-windows) and follow the instructions to manage Node.js versions.
+## Support
 
-Verify the installation:
-```bash
-node -v
-npm -v
-```
-4.4 Run Hooks Manually
-```bash
-.husky/pre-commit
-# or
-bash .husky/pre-commit
-```
-4.5 For errors related to branch name or commit message format:
-Please note: We follow a loose convention for branch names
-```
-[type]/gh-[issue number]/[summary of task]
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-gh-16/setup-ci-frontend-tests
-docs/gh-16/fix-typos
-```
-where `16` is the issue number.
+## Stay in touch
 
-For commit message format checkout - [link](https://www.conventionalcommits.org/en/v1.0.0/)
+- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
-### Contributing
+## License
 
-We welcome contributions to improve this project. Please fork the repository and submit a pull request.
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
