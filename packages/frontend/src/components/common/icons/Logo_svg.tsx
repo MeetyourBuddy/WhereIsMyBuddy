@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Logo_svg = () => {
   return (
     <div>

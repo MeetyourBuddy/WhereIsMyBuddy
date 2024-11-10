@@ -1,5 +1,3 @@
-import React from 'react';
-
 const google_svg = () => {
   return (
     <div>

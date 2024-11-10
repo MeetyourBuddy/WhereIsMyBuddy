@@ -1,5 +1,4 @@
-import React from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input, Button } from '@nextui-org/react';
 import { changePasswordSchema } from '../../libs/validation/auth-validation';
@@ -9,13 +8,14 @@ const ChangePasswordForm = () => {
     resolver: zodResolver(changePasswordSchema)
   });
 
-  const onSubmit = (data: any) => {
-    console.log('Password change data:', data);
+  const onSubmit = (data: FieldValues) => {
+    console.log('Change password data:', data);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex min-w-[388px] flex-col space-y-6">
       <div>
+        <label className="-sm text-base">Old Password</label>
         <Controller
           name="oldPassword"
           control={control}
@@ -23,19 +23,19 @@ const ChangePasswordForm = () => {
           render={({ field, fieldState: { error } }) => (
             <Input
               {...field}
-              label="Old Password"
+              type="password"
               variant="bordered"
               radius="sm"
-              type="password"
-              labelPlacement="outside"
-              isInvalid={!!error}
               placeholder="At least 8 characters"
+              isInvalid={!!error}
               errorMessage={error && error.message}
             />
           )}
         />
       </div>
+
       <div>
+        <label className="-sm text-base">New Password</label>
         <Controller
           name="newPassword"
           control={control}
@@ -43,19 +43,19 @@ const ChangePasswordForm = () => {
           render={({ field, fieldState: { error } }) => (
             <Input
               {...field}
-              label="New Password"
+              type="password"
               variant="bordered"
               radius="sm"
-              type="password"
-              labelPlacement="outside"
-              isInvalid={!!error}
               placeholder="At least 8 characters"
+              isInvalid={!!error}
               errorMessage={error && error.message}
             />
           )}
         />
       </div>
+
       <div>
+        <label className="-sm text-base">Confirm Password</label>
         <Controller
           name="confirmPassword"
           control={control}
@@ -63,23 +63,22 @@ const ChangePasswordForm = () => {
           render={({ field, fieldState: { error } }) => (
             <Input
               {...field}
-              label="Confirm Password"
+              type="password"
               variant="bordered"
               radius="sm"
-              type="password"
-              labelPlacement="outside"
-              isInvalid={!!error}
               placeholder="At least 8 characters"
+              isInvalid={!!error}
               errorMessage={error && error.message}
             />
           )}
         />
       </div>
+
       <div className="pt-6">
         <Button
           type="submit"
           radius="sm"
-          className="text-md w-full rounded-lg bg-signin-blue text-white"
+          className="w-full rounded-lg bg-signin-blue text-white"
           size="md"
         >
           Change Password
