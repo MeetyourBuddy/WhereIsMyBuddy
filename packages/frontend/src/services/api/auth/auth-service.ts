@@ -1,6 +1,12 @@
 import axiosInstance from '../axios-instance';
 import { tokenService } from '@services/token/token-service';
-import { AuthResponse, SignInCredentials, SignUpData, User } from '@/types/auth-types';
+import {
+  AuthResponse,
+  SignInCredentials,
+  SignUpData,
+  IUser,
+  LogoutResponse
+} from '@/types/auth-types';
 import { AxiosResponse } from 'axios';
 
 class AuthService {
@@ -26,16 +32,18 @@ class AuthService {
     return response;
   }
 
-  async logout(): Promise<void> {
+  async logout(): Promise<AxiosResponse<LogoutResponse>> {
     try {
-      await axiosInstance.post('/auth/logout');
+      const response = await axiosInstance.post<LogoutResponse>('/auth/logout');
+
+      return response;
     } finally {
       tokenService.clearTokens();
     }
   }
 
-  getCurrentUser(): Promise<AxiosResponse<User>> {
-    return axiosInstance.get<User>('/auth/me');
+  getCurrentUser(): Promise<AxiosResponse<IUser>> {
+    return axiosInstance.get<IUser>('/auth/me');
   }
 }
 

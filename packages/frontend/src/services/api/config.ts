@@ -10,7 +10,7 @@ export const API_CONFIG = {
 
 export const COOKIE_CONFIG = {
   token: {
-    name: 'auth_token',
+    name: 'accessToken',
     options: {
       secure: true,
       sameSite: 'strict' as const,
@@ -19,7 +19,7 @@ export const COOKIE_CONFIG = {
     }
   },
   refreshToken: {
-    name: 'refresh_token',
+    name: 'refreshToken',
     options: {
       secure: true,
       sameSite: 'strict' as const,

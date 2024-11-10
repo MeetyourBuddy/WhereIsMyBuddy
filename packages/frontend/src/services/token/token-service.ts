@@ -1,6 +1,5 @@
 import Cookies from 'js-cookie';
 import { COOKIE_CONFIG } from '../api/config';
-import { TokenPair } from '@/types/auth-types';
 
 class TokenService {
   setTokens(accessToken: string, refreshToken?: string): void {

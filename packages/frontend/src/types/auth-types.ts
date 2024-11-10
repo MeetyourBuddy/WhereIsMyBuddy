@@ -14,8 +14,8 @@ export interface TokenPair {
   refreshToken: string;
 }
 
-export interface User {
-  id: string;
+export interface IUser {
+  _id: string;
   email: string;
   name: string;
   createdAt: string;
@@ -23,5 +23,9 @@ export interface User {
 }
 
 export interface AuthResponse extends TokenPair {
-  user: User;
+  user: IUser;
+}
+
+export interface LogoutResponse {
+  message: string;
 }
