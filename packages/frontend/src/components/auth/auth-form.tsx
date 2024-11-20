@@ -1,26 +1,36 @@
-import React from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input, Button } from '@nextui-org/react';
 import Google_svg from '../common/icons/Google_logo';
-import Discord_svg from '../common/icons/Discord_logo';
 import { useLocation } from 'react-router-dom';
 import { authValidationSchema } from '../../libs/validation/auth-validation';
+import { useAuth } from '@/libs/hooks/use-auth';
+import { SignInCredentials, SignUpData } from '@/types/auth-types';
+
+type FormData = SignInCredentials | SignUpData;
 
 const AuthForm = () => {
   const { pathname } = useLocation();
   const isSignup = pathname === '/signup';
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors }
-  } = useForm({
-    resolver: zodResolver(authValidationSchema)
+  const { login, register } = useAuth();
+
+  const { control, handleSubmit } = useForm<FormData>({
+    resolver: zodResolver(authValidationSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      ...(isSignup && { name: '' })
+    }
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit: SubmitHandler<FormData> = (data) => {
     console.log(data);
+    if (isSignup) {
+      register(data as SignUpData);
+    } else {
+      login(data as SignInCredentials);
+    }
   };
 
   return (
@@ -30,7 +40,6 @@ const AuthForm = () => {
           <Controller
             name="name"
             control={control}
-            defaultValue=""
             render={({ field, fieldState: { error } }) => (
               <Input
                 {...field}
@@ -41,7 +50,7 @@ const AuthForm = () => {
                 placeholder="John"
                 labelPlacement="outside"
                 isInvalid={!!error}
-                errorMessage={error && error.message}
+                errorMessage={error?.message}
               />
             )}
           />
@@ -51,7 +60,6 @@ const AuthForm = () => {
         <Controller
           name="email"
           control={control}
-          defaultValue=""
           render={({ field, fieldState: { error } }) => (
             <Input
               {...field}
@@ -62,16 +70,16 @@ const AuthForm = () => {
               placeholder="Example@gmail.com"
               labelPlacement="outside"
               isInvalid={!!error}
-              errorMessage={error && error.message}
+              errorMessage={error?.message}
             />
           )}
         />
       </div>
+
       <div>
         <Controller
           name="password"
           control={control}
-          defaultValue=""
           render={({ field, fieldState: { error } }) => (
             <Input
               {...field}
@@ -83,16 +91,18 @@ const AuthForm = () => {
               placeholder="At least 8 characters"
               labelPlacement="outside"
               isInvalid={!!error}
-              errorMessage={error && error.message}
+              errorMessage={error?.message}
             />
           )}
         />
       </div>
+
       {!isSignup && (
         <div className="mb-3 text-right text-sm text-blue-600">
           <a href="/forgot-password">Forgot Password?</a>
         </div>
       )}
+
       <Button
         type="submit"
         radius="sm"
@@ -101,6 +111,7 @@ const AuthForm = () => {
       >
         {isSignup ? 'Sign up' : 'Sign in'}
       </Button>
+
       <div className="inline-flex items-center justify-center">
         <hr className="h-px w-full border-0 bg-gray-200 dark:bg-gray-700" />
         <span className="mx-4 my-4 text-sm">Or</span>
@@ -116,14 +127,7 @@ const AuthForm = () => {
         >
           Sign in with Google
         </Button>
-        <Button
-          className="text-md w-full bg-google-button hover:bg-secondary-50"
-          radius="sm"
-          startContent={<Discord_svg />}
-          size="md"
-        >
-          Sign in with Discord
-        </Button>
+
         <p className="pt-[24px]">
           Don't you have an account?{' '}
           <a href={isSignup ? '/signin' : '/signup'} className="text-blue-600">

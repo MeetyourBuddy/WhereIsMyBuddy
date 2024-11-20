@@ -1,4 +1,3 @@
-import React from 'react';
 import AuthLayout from '../../layouts/auth-layout';
 import PageIntro from '../../components/auth/page-intro';
 import ChangePasswordForm from '../../components/auth/change-password';

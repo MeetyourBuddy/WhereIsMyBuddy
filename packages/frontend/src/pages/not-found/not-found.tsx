@@ -1,7 +1,5 @@
-import React from 'react';
-import { Image } from '@nextui-org/react';
-import { Button } from '@nextui-org/react';
-
+import { Image, Link } from '@nextui-org/react';
+1;
 const NotFound = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[url('/background/background-with-dots.png')] bg-cover bg-center">
@@ -13,14 +11,13 @@ const NotFound = () => {
           <p className="font-rub font-semibold tracking-widest text-not-found">
             OPPS! PAGE NOT FOUND
           </p>
-          <Button
-            type="submit"
-            radius="sm"
-            className="text-md w-full rounded-lg bg-signin-blue text-white"
+          <Link
+            href="/"
+            className="text-md h-10 w-full justify-center rounded-lg bg-signin-blue text-white"
             size="md"
           >
             Go Back to Home
-          </Button>
+          </Link>
         </div>
       </div>
     </div>
