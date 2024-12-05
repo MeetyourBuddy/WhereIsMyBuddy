@@ -9,7 +9,7 @@ import { AuthProvider } from './providers/contexts/auth-context.tsx';
 import { validateEnv } from './utils/env.ts';
 
 // Validate environment variables
-// validateEnv();
+validateEnv();
 
 const queryClient = new QueryClient();
 
