@@ -60,6 +60,18 @@ export class User implements Omit<IUser, '_id'> {
   lastLogin: Date | null;
 
   @Prop({
+    default: null,
+    type: Date,
+  })
+  lastLogout: Date | null;
+
+  @Prop({
+    default: null,
+    type: Date,
+  })
+  lastTokenRefresh: Date | null;
+
+  @Prop({
     default: Date.now,
     type: Date,
   })

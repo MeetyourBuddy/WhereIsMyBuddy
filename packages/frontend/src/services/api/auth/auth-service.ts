@@ -33,13 +33,13 @@ class AuthService {
   }
 
   async logout(): Promise<AxiosResponse<LogoutResponse>> {
-    try {
-      const response = await axiosInstance.post<LogoutResponse>('/auth/logout');
+    const response = await axiosInstance.post<LogoutResponse>('/auth/logout');
 
-      return response;
-    } finally {
+    if (response.status === 200) {
       tokenService.clearTokens();
     }
+
+    return response;
   }
 
   getCurrentUser(): Promise<AxiosResponse<IUser>> {

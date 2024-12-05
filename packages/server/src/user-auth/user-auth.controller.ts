@@ -4,101 +4,63 @@ import {
   Body,
   Get,
   UseGuards,
-  Req,
   HttpStatus,
   HttpCode,
-  UnauthorizedException,
-  Logger,
 } from '@nestjs/common';
 import { UserAuthService } from './user-auth.service';
-import { User } from './schemas/user-auth-schema';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user-dto';
 import { LoginUserDto } from './dto/loginUserDto';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
-import { RequestWithUser, AuthResponse } from './types';
+import { Public } from './decorators/public.decorator';
+import { GetUser } from './decorators/get-user.decorator';
 
 @Controller('api/auth')
 export class UserAuthController {
-  constructor(private readonly userAuthService: UserAuthService) {}
+  constructor(private userAuthService: UserAuthService) {}
 
-  private readonly logger = new Logger(UserAuthController.name);
-
+  @Public()
   @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  async registerUser(
-    @Body() createUserDto: CreateUserDto,
-  ): Promise<AuthResponse> {
-    const result = await this.userAuthService.registerUser(createUserDto);
-    return {
-      message: 'User registered successfully',
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      user: result.user,
-    };
+  async register(@Body() createUserDto: CreateUserDto) {
+    return this.userAuthService.registerUser(createUserDto);
   }
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async loginUser(@Body() loginUserDto: LoginUserDto): Promise<AuthResponse> {
-    const result = await this.userAuthService.loginUser(loginUserDto);
-    return {
-      message: 'Login successful',
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      user: result.user,
-    };
+  async login(@Body() loginUserDto: LoginUserDto) {
+    return this.userAuthService.loginUser(loginUserDto);
   }
 
-  @UseGuards(RefreshTokenGuard)
   @Post('refresh')
+  @Public()
+  @UseGuards(RefreshTokenGuard)
   @HttpCode(HttpStatus.OK)
   async refreshTokens(
-    @Req() req: RequestWithUser,
+    @GetUser('sub') userId: string,
     @Body('refreshToken') refreshToken: string,
   ) {
-    const userId = req.user?.sub;
-    if (!userId) {
-      throw new UnauthorizedException('User ID not found in token');
-    }
-
-    const tokens = await this.userAuthService.refreshTokens(
-      userId,
-      refreshToken,
-    );
-
-    return {
-      message: 'Tokens refreshed successfully',
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    };
+    return this.userAuthService.refreshTokens(userId, refreshToken);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: RequestWithUser): Promise<{ message: string }> {
-    try {
-      this.logger.log('Logout attempt initiated');
-
-      if (!req.user) {
-        this.logger.error('No user object found in request');
-        throw new UnauthorizedException('User not authenticated');
-      }
-
-      const userId = req.user.sub;
-
-      return this.userAuthService.logout(userId);
-    } catch (error) {
-      this.logger.error(`Logout failed: ${error.message}`);
-      throw error;
-    }
+  async logout(@GetUser('userId') userId: string) {
+    return this.userAuthService.logout(userId);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('users')
+  @Get('profile')
   @HttpCode(HttpStatus.OK)
-  async getUsers(): Promise<User[]> {
+  getProfile(@GetUser('userId') userId: string) {
+    return this.userAuthService.getProfile(userId);
+  }
+
+  @Get('users')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  getUsers() {
     return this.userAuthService.getUsers();
   }
 }

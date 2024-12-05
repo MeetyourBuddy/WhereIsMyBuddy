@@ -1,29 +1,24 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from './schemas/user-auth-schema';
-import { UserAuthService } from './user-auth.service';
 import { JwtModule } from '@nestjs/jwt';
+import { MongooseModule } from '@nestjs/mongoose';
+import { PassportModule } from '@nestjs/passport';
 import { UserAuthController } from './user-auth.controller';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RefreshTokenGuard } from './guards/refresh-token.guard';
+import { UserAuthService } from './user-auth.service';
+import { User, UserSchema } from './schemas/user-auth-schema';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>(
-          process.env.JWT_ACCESS_SECRET || 'jwt-secret-key',
-        ),
-        signOptions: { expiresIn: '1h' },
-      }),
-      inject: [ConfigService],
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.register({
+      secret: process.env.JWT_ACCESS_SECRET,
+      signOptions: { expiresIn: '15m' },
     }),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
-  providers: [UserAuthService, JwtAuthGuard, RefreshTokenGuard],
-  exports: [UserAuthService],
   controllers: [UserAuthController],
+  providers: [UserAuthService, JwtStrategy, RefreshTokenStrategy],
+  exports: [UserAuthService],
 })
 export class UserAuthModule {}
