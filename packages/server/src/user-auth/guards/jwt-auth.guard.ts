@@ -1,49 +1,60 @@
 import {
-  CanActivate,
   ExecutionContext,
   Injectable,
+  Logger,
   UnauthorizedException,
+  SetMetadata,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { Observable } from 'rxjs';
+
+export const IS_PUBLIC_KEY = 'isPublic';
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  private readonly logger = new Logger(JwtAuthGuard.name);
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
-
-    if (!token) {
-      throw new UnauthorizedException('No token provided');
-    }
-
-    try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_ACCESS_SECRET || 'your-secret-key',
-      });
-
-      if (!payload.sub) {
-        throw new UnauthorizedException('Invalid token payload');
-      }
-
-      request.user = payload;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid token', { cause: error });
-    }
-
-    return true;
+  constructor(private reflector: Reflector) {
+    super();
   }
 
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const authHeader = request.headers.authorization;
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    this.logger.debug(
+      `JWT Guard called for ${context.getClass().name} - ${context.getHandler().name}`,
+    );
 
-    if (!authHeader) {
-      return undefined;
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      this.logger.debug('Route is marked as public, skipping authentication');
+      return true;
     }
 
-    const [type, token] = authHeader.split(' ');
-    return type === 'Bearer' ? token : undefined;
+    return super.canActivate(context);
+  }
+
+  handleRequest(err: any, user: any, info: any): any {
+    this.logger.debug('Handle request called with:', { user, info });
+
+    if (err || !user) {
+      this.logger.error('Authentication failed', {
+        error: err?.message || 'No user found',
+        info,
+      });
+      throw err || new UnauthorizedException('Authentication failed');
+    }
+
+    this.logger.debug('Authentication successful', {
+      userId: user.userId,
+      email: user.email,
+    });
+    return user;
   }
 }

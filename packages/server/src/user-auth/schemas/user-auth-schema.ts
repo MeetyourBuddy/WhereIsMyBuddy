@@ -23,6 +23,18 @@ export class User implements Omit<IUser, '_id'> {
   })
   name: string;
 
+  @Prop()
+  googleId?: string;
+
+  @Prop()
+  firstName?: string;
+
+  @Prop()
+  lastName?: string;
+
+  @Prop({ default: false })
+  isEmailVerified: boolean;
+
   @Prop({
     required: [true, 'Email is required'],
     unique: true,
@@ -41,6 +53,12 @@ export class User implements Omit<IUser, '_id'> {
   })
   password: string;
 
+  @Prop()
+  picture?: string;
+
+  @Prop()
+  provider?: string;
+
   @Prop({
     default: null,
     type: String,
@@ -58,6 +76,18 @@ export class User implements Omit<IUser, '_id'> {
     type: Date,
   })
   lastLogin: Date | null;
+
+  @Prop({
+    default: null,
+    type: Date,
+  })
+  lastLogout: Date | null;
+
+  @Prop({
+    default: null,
+    type: Date,
+  })
+  lastTokenRefresh: Date | null;
 
   @Prop({
     default: Date.now,
