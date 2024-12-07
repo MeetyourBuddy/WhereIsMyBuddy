@@ -1,16 +1,22 @@
 import { Request } from 'express';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 
 export interface IUser {
-  _id: Types.ObjectId;
+  _id: string;
   name: string;
   email: string;
-  password?: string;
-  refreshToken?: string | null;
-  isActive?: boolean;
-  lastLogin?: Date | null;
-  createdAt?: Date;
-  updatedAt?: Date;
+  password: string;
+  refreshToken: string | null;
+  isActive: boolean;
+  lastLogin: Date | null;
+  lastLogout: Date | null;
+  lastTokenRefresh: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  googleId?: string;
+  firstName?: string;
+  lastName?: string;
+  isEmailVerified: boolean;
 }
 
 export interface UserDocument extends IUser {
@@ -33,13 +39,26 @@ export interface Tokens {
   refreshToken: string;
 }
 
+export interface JwtUser {
+  sub: string;
+  email: string;
+}
+
 export interface RequestWithUser extends Request {
-  user?: JwtPayload;
+  user: JwtUser;
+}
+
+export interface PublicUser {
+  _id: string;
+  name?: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface AuthResponse {
   message: string;
   accessToken?: string;
   refreshToken?: string;
-  user: IUser;
+  user: PublicUser;
 }

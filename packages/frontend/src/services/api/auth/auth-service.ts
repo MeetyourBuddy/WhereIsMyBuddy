@@ -32,6 +32,20 @@ class AuthService {
     return response;
   }
 
+  async googleLogin(credential: string): Promise<AxiosResponse<AuthResponse>> {
+    const response = await axiosInstance.post<AuthResponse>('/auth/google/callback', {
+      credential
+    });
+
+    const { accessToken, refreshToken } = response.data;
+
+    if (accessToken) {
+      tokenService.setTokens(accessToken, refreshToken);
+    }
+
+    return response;
+  }
+
   async logout(): Promise<AxiosResponse<LogoutResponse>> {
     const response = await axiosInstance.post<LogoutResponse>('/auth/logout');
 
@@ -42,7 +56,7 @@ class AuthService {
     return response;
   }
 
-  getCurrentUser(): Promise<AxiosResponse<IUser>> {
+  getMe(): Promise<AxiosResponse<IUser>> {
     return axiosInstance.get<IUser>('/auth/me');
   }
 }

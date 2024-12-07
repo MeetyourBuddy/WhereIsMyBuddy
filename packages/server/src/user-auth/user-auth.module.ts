@@ -7,6 +7,7 @@ import { UserAuthService } from './user-auth.service';
 import { User, UserSchema } from './schemas/user-auth-schema';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
@@ -18,7 +19,12 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   controllers: [UserAuthController],
-  providers: [UserAuthService, JwtStrategy, RefreshTokenStrategy],
+  providers: [
+    UserAuthService,
+    JwtStrategy,
+    RefreshTokenStrategy,
+    GoogleStrategy,
+  ],
   exports: [UserAuthService],
 })
 export class UserAuthModule {}

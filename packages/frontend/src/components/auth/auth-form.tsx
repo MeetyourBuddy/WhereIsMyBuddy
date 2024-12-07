@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom';
 import { authValidationSchema } from '../../libs/validation/auth-validation';
 import { useAuth } from '@/libs/hooks/use-auth';
 import { SignInCredentials, SignUpData } from '@/types/auth-types';
+import { config } from '@/config';
 
 type FormData = SignInCredentials | SignUpData;
 
@@ -23,6 +24,10 @@ const AuthForm = () => {
       ...(isSignup && { name: '' })
     }
   });
+
+  const handleGoogleSignin = () => {
+    window.open(`${config.api.baseURL}/auth/google`, '_self');
+  };
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
     console.log(data);
@@ -123,6 +128,7 @@ const AuthForm = () => {
           className="text-md w-full bg-google-button hover:bg-secondary-50"
           radius="sm"
           startContent={<Google_svg />}
+          onClick={handleGoogleSignin}
           size="md"
         >
           Sign in with Google

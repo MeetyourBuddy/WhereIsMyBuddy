@@ -6,6 +6,8 @@ import {
   UseGuards,
   HttpStatus,
   HttpCode,
+  Req,
+  Res,
 } from '@nestjs/common';
 import { UserAuthService } from './user-auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -14,8 +16,10 @@ import { LoginUserDto } from './dto/loginUserDto';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { Public } from './decorators/public.decorator';
 import { GetUser } from './decorators/get-user.decorator';
+import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
 
-@Controller('api/auth')
+@Controller('auth')
 export class UserAuthController {
   constructor(private userAuthService: UserAuthService) {}
 
@@ -51,10 +55,10 @@ export class UserAuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('profile')
+  @Get('me')
   @HttpCode(HttpStatus.OK)
   getProfile(@GetUser('userId') userId: string) {
-    return this.userAuthService.getProfile(userId);
+    return this.userAuthService.getMe(userId);
   }
 
   @Get('users')
@@ -62,5 +66,44 @@ export class UserAuthController {
   @HttpCode(HttpStatus.OK)
   getUsers() {
     return this.userAuthService.getUsers();
+  }
+
+  @Get('google')
+  @Public()
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Guard redirects to Google
+  }
+
+  @Get('google/callback')
+  @Public()
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req, @Res() res: Response) {
+    try {
+      // The validated user from GoogleStrategy is in req.user
+      const authResponse = await this.userAuthService.handleGoogleAuth({
+        googleId: req.user.googleId,
+        email: req.user.email,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        picture: req.user.picture,
+      });
+
+      // Construct a secure redirect URL with tokens
+      const redirectUrl = new URL(`${process.env.FRONTEND_URL}/oauth`);
+      redirectUrl.searchParams.append('accessToken', authResponse.accessToken);
+      redirectUrl.searchParams.append(
+        'refreshToken',
+        authResponse.refreshToken,
+      );
+
+      return res.redirect(redirectUrl.toString());
+    } catch (error) {
+      // Handle errors by redirecting to login with an error flag
+      console.log(error);
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/signin?error=google_auth_failed`,
+      );
+    }
   }
 }

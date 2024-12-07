@@ -4,7 +4,8 @@ export const API_CONFIG = {
   baseURL: config.api.baseURL || 'http://localhost:3000/api',
   timeout: 5000,
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
   }
 } as const;
 

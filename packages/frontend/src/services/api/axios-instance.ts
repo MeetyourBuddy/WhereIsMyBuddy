@@ -4,8 +4,7 @@ import { tokenService } from '../token/token-service';
 import { AuthResponse } from '@/types/auth-types';
 
 const axiosInstance: AxiosInstance = axios.create({
-  ...API_CONFIG,
-  withCredentials: true
+  ...API_CONFIG
 });
 
 // Request interceptor

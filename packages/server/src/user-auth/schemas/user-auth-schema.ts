@@ -23,6 +23,18 @@ export class User implements Omit<IUser, '_id'> {
   })
   name: string;
 
+  @Prop()
+  googleId?: string;
+
+  @Prop()
+  firstName?: string;
+
+  @Prop()
+  lastName?: string;
+
+  @Prop({ default: false })
+  isEmailVerified: boolean;
+
   @Prop({
     required: [true, 'Email is required'],
     unique: true,
@@ -40,6 +52,12 @@ export class User implements Omit<IUser, '_id'> {
     minlength: [6, 'Password must be at least 6 characters'],
   })
   password: string;
+
+  @Prop()
+  picture?: string;
+
+  @Prop()
+  provider?: string;
 
   @Prop({
     default: null,
