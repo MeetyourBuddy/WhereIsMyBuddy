@@ -24,7 +24,8 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.1",
     "husky": "7.0.0",
-    "react-router-dom": "^6.26.0"
+    "react-router-dom": "^6.26.0",
+    "typescript": "~5.3.3"
   },
   "dependencies": {
     "@nestjs/config": "^3.3.0",
