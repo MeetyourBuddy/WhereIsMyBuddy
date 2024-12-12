@@ -15,5 +15,7 @@ export const validationSchema = Joi.object({
   CORS_ORIGIN: Joi.string().default('http://localhost:5173'),
   GOOGLE_CLIENT_ID: Joi.string().required(),
   GOOGLE_CLIENT_SECRET: Joi.string().required(),
-  NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test')
+    .default('development'),
 });

@@ -3,9 +3,9 @@ import { IsString, MinLength, IsOptional } from 'class-validator';
 import { BaseUserDto } from './base-user.dto';
 
 export class CreateUserDto extends BaseUserDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'Password123!',
-    description: 'Password must be at least 6 characters long' 
+    description: 'Password must be at least 6 characters long',
   })
   @IsString()
   @MinLength(6, { message: 'Password must be at least 6 characters long' })
@@ -20,5 +20,4 @@ export class CreateUserDto extends BaseUserDto {
   @IsOptional()
   @IsString()
   bio?: string;
-
 }

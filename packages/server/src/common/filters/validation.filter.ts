@@ -17,14 +17,15 @@ export class ValidationFilter implements ExceptionFilter {
     // Handle BadRequestException (including validation errors)
     if (exception instanceof BadRequestException) {
       const exceptionResponse = exception.getResponse() as any;
-      
+
       return response.status(status).json({
         success: false,
-        message: typeof exceptionResponse === 'string' 
-          ? exceptionResponse 
-          : exceptionResponse.message,
-        errors: Array.isArray(exceptionResponse.message) 
-          ? this.formatErrors(exceptionResponse.message) 
+        message:
+          typeof exceptionResponse === 'string'
+            ? exceptionResponse
+            : exceptionResponse.message,
+        errors: Array.isArray(exceptionResponse.message)
+          ? this.formatErrors(exceptionResponse.message)
           : null,
       });
     }
@@ -38,8 +39,8 @@ export class ValidationFilter implements ExceptionFilter {
 
   private formatErrors(errors: string[]) {
     if (!Array.isArray(errors)) return [];
-    
-    return errors.map(error => ({
+
+    return errors.map((error) => ({
       message: error,
     }));
   }

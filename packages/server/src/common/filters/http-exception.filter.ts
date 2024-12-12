@@ -28,18 +28,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
-    this.logger.error(
-      `Http Exception: ${JSON.stringify(exceptionResponse)}`,
-    );
+    this.logger.error(`Http Exception: ${JSON.stringify(exceptionResponse)}`);
 
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
-      message: 
+      message:
         typeof exceptionResponse === 'string'
           ? exceptionResponse
           : (exceptionResponse as any).message || 'Internal server error',
       path: ctx.getRequest().url,
     });
   }
-} 
+}

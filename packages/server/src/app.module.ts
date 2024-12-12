@@ -31,8 +31,8 @@ import { ValidationFilter } from './common/filters/validation.filter';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get('jwt.accessSecret'),
-        signOptions: { 
-          expiresIn: config.get('jwt.accessExpiresIn') 
+        signOptions: {
+          expiresIn: config.get('jwt.accessExpiresIn'),
         },
       }),
     }),

@@ -18,7 +18,8 @@ import { GoogleStrategy } from './strategies/google.strategy';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+          expiresIn:
+            configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
         },
       }),
       inject: [ConfigService],
@@ -26,12 +27,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    RefreshTokenStrategy,
-    GoogleStrategy,
-  ],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, GoogleStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

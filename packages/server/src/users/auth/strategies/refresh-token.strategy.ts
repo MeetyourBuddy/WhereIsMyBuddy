@@ -9,7 +9,10 @@ import { Model } from 'mongoose';
 import { User } from '../../schemas/user.schema';
 
 @Injectable()
-export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class RefreshTokenStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private configService: ConfigService,
@@ -22,7 +25,6 @@ export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refres
   }
 
   async validate(req: Request, payload: JwtPayload) {
-    const refreshToken = req.get('Authorization').replace('Bearer', '').trim();
     const user = await this.userModel.findById(payload.sub);
     if (!user || !user.refreshToken) {
       throw new UnauthorizedException();

@@ -40,8 +40,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         info: info?.message,
       });
 
-      throw err || new UnauthorizedException(
-        info?.message || 'Authentication failed',
+      throw (
+        err ||
+        new UnauthorizedException(info?.message || 'Authentication failed')
       );
     }
 

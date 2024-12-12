@@ -3,7 +3,6 @@
 - It is used to return a paginated response from the API
 */
 
-
 import { applyDecorators, Type } from '@nestjs/common';
 import { ApiOkResponse, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
@@ -40,4 +39,4 @@ export const ApiPaginatedResponse = <TModel extends Type<any>>(
       },
     }),
   );
-}; 
+};

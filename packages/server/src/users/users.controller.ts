@@ -7,7 +7,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
 import { User } from './schemas/user.schema';
@@ -31,7 +36,9 @@ export class UsersController {
     description: 'Returns the user profile',
     type: User,
   })
-  async getProfile(@GetUser('userId') userId: string): Promise<ServiceResponse<User>> {
+  async getProfile(
+    @GetUser('userId') userId: string,
+  ): Promise<ServiceResponse<User>> {
     return this.usersService.getUserProfile(userId);
   }
 

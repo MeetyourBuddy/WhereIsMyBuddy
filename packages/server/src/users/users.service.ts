@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
@@ -8,9 +12,7 @@ import { ServiceResponse } from './interfaces/common.interface';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async getUserProfile(userId: string): Promise<ServiceResponse<User>> {
     const user = await this.userModel.findById(userId);
@@ -77,8 +79,12 @@ export class UsersService {
     };
   }
 
-  async checkOnboardingStatus(userId: string): Promise<ServiceResponse<{ hasCompletedOnboarding: boolean }>> {
-    const user = await this.userModel.findById(userId).select('hasCompletedOnboarding');
+  async checkOnboardingStatus(
+    userId: string,
+  ): Promise<ServiceResponse<{ hasCompletedOnboarding: boolean }>> {
+    const user = await this.userModel
+      .findById(userId)
+      .select('hasCompletedOnboarding');
 
     if (!user) {
       throw new NotFoundException('User not found');

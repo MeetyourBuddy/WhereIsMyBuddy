@@ -1,22 +1,44 @@
-import { Injectable } from '@nestjs/common';
-import { ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+import { registerDecorator, ValidationOptions } from 'class-validator';
 
-@ValidatorConstraint({ name: 'interests', async: false })
-@Injectable()
-export class InterestsValidator implements ValidatorConstraintInterface {
-  validate(interests: string[], args: ValidationArguments) {
-    if (!Array.isArray(interests)) return false;
-    if (interests.length === 0) return false;
-    if (interests.length > 5) return false; // Maximum 5 interests
-    
-    return interests.every(interest => 
-      typeof interest === 'string' && 
-      interest.length >= 2 && 
-      interest.length <= 20
-    );
-  }
+export function ValidateInterests(validationOptions?: ValidationOptions) {
+  return function (_: object, __: string) {
+    registerDecorator({
+      name: 'validateInterests',
+      target: Object,
+      propertyName: __,
+      options: validationOptions,
+      validator: {
+        validate(value: any) {
+          if (!Array.isArray(value)) return false;
+          if (value.length === 0) return false;
+          return value.every(
+            (interest) =>
+              typeof interest === 'string' && interest.trim().length > 0,
+          );
+        },
+        defaultMessage() {
+          return 'Interests must be a non-empty array of strings';
+        },
+      },
+    });
+  };
+}
 
-  defaultMessage(args: ValidationArguments) {
-    return 'Interests must be an array of 1-5 strings, each 2-20 characters long';
-  }
+export function ValidateLocation(validationOptions?: ValidationOptions) {
+  return function (_: object, __: string) {
+    registerDecorator({
+      name: 'validateLocation',
+      target: Object,
+      propertyName: __,
+      options: validationOptions,
+      validator: {
+        validate(value: string) {
+          return typeof value === 'string' && value.trim().length > 0;
+        },
+        defaultMessage() {
+          return 'Location must be a non-empty string';
+        },
+      },
+    });
+  };
 }

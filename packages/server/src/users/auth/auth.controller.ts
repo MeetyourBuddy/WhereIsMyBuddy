@@ -10,33 +10,13 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiBearerAuth 
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
-import { 
-  CreateUserDto, 
-  LoginUserDto, 
-  AuthResponseDto 
-} from '../dto';
-import { 
-  Public, 
-  GetUser, 
-  AuthUser 
-} from './decorators';
-import { 
-  RefreshTokenGuard,
-  GoogleAuthGuard 
-} from './guards';
-import { 
-  AuthResponse, 
-  Tokens, 
-  GoogleAuthRequest 
-} from '../interfaces';
+import { CreateUserDto, LoginUserDto, AuthResponseDto } from '../dto';
+import { Public, GetUser, AuthUser } from './decorators';
+import { RefreshTokenGuard, GoogleAuthGuard } from './guards';
+import { AuthResponse, Tokens, GoogleAuthRequest } from '../interfaces';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -46,14 +26,12 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'Register new user' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'User successfully registered',
-    type: AuthResponseDto 
+    type: AuthResponseDto,
   })
-  async register(
-    @Body() createUserDto: CreateUserDto
-  ): Promise<AuthResponse> {
+  async register(@Body() createUserDto: CreateUserDto): Promise<AuthResponse> {
     return this.authService.register(createUserDto);
   }
 
@@ -61,14 +39,12 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Login successful',
-    type: AuthResponseDto 
+    type: AuthResponseDto,
   })
-  async login(
-    @Body() loginUserDto: LoginUserDto
-  ): Promise<AuthResponse> {
+  async login(@Body() loginUserDto: LoginUserDto): Promise<AuthResponse> {
     return this.authService.login(loginUserDto);
   }
 
@@ -77,9 +53,9 @@ export class AuthController {
   @UseGuards(RefreshTokenGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Tokens refreshed successfully' 
+  @ApiResponse({
+    status: 200,
+    description: 'Tokens refreshed successfully',
   })
   async refreshTokens(
     @GetUser('sub') userId: string,
@@ -92,9 +68,9 @@ export class AuthController {
   @Public()
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth login' })
-  @ApiResponse({ 
-    status: 302, 
-    description: 'Redirects to Google login' 
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to Google login',
   })
   googleAuth() {
     // Guard redirects to Google
@@ -104,13 +80,13 @@ export class AuthController {
   @Public()
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth callback' })
-  @ApiResponse({ 
-    status: 302, 
-    description: 'Redirects to frontend with tokens' 
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to frontend with tokens',
   })
   async googleAuthCallback(
-    @Req() req: GoogleAuthRequest, 
-    @Res() res: Response
+    @Req() req: GoogleAuthRequest,
+    @Res() res: Response,
   ) {
     return this.authService.handleGoogleAuth(req.user, res);
   }
@@ -119,12 +95,12 @@ export class AuthController {
   @AuthUser()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User logout' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Logout successful' 
+  @ApiResponse({
+    status: 200,
+    description: 'Logout successful',
   })
   async logout(
-    @GetUser('userId') userId: string
+    @GetUser('userId') userId: string,
   ): Promise<{ message: string }> {
     return this.authService.logout(userId);
   }

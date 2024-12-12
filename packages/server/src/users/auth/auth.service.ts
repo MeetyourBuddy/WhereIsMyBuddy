@@ -52,8 +52,14 @@ export class AuthService {
         provider: 'local',
       });
 
-      const tokens = await this.getTokens(newUser._id.toString(), newUser.email);
-      await this.updateRefreshToken(newUser._id.toString(), tokens.refreshToken);
+      const tokens = await this.getTokens(
+        newUser._id.toString(),
+        newUser.email,
+      );
+      await this.updateRefreshToken(
+        newUser._id.toString(),
+        tokens.refreshToken,
+      );
 
       const userResponse = this.formatUserResponse(newUser);
 
@@ -139,21 +145,28 @@ export class AuthService {
           profilePicture: googleUser.picture,
           isEmailVerified: true,
           provider: 'google',
-          password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10),
+          password: await bcrypt.hash(
+            crypto.randomBytes(32).toString('hex'),
+            10,
+          ),
         });
       }
 
       const tokens = await this.getTokens(user._id.toString(), user.email);
       await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
 
-      const redirectUrl = new URL(`${this.configService.get('FRONTEND_URL')}/oauth`);
+      const redirectUrl = new URL(
+        `${this.configService.get('FRONTEND_URL')}/oauth`,
+      );
       redirectUrl.searchParams.append('accessToken', tokens.accessToken);
       redirectUrl.searchParams.append('refreshToken', tokens.refreshToken);
 
       res.redirect(redirectUrl.toString());
     } catch (error) {
       this.logger.error(`Google auth error: ${error.message}`, error.stack);
-      res.redirect(`${this.configService.get('FRONTEND_URL')}/login?error=google_auth_failed`);
+      res.redirect(
+        `${this.configService.get('FRONTEND_URL')}/login?error=google_auth_failed`,
+      );
     }
   }
 
@@ -183,11 +196,13 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+        expiresIn:
+          this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
       }),
       this.jwtService.signAsync(jwtPayload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
+        expiresIn:
+          this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
       }),
     ]);
 
@@ -220,7 +235,7 @@ export class AuthService {
       updatedAt: user.updatedAt,
       interests: user.interests,
       location: user.location,
-      hasCompletedOnboarding: user.hasCompletedOnboarding
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
     };
   }
 }
