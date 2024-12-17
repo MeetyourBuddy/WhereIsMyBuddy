@@ -8,9 +8,9 @@ if [ -n "$(git status packages/frontend --porcelain --untracked-files=no)" ]; th
   cd -  # Return to the original directory
 fi
 
-# If backend has changes, run backend lint-staged and validate branch name
-if [ -n "$(git status packages/backend --porcelain --untracked-files=no)" ]; then
-  cd packages/backend
+# If backend has changes, run server lint-staged and validate branch name
+if [ -n "$(git status packages/server --porcelain --untracked-files=no)" ]; then
+  cd packages/server
   npx lint-staged
   npx validate-branch-name
   cd -  # Return to the original directory
