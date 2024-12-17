@@ -1,6 +1,6 @@
 export const config = {
   api: {
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: 'http://localhost:3000',
     port: parseInt(import.meta.env.VITE_PORT, 10)
   }
 } as const;
