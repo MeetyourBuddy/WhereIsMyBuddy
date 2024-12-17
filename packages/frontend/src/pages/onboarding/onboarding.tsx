@@ -13,12 +13,13 @@ const Onboarding = () => {
   const handleLogout = () => {
     logout();
   };
+
   return (
     <div>
       <h1>
         Onboarding {user.name} with ID: {user._id} and email: {user.email}
       </h1>
-      <Button color="danger" onClick={handleLogout}>
+      <Button color="danger" onPress={handleLogout}>
         Logout
       </Button>
     </div>

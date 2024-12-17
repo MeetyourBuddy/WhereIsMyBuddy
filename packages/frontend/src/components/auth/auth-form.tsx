@@ -109,6 +109,8 @@ const AuthForm = () => {
       )}
 
       <Button
+        onPress={() => handleSubmit(onSubmit)()}
+        color="primary"
         type="submit"
         radius="sm"
         className="text-md rounded-lg bg-signin-blue text-white"
@@ -128,7 +130,7 @@ const AuthForm = () => {
           className="text-md w-full bg-google-button hover:bg-secondary-50"
           radius="sm"
           startContent={<Google_svg />}
-          onClick={handleGoogleSignin}
+          onPress={handleGoogleSignin}
           size="md"
         >
           Sign in with Google

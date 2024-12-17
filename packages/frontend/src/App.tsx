@@ -3,7 +3,12 @@ import Router from '@/providers/routes/routes';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <Router />
     </BrowserRouter>
   );
