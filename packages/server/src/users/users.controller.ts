@@ -16,7 +16,7 @@ import {
 
 import { UsersService } from './users.service';
 import { User } from './schemas/user.schema';
-import { GetUser } from './auth/decorators/get-user.decorator';
+import { GetUser } from './decorators/get-user.decorator';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
