@@ -14,7 +14,9 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginUserDto, AuthResponseDto } from '../dto';
-import { Public, GetUser, AuthUser } from '../../common/decorators';
+import { Public } from '../../common/decorators';
+import { AuthUser } from './decorators';
+import { GetUser } from '../decorators/get-user.decorator';
 import { RefreshTokenGuard, GoogleAuthGuard } from './guards';
 import { AuthResponse, Tokens, GoogleAuthRequest } from '../interfaces';
 
