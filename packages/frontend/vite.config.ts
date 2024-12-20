@@ -22,5 +22,8 @@ export default defineConfig({
       '@config': resolve(__dirname, './src/config'),
       '@providers': resolve(__dirname, './src/providers')
     }
+  },
+  define: {
+    'process.env': {}
   }
 });

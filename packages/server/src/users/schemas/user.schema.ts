@@ -68,7 +68,3 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
-
-// Index for better query performance
-UserSchema.index({ email: 1 });
-UserSchema.index({ googleId: 1 });
