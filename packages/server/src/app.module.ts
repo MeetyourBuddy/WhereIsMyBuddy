@@ -12,7 +12,7 @@ import { User, UserSchema } from './users/schemas/user.schema';
 import { JwtStrategy } from './users/auth/strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './users/auth/strategies/refresh-token.strategy';
 import { GoogleStrategy } from './users/auth/strategies/google.strategy';
-import { ValidationFilter } from './common/filters/validation.filter';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 @Module({
   imports: [
@@ -46,7 +46,7 @@ import { ValidationFilter } from './common/filters/validation.filter';
     GoogleStrategy,
     {
       provide: APP_FILTER,
-      useClass: ValidationFilter,
+      useClass: HttpExceptionFilter,
     },
   ],
   exports: [UsersService, AuthService],
