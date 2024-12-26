@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 239, 84%, 67%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 273, 91%, 65%;
+    --secondary-foreground: 273, 70%, 47%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 273, 91%, 65%;
+    --accent-foreground: 273, 70%, 47%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 228, 96%, 89%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --primary-hover: 239, 84%, 60%;
+    --secondary-hover: 210, 40%, 96%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --primary-hover: 0 0% 85%;
+    --secondary-hover: 240 3.7% 12%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+    }
+    body {
+      @apply bg-background text-foreground;
+      @apply text-base antialiased;
+    }
+  }
+  h1 {
+    @apply text-heading-md font-bold leading-heading-md tracking-tight text-gray-80;
+  }
+
+  h2 {
+    @apply text-heading-sm font-semibold leading-heading-sm tracking-tight text-gray-80;
+  }
+
+  h3 {
+    @apply text-heading-xs font-semibold leading-heading-xs tracking-tight text-gray-80;
+  }
+
+  h4 {
+    @apply text-heading-md font-semibold leading-heading-md tracking-tight text-gray-80;
+  }
+
+  h5 {
+    @apply text-heading-sm font-semibold leading-heading-sm tracking-tight text-gray-80;
+  }
+
+  h6 {
+    @apply text-heading-xs font-semibold leading-heading-xs tracking-tight text-gray-80;
+  }
+
+  p {
+    @apply text-paragraph-lg leading-paragraph-lg tracking-tight text-gray-80;
+  }
+
+  /* Prose styles for content areas */
+  .prose {
+    @apply max-w-none leading-7;
+
+    p {
+      @apply mb-4;
+    }
+
+    ul {
+      @apply my-6 ml-6 list-disc [&>li]:mt-2;
+    }
+
+    ol {
+      @apply my-6 ml-6 list-decimal [&>li]:mt-2;
+    }
+
+    blockquote {
+      @apply mt-6 border-l-2 border-slate-300 pl-6 italic;
+    }
+  }
+}
+
+/* Component styles */
+@layer components {
+  .container-tight {
+    @apply mx-auto max-w-[640px] px-4;
+  }
+
+  .container-default {
+    @apply mx-auto max-w-[1024px] px-4;
+  }
+
+  .container-wide {
+    @apply mx-auto max-w-[1280px] px-4;
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

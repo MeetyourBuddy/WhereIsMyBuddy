@@ -1,8 +1,17 @@
-import { Button, Select, SelectItem, Progress, CheckboxGroup } from '@nextui-org/react';
+import { Button } from '@/components/common/ui/button';
+import { Progress } from '@/components/common/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/common/ui/select';
 import { useState } from 'react';
-import Back from '../common/icons/Back';
+import { ChevronLeft } from 'lucide-react';
 import { CustomCheckbox } from './checkbox-badge';
 import { useNavigate } from 'react-router-dom';
+import { ScrollArea } from '../common/ui/scroll-area';
 
 const onboardingData = [
   {
@@ -31,7 +40,6 @@ const selectComponentData = [
     'Art',
     'Science',
     'History',
-    'Philosophy',
     'Technology',
     'Business',
     'Finance',
@@ -46,7 +54,6 @@ const selectComponentData = [
     'Philosophy',
     'Psychology',
     'Religion',
-    'Science',
     'Space Travel',
     'Books',
     'Movies',
@@ -60,14 +67,15 @@ const placeholderData = ['Select a location', 'Select a frequency', 'Select your
 const OnboardingCard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
-  //   const [selectedFrequency, setSelectedFrequency] = useState<string>('');
-  //   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [selectedFrequency, setSelectedFrequency] = useState<string>('');
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const progress = (currentStep / onboardingData.length) * 100;
-
   const navigate = useNavigate();
 
   const handleNext = () => {
-    if (selectedCountry) {
+    if (currentStep === 1 && selectedCountry) {
+      setCurrentStep(currentStep + 1);
+    } else if (currentStep === 2 && selectedFrequency) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -76,85 +84,95 @@ const OnboardingCard = () => {
     navigate('/activity');
   };
 
+  const handleInterestChange = (interest: string) => {
+    setSelectedInterests((prev) => [...prev, interest]);
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="flex min-h-[904px] w-full max-w-[824px] flex-col items-center rounded-[25px] border border-border bg-onboarding-card">
+      <div className="flex min-h-[904px] w-full max-w-[824px] flex-col items-center rounded-[25px] border bg-gray-5">
         <div className="relative flex w-full flex-col items-center pt-[106px]">
           <div className="absolute flex items-center justify-between space-x-6">
             {currentStep > 1 && (
               <Button
-                className="h-10 rounded-full bg-transparent"
-                size="sm"
-                variant="light"
+                variant="ghost"
+                size="icon"
                 onClick={() => setCurrentStep(currentStep - 1)}
+                className="h-10 w-10 rounded-full"
               >
-                <Back className="h-6 w-6" strokeWidth={2} stroke="#162D3A" />
+                <ChevronLeft className="h-6 w-6" />
               </Button>
             )}
-            <Progress
-              classNames={{
-                base: 'w-[475px]',
-                track: 'drop-shadow-md border border-default',
-                indicator: 'bg-gradient-to-r from-black to-blue-500',
-                label: 'tracking-wider font-medium text-default-600',
-                value: 'text-foreground/60'
-              }}
-              radius="sm"
-              size="md"
-              value={progress}
-            />
+            <Progress value={progress} className="w-[475px]" />
             <div className="flex items-center">
               <p className="text-center text-xl font-semibold">
                 {currentStep} / {onboardingData.length}
               </p>
             </div>
           </div>
+
           <div className="absolute top-[300px] mt-6 flex max-w-[600px] flex-col items-center space-y-6 text-center">
-            <h1 className="text-center text-4xl font-semibold">
-              {onboardingData[currentStep - 1].title}
-            </h1>
-            <p className="text-center text-xl font-normal text-gray-500">
+            <h1 className="text-4xl font-semibold">{onboardingData[currentStep - 1].title}</h1>
+            <p className="text-xl text-muted-foreground">
               {onboardingData[currentStep - 1].description}
             </p>
 
             <div className="flex w-full justify-center">
-              {currentStep < onboardingData.length && (
-                <Select
-                  isRequired
-                  selectedKeys={selectedCountry ? [selectedCountry] : []}
-                  onSelectionChange={(keys) => setSelectedCountry(Array.from(keys)[0] as string)}
-                  className="mt-[58px] h-12 max-w-[388px]"
-                  // label="Location"
-                  placeholder={placeholderData[currentStep - 1]}
-                  size="md"
-                  classNames={{
-                    trigger: 'bg-white flex justify-end items-center',
-                    value: 'text-default-700'
-                  }}
-                >
-                  {selectComponentData[currentStep - 1].map((country) => (
-                    <SelectItem key={country} value={country}>
-                      {country}
-                    </SelectItem>
-                  ))}
+              {currentStep === 1 && (
+                <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                  <SelectTrigger className="mt-[58px] h-12 w-[388px] bg-white">
+                    <SelectValue placeholder={placeholderData[0]} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectComponentData[0].map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               )}
-
-              {currentStep === onboardingData.length && (
-                <CheckboxGroup>
-                  <div className="flex max-h-[280px] max-w-[654px] flex-row flex-wrap items-center justify-center gap-4 overflow-y-auto">
+              {currentStep === 2 && (
+                <Select value={selectedFrequency} onValueChange={setSelectedFrequency}>
+                  <SelectTrigger className="mt-[58px] h-12 w-[388px] bg-white">
+                    <SelectValue placeholder={placeholderData[1]} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectComponentData[1].map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {currentStep === 3 && (
+                <ScrollArea className="max-h-[280px] max-w-[654px]">
+                  <div className="flex flex-row flex-wrap items-center justify-center gap-4">
                     {selectComponentData[onboardingData.length - 1].map((interest) => (
-                      <CustomCheckbox key={interest} value={interest} />
+                      <CustomCheckbox
+                        key={interest}
+                        value={interest}
+                        checked={selectedInterests.includes(interest)}
+                        onChange={() => handleInterestChange(interest)}
+                      />
                     ))}
                   </div>
-                </CheckboxGroup>
+                </ScrollArea>
               )}
             </div>
           </div>
+
           <Button
             onClick={currentStep === onboardingData.length ? handleFinish : handleNext}
-            isDisabled={!selectedCountry}
-            className="absolute top-[750px] h-[52px] w-[253px] rounded-full border border-black bg-white text-signin-blue transition-colors hover:bg-gray-50"
+            disabled={
+              currentStep === 1
+                ? !selectedCountry
+                : currentStep === 2
+                  ? !selectedFrequency
+                  : selectedInterests.length < 3
+            }
+            className="absolute top-[750px] h-[52px] w-[253px]"
           >
             {currentStep === onboardingData.length ? 'Finish' : 'Next'}
           </Button>

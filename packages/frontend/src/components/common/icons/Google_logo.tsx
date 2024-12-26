@@ -1,14 +1,8 @@
-const google_svg = () => {
+const google_svg = ({ ...props }) => {
   return (
     <div>
       <div>
-        <svg
-          width="29"
-          height="29"
-          viewBox="0 0 29 29"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
+        <svg viewBox="0 0 29 29" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
           <g clipPath="url(#clip0_191_249)">
             <path
               d="M28.227 14.8225C28.227 13.8709 28.1498 12.914 27.9852 11.9778H14.78V17.3689H22.342C22.0282 19.1077 21.0199 20.6458 19.5435 21.6232V25.1213H24.055C26.7043 22.6829 28.227 19.082 28.227 14.8225Z"

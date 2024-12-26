@@ -1,4 +1,4 @@
-const Logo_svg = ({ ...props }) => {
+const Logo_alt = ({ ...props }) => {
   return (
     <div>
       <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -7,11 +7,11 @@ const Logo_svg = ({ ...props }) => {
           fill="#0E1125"
         />
         <path d="M21.7942 9.5L14 23L6.20577 9.5L21.7942 9.5Z" stroke="white" />
-        <path d="M7 10L14 14.5L21.5 10" stroke="white" stroke-linecap="round" />
-        <path d="M14 14.5V22.5" stroke="white" stroke-linecap="round" />
+        <path d="M7 10L14 14.5L21.5 10" stroke="white" strokeLinecap="round" />
+        <path d="M14 14.5V22.5" stroke="white" strokeLinecap="round" />
       </svg>
     </div>
   );
 };
 
-export default Logo_svg;
+export default Logo_alt;

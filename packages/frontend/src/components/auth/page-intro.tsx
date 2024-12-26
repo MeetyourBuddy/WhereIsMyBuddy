@@ -5,9 +5,9 @@ interface PageIntroProps {
 
 const PageIntro = ({ title, description }: PageIntroProps) => {
   return (
-    <div className="mb-6">
-      <h1 className="text-4xl font-semibold">{title}</h1>
-      <p className="mt-4 text-xl">{description}</p>
+    <div className="mb-4 space-y-2">
+      <h1 className="scroll-m-20 font-bold">{title}</h1>
+      <p className="text-muted-foreground">{description}</p>
     </div>
   );
 };
