@@ -1,27 +1,15 @@
-import { useAuth } from '@/libs/hooks/use-auth';
-import { useAuthContext } from '@/providers/contexts/auth-context';
-import { Button } from '@nextui-org/react';
+import Logo_alt from '@/components/common/icons/Logo_alt';
+import OnboardingCard from '@/components/onboarding/onboarding-card';
 
 const Onboarding = () => {
-  const { logout } = useAuth();
-  const { user } = useAuthContext();
-
-  if (!user) {
-    return <div>Loading...</div>;
-  }
-
-  const handleLogout = () => {
-    logout();
-  };
-
   return (
-    <div>
-      <h1>
-        Onboarding {user.name} with ID: {user._id} and email: {user.email}
-      </h1>
-      <Button color="danger" onPress={handleLogout}>
-        Logout
-      </Button>
+    <div className="m-0 flex flex-row p-0">
+      <div className="m-6 flex flex-col">
+        <Logo_alt className="h-10 w-10" />
+      </div>
+      <div className="w-full">
+        <OnboardingCard />
+      </div>
     </div>
   );
 };

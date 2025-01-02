@@ -1,99 +1,99 @@
-import { useForm, Controller, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Input, Button } from '@nextui-org/react';
-import { changePasswordSchema } from '../../libs/validation/auth-validation';
+import { useForm } from 'react-hook-form';
+import { changePasswordSchema } from '../../lib/validation/auth-validation';
+import { Button } from '@/components/common/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/common/ui/form';
+import { Input } from '@/components/common/ui/input';
+
+// Define type for the form values
+type ChangePasswordValues = {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
 
 const ChangePasswordForm = () => {
-  const { control, handleSubmit } = useForm({
-    resolver: zodResolver(changePasswordSchema)
+  const form = useForm<ChangePasswordValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    }
   });
 
-  const onSubmit = (data: FieldValues) => {
+  function onSubmit(data: ChangePasswordValues) {
     console.log('Change password data:', data);
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex min-w-[388px] flex-col space-y-6">
-      <div>
-        <label className="-sm text-base">Old Password</label>
-        <Controller
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-[388px] space-y-6">
+        <FormField
+          control={form.control}
           name="oldPassword"
-          control={control}
-          defaultValue=""
-          render={({ field, fieldState: { error } }) => (
-            <Input
-              {...field}
-              type="password"
-              variant="bordered"
-              radius="sm"
-              placeholder="At least 8 characters"
-              isInvalid={!!error}
-              errorMessage={error && error.message}
-            />
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Old Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="At least 8 characters" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-      </div>
 
-      <div>
-        <label className="-sm text-base">New Password</label>
-        <Controller
+        <FormField
+          control={form.control}
           name="newPassword"
-          control={control}
-          defaultValue=""
-          render={({ field, fieldState: { error } }) => (
-            <Input
-              {...field}
-              type="password"
-              variant="bordered"
-              radius="sm"
-              placeholder="At least 8 characters"
-              isInvalid={!!error}
-              errorMessage={error && error.message}
-            />
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>New Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="At least 8 characters" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-      </div>
 
-      <div>
-        <label className="-sm text-base">Confirm Password</label>
-        <Controller
+        <FormField
+          control={form.control}
           name="confirmPassword"
-          control={control}
-          defaultValue=""
-          render={({ field, fieldState: { error } }) => (
-            <Input
-              {...field}
-              type="password"
-              variant="bordered"
-              radius="sm"
-              placeholder="At least 8 characters"
-              isInvalid={!!error}
-              errorMessage={error && error.message}
-            />
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="At least 8 characters" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-      </div>
 
-      <div className="pt-6">
-        <Button
-          type="submit"
-          radius="sm"
-          className="w-full rounded-lg bg-signin-blue text-white"
-          size="md"
-        >
-          Change Password
-        </Button>
-      </div>
+        <div className="pt-6">
+          <Button type="submit" className="w-full">
+            Change Password
+          </Button>
+        </div>
 
-      <div className="flex flex-col items-center space-y-6">
-        <p className="pt-[24px]">
-          Go back to{' '}
-          <a href="#" className="text-blue-600">
-            Settings
-          </a>
-        </p>
-      </div>
-    </form>
+        <div className="flex flex-col items-center space-y-6">
+          <p className="pt-6">
+            Go back to{' '}
+            <a href="/settings" className="text-primary">
+              Settings
+            </a>
+          </p>
+        </div>
+      </form>
+    </Form>
   );
 };
 
