@@ -1,23 +1,23 @@
-import { Image, Link } from '@nextui-org/react';
-1;
+import { Button } from '@/components/common/ui/button';
+
 const NotFound = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[url('/background/background-with-dots.png')] bg-cover bg-center">
       <div className="flex flex-col items-center gap-[13vw]">
-        <div className="">
-          <Image src={'/not-found/404.png'} className="max-h-[450px]" alt="login image" />
+        <div>
+          <img
+            src="/not-found/404.png"
+            width={450}
+            height={450}
+            className="h-auto max-h-[450px] w-auto"
+            alt="404 not found illustration"
+          />
         </div>
         <div className="flex w-[280px] flex-col items-center gap-5">
-          <p className="font-rub font-semibold tracking-widest text-not-found">
-            OPPS! PAGE NOT FOUND
-          </p>
-          <Link
-            href="/"
-            className="text-md h-10 w-full justify-center rounded-lg bg-signin-blue text-white"
-            size="md"
-          >
-            Go Back to Home
-          </Link>
+          <p className="font-semibold tracking-widest text-foreground/80">OOPS! PAGE NOT FOUND</p>
+          <Button onClick={() => window.history.back()} className="w-full">
+            Go Back
+          </Button>
         </div>
       </div>
     </div>
