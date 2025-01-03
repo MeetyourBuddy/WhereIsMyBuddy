@@ -28,7 +28,7 @@ const onboardingData = [
   }
 ];
 
-const selectComponentData = [
+export const selectComponentData = [
   ['United States', 'Canada', 'United Kingdom'],
   ['Daily', 'Weekly', 'Monthly'],
   [

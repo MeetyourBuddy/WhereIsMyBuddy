@@ -35,12 +35,10 @@ export function NavMain({
         {items.map((item) => {
           const isActive = pathname === item.url;
 
-          console.log(isActive);
-
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton tooltip={item.title} url={item.url} isActive={isActive}>
-                {item.icon && <item.icon />}
+                {item.icon && <item.icon className="size-5" />}
                 <span>{item.title}</span>
               </SidebarMenuButton>
               {item.items && (

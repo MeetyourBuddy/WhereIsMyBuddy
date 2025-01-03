@@ -3,10 +3,10 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
   BreadcrumbLink
-} from '../../ui/breadcrumb';
+} from '@/components/common/ui/breadcrumb';
 import React from 'react';
 
-import { BreadcrumbList } from '../../ui/breadcrumb';
+import { BreadcrumbList } from '@/components/common/ui/breadcrumb';
 import { cn } from '@/lib/utils';
 
 interface BreadcrumbItem {
