@@ -64,14 +64,6 @@ export class CompleteOnboardingDto {
   })
   interestsCategories: InterestCategory[];
 
-  @ApiProperty({
-    type: [String],
-    example: ['Web Development', 'Mobile Apps'],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  interestsCommodities: string[];
-
   /**
    * User's location information
    */
