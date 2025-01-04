@@ -27,6 +27,9 @@ export class User {
   @Prop({ required: true })
   password: string;
 
+  @Prop({ type: Date })
+  dateOfBirth?: Date;
+
   @Prop({ trim: true })
   profilePicture?: string;
 
@@ -44,10 +47,10 @@ export class User {
   city?: string;
 
   // Interests
-  @Prop({ 
-    type: [String], 
+  @Prop({
+    type: [String],
     enum: Object.values(InterestCategory),
-    default: [] 
+    default: [],
   })
   interestsCategories: InterestCategory[];
 
@@ -55,10 +58,10 @@ export class User {
   interestsCommodities: string[];
 
   // Language Settings
-  @Prop({ 
+  @Prop({
     type: String,
     enum: Object.values(Language),
-    default: Language.ENGLISH 
+    default: Language.ENGLISH,
   })
   preferredLanguage: string;
 
@@ -92,7 +95,11 @@ export class User {
   @Prop({ required: true, unique: true })
   profileQR: string;
 
-  @Prop({ required: true, default: 'open', enum: ['open','occupied','undecided'] })
+  @Prop({
+    required: true,
+    default: 'open',
+    enum: ['open', 'occupied', 'undecided'],
+  })
   collaborationStatus: 'open' | 'occupied' | 'undecided';
 
   @Prop({ trim: true })

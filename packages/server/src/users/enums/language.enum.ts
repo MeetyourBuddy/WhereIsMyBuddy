@@ -10,5 +10,5 @@ export enum Language {
   HINDI = 'hindi',
   PORTUGUESE = 'portuguese',
   RUSSIAN = 'russian',
-  ITALIAN = 'italian'
-} 
+  ITALIAN = 'italian',
+}

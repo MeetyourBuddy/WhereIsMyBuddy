@@ -30,9 +30,9 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('jwt.accessSecret'),
+        secret: config.get('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: config.get('jwt.accessExpiresIn'),
+          expiresIn: config.get('JWT_ACCESS_EXPIRES_IN'),
         },
       }),
     }),

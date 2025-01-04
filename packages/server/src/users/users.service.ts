@@ -43,7 +43,7 @@ export class UsersService {
     const user = await this.userModel
       .findById(userId)
       .select('-password -refreshToken');
-      
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -61,11 +61,9 @@ export class UsersService {
   ): Promise<ServiceResponse<User>> {
     const sanitizedUpdate = SanitizeUpdateDto.sanitize(updateUserDto);
 
-    const user = await this.userModel.findByIdAndUpdate(
-      userId,
-      { $set: sanitizedUpdate },
-      { new: true }
-    ).select('-password -refreshToken');
+    const user = await this.userModel
+      .findByIdAndUpdate(userId, { $set: sanitizedUpdate }, { new: true })
+      .select('-password -refreshToken');
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -105,17 +103,20 @@ export class UsersService {
       throw new BadRequestException('User has already completed onboarding');
     }
 
-    const updatedUser = await this.userModel.findByIdAndUpdate(
-      userId,
-      {
-        interestsCategories: onboardingDto.interestsCategories,
-        interestsCommodities: onboardingDto.interestsCommodities,
-        country: onboardingDto.location.country,
-        city: onboardingDto.location.city,
-        hasCompletedOnboarding: true,
-      },
-      { new: true }
-    ).select('-password -refreshToken');
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          dateOfBirth: onboardingDto.dateOfBirth,
+          interestsCategories: onboardingDto.interestsCategories,
+          interestsCommodities: onboardingDto.interestsCommodities,
+          country: onboardingDto.location.country,
+          city: onboardingDto.location.city,
+          hasCompletedOnboarding: true,
+        },
+        { new: true },
+      )
+      .select('-password -refreshToken');
 
     return {
       success: true,

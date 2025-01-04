@@ -13,11 +13,11 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { GetUser } from './decorators/get-user.decorator';
-import { 
+import {
   UpdateUserDto,
   PaginationQueryDto,
   CompleteOnboardingDto,
-  UserResponseDto 
+  UserResponseDto,
 } from './dto';
 
 @ApiTags('Users')
@@ -64,7 +64,7 @@ export class UsersController {
   updateProfile(
     @Param('id') id: string,
     @GetUser('userId') userId: string,
-    @Body() updateUserDto: UpdateUserDto
+    @Body() updateUserDto: UpdateUserDto,
   ) {
     // Ensure users can only update their own profile
     if (id !== userId) {
@@ -77,7 +77,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Complete user onboarding' })
   completeOnboarding(
     @Param('id') id: string,
-    @Body() onboardingDto: CompleteOnboardingDto
+    @Body() onboardingDto: CompleteOnboardingDto,
   ) {
     return this.usersService.completeOnboarding(id, onboardingDto);
   }

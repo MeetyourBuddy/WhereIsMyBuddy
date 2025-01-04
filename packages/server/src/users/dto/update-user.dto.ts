@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUrl, IsEnum, IsBoolean, IsArray } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsUrl,
+  IsEnum,
+  IsBoolean,
+  IsArray,
+} from 'class-validator';
 import { Language } from '../enums/language.enum';
 import { Country } from '../enums/location.enum';
 import { InterestCategory } from '../enums/interests.enum';

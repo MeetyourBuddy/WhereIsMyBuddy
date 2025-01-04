@@ -69,13 +69,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Cycling',
     'Rock Climbing',
   ],
-  [InterestCategory.MUSIC]: [
-    'Rock',
-    'Pop',
-    'Jazz',
-    'Classical',
-    'Hip-Hop',
-  ],
+  [InterestCategory.MUSIC]: ['Rock', 'Pop', 'Jazz', 'Classical', 'Hip-Hop'],
   [InterestCategory.TRAVEL]: [
     'Europe',
     'Asia',
@@ -115,7 +109,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Biographies',
     'Fantasy',
     'Science Fiction',
-  ],  
+  ],
   [InterestCategory.MOVIES]: [
     'Action',
     'Adventure',
@@ -168,13 +162,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Wildlife',
     'Birdwatching',
   ],
-  [InterestCategory.PETS]: [
-    'Dogs',
-    'Cats',
-    'Birds',
-    'Fish',
-    'Reptiles',
-  ],
+  [InterestCategory.PETS]: ['Dogs', 'Cats', 'Birds', 'Fish', 'Reptiles'],
   [InterestCategory.DIY]: [
     'Home Improvement',
     'DIY Crafts',
@@ -188,17 +176,16 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Copywriting',
     'Blog Writing',
     'Freelance Writing',
-  ],  
-    
+  ],
 };
 
 export type InterestCategoryType = keyof typeof InterestCategory;
-export type CommodityType = typeof CommoditiesByCategory[InterestCategory][number];
+export type CommodityType =
+  (typeof CommoditiesByCategory)[InterestCategory][number];
 
 export const isCommodityInCategory = (
   category: InterestCategory,
-  commodity: string
+  commodity: string,
 ): boolean => {
   return CommoditiesByCategory[category].includes(commodity);
 };
-
