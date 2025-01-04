@@ -13,12 +13,16 @@ import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
-import { CreateUserDto, LoginUserDto, AuthResponseDto } from '../dto';
+import {  AuthResponseDto } from './dto/auth-response.dto';
+import { LoginUserDto } from './dto/login-user.dto';
+import { CreateUserDto } from '../dto';
+
+
 import { Public } from '../../common/decorators';
 import { AuthUser } from './decorators';
 import { GetUser } from '../decorators/get-user.decorator';
 import { RefreshTokenGuard, GoogleAuthGuard } from './guards';
-import { AuthResponse, Tokens, GoogleAuthRequest } from '../interfaces';
+import { AuthResponse, Tokens, GoogleAuthRequest } from './interfaces/auth.interface';
 
 @ApiTags('Authentication')
 @Controller('auth')
