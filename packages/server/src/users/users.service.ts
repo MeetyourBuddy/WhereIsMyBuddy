@@ -6,23 +6,51 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto, PaginationQueryDto } from './dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { ServiceResponse } from './interfaces/common.interface';
+import { SanitizeUpdateDto } from './dto/sanitize-update.dto';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async getUserProfile(userId: string): Promise<ServiceResponse<User>> {
-    const user = await this.userModel.findById(userId);
+  async findAll(query: PaginationQueryDto): Promise<ServiceResponse<User[]>> {
+    const { limit = 10, offset = 0 } = query;
+    const users = await this.userModel
+      .find()
+      .select('-password -refreshToken')
+      .skip(offset)
+      .limit(limit)
+      .exec();
+
+    const total = await this.userModel.countDocuments();
+
+    return {
+      success: true,
+      message: 'Users retrieved successfully',
+      data: users,
+      metadata: {
+        total,
+        offset,
+        limit,
+        hasMore: offset + limit < total,
+      },
+    };
+  }
+
+  async getUser(userId: string): Promise<ServiceResponse<User>> {
+    const user = await this.userModel
+      .findById(userId)
+      .select('-password -refreshToken');
+      
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     return {
       success: true,
-      message: 'User profile retrieved successfully',
+      message: 'User retrieved successfully',
       data: user,
     };
   }
@@ -31,11 +59,13 @@ export class UsersService {
     userId: string,
     updateUserDto: UpdateUserDto,
   ): Promise<ServiceResponse<User>> {
+    const sanitizedUpdate = SanitizeUpdateDto.sanitize(updateUserDto);
+
     const user = await this.userModel.findByIdAndUpdate(
       userId,
-      { $set: updateUserDto },
-      { new: true },
-    );
+      { $set: sanitizedUpdate },
+      { new: true }
+    ).select('-password -refreshToken');
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -45,6 +75,19 @@ export class UsersService {
       success: true,
       message: 'Profile updated successfully',
       data: user,
+    };
+  }
+
+  async delete(userId: string): Promise<ServiceResponse<null>> {
+    const user = await this.userModel.findByIdAndDelete(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      success: true,
+      message: 'User deleted successfully',
+      data: null,
     };
   }
 
@@ -65,35 +108,19 @@ export class UsersService {
     const updatedUser = await this.userModel.findByIdAndUpdate(
       userId,
       {
-        interests: onboardingDto.interests,
-        location: onboardingDto.location,
+        interestsCategories: onboardingDto.interestsCategories,
+        interestsCommodities: onboardingDto.interestsCommodities,
+        country: onboardingDto.location.country,
+        city: onboardingDto.location.city,
         hasCompletedOnboarding: true,
       },
-      { new: true },
-    );
+      { new: true }
+    ).select('-password -refreshToken');
 
     return {
       success: true,
       message: 'Onboarding completed successfully',
       data: updatedUser,
-    };
-  }
-
-  async checkOnboardingStatus(
-    userId: string,
-  ): Promise<ServiceResponse<{ hasCompletedOnboarding: boolean }>> {
-    const user = await this.userModel
-      .findById(userId)
-      .select('hasCompletedOnboarding');
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return {
-      success: true,
-      message: 'Onboarding status retrieved',
-      data: { hasCompletedOnboarding: user.hasCompletedOnboarding },
     };
   }
 }
