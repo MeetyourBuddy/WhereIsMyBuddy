@@ -22,7 +22,7 @@ export enum Country {
   }
   
   // city mappings per country
-  export const CitiesByCountry: Record<Country, string[]> = {
+  export const CityByCountry: Record<Country, string[]> = {
     [Country.USA]: [
       'New York',
       'Los Angeles',
