@@ -1,15 +1,21 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class BaseUserDto {
-  @ApiProperty({ example: 'john@example.com' })
+  /**
+   * User's email address
+   * @example john@example.com
+   */
   @IsEmail({}, { message: 'Please provide a valid email' })
   @Transform(({ value }) => value.toLowerCase())
   email: string;
 
-  @ApiProperty({ example: 'John' })
+  /**
+   * User's full name
+   * @example John Doe
+   * @minLength 2
+   */
   @IsString()
-  @MinLength(2, { message: 'Name must be at least 2 characters long' })
-  name: string;
+  @MinLength(3, { message: 'Username must be at least 3 characters long' })
+  username: string;
 }
