@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from 'react-query';
-import toast from 'react-hot-toast';
 import { useAuthContext } from '@/providers/contexts/auth-context';
 import { authService } from '@/services/api/auth/auth-service';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '@/lib/hooks/use-toast';
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -14,12 +14,19 @@ export function useAuth() {
     mutationFn: authService.login,
     onSuccess: (userData) => {
       setUser(userData.data.user);
-      toast.success('Login successful!');
+      toast({
+        title: 'Authentication!',
+        description: 'Login successful!'
+      });
       queryClient.invalidateQueries('user');
       navigate('/onboarding');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Login failed');
+      console.log(error);
+      toast({
+        title: 'Authentication!',
+        description: 'Login failed'
+      });
     }
   });
 
@@ -28,12 +35,19 @@ export function useAuth() {
     mutationFn: authService.register,
     onSuccess: (userData) => {
       setUser(userData?.data?.user);
-      toast.success('User registration successful!');
+      toast({
+        title: 'Authentication!',
+        description: 'User registration successful!'
+      });
       queryClient.invalidateQueries('user');
       navigate('/onboarding');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'User registration failed');
+      console.log(error);
+      toast({
+        title: 'Authentication!',
+        description: 'User registration failed'
+      });
     }
   });
 
@@ -42,12 +56,18 @@ export function useAuth() {
     mutationFn: authService.logout,
     onSuccess: () => {
       setUser(null);
-      toast.success('Logged out successfully');
+      toast({
+        title: 'Authentication!',
+        description: 'Logged out successfully!'
+      });
       queryClient.invalidateQueries('user');
       navigate('/signin');
     },
     onError: () => {
-      toast.error('Logout failed');
+      toast({
+        title: 'Authentication!',
+        description: 'Logout failed'
+      });
     }
   });
 

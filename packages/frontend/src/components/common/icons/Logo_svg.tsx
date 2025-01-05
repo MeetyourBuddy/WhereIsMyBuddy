@@ -1,13 +1,7 @@
-const Logo_svg = () => {
+const Logo_svg = ({ ...props }) => {
   return (
     <div>
-      <svg
-        width="56"
-        height="56"
-        viewBox="0 0 56 56"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+      <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
         <circle cx="28" cy="28" r="28" fill="#0E1125" />
         <path d="M44.4544 18.5L27.9999 47L11.5455 18.5L44.4544 18.5Z" stroke="white" />
         <path d="M14 20L28 29L43 20" stroke="white" strokeLinecap="round" />
