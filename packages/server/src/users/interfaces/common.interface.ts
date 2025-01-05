@@ -8,11 +8,19 @@ export interface PaginatedResponse<T> {
   hasMore: boolean;
 }
 
+export interface PaginationMetadata {
+  total: number;
+  offset: number;
+  limit: number;
+  hasMore: boolean;
+}
+
 export interface ServiceResponse<T> {
   success: boolean;
   message?: string;
   data?: T;
   error?: string;
+  metadata?: PaginationMetadata;
 }
 
 export interface Tokens {
