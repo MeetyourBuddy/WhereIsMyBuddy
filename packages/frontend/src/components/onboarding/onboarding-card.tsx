@@ -7,11 +7,15 @@ import { ScrollArea } from '../common/ui/scroll-area';
 import { FormDatePicker } from '../common/form/form-date-picker';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { FormSelect } from '../common/form/form-select';
 import { useState } from 'react';
 import { citiesByCountry, countries } from '@/lib/utils';
 import { Country, interestCategories } from '@/lib/constants';
+import { onboardingService } from '@/services/api/onboarding/onboarding-service';
+import { useAuthContext } from '@/providers/contexts/auth-context';
+import { OnboardingFormData, onboardingSchema } from '@/lib/validation/onboarding-validation';
+import { useProfileStore } from '@/providers/store';
+import { IUserData } from '@/types/user-types';
 
 const onboardingData = [
   {
@@ -28,34 +32,34 @@ const onboardingData = [
   }
 ];
 
-// Add form schema
-const onboardingSchema = z.object({
-  country: z.nativeEnum(Country, {
-    errorMap: () => ({ message: 'Please select a country' })
-  }),
-  city: z.string().min(1, 'Please select a city'),
-  birthday: z.date({
-    required_error: 'Please select a date'
-  }),
-  interests: z.array(z.string()).min(3, 'Please select at least 3 interests')
-});
-
-type OnboardingFormData = z.infer<typeof onboardingSchema>;
-
 const OnboardingCard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
+  const { user } = useAuthContext();
+  const { setProfile } = useProfileStore();
 
   const methods = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
     mode: 'onChange'
   });
 
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
   const { handleSubmit, watch } = methods;
 
-  const onSubmit = (data: OnboardingFormData) => {
-    console.log('Form data:', data);
-    setProfile(data);
+  const onSubmit = async (data: OnboardingFormData) => {
+    console.log('Form data:', data, user.id);
+
+    const response = await onboardingService.completeOnboarding(user.id, {
+      ...data,
+      dateOfBirth: data.dateOfBirth.toISOString()
+    });
+
+    if (response.success) {
+      setProfile(response.data as IUserData);
+    }
 
     navigate('/activity');
   };
@@ -68,8 +72,7 @@ const OnboardingCard = () => {
 
   // Watch form values for validation
   const selectedCountry = watch('country') as Country | undefined;
-  const selectedCity = watch('city');
-  const selectedInterests = watch('interests') || [];
+  const selectedInterests = watch('interestsCategories') || [];
 
   // Get available cities based on selected country
   const availableCities = selectedCountry ? citiesByCountry[selectedCountry] : [];
@@ -77,9 +80,9 @@ const OnboardingCard = () => {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return !!selectedCountry && !!selectedCity;
+        return !!selectedCountry;
       case 2:
-        return !!watch('birthday');
+        return !!watch('dateOfBirth');
       case 3:
         return selectedInterests.length >= 3;
       default:
@@ -148,7 +151,7 @@ const OnboardingCard = () => {
                 )}
                 {currentStep === 2 && (
                   <FormDatePicker
-                    name="birthday"
+                    name="dateOfBirth"
                     label="What is your birthday?"
                     placeholder="Select a date"
                     control={methods.control}
@@ -168,7 +171,7 @@ const OnboardingCard = () => {
                             const updatedInterests = selectedInterests.includes(interest.value)
                               ? selectedInterests.filter((i) => i !== interest.value)
                               : [...selectedInterests, interest.value];
-                            methods.setValue('interests', updatedInterests);
+                            methods.setValue('interestsCategories', updatedInterests);
                           }}
                         />
                       ))}

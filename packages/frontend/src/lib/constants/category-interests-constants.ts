@@ -5,7 +5,7 @@ export const interestCategories = [
   { label: 'Sports', value: 'Sports' },
   { label: 'Music', value: 'Music' },
   { label: 'Travel', value: 'Travel' },
-  { label: 'Food & Cooking', value: 'Food_And_Cooking' },
+  { label: 'Food & Cooking', value: 'Food & Cooking' },
   { label: 'Fashion', value: 'Fashion' },
   { label: 'Gaming', value: 'Gaming' },
   { label: 'Books', value: 'Books' },
@@ -88,7 +88,7 @@ export const commoditiesByCategory: Record<
     { label: 'North America', value: 'North America' },
     { label: 'South America', value: 'South America' }
   ],
-  Food_And_Cooking: [
+  'Food & Cooking': [
     { label: 'Italian Cuisine', value: 'Italian Cuisine' },
     { label: 'Asian Cuisine', value: 'Asian Cuisine' },
     { label: 'Baking', value: 'Baking' },

@@ -18,18 +18,21 @@ export interface IUser {
   id: string;
   email: string;
   name: string;
-  interestsCategories: string[];
-  interestsCommodities: string[];
-  preferredLanguage: string;
-  isActive: boolean;
-  isEmailVerified: boolean;
-  hasCompletedOnboarding: boolean;
-  provider: string;
-  profileLink: string;
-  profileQR: string;
-  collaborationStatus: string;
-  createdAt: string;
-  updatedAt: string;
+  interestsCategories?: string[];
+  interestsCommodities?: string[];
+  preferredLanguage?: string;
+  isActive?: boolean;
+  isEmailVerified?: boolean;
+  hasCompletedOnboarding?: boolean;
+  provider?: string;
+  profileLink?: string;
+  profileQR?: string;
+  collaborationStatus?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  city?: string;
+  country?: string;
+  dateOfBirth?: string;
 }
 
 export interface AuthResponse {

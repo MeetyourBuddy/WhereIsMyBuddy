@@ -40,7 +40,11 @@ export const OAuthHandler = () => {
         }
 
         setUser(userData);
-        navigate('/onboarding');
+        if (userData.hasCompletedOnboarding) {
+          navigate('/');
+        } else {
+          navigate('/onboarding');
+        }
       } catch (error) {
         console.error('Authentication error:', error);
         navigate('/signin', {
