@@ -1,5 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { Country } from '../enums/location.enum';
+import { InterestCategory } from '../enums/interests.enum';
+import { Language } from '../enums/language.enum';
 
 export type UserDocument = User & Document;
 
@@ -14,24 +17,65 @@ export type UserDocument = User & Document;
   },
 })
 export class User {
-  @Prop({ required: true, unique: true, lowercase: true })
+  // Basic Info
+  @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, trim: true })
   name: string;
 
   @Prop({ required: true })
   password: string;
 
-  @Prop()
+  @Prop({ type: Date })
+  dateOfBirth?: Date;
+
+  @Prop({ trim: true })
   profilePicture?: string;
 
-  @Prop()
+  @Prop({ trim: true })
   bio?: string;
 
+  @Prop({ trim: true })
+  phoneNumber?: string;
+
+  // Location
+  @Prop({ type: String, enum: Object.values(Country) })
+  country?: string;
+
+  @Prop({ trim: true })
+  city?: string;
+
+  // Interests
+  @Prop({
+    type: [String],
+    enum: Object.values(InterestCategory),
+    default: [],
+  })
+  interestsCategories: InterestCategory[];
+
+  @Prop({ type: [String], default: [] })
+  interestsCommodities: string[];
+
+  // Language Settings
+  @Prop({
+    type: String,
+    enum: Object.values(Language),
+    default: Language.ENGLISH,
+  })
+  preferredLanguage: string;
+
+  // Status & Settings
   @Prop({ default: true })
   isActive: boolean;
 
+  @Prop({ default: false })
+  isEmailVerified: boolean;
+
+  @Prop({ default: false })
+  hasCompletedOnboarding: boolean;
+
+  // Authentication
   @Prop()
   refreshToken?: string;
 
@@ -41,30 +85,35 @@ export class User {
   @Prop()
   googleId?: string;
 
-  @Prop({ default: false })
-  isEmailVerified: boolean;
-
   @Prop({ default: 'local', enum: ['local', 'google'] })
   provider: 'local' | 'google';
 
-  createdAt: Date;
-  updatedAt: Date;
-  @Prop({ type: [String], default: [] })
-  interests?: string[];
+  // Profile & Social
+  @Prop({ required: true, unique: true, trim: true })
+  profileLink: string;
+
+  @Prop({ required: true, unique: true })
+  profileQR: string;
 
   @Prop({
-    type: {
-      city: String,
-      country: String,
-    },
+    required: true,
+    default: 'open',
+    enum: ['open', 'occupied', 'undecided'],
   })
-  location?: {
-    city: string;
-    country: string;
-  };
+  collaborationStatus: 'open' | 'occupied' | 'undecided';
 
-  @Prop({ default: false })
-  hasCompletedOnboarding: boolean;
+  @Prop({ trim: true })
+  linkedInUrl?: string;
+
+  @Prop({ trim: true })
+  twitterUrl?: string;
+
+  @Prop({ trim: true })
+  instagramUrl?: string;
+
+  // Timestamps (added by schema options)
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

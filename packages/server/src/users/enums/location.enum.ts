@@ -1,26 +1,3 @@
-export enum UserInterest {
-  TECHNOLOGY = 'Technology',
-  SCIENCE = 'Science',
-  ARTS = 'Arts',
-  SPORTS = 'Sports',
-  MUSIC = 'Music',
-  TRAVEL = 'Travel',
-  FOOD = 'Food',
-  FASHION = 'Fashion',
-  GAMING = 'Gaming',
-  BOOKS = 'Books',
-  MOVIES = 'Movies',
-  FITNESS = 'Fitness',
-  PHOTOGRAPHY = 'Photography',
-  EDUCATION = 'Education',
-  BUSINESS = 'Business',
-  NATURE = 'Nature',
-  PETS = 'Pets',
-  COOKING = 'Cooking',
-  DIY = 'DIY',
-  WRITING = 'Writing',
-}
-
 export enum Country {
   USA = 'United States',
   UK = 'United Kingdom',
@@ -45,7 +22,7 @@ export enum Country {
 }
 
 // city mappings per country
-export const CitiesByCountry: Record<Country, string[]> = {
+export const CityByCountry: Record<Country, string[]> = {
   [Country.USA]: [
     'New York',
     'Los Angeles',

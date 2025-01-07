@@ -13,15 +13,18 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
 import { User, UserDocument } from '../schemas/user.schema';
-import { CreateUserDto, LoginUserDto } from '../dto/index';
+import { CreateUserDto } from '../dto/index';
+import { LoginUserDto } from './dto/login-user.dto';
 import {
   AuthResponse,
   Tokens,
   GoogleUser,
   JwtPayload,
-  ServiceResponse,
   IUserResponse,
 } from './interfaces/auth.interface';
+import { Country } from '../enums/location.enum';
+import { InterestCategory } from '../enums/interests.enum';
+import { Language } from '../enums/language.enum';
 
 @Injectable()
 export class AuthService {
@@ -44,12 +47,18 @@ export class AuthService {
       }
 
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+      const profileLink = `user-${crypto.randomBytes(4).toString('hex')}`;
+      const profileQR = `qr-${crypto.randomBytes(8).toString('hex')}`;
 
       const newUser = await this.userModel.create({
         ...createUserDto,
         email: createUserDto.email.toLowerCase(),
         password: hashedPassword,
         provider: 'local',
+        profileLink,
+        profileQR,
+        name: createUserDto.username,
+        collaborationStatus: 'open',
       });
 
       const tokens = await this.getTokens(
@@ -61,12 +70,13 @@ export class AuthService {
         tokens.refreshToken,
       );
 
-      const userResponse = this.formatUserResponse(newUser);
-
       return {
+        success: true,
         message: 'Registration successful',
-        ...tokens,
-        user: userResponse,
+        data: {
+          tokens,
+          user: this.formatUserResponse(newUser),
+        },
       };
     } catch (error) {
       this.logger.error(`Registration error: ${error.message}`, error.stack);
@@ -97,9 +107,12 @@ export class AuthService {
       await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
 
       return {
+        success: true,
         message: 'Login successful',
-        ...tokens,
-        user: this.formatUserResponse(user),
+        data: {
+          tokens,
+          user: this.formatUserResponse(user),
+        },
       };
     } catch (error) {
       this.logger.error(`Login error: ${error.message}`, error.stack);
@@ -138,6 +151,9 @@ export class AuthService {
       let user = await this.userModel.findOne({ email: googleUser.email });
 
       if (!user) {
+        const profileLink = `user-${crypto.randomBytes(4).toString('hex')}`;
+        const profileQR = `qr-${crypto.randomBytes(8).toString('hex')}`;
+
         user = await this.userModel.create({
           email: googleUser.email,
           name: `${googleUser.firstName} ${googleUser.lastName}`,
@@ -145,6 +161,9 @@ export class AuthService {
           profilePicture: googleUser.picture,
           isEmailVerified: true,
           provider: 'google',
+          profileLink,
+          profileQR,
+          collaborationStatus: 'open',
           password: await bcrypt.hash(
             crypto.randomBytes(32).toString('hex'),
             10,
@@ -170,7 +189,7 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string): Promise<ServiceResponse<null>> {
+  async logout(userId: string): Promise<{ message: string }> {
     try {
       await this.userModel.findByIdAndUpdate(userId, {
         refreshToken: null,
@@ -178,7 +197,6 @@ export class AuthService {
       });
 
       return {
-        success: true,
         message: 'Logout successful',
       };
     } catch (error) {
@@ -230,12 +248,24 @@ export class AuthService {
       name: user.name,
       profilePicture: user.profilePicture,
       bio: user.bio,
+      phoneNumber: user.phoneNumber,
+      country: user.country as Country,
+      city: user.city,
+      interestsCategories: user.interestsCategories as InterestCategory[],
+      interestsCommodities: user.interestsCommodities,
+      preferredLanguage: user.preferredLanguage as Language,
       isActive: user.isActive,
+      isEmailVerified: user.isEmailVerified,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
+      provider: user.provider,
+      profileLink: user.profileLink,
+      profileQR: user.profileQR,
+      collaborationStatus: user.collaborationStatus,
+      linkedInUrl: user.linkedInUrl,
+      twitterUrl: user.twitterUrl,
+      instagramUrl: user.instagramUrl,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      interests: user.interests,
-      location: user.location,
-      hasCompletedOnboarding: user.hasCompletedOnboarding,
     };
   }
 }
