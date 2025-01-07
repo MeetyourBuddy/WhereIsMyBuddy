@@ -46,7 +46,7 @@ export const FormCountryDropdown = ({
           <FormItem className="w-full">
             <FormLabel
               className={cn(
-                'text-neutral-dark-600 text-base font-medium',
+                'text-base font-medium text-gray-60',
                 required && 'after:ml-1 after:content-["*"]'
               )}
             >
@@ -56,8 +56,8 @@ export const FormCountryDropdown = ({
               <div className="space-y-2">
                 <CountryDropdown
                   className={cn(
-                    'bg-neutral-light-100 h-[103px] max-h-[103px] w-full',
-                    showError && 'border-error-500 focus-visible:ring-error-100'
+                    'w-full bg-gray-10',
+                    showError && 'border-destructive-50 focus-visible:ring-destructive-10'
                   )}
                   placeholder={placeholder}
                   {...field}
@@ -66,9 +66,9 @@ export const FormCountryDropdown = ({
               </div>
             </FormControl>
             {showError && (
-              <div className="text-destructive-500 flex items-center gap-2">
-                <Icons.info className="h-4 w-4" />
-                <p className="text-sm">{customError}</p>
+              <div className="flex items-center gap-2">
+                <Icons.info className="h-4 w-4 text-destructive" />
+                <p className="text-sm text-destructive">{customError}</p>
               </div>
             )}
           </FormItem>

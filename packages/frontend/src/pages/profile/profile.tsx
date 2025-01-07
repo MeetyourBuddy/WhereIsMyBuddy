@@ -1,7 +1,9 @@
-import ProfileFeed from './profile-feed';
-import ProfileHeader from './profile-header';
-
+import ProfileFeed from '../../components/profile/profile-feed';
+import ProfileHeader from '../../components/profile/profile-header';
+import { useProfileStore } from '@/providers/store';
 const Profile = () => {
+  const { profile, setProfile } = useProfileStore();
+
   const handleAvatarUpdate = async (previewUrl: string, file: File) => {
     try {
       const formData = new FormData();
@@ -15,7 +17,6 @@ const Profile = () => {
       if (!response.ok) throw new Error('Failed to upload avatar');
 
       const { avatarUrl } = await response.json();
-      // Update your global state/context here with the new avatar URL
     } catch (error) {
       throw error;
     }
@@ -34,7 +35,6 @@ const Profile = () => {
       if (!response.ok) throw new Error('Failed to upload banner');
 
       const { bannerUrl } = await response.json();
-      // Update your global state/context here with the new banner URL
     } catch (error) {
       throw error;
     }

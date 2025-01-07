@@ -60,10 +60,7 @@ export const FormInput = ({
       render={({ field }) => (
         <FormItem className="w-full">
           <FormLabel
-            className={cn(
-              'text-neutral-dark-600 text-base font-medium',
-              required && 'after:content-["*"]'
-            )}
+            className={cn('text-base font-medium text-gray-60', required && 'after:content-["*"]')}
           >
             {label}
           </FormLabel>
@@ -75,9 +72,9 @@ export const FormInput = ({
                 rightIcon={rightIcon}
                 type={type}
                 className={cn(
-                  'bg-neutral-light-100 w-full',
-                  inputError && 'border-red-500 focus-visible:ring-red-100',
-                  disabled && 'bg-neutral-light-100'
+                  'w-full bg-gray-10',
+                  inputError && 'border-destructive-50 focus-visible:ring-destructive-10',
+                  disabled && 'bg-gray-10'
                 )}
                 {...field}
               />
@@ -88,9 +85,9 @@ export const FormInput = ({
                 rightLabel={rightLabel}
                 type={type}
                 className={cn(
-                  'bg-neutral-light-100 w-full',
-                  inputError && 'border-red-500 focus-visible:ring-red-100',
-                  disabled && 'bg-neutral-light-100'
+                  'w-full bg-gray-10',
+                  inputError && 'border-destructive-50 focus-visible:ring-destructive-10',
+                  disabled && 'bg-gray-10'
                 )}
                 {...field}
               />
@@ -98,9 +95,9 @@ export const FormInput = ({
               <Input
                 placeholder={placeholder}
                 className={cn(
-                  'bg-neutral-light-100 w-full',
-                  inputError && 'border-red-500 focus-visible:ring-red-100',
-                  disabled && 'bg-neutral-light-100'
+                  'w-full bg-gray-10',
+                  inputError && 'border-destructive-50 focus-visible:ring-destructive-10',
+                  disabled && 'bg-gray-10'
                 )}
                 {...field}
                 type={type}
@@ -109,8 +106,10 @@ export const FormInput = ({
           </FormControl>
           {inputError && (
             <div className="flex flex-row items-center gap-2">
-              <Icons.info className="h-4 w-4" />
-              <p className="text-destructive-500 text-sm">{customError}</p>
+              <Icons.info className="h-4 w-4 text-destructive" />
+              <p className="text-sm text-destructive">
+                {customError || (inputError as { message: string }).message}
+              </p>
             </div>
           )}
         </FormItem>

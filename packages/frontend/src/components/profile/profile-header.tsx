@@ -36,16 +36,19 @@ const ProfileHeader = ({
     }
   };
 
-  const handleSave = async () => {
-    if (selectedFile && onAvatarUpdate) {
+  const handleSave = async (croppedImageUrl?: string) => {
+    if (selectedFile && onAvatarUpdate && croppedImageUrl) {
       try {
-        await onAvatarUpdate(previewUrl, selectedFile);
+        // Convert base64 to File object
+        const response = await fetch(croppedImageUrl);
+        const blob = await response.blob();
+        const croppedFile = new File([blob], selectedFile.name, { type: 'image/jpeg' });
+
+        await onAvatarUpdate(croppedImageUrl, croppedFile);
         setIsModalOpen(false);
-        // Clear the temporary file data after successful upload
         setSelectedFile(null);
       } catch (error) {
         console.error('Failed to update avatar:', error);
-        // Handle error (you might want to show an error toast here)
       }
     }
   };

@@ -13,10 +13,12 @@ interface FormSelectProps {
   customError?: string;
   control?: Control<any>;
   required?: boolean;
+  disabled?: boolean;
   options: {
     label: string;
     value: string;
   }[];
+  className?: string;
 }
 
 export const FormSelect = ({
@@ -26,6 +28,8 @@ export const FormSelect = ({
   customError,
   control: controlProp,
   required = false,
+  disabled = false,
+  className,
   options
 }: FormSelectProps) => {
   const formContext = useFormContext();
@@ -46,18 +50,24 @@ export const FormSelect = ({
       control={control}
       name={name}
       render={({ field }) => (
-        <FormItem>
+        <FormItem className={cn('w-full', className)}>
           <FormLabel
             className={cn(
-              'text-neutral-dark-600 text-base font-medium',
-              required && 'after:ml-1 after:content-["*"]'
+              'text-base font-medium text-gray-60',
+              required && 'after:ml-1 after:content-["*"]',
+              className
             )}
           >
             {label}
           </FormLabel>
           <FormControl>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <SelectTrigger className="bg-neutral-light-100 w-full">
+            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={disabled}>
+              <SelectTrigger
+                className={cn(
+                  'w-full bg-gray-10',
+                  showError && 'border-destructive focus-visible:ring-destructive-10'
+                )}
+              >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
               <SelectContent>
@@ -70,9 +80,9 @@ export const FormSelect = ({
             </Select>
           </FormControl>
           {showError && (
-            <div className="text-destructive-500 flex items-center gap-2">
-              <Icons.info className="h-4 w-4" />
-              <p className="text-sm">{customError}</p>
+            <div className="flex items-center gap-2">
+              <Icons.info className="h-4 w-4 text-destructive" />
+              <p className="text-sm text-destructive">{customError}</p>
             </div>
           )}
         </FormItem>

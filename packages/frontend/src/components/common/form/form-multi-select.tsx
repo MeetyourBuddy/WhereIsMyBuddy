@@ -51,7 +51,7 @@ export const FormMultiSelect = ({
         <FormItem>
           <FormLabel
             className={cn(
-              'text-neutral-dark-600 text-base font-medium',
+              'text-base font-medium text-gray-60',
               required && 'after:ml-1 after:content-["*"]'
             )}
           >
@@ -66,12 +66,13 @@ export const FormMultiSelect = ({
               variant="inverted"
               animation={2}
               maxCount={maxCount}
+              className={cn(showError && 'border-destructive-50 focus-visible:ring-destructive-10')}
             />
           </FormControl>
           {showError && (
-            <div className="text-destructive-500 flex items-center gap-2">
-              <Icons.info className="h-4 w-4" />
-              <p className="text-sm">{customError}</p>
+            <div className="flex items-center gap-2">
+              <Icons.info className="h-4 w-4 text-destructive" />
+              <p className="text-sm text-destructive">{customError}</p>
             </div>
           )}
         </FormItem>

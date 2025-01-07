@@ -61,7 +61,7 @@ export const FormTextarea = ({
                 <Textarea
                   className={cn(
                     'bg-neutral-light-100 h-[103px] max-h-[103px] w-full text-base',
-                    showError && 'border-error-500 focus-visible:ring-error-100'
+                    showError && 'border-destructive-50 focus-visible:ring-destructive-10'
                   )}
                   placeholder={placeholder}
                   maxLength={maxLength}
@@ -73,22 +73,24 @@ export const FormTextarea = ({
                     }
                   }}
                 />
-                {showCount && (
-                  <div className="text-neutral-dark-400 flex items-center justify-end gap-2">
-                    <Icons.info className="h-4 w-4" />
-                    <p className="text-sm">
-                      {charCount}/{maxLength} characters
-                    </p>
-                  </div>
-                )}
+                <div className="flex flex-col gap-2">
+                  {showError && (
+                    <div className="flex items-center gap-2 text-destructive-50">
+                      <Icons.info className="h-4 w-4" />
+                      <p className="text-sm">{customError}</p>
+                    </div>
+                  )}
+                  {showCount && (
+                    <div className="flex items-center justify-end gap-2 text-gray-40">
+                      <Icons.info className="h-4 w-4" />
+                      <p className="text-sm">
+                        {charCount}/{maxLength} characters
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </FormControl>
-            {showError && (
-              <div className="text-destructive-500 flex items-center gap-2">
-                <Icons.info className="h-4 w-4" />
-                <p className="text-sm">{customError}</p>
-              </div>
-            )}
           </FormItem>
         );
       }}
