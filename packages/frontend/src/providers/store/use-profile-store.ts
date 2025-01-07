@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Profile } from '@/lib/validation/profile-validation';
+import { IUserData } from '@/types/user-types';
 
 interface ProfileState {
-  profile: Profile | null;
+  profile: IUserData | null;
   isLoading: boolean;
   error: string | null;
-  updateProfile: (profile: Partial<Profile>) => void;
-  setProfile: (profile: Profile) => void;
+  updateProfile: (profile: Partial<IUserData>) => void;
+  setProfile: (profile: IUserData) => void;
   clearProfile: () => void;
   setError: (error: string | null) => void;
   setLoading: (isLoading: boolean) => void;

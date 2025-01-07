@@ -7,8 +7,6 @@ class AuthService {
   async login(credentials: SignInCredentials): Promise<AxiosResponse<AuthResponse>> {
     const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
 
-    console.log('response here', response.data.data.data.tokens);
-
     return response;
   }
 

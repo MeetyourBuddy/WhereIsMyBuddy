@@ -1,11 +1,17 @@
 import axiosInstance from '../axios-instance';
 import { IServiceResponse } from '@/types/index';
-import { IUser } from '@/types/auth-types';
 import { IOnboarding } from '@/types/onboarding-types';
+import { IUserData } from '@/types/user-types';
 
 class OnboardingService {
-  async completeOnboarding(userId: string, data: IOnboarding): Promise<IServiceResponse<IUser>> {
-    const { data: responseData } = await axiosInstance.put<IUser>(`/${userId}/onboarding`, data);
+  async completeOnboarding(
+    userId: string,
+    data: IOnboarding
+  ): Promise<IServiceResponse<IUserData>> {
+    const { data: responseData } = await axiosInstance.put<IUserData>(
+      `/users/${userId}/onboarding`,
+      data
+    );
     return {
       success: true,
       data: responseData,

@@ -20,7 +20,12 @@ export function useAuth() {
         description: 'Login successful!'
       });
       queryClient.invalidateQueries('user');
-      navigate('/onboarding');
+      const user = userData.data.data.data.user;
+      if (user.hasCompletedOnboarding) {
+        navigate('/');
+      } else {
+        navigate('/onboarding');
+      }
     },
     onError: (error: any) => {
       console.log(error);

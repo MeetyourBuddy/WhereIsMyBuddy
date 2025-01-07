@@ -12,25 +12,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { InterestCategory } from '../enums/interests.enum';
 import { Country } from '../enums/location.enum';
 
-class LocationDto {
-  /**
-   * User's country of residence
-   * @example "USA"
-   */
-  @ApiProperty({ enum: Country, example: 'USA' })
-  @IsEnum(Country, { message: 'Please select a valid country' })
-  country: Country;
-
-  /**
-   * User's city of residence
-   * @example "New York"
-   */
-  @ApiProperty({ example: 'New York' })
-  @IsNotEmpty({ message: 'City cannot be empty' })
-  @IsString()
-  city: string;
-}
-
 export class CompleteOnboardingDto {
   /**
    * User's date of birth
@@ -65,10 +46,19 @@ export class CompleteOnboardingDto {
   interestsCategories: InterestCategory[];
 
   /**
-   * User's location information
+   * User's country of residence
+   * @example "USA"
    */
-  @ApiProperty({ type: LocationDto })
-  @ValidateNested()
-  @Type(() => LocationDto)
-  location: LocationDto;
+  @ApiProperty({ enum: Country, example: 'USA' })
+  @IsEnum(Country, { message: 'Please select a valid country' })
+  country: Country;
+
+  /**
+   * User's city of residence
+   * @example "New York"
+   */
+  @ApiProperty({ example: 'New York' })
+  @IsNotEmpty({ message: 'City cannot be empty' })
+  @IsString()
+  city: string;
 }

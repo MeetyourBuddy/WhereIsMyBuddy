@@ -1,5 +1,6 @@
 export interface IOnboarding {
   interestsCategories: string[];
-  location: string;
+  country: string;
+  city: string;
   dateOfBirth: string;
 }
