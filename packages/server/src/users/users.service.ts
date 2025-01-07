@@ -109,7 +109,6 @@ export class UsersService {
         {
           dateOfBirth: onboardingDto.dateOfBirth,
           interestsCategories: onboardingDto.interestsCategories,
-          interestsCommodities: onboardingDto.interestsCommodities,
           country: onboardingDto.location.country,
           city: onboardingDto.location.city,
           hasCompletedOnboarding: true,

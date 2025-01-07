@@ -1,4 +1,4 @@
-export interface UserData {
+export interface IUserData {
   name: string;
   country: string;
   email: string;

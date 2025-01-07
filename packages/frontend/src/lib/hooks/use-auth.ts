@@ -13,7 +13,8 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (userData) => {
-      setUser(userData.data.user);
+      console.log('userData here', userData);
+      setUser(userData.data.data.data.user);
       toast({
         title: 'Authentication!',
         description: 'Login successful!'
@@ -34,7 +35,7 @@ export function useAuth() {
   const registerMutation = useMutation({
     mutationFn: authService.register,
     onSuccess: (userData) => {
-      setUser(userData?.data?.user);
+      setUser(userData?.data?.data?.data?.user);
       toast({
         title: 'Authentication!',
         description: 'User registration successful!'

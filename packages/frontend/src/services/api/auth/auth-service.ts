@@ -1,33 +1,19 @@
 import axiosInstance from '../axios-instance';
 import { tokenService } from '@services/token/token-service';
-import {
-  AuthResponse,
-  SignInCredentials,
-  SignUpData,
-  IUser,
-  LogoutResponse
-} from '@/types/auth-types';
+import { AuthResponse, SignInCredentials, SignUpData, LogoutResponse } from '@/types/auth-types';
 import { AxiosResponse } from 'axios';
 
 class AuthService {
   async login(credentials: SignInCredentials): Promise<AxiosResponse<AuthResponse>> {
     const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
-    const { accessToken, refreshToken } = response.data;
 
-    if (accessToken) {
-      tokenService.setTokens(accessToken, refreshToken);
-    }
+    console.log('response here', response.data.data.data.tokens);
 
     return response;
   }
 
   async register(userData: SignUpData): Promise<AxiosResponse<AuthResponse>> {
     const response = await axiosInstance.post<AuthResponse>('/auth/register', userData);
-    const { accessToken, refreshToken } = response.data;
-
-    if (accessToken) {
-      tokenService.setTokens(accessToken, refreshToken);
-    }
 
     return response;
   }
@@ -36,12 +22,6 @@ class AuthService {
     const response = await axiosInstance.post<AuthResponse>('/auth/google/callback', {
       credential
     });
-
-    const { accessToken, refreshToken } = response.data;
-
-    if (accessToken) {
-      tokenService.setTokens(accessToken, refreshToken);
-    }
 
     return response;
   }
@@ -54,10 +34,6 @@ class AuthService {
     }
 
     return response;
-  }
-
-  getMe(): Promise<AxiosResponse<IUser>> {
-    return axiosInstance.get<IUser>('/auth/me');
   }
 }
 

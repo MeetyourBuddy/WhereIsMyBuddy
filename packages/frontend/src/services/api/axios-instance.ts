@@ -22,10 +22,10 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
-    const data = response.data as Partial<AuthResponse>;
+    const tokens = response.data.data.data.tokens;
 
-    if (data.accessToken) {
-      tokenService.setTokens(data.accessToken, data.refreshToken);
+    if (tokens) {
+      tokenService.setTokens(tokens.accessToken, tokens.refreshToken);
     }
 
     return response;
@@ -47,7 +47,7 @@ axiosInstance.interceptors.response.use(
             refreshToken
           });
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data.data.tokens;
 
           tokenService.setTokens(accessToken, newRefreshToken);
           originalRequest.headers.set('Authorization', `Bearer ${accessToken}`);

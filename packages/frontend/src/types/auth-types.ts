@@ -15,15 +15,33 @@ export interface TokenPair {
 }
 
 export interface IUser {
-  _id: string;
+  id: string;
   email: string;
   name: string;
+  interestsCategories: string[];
+  interestsCommodities: string[];
+  preferredLanguage: string;
+  isActive: boolean;
+  isEmailVerified: boolean;
+  hasCompletedOnboarding: boolean;
+  provider: string;
+  profileLink: string;
+  profileQR: string;
+  collaborationStatus: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface AuthResponse extends TokenPair {
-  user: IUser;
+export interface AuthResponse {
+  data: {
+    success: boolean;
+    message: string;
+    data: {
+      tokens: TokenPair;
+      user: IUser;
+    };
+  };
+  timestamp: string;
 }
 
 export interface LogoutResponse {

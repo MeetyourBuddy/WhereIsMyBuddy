@@ -1,16 +1,34 @@
 import axiosInstance from '../axios-instance';
-import { AxiosResponse } from 'axios';
+import { IUserData } from '@/types/user-types';
+import { IServiceResponse } from '@/types';
 import { IUser } from '@/types/auth-types';
 
 class UserService {
-  async getUser(): Promise<AxiosResponse<IUser>> {
-    const response = await axiosInstance.get<IUser>('/auth/user');
-    return response;
+  async getUser(): Promise<IServiceResponse<IUserData>> {
+    const { data } = await axiosInstance.get<IUserData>('/auth/user');
+    return {
+      success: true,
+      data,
+      message: 'User fetched successfully'
+    };
   }
 
-  async updateUser(data: IUser): Promise<AxiosResponse<IUser>> {
-    const response = await axiosInstance.put<IUser>('/auth/user', data);
-    return response;
+  async updateUser(data: IUserData): Promise<IServiceResponse<IUserData>> {
+    const { data: responseData } = await axiosInstance.put<IUserData>('/auth/user', data);
+    return {
+      success: true,
+      data: responseData,
+      message: 'User updated successfully'
+    };
+  }
+
+  async getMe(): Promise<IServiceResponse<IUser>> {
+    const { data } = await axiosInstance.get<IUser>('/users/my-profile');
+    return {
+      success: true,
+      data,
+      message: 'User fetched successfully'
+    };
   }
 }
 
