@@ -13,10 +13,12 @@ export interface Tokens {
 }
 
 export interface AuthResponse {
+  success: boolean;
   message: string;
-  accessToken: string;
-  refreshToken: string;
-  user: IUserResponse;
+  data: {
+    tokens: Tokens;
+    user: IUserResponse;
+  };
 }
 
 export interface GoogleUser {

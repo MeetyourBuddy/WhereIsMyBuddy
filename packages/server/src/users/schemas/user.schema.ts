@@ -29,22 +29,22 @@ export class User {
 
   @Prop({ type: Date })
   dateOfBirth?: Date;
-
-  @Prop({ trim: true })
-  profilePicture?: string;
-
-  @Prop({ trim: true })
-  bio?: string;
-
-  @Prop({ trim: true })
-  phoneNumber?: string;
-
+  
   // Location
   @Prop({ type: String, enum: Object.values(Country) })
   country?: string;
 
   @Prop({ trim: true })
   city?: string;
+
+  @Prop({ trim: true })
+  bio?: string;
+
+  @Prop({ trim: true })
+  profilePicture?: string;
+
+  @Prop({ trim: true })
+  phoneNumber?: string;
 
   // Interests
   @Prop({
@@ -95,6 +95,18 @@ export class User {
   @Prop({ required: true, unique: true })
   profileQR: string;
 
+  @Prop({ trim: true })
+  goals?: string;
+
+  @Prop({ required: true })
+  age?: number;
+
+  @Prop({ 
+    required: false,
+    enum: ['male', 'female', 'other'],
+   })
+  gender?: 'male' | 'female' | 'other';
+
   @Prop({
     required: true,
     default: 'open',
@@ -106,10 +118,16 @@ export class User {
   linkedInUrl?: string;
 
   @Prop({ trim: true })
-  twitterUrl?: string;
+  githubUrl?: string;
+
+  @Prop({ trim: true })
+  portfolioUrl?: string;
 
   @Prop({ trim: true })
   instagramUrl?: string;
+
+  @Prop({ trim: true })
+  timezone?: string;
 
   // Timestamps (added by schema options)
   createdAt: Date;

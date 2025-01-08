@@ -2,7 +2,6 @@ import {
   IsArray,
   IsEnum,
   IsNotEmpty,
-  ValidateNested,
   ArrayMinSize,
   IsString,
   IsDate,
@@ -12,7 +11,39 @@ import { ApiProperty } from '@nestjs/swagger';
 import { InterestCategory } from '../enums/interests.enum';
 import { Country } from '../enums/location.enum';
 
-class LocationDto {
+export class CompleteOnboardingDto {
+  /**
+   * User's date of birth
+   * @example "1990-01-01"
+   */
+  @ApiProperty({
+    type: Date,
+    example: '1990-01-01',
+    description: "User's date of birth"
+  })
+  @Type(() => Date)
+  @IsDate({ message: 'Please provide a valid date' })
+  @IsNotEmpty({ message: 'Date of birth is required' })
+  dateOfBirth: Date;
+
+  /**
+   * User's areas of interest
+   * @example ["TECHNOLOGY", "GAMING"]
+   * @minimum 1
+   */
+  @ApiProperty({
+    type: [String],
+    enum: InterestCategory,
+    example: ['TECHNOLOGY', 'GAMING']
+  })
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Please select at least one interest category' })
+  @IsEnum(InterestCategory, {
+    each: true,
+    message: 'Please select valid interest categories',
+  })
+  interestsCategories: InterestCategory[];
+
   /**
    * User's country of residence
    * @example "USA"
@@ -29,46 +60,18 @@ class LocationDto {
   @IsNotEmpty({ message: 'City cannot be empty' })
   @IsString()
   city: string;
-}
 
-export class CompleteOnboardingDto {
-  /**
-   * User's date of birth
-   * @example "1990-01-01"
-   */
-  @ApiProperty({
-    type: Date,
-    example: '1990-01-01',
-    description: "User's date of birth",
-  })
-  @Type(() => Date)
-  @IsDate({ message: 'Please provide a valid date' })
-  @IsNotEmpty({ message: 'Date of birth is required' })
-  dateOfBirth: Date;
-
-  /**
-   * User's areas of interest
-   * @example ["TECHNOLOGY", "GAMING"]
-   * @minimum 1
-   */
-  @ApiProperty({
-    type: [String],
-    enum: InterestCategory,
-    example: ['TECHNOLOGY', 'GAMING'],
-  })
-  @IsArray()
-  @ArrayMinSize(1, { message: 'Please select at least one interest category' })
-  @IsEnum(InterestCategory, {
-    each: true,
-    message: 'Please select valid interest categories',
-  })
-  interestsCategories: InterestCategory[];
-
-  /**
-   * User's location information
-   */
-  @ApiProperty({ type: LocationDto })
-  @ValidateNested()
-  @Type(() => LocationDto)
-  location: LocationDto;
+  // Calculate age from date of birth
+  get age(): number {
+    const today = new Date();
+    const birthDate = new Date(this.dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  }
 }
