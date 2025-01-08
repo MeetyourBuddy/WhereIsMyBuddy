@@ -22,12 +22,10 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
-    const tokens = response.data.data.data.tokens;
-
-    if (tokens) {
-      tokenService.setTokens(tokens.accessToken, tokens.refreshToken);
+    const { data } = response.data;
+    if (data?.tokens) {
+      tokenService.setTokens(data.tokens.accessToken, data.tokens.refreshToken);
     }
-
     return response;
   },
   async (error: AxiosError) => {

@@ -4,26 +4,21 @@ import { AuthResponse, SignInCredentials, SignUpData, LogoutResponse } from '@/t
 import { AxiosResponse } from 'axios';
 
 class AuthService {
-  async login(credentials: SignInCredentials): Promise<AxiosResponse<AuthResponse>> {
+  async login(credentials: SignInCredentials): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
-
-    console.log('response here', response.data.data.data.tokens);
-
-    return response;
+    return response.data;
   }
 
-  async register(userData: SignUpData): Promise<AxiosResponse<AuthResponse>> {
+  async register(userData: SignUpData): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/register', userData);
-
-    return response;
+    return response.data;
   }
 
-  async googleLogin(credential: string): Promise<AxiosResponse<AuthResponse>> {
+  async googleLogin(credential: string): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/google/callback', {
       credential
     });
-
-    return response;
+    return response.data;
   }
 
   async logout(): Promise<AxiosResponse<LogoutResponse>> {
