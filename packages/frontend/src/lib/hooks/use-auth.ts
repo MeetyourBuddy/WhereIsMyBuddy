@@ -88,7 +88,7 @@ export function useAuth() {
     }
   });
 
-  // Logout mutation
+  // Updated Logout mutation
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
