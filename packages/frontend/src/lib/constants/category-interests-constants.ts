@@ -201,7 +201,12 @@ export type Commodity = {
   value: string;
 };
 
-export const getCommoditiesForCategory = (category: InterestCategory): Commodity[] => {
+export const getCommoditiesForCategory = (
+  category: InterestCategory | InterestCategory[]
+): Commodity[] => {
+  if (Array.isArray(category)) {
+    return category.flatMap((cat) => commoditiesByCategory[cat]);
+  }
   return commoditiesByCategory[category];
 };
 

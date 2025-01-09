@@ -1,19 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/common/ui/card';
 import { Button } from '@/components/common/ui/button';
 import { Edit2, Globe, User, Link, Settings, Lock, Target, X } from 'lucide-react';
-import { FormCountryDropdown } from '@/components/common/form/form-country-select';
 import { FormInput } from '@/components/common/form/form-input';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormTextarea } from '@/components/common/form/form-textarea';
 import { FormSelect } from '@/components/common/form/form-select';
 import { QRCodeSection } from '@/components/common/qr-code/qr-code';
 import { FormMultiSelect } from '@/components/common/form/form-multi-select';
 import { profileSchema, type Profile } from '@/lib/validation/profile-validation';
-import { useProfileStore } from '@/providers/store';
-import { Country, interestCategories } from '@/lib/constants';
-import { useState } from 'react';
+import {
+  Country,
+  getCommoditiesForCategory,
+  interestCategories,
+  InterestCategory
+} from '@/lib/constants';
+import { useEffect, useState } from 'react';
 import { citiesByCountry, countries } from '@/lib/utils';
+import { useAuthContext } from '@/providers/contexts/auth-context';
+import { FormDatePicker } from '../common/form/form-date-picker';
 
 interface ProfileSectionProps {
   title: string;
@@ -58,33 +63,42 @@ const ProfileSection = ({
 };
 
 const ProfileFeed = () => {
-  const { profile, setProfile } = useProfileStore();
+  const { user } = useAuthContext();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [savedData, setSavedData] = useState<Partial<Profile>>({});
 
-  const { watch } = useFormContext();
-
-  // Get available cities based on selected country
-  const selectedCountry = watch('country') as Country | undefined;
-  const availableCities = selectedCountry ? citiesByCountry[selectedCountry] : [];
+  console.log('profile here here', user);
 
   const methods = useForm<Profile>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      collaborationStatus: 'undecided',
-      preferredLanguage: 'en',
-      categories: [],
-      interests: [],
-      gender: 'prefer-not-to-say'
+      name: user?.name || '',
+      country: user?.country || '',
+      city: user?.city || '',
+      collaborationStatus: user?.collaborationStatus || 'undecided',
+      preferredLanguage: user?.preferredLanguage?.toLowerCase() || 'en',
+      interestsCategories: user?.interestsCategories || [],
+      interestsCommodities: user?.interestsCommodities || [],
+      profileLink: user?.profileLink || ''
     }
   });
+
+  // Update form when profile changes
+  useEffect(() => {
+    if (user) {
+      methods.reset(user);
+    }
+  }, [user, methods]);
+
+  const selectedCountry = methods.watch('country') as Country | undefined;
+  const availableCities = selectedCountry ? citiesByCountry[selectedCountry] : [];
 
   const onSubmit = async (data: Profile) => {
     try {
       console.log(data);
       setSavedData(data);
       setEditingSection(null); // Close edit mode after saving
-      setProfile(data);
+      // setProfile(data);
     } catch (error) {
       console.error('Error submitting form:', error);
     }
@@ -128,13 +142,12 @@ const ProfileFeed = () => {
               options={countries}
               customError="Country is required"
             />
-            <FormSelect
-              name="city"
-              label="City"
-              placeholder="Select a city"
-              className="pt-4"
+            <FormInput
+              name="email"
+              label="Email"
+              placeholder="Your email"
+              customError="Email is required"
               required
-              options={availableCities}
             />
             <FormSelect
               name="city"
@@ -142,13 +155,7 @@ const ProfileFeed = () => {
               placeholder="Your city"
               customError="City is required"
               required
-              options={[
-                { label: 'New York', value: 'new-york' },
-                { label: 'Los Angeles', value: 'los-angeles' },
-                { label: 'Chicago', value: 'chicago' },
-                { label: 'Houston', value: 'houston' },
-                { label: 'Miami', value: 'miami' }
-              ]}
+              options={availableCities}
             />
           </div>
         </ProfileSection>
@@ -226,7 +233,7 @@ const ProfileFeed = () => {
             />
             <div className="space-y-2">
               <FormMultiSelect
-                name="categories"
+                name="interestsCategories"
                 label="Categories"
                 placeholder="Your categories"
                 maxCount={10}
@@ -238,16 +245,19 @@ const ProfileFeed = () => {
                 }))}
               />
               <FormMultiSelect
-                name="interests"
+                name="interestsCommodities"
                 label="Interests"
                 placeholder="Your interests"
                 maxCount={10}
                 required
                 customError="Interests are required"
-                options={interestCategories.map((interest) => ({
-                  label: interest.label,
-                  value: interest.value
-                }))}
+                options={
+                  methods
+                    .watch('interestsCategories')
+                    ?.flatMap((category) =>
+                      getCommoditiesForCategory(category as InterestCategory)
+                    ) || []
+                }
               />
             </div>
           </div>
@@ -261,7 +271,13 @@ const ProfileFeed = () => {
           onEditClick={handleEditClick}
         >
           <div className="grid gap-4 md:grid-cols-2">
-            <FormInput name="age" label="Age" placeholder="Your age" type="number" />
+            <FormDatePicker
+              name="dateOfBirth"
+              label="What is your birthday?"
+              placeholder="Select a date"
+              control={methods.control}
+              required
+            />
             <FormSelect
               name="gender"
               label="Gender"

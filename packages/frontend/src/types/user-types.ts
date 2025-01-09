@@ -10,9 +10,9 @@ export interface IUserData {
   github?: string;
   linkedin?: string;
   preferredLanguage: string;
-  categories: string[];
-  interests: string[];
-  age?: number;
+  interestsCategories: string[];
+  interestsCommodities: string[];
+  dateOfBirth: string;
   gender: 'male' | 'female' | 'other' | 'prefer-not-to-say';
   goals?: string;
 }

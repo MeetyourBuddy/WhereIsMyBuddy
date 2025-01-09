@@ -25,6 +25,8 @@ export interface IUserResponse {
   linkedInUrl?: string;
   twitterUrl?: string;
   instagramUrl?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
