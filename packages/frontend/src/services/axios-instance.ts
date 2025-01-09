@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { API_CONFIG } from './config';
-import { tokenService } from '../token/token-service';
+import { API_CONFIG } from '@services/api/config';
+import { tokenService } from '@services/token/token-service';
 import { AuthResponse } from '@/types/auth-types';
 
 const axiosInstance: AxiosInstance = axios.create({

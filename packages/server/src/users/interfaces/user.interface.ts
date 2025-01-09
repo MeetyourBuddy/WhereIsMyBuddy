@@ -7,6 +7,7 @@ export interface IUserResponse {
   email: string;
   name: string;
   dateOfBirth?: Date;
+  age?: number;
   profilePicture?: string;
   bio?: string;
   phoneNumber?: string;
@@ -21,12 +22,14 @@ export interface IUserResponse {
   provider: 'local' | 'google';
   profileLink: string;
   profileQR: string;
+  goals?: string;
+  gender?: 'male' | 'female' | 'other';
   collaborationStatus: 'open' | 'occupied' | 'undecided';
   linkedInUrl?: string;
-  twitterUrl?: string;
-  instagramUrl?: string;
   githubUrl?: string;
   portfolioUrl?: string;
+  instagramUrl?: string;
+  timezone?: string;
   createdAt: Date;
   updatedAt: Date;
 }

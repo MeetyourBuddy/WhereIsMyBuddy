@@ -2,7 +2,6 @@ import {
   IsArray,
   IsEnum,
   IsNotEmpty,
-  ValidateNested,
   ArrayMinSize,
   IsString,
   IsDate,
@@ -61,4 +60,20 @@ export class CompleteOnboardingDto {
   @IsNotEmpty({ message: 'City cannot be empty' })
   @IsString()
   city: string;
+
+  // Calculate age from date of birth
+  get age(): number {
+    const today = new Date();
+    const birthDate = new Date(this.dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+    
+    return age;
+  }
 }

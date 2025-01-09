@@ -69,10 +69,6 @@ export class UpdateUserDto {
   @IsUrl()
   linkedInUrl?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsUrl()
-  twitterUrl?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -83,4 +79,29 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  goals?: string;
+
+  @ApiPropertyOptional({ enum: ['male', 'female', 'other'] })
+  @IsOptional()
+  @IsEnum(['male', 'female', 'other'])
+  gender?: 'male' | 'female' | 'other';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  githubUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  portfolioUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  timezone?: string;
 }

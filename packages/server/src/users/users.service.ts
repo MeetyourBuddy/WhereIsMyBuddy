@@ -108,6 +108,7 @@ export class UsersService {
         userId,
         {
           dateOfBirth: onboardingDto.dateOfBirth,
+          age: onboardingDto.age,
           interestsCategories: onboardingDto.interestsCategories,
           country: onboardingDto.country,
           city: onboardingDto.city,

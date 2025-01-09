@@ -1,27 +1,24 @@
-import axiosInstance from '../axios-instance';
+import axiosInstance from '@services/axios-instance';
 import { tokenService } from '@services/token/token-service';
 import { AuthResponse, SignInCredentials, SignUpData, LogoutResponse } from '@/types/auth-types';
 import { AxiosResponse } from 'axios';
 
 class AuthService {
-  async login(credentials: SignInCredentials): Promise<AxiosResponse<AuthResponse>> {
+  async login(credentials: SignInCredentials): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
-
-    return response;
+    return response.data;
   }
 
-  async register(userData: SignUpData): Promise<AxiosResponse<AuthResponse>> {
+  async register(userData: SignUpData): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/register', userData);
-
-    return response;
+    return response.data;
   }
 
-  async googleLogin(credential: string): Promise<AxiosResponse<AuthResponse>> {
+  async googleLogin(credential: string): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/google/callback', {
       credential
     });
-
-    return response;
+    return response.data;
   }
 
   async logout(): Promise<AxiosResponse<LogoutResponse>> {
