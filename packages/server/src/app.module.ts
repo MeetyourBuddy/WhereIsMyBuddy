@@ -13,6 +13,7 @@ import { JwtStrategy } from './users/auth/strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './users/auth/strategies/refresh-token.strategy';
 import { GoogleStrategy } from './users/auth/strategies/google.strategy';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ActivitiesModule } from './activities/activities.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
         },
       }),
     }),
+    ActivitiesModule,
   ],
   controllers: [UsersController, AuthController],
   providers: [
