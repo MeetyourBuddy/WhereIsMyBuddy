@@ -4,8 +4,6 @@ import { authService } from '@/services/api/auth/auth-service';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/lib/hooks/use-toast';
 import { tokenService } from '@/services/token/token-service';
-import { useProfileStore } from '@/providers/store';
-import { IUserData } from '@/types/user-types';
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -88,21 +86,23 @@ export function useAuth() {
     }
   });
 
-  // Logout mutation
+  // Updated Logout mutation
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
       // Clear all auth-related state
+      // Clear all auth-related state
       setUser(null);
-      clearProfile();
-      queryClient.clear();
+      queryClient.clear(); // Clear all queries
       tokenService.clearTokens();
 
       toast({
         title: 'Authentication',
+        title: 'Authentication',
         description: 'Logged out successfully!'
       });
 
+      // Use React Router navigation
       navigate('/signin');
     },
     onError: (error) => {
@@ -110,7 +110,6 @@ export function useAuth() {
 
       // Force logout even if API fails
       setUser(null);
-      clearProfile();
       queryClient.clear();
       tokenService.clearTokens();
 
@@ -118,17 +117,18 @@ export function useAuth() {
         title: 'Authentication Error',
         description: 'Logout failed, but you have been logged out locally.',
         variant: 'destructive'
+        title: 'Authentication Error',
+        description: 'Logout failed, but you have been logged out locally.',
+        variant: 'destructive'
       });
 
       navigate('/signin');
-    },
-    onMutate: () => {
-      setLoading(true);
-    },
-    onSettled: () => {
-      setLoading(false);
     }
   });
+
+  const logout = () => {
+    logoutMutation.mutate();
+  };
 
   const logout = () => {
     logoutMutation.mutate();
@@ -138,6 +138,6 @@ export function useAuth() {
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout,
-    isLoading: loginMutation.isLoading || registerMutation.isLoading || logoutMutation.isLoading
+    isLoading: loginMutation.isLoading || logoutMutation.isLoading
   };
 }

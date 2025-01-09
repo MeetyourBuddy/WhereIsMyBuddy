@@ -1,22 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/common/ui/card';
 import { Button } from '@/components/common/ui/button';
-import { Edit2, Globe, User, Link, Settings, Lock, Target } from 'lucide-react';
+import { Edit2, Globe, User, Link, Settings, Lock, Target, X } from 'lucide-react';
 import { FormInput } from '@/components/common/form/form-input';
-import { useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { FormTextarea } from '@/components/common/form/form-textarea';
 import { FormSelect } from '@/components/common/form/form-select';
 import { QRCodeSection } from '@/components/common/qr-code/qr-code';
 import { FormMultiSelect } from '@/components/common/form/form-multi-select';
-import { type Profile } from '@/lib/validation/profile-validation';
+import { profileSchema, type Profile } from '@/lib/validation/profile-validation';
 import {
   Country,
   getCommoditiesForCategory,
   interestCategories,
   InterestCategory
 } from '@/lib/constants';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { citiesByCountry, countries } from '@/lib/utils';
-import { toast } from '@/lib/hooks/use-toast';
+import { useAuthContext } from '@/providers/contexts/auth-context';
+import { FormDatePicker } from '../common/form/form-date-picker';
 
 interface ProfileSectionProps {
   title: string;
@@ -57,30 +59,43 @@ const ProfileSection = ({
   );
 };
 
-const ProfileFeed = ({ onSubmit }: ProfileFeedProps) => {
+const ProfileFeed = () => {
+  const { user } = useAuthContext();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const methods = useFormContext<Profile>();
-  const {
-    watch,
-    handleSubmit,
-    formState: { isDirty, errors }
-  } = methods;
+  console.log('profile here here', user);
 
-  const selectedCountry = watch('country') as Country | undefined;
+  const methods = useForm<Profile>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: user?.name || '',
+      country: user?.country || '',
+      city: user?.city || '',
+      collaborationStatus: user?.collaborationStatus || 'undecided',
+      preferredLanguage: user?.preferredLanguage?.toLowerCase() || 'en',
+      interestsCategories: user?.interestsCategories || [],
+      interestsCommodities: user?.interestsCommodities || [],
+      profileLink: user?.profileLink || ''
+    }
+  });
+
+  // Update form when profile changes
+  useEffect(() => {
+    if (user) {
+      methods.reset(user);
+    }
+  }, [user, methods]);
+
+  const selectedCountry = methods.watch('country') as Country | undefined;
   const availableCities = selectedCountry ? citiesByCountry[selectedCountry] : [];
 
-  const handleFormSubmit = async (data: Profile) => {
-    if (!isDirty) {
-      console.log('Form is not dirty, skipping submission');
-      return;
-    }
-
+  const onSubmit = async (data: Profile) => {
     try {
-      setIsSubmitting(true);
-      await onSubmit(data);
-      setEditingSection(null);
+      console.log(data);
+      setSavedData(data);
+      setEditingSection(null); // Close edit mode after saving
+      // setProfile(data);
     } catch (error) {
       console.error('Submission error:', error);
       toast({
@@ -102,47 +117,48 @@ const ProfileFeed = ({ onSubmit }: ProfileFeedProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="mb-6 space-y-6">
-      <ProfileSection
-        title="Personal Information"
-        icon={<User className="h-5 w-5" />}
-        sectionKey="personal"
-        isEditing={editingSection === 'personal'}
-        onEditClick={handleEditClick}
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormInput
-            name="name"
-            label="Name"
-            placeholder="Your name"
-            customError="Name is required"
-            required
-          />
-          <FormSelect
-            name="country"
-            label="Country"
-            placeholder="Select a country"
-            required
-            options={countries}
-            customError="Country is required"
-          />
-          <FormInput
-            name="email"
-            label="Email"
-            placeholder="Your email"
-            customError="Email is required"
-            required
-          />
-          <FormSelect
-            name="city"
-            label="City"
-            placeholder="Your city"
-            customError="City is required"
-            required
-            options={availableCities}
-          />
-        </div>
-      </ProfileSection>
+    <FormProvider {...methods}>
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="mb-6 space-y-6">
+        <ProfileSection
+          title="Personal Information"
+          icon={<User className="h-5 w-5" />}
+          sectionKey="personal"
+          isEditing={editingSection === 'personal'}
+          onEditClick={handleEditClick}
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormInput
+              name="name"
+              label="Name"
+              placeholder="Your name"
+              customError="Name is required"
+              required
+            />
+            <FormSelect
+              name="country"
+              label="Country"
+              placeholder="Select a country"
+              required
+              options={countries}
+              customError="Country is required"
+            />
+            <FormInput
+              name="email"
+              label="Email"
+              placeholder="Your email"
+              customError="Email is required"
+              required
+            />
+            <FormSelect
+              name="city"
+              label="City"
+              placeholder="Your city"
+              customError="City is required"
+              required
+              options={availableCities}
+            />
+          </div>
+        </ProfileSection>
 
       {/* Profile Details Section */}
       <ProfileSection
@@ -199,86 +215,84 @@ const ProfileFeed = ({ onSubmit }: ProfileFeedProps) => {
         </div>
       </ProfileSection>
 
-      {/* Preferences Section */}
-      <ProfileSection
-        title="Preferences"
-        icon={<Settings className="h-5 w-5" />}
-        sectionKey="preferences"
-        isEditing={editingSection === 'preferences'}
-        onEditClick={handleEditClick}
-      >
-        <div className="space-y-4">
-          <FormSelect
-            name="preferredLanguage"
-            label="Preferred Language"
-            placeholder="Select language"
-            options={[
-              { label: 'English', value: 'en' },
-              { label: 'Spanish', value: 'es' },
-              { label: 'French', value: 'fr' }
-            ]}
-          />
-          <div className="space-y-2">
-            <FormMultiSelect
-              name="interestsCategories"
-              label="Categories"
-              placeholder="Your categories"
-              maxCount={10}
-              required
-              customError="Categories are required"
-              options={interestCategories.map((interest) => ({
-                label: interest.label,
-                value: interest.value
-              }))}
+        <ProfileSection
+          title="Preferences"
+          icon={<Settings className="h-5 w-5" />}
+          sectionKey="preferences"
+          isEditing={editingSection === 'preferences'}
+          onEditClick={handleEditClick}
+        >
+          <div className="space-y-4">
+            <FormSelect
+              name="preferredLanguage"
+              label="Preferred Language"
+              placeholder="Select language"
+              options={[
+                { label: 'English', value: 'en' },
+                { label: 'Spanish', value: 'es' },
+                { label: 'French', value: 'fr' }
+              ]}
             />
-            <FormMultiSelect
-              name="interestsCommodities"
-              label="Interests"
-              placeholder="Your interests"
-              maxCount={10}
+            <div className="space-y-2">
+              <FormMultiSelect
+                name="interestsCategories"
+                label="Categories"
+                placeholder="Your categories"
+                maxCount={10}
+                required
+                customError="Categories are required"
+                options={interestCategories.map((interest) => ({
+                  label: interest.label,
+                  value: interest.value
+                }))}
+              />
+              <FormMultiSelect
+                name="interestsCommodities"
+                label="Interests"
+                placeholder="Your interests"
+                maxCount={10}
+                required
+                customError="Interests are required"
+                options={
+                  methods
+                    .watch('interestsCategories')
+                    ?.flatMap((category) =>
+                      getCommoditiesForCategory(category as InterestCategory)
+                    ) || []
+                }
+              />
+            </div>
+          </div>
+        </ProfileSection>
+
+        <ProfileSection
+          title="Private Information"
+          icon={<Lock className="h-5 w-5" />}
+          sectionKey="private"
+          isEditing={editingSection === 'private'}
+          onEditClick={handleEditClick}
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormDatePicker
+              name="dateOfBirth"
+              label="What is your birthday?"
+              placeholder="Select a date"
+              control={methods.control}
               required
-              customError="Interests are required"
-              options={
-                watch('interestsCategories')?.flatMap((category) =>
-                  getCommoditiesForCategory(category as InterestCategory)
-                ) || []
-              }
+            />
+            <FormSelect
+              name="gender"
+              label="Gender"
+              placeholder="Select gender"
+              options={[
+                { label: 'Male', value: 'male' },
+                { label: 'Female', value: 'female' },
+                { label: 'Other', value: 'other' },
+                { label: 'Prefer not to say', value: 'prefer-not-to-say' }
+              ]}
             />
           </div>
-        </div>
-      </ProfileSection>
-
-      {/* Private Information Section */}
-      <ProfileSection
-        title="Private Information"
-        icon={<Lock className="h-5 w-5" />}
-        sectionKey="private"
-        isEditing={editingSection === 'private'}
-        onEditClick={handleEditClick}
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormInput
-            name="dateOfBirth"
-            hasInputIcon={true}
-            leftIcon="calendar"
-            label="What is your birthday?"
-            placeholder="Select a date"
-            customError="Date of birth is required"
-            disabled
-          />
-          <FormSelect
-            name="gender"
-            label="Gender"
-            placeholder="Select gender"
-            options={[
-              { label: 'Male', value: 'male' },
-              { label: 'Female', value: 'female' },
-              { label: 'Other', value: 'other' },
-              { label: 'Prefer not to say', value: 'prefer-not-to-say' }
-            ]}
-          />
-        </div>
-      </ProfileSection>
+        </ProfileSection>
 
       {/* Aspirations Section */}
       <ProfileSection
