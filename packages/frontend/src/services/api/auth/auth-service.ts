@@ -23,13 +23,14 @@ class AuthService {
   }
 
   async logout(): Promise<AxiosResponse<LogoutResponse>> {
-    const response = await axiosInstance.post<LogoutResponse>('/auth/logout');
-
-    if (response.status === 200) {
+    try {
+      const response = await axiosInstance.post<LogoutResponse>('/auth/logout');
       tokenService.clearTokens();
+      return response;
+    } catch (error) {
+      tokenService.clearTokens();
+      throw error;
     }
-
-    return response;
   }
 }
 

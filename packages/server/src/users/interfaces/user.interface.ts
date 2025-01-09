@@ -29,7 +29,8 @@ export interface IUserResponse {
   githubUrl?: string;
   portfolioUrl?: string;
   instagramUrl?: string;
-  timezone?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
