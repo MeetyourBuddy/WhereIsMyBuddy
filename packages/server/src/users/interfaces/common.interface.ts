@@ -17,10 +17,13 @@ export interface PaginationMetadata {
 
 export interface ServiceResponse<T> {
   success: boolean;
-  message?: string;
-  data?: T;
-  error?: string;
-  metadata?: PaginationMetadata;
+  message: string;
+  data: T;
+  metadata?: {
+    total?: number;
+    offset?: number;
+    limit?: number;
+  };
 }
 
 export interface Tokens {
