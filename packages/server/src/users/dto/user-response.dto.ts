@@ -237,32 +237,4 @@ export class UserResponseDto {
   @Expose()
   @ApiProperty()
   updatedAt: Date;
-
-  /**
-   * User's gender identity
-   * @example "male"
-   */
-  @Expose()
-  gender: 'male' | 'female' | 'other' | 'prefer-not-to-say';
-
-  /**
-   * User's professional or personal goals
-   * @example "Looking to collaborate on open-source projects and expand my network"
-   */
-  @Expose()
-  goals: string;
-
-  /**
-   * User's GitHub profile URL
-   * @example "https://github.com/john-doe"
-   */
-  @Expose()
-  githubUrl?: string;
-
-  /**
-   * User's personal portfolio website URL
-   * @example "https://johndoe.dev"
-   */
-  @Expose()
-  portfolioUrl?: string;
 }

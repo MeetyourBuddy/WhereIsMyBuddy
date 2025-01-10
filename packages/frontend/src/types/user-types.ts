@@ -19,16 +19,6 @@ export interface IUserData {
   linkedInUrl?: string;
   instagramUrl?: string;
   bio?: string;
-  profileLink?: string;
-  collaborationStatus: 'open' | 'closed' | 'undecided';
-  portfolio?: string;
-  github?: string;
-  linkedin?: string;
-  preferredLanguage: string;
-  interestsCategories: string[];
-  interestsCommodities: string[];
-  dateOfBirth: string;
-  gender: 'male' | 'female' | 'other' | 'prefer-not-to-say';
   goals?: string;
   city?: string;
   country?: string;

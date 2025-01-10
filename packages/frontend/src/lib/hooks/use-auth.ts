@@ -31,7 +31,7 @@ export function useAuth() {
       });
 
       queryClient.invalidateQueries('user');
-      const user = userData.data.data.data.user;
+
       if (user.hasCompletedOnboarding) {
         navigate('/');
       } else {
@@ -88,7 +88,7 @@ export function useAuth() {
     }
   });
 
-  // Updated Logout mutation
+  // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {

@@ -40,7 +40,6 @@ export interface IUser {
   provider?: string;
   profileLink?: string;
   profileQR?: string;
-  collaborationStatus?: 'open' | 'closed' | 'undecided';
   createdAt?: string;
   updatedAt?: string;
   bannerImage?: string;
