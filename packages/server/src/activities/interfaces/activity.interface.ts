@@ -27,6 +27,7 @@ export interface IActivityResponse {
   rules: Array<{ rule: string; isDefault: boolean }>;
   participants: Array<Types.ObjectId | User>;
   isActive: boolean;
+  availableSeats: number;
   createdAt: Date;
   updatedAt: Date;
 }

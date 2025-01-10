@@ -9,7 +9,7 @@ import Onboarding from '@/pages/onboarding/onboarding';
 import OAuthHandler from '@/pages/auth/oauth';
 import AuthLayout from '@/layouts/auth-layout';
 import BaseLayout from '@/layouts/base-layout';
-import Profile from '@/pages/profile/profile';
+import ProfilePage from '@/pages/profile/profile';
 import Dashboard from '@/pages/dashhboard/dashboard';
 import Activity from '@/pages/activity/activity';
 
@@ -29,7 +29,7 @@ const Router = () => (
       <Route element={<BaseLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/activity" element={<Activity />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/change-password" element={<ChangePassword />} />
       </Route>
     </Route>

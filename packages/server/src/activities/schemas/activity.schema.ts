@@ -35,7 +35,7 @@ export enum ActivityRole {
 @Schema({
   timestamps: true,
 })
-export class Activity {
+export class Activity extends Document {
   @Prop({ required: true, trim: true })
   title: string;
 

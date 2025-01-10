@@ -18,31 +18,48 @@ export interface IUser {
   id: string;
   email: string;
   name: string;
-  interestsCategories?: string[];
+  bio?: string;
+  phoneNumber?: string;
+  profileImage?: string;
+  preferredLanguage?: Language;
+  country?: Country;
+  city?: string;
+  interestsCategories?: InterestCategory[];
   interestsCommodities?: string[];
-  preferredLanguage?: string;
+  collaborationStatus?: 'open' | 'occupied' | 'undecided';
+  linkedInUrl?: string;
+  instagramUrl?: string;
   isActive?: boolean;
+  goals?: string;
+  gender?: 'male' | 'female' | 'other';
+  githubUrl?: string;
+  portfolioUrl?: string;
+  timezone?: string;
   isEmailVerified?: boolean;
   hasCompletedOnboarding?: boolean;
   provider?: string;
   profileLink?: string;
   profileQR?: string;
-  collaborationStatus?: 'open' | 'closed' | 'undecided';
   createdAt?: string;
   updatedAt?: string;
-  city?: string;
-  country?: string;
-  dateOfBirth?: string;
+  bannerImage?: string;
 }
 
+export enum Language {}
+// Add language enum values
+
+export enum Country {}
+// Add country enum values
+
+export enum InterestCategory {}
+// Add interest category enum values
+
 export interface AuthResponse {
+  success: boolean;
+  message: string;
   data: {
-    success: boolean;
-    message: string;
-    data: {
-      tokens: TokenPair;
-      user: IUser;
-    };
+    tokens: TokenPair;
+    user: IUser;
   };
   timestamp: string;
 }

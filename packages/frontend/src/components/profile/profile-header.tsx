@@ -5,7 +5,7 @@ import { PreviewModal } from '@/components/common/modal/preview-modal';
 
 interface ProfileHeaderProps {
   name: string;
-  role: string;
+  email?: string;
   avatarUrl: string;
   bannerUrl?: string;
   onAvatarUpdate: (newAvatarUrl: string, file: File) => Promise<void>;
@@ -14,7 +14,7 @@ interface ProfileHeaderProps {
 
 const ProfileHeader = ({
   name,
-  role,
+  email,
   avatarUrl,
   bannerUrl,
   onAvatarUpdate,
@@ -104,7 +104,7 @@ const ProfileHeader = ({
 
           <div className="bottom-[-70px] left-[200px] flex flex-col">
             <h6 className="font-bold">{name}</h6>
-            <p className="text-paragraph-md italic text-muted-foreground">{role}</p>
+            <p className="text-paragraph-md italic text-muted-foreground">{email}</p>
           </div>
         </div>
       </div>

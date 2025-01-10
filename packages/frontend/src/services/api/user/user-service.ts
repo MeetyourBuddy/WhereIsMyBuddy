@@ -1,4 +1,4 @@
-import axiosInstance from '../axios-instance';
+import axiosInstance from '../../axios-instance';
 import { IUserData } from '@/types/user-types';
 import { IServiceResponse } from '@/types';
 import { IUser } from '@/types/auth-types';
@@ -13,8 +13,8 @@ class UserService {
     };
   }
 
-  async updateUser(data: IUserData): Promise<IServiceResponse<IUserData>> {
-    const { data: responseData } = await axiosInstance.put<IUserData>('/auth/user', data);
+  async updateUser(id: string, data: Partial<IUserData>): Promise<IServiceResponse<IUserData>> {
+    const { data: responseData } = await axiosInstance.put<IUserData>(`/users/${id}`, data);
     return {
       success: true,
       data: responseData,

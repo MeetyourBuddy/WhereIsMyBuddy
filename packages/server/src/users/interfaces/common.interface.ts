@@ -19,6 +19,12 @@ export interface ServiceResponse<T> {
   success: boolean;
   message?: string;
   data: T;
+  metadata?: {
+    total?: number;
+    offset?: number;
+    limit?: number;
+    hasMore?: boolean;
+  };
   metadata?: PaginationMetadata;
 }
 
