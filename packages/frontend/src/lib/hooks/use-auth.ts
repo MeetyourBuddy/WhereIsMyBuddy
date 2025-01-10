@@ -4,6 +4,8 @@ import { authService } from '@/services/api/auth/auth-service';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/lib/hooks/use-toast';
 import { tokenService } from '@/services/token/token-service';
+import { useProfileStore } from '@/providers/store';
+import { IUserData } from '@/types/user-types';
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -29,7 +31,7 @@ export function useAuth() {
       });
 
       queryClient.invalidateQueries('user');
-      const user = userData.data.data.data.user;
+
       if (user.hasCompletedOnboarding) {
         navigate('/');
       } else {
@@ -86,14 +88,15 @@ export function useAuth() {
     }
   });
 
-  // Updated Logout mutation
+  // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
       // Clear all auth-related state
       // Clear all auth-related state
       setUser(null);
-      queryClient.clear(); // Clear all queries
+      clearProfile();
+      queryClient.clear();
       tokenService.clearTokens();
 
       toast({
@@ -102,7 +105,6 @@ export function useAuth() {
         description: 'Logged out successfully!'
       });
 
-      // Use React Router navigation
       navigate('/signin');
     },
     onError: (error) => {
@@ -110,6 +112,7 @@ export function useAuth() {
 
       // Force logout even if API fails
       setUser(null);
+      clearProfile();
       queryClient.clear();
       tokenService.clearTokens();
 
@@ -123,6 +126,12 @@ export function useAuth() {
       });
 
       navigate('/signin');
+    },
+    onMutate: () => {
+      setLoading(true);
+    },
+    onSettled: () => {
+      setLoading(false);
     }
   });
 
@@ -138,6 +147,6 @@ export function useAuth() {
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout,
-    isLoading: loginMutation.isLoading || logoutMutation.isLoading
+    isLoading: loginMutation.isLoading || registerMutation.isLoading || logoutMutation.isLoading
   };
 }
