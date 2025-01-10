@@ -67,6 +67,8 @@ export const FormInput = ({
           <FormControl>
             {hasInputIcon ? (
               <IconInput
+                {...field}
+                value={field.value ?? ''}
                 placeholder={placeholder}
                 leftIcon={leftIcon}
                 rightIcon={rightIcon}
@@ -76,10 +78,12 @@ export const FormInput = ({
                   inputError && 'border-destructive-50 focus-visible:ring-destructive-10',
                   disabled && 'bg-gray-10'
                 )}
-                {...field}
+                disabled={disabled}
               />
             ) : hasLabelInput ? (
               <LabelInput
+                {...field}
+                value={field.value ?? ''}
                 placeholder={placeholder}
                 leftLabel={leftLabel}
                 rightLabel={rightLabel}
@@ -89,18 +93,20 @@ export const FormInput = ({
                   inputError && 'border-destructive-50 focus-visible:ring-destructive-10',
                   disabled && 'bg-gray-10'
                 )}
-                {...field}
+                disabled={disabled}
               />
             ) : (
               <Input
+                {...field}
+                value={field.value ?? ''}
                 placeholder={placeholder}
                 className={cn(
                   'w-full bg-gray-10',
                   inputError && 'border-destructive-50 focus-visible:ring-destructive-10',
                   disabled && 'bg-gray-10'
                 )}
-                {...field}
                 type={type}
+                disabled={disabled}
               />
             )}
           </FormControl>

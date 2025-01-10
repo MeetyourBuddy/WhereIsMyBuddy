@@ -22,9 +22,10 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
-    const tokens = response.data.data.data.tokens;
+    const tokens = response.data.data.tokens;
 
     if (tokens) {
+      console.log('response hereeeeeeeee', tokens.accessToken);
       tokenService.setTokens(tokens.accessToken, tokens.refreshToken);
     }
 
@@ -47,7 +48,10 @@ axiosInstance.interceptors.response.use(
             refreshToken
           });
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data.data.tokens;
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data.tokens;
+
+          console.log('accessToken in the interceptor', accessToken);
+          console.log('newRefreshToken in the interceptor', newRefreshToken);
 
           tokenService.setTokens(accessToken, newRefreshToken);
           originalRequest.headers.set('Authorization', `Bearer ${accessToken}`);
@@ -56,7 +60,7 @@ axiosInstance.interceptors.response.use(
         }
       } catch (error) {
         tokenService.clearTokens();
-        window.location.href = '/login';
+        window.location.href = '/signin';
       }
     }
 

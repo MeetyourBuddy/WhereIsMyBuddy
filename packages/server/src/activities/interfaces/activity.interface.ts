@@ -1,12 +1,16 @@
-import { User } from '../../users/schemas/user.schema';
-import { ActivityType, JoinType, ContactFrequency } from '../schemas/activity.schema';
+import { UserResponseDto } from '../../users/dto/user-response.dto';
+import {
+  ActivityType,
+  JoinType,
+  ContactFrequency,
+} from '../schemas/activity.schema';
 
 // Defines the structure of Activity data in API responses
 export interface IActivityResponse {
   id: string;
   title: string;
   description: string;
-  admin: User;
+  admin: UserResponseDto;
   proposedDuration: number;
   bannerImage?: string;
   contactFrequency: ContactFrequency;
@@ -17,8 +21,9 @@ export interface IActivityResponse {
   currentSize: number;
   tags: string[];
   rules: Array<{ rule: string; isDefault: boolean }>;
-  participants: User[];
+  participants: UserResponseDto[];
   isActive: boolean;
+  availableSeats: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,4 +47,4 @@ export interface IActivityStats {
   availableSeats: number;
   participationRate: number;
   isJoinable: boolean;
-} 
+}

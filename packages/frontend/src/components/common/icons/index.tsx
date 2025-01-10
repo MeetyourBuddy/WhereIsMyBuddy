@@ -18,7 +18,8 @@ import {
   RefreshCcw,
   InfoIcon,
   PlusCircleIcon,
-  CopyIcon
+  CopyIcon,
+  CalendarIcon
 } from 'lucide-react';
 
 export const Icons = {
@@ -34,6 +35,7 @@ export const Icons = {
   uploadCloud: UploadCloud,
   x: X,
   fileIcon: FileIcon,
+  calendar: CalendarIcon,
   checkCircle: CheckCircle,
   alertCircle: AlertCircle,
   userRoundPlus: UserRoundPlus,

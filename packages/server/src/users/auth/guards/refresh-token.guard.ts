@@ -6,15 +6,22 @@ export class RefreshTokenGuard extends AuthGuard('jwt-refresh') {
   private readonly logger = new Logger(RefreshTokenGuard.name);
 
   handleRequest(err: any, user: any, info: any) {
+    if (info?.message === 'invalid signature') {
+      this.logger.error('Refresh token has invalid signature', {
+        error: 'Invalid token signature',
+        info: info.message,
+      });
+      throw new UnauthorizedException('Invalid refresh token signature');
+    }
+
     if (err || !user) {
       this.logger.error('Refresh token validation failed', {
         error: err?.message || 'No user found',
         info: info?.message,
       });
 
-      throw (
-        err ||
-        new UnauthorizedException(info?.message || 'Invalid refresh token')
+      throw new UnauthorizedException(
+        info?.message || err?.message || 'Invalid refresh token',
       );
     }
 

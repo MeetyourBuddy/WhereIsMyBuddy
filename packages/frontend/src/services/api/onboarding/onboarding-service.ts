@@ -1,4 +1,4 @@
-import axiosInstance from '../axios-instance';
+import axiosInstance from '../../axios-instance';
 import { IServiceResponse } from '@/types/index';
 import { IOnboarding } from '@/types/onboarding-types';
 import { IUserData } from '@/types/user-types';

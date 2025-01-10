@@ -23,6 +23,7 @@ export interface ServiceResponse<T> {
     total?: number;
     offset?: number;
     limit?: number;
+    hasMore?: boolean;
   };
 }
 

@@ -32,17 +32,6 @@ export class UsersController {
     return this.usersService.findAll(query);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get user by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns the user profile',
-    type: UserResponseDto,
-  })
-  getUserById(@Param('id') id: string) {
-    return this.usersService.getUser(id);
-  }
-
   @Get('my-profile')
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({
@@ -52,6 +41,17 @@ export class UsersController {
   })
   getProfile(@GetUser('userId') userId: string) {
     return this.usersService.getUser(userId);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the user profile',
+    type: UserResponseDto,
+  })
+  getUserById(@Param('id') id: string) {
+    return this.usersService.getUser(id);
   }
 
   @Put(':id')

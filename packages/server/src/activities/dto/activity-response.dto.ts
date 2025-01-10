@@ -3,7 +3,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
-import { ActivityType, JoinType, ContactFrequency } from '../schemas/activity.schema';
+import {
+  ActivityType,
+  JoinType,
+  ContactFrequency,
+} from '../schemas/activity.schema';
 
 @Exclude()
 export class ActivityResponseDto {
@@ -120,9 +124,9 @@ export class ActivityResponseDto {
       type: 'object',
       properties: {
         rule: { type: 'string' },
-        isDefault: { type: 'boolean' }
-      }
-    }
+        isDefault: { type: 'boolean' },
+      },
+    },
   })
   rules: Array<{ rule: string; isDefault: boolean }>;
 
@@ -166,4 +170,4 @@ export class ActivityResponseDto {
   @Expose()
   @ApiProperty()
   updatedAt: Date;
-} 
+}
