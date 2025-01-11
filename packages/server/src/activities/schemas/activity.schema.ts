@@ -7,10 +7,12 @@ export type ActivityDocument = Activity & Document;
 export enum ActivityType {
   PRIVATE = 'private',
   PUBLIC = 'public',
+  PUBLIC = 'public',
 }
 
 export enum JoinType {
   FLEXIBLE = 'flexible',
+  FIXED = 'fixed',
   FIXED = 'fixed',
 }
 
@@ -71,9 +73,11 @@ export class Activity extends Document {
   CheckinFrequency: CheckinFrequency;
 
   @Prop({
+  @Prop({
     type: String,
     enum: ActivityType,
     required: true,
+    default: ActivityType.PUBLIC,
     default: ActivityType.PUBLIC,
   })
   type: ActivityType;
@@ -82,9 +86,11 @@ export class Activity extends Document {
   startDate: Date;
 
   @Prop({
+  @Prop({
     type: String,
     enum: JoinType,
     required: false,
+    default: JoinType.FLEXIBLE,
     default: JoinType.FLEXIBLE,
   })
   joinType: JoinType;
@@ -102,9 +108,17 @@ export class Activity extends Document {
         isDefault: { type: Boolean, default: false },
       },
     ],
+    type: [
+      {
+        rule: { type: String, required: false },
+        isDefault: { type: Boolean, default: false },
+      },
+    ],
     default: [
       { rule: 'Be respectful to all participants', isDefault: true },
       { rule: 'Maintain regular communication', isDefault: true },
+      { rule: 'Inform in advance if unable to attend', isDefault: true },
+    ],
       { rule: 'Inform in advance if unable to attend', isDefault: true },
     ],
   })
@@ -144,6 +158,7 @@ export const ActivitySchema = SchemaFactory.createForClass(Activity);
 ActivitySchema.index({ title: 'text', description: 'text', tags: 'text' });
 
 // Add virtual field for available seats
+ActivitySchema.virtual('availableSeats').get(function () {
 ActivitySchema.virtual('availableSeats').get(function () {
   return this.maxSize - this.currentSize;
 });
