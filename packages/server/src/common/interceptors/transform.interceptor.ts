@@ -24,10 +24,15 @@ interface Response<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+export class TransformInterceptor<T>
+  implements NestInterceptor<T, Response<T>>
+{
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<Response<T>> {
     return next.handle().pipe(
-      map(response => {
+      map((response) => {
         // If response is already formatted (has success field), return as is with timestamp
         if (response?.success !== undefined) {
           return {
@@ -35,7 +40,7 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
             timestamp: new Date().toISOString(),
           };
         }
-        
+
         // Otherwise, wrap the response in data field
         return {
           data: response,

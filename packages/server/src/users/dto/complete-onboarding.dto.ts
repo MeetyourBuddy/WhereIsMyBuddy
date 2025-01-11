@@ -19,7 +19,7 @@ export class CompleteOnboardingDto {
   @ApiProperty({
     type: Date,
     example: '1990-01-01',
-    description: "User's date of birth"
+    description: "User's date of birth",
   })
   @Type(() => Date)
   @IsDate({ message: 'Please provide a valid date' })
@@ -34,7 +34,7 @@ export class CompleteOnboardingDto {
   @ApiProperty({
     type: [String],
     enum: InterestCategory,
-    example: ['TECHNOLOGY', 'GAMING']
+    example: ['TECHNOLOGY', 'GAMING'],
   })
   @IsArray()
   @ArrayMinSize(1, { message: 'Please select at least one interest category' })
@@ -67,11 +67,14 @@ export class CompleteOnboardingDto {
     const birthDate = new Date(this.dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
-    
+
     return age;
   }
 }

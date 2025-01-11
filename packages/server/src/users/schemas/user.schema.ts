@@ -29,7 +29,7 @@ export class User {
 
   @Prop({ type: Date })
   dateOfBirth?: Date;
-  
+
   // Location
   @Prop({ type: String, enum: Object.values(Country) })
   country?: string;
@@ -101,10 +101,10 @@ export class User {
   @Prop({ required: true })
   age?: number;
 
-  @Prop({ 
+  @Prop({
     required: false,
     enum: ['male', 'female', 'other'],
-   })
+  })
   gender?: 'male' | 'female' | 'other';
 
   @Prop({

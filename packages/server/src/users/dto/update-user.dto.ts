@@ -69,7 +69,6 @@ export class UpdateUserDto {
   @IsUrl()
   linkedInUrl?: string;
 
-
   @ApiPropertyOptional()
   @IsOptional()
   @IsUrl()
