@@ -15,5 +15,7 @@ import { Activity, ActivitySchema } from './schemas/activity.schema';
   controllers: [ActivitiesController],
   providers: [ActivitiesService],
   exports: [ActivitiesService],
+  providers: [ActivitiesService],
+  exports: [ActivitiesService],
 })
 export class ActivitiesModule {}
