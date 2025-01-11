@@ -21,7 +21,8 @@
     "providers": "@/providers",
     "config": "@/config",
     "services": "@/services",
-    "types": "@/types"
+    "types": "@/types",
+    "icons": "@/components/common/icons"
   },
   "iconLibrary": "lucide"
 }

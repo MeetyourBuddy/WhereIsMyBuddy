@@ -2,7 +2,6 @@ import {
   IsArray,
   IsEnum,
   IsNotEmpty,
-  ValidateNested,
   ArrayMinSize,
   IsString,
   IsDate,
@@ -11,25 +10,6 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { InterestCategory } from '../enums/interests.enum';
 import { Country } from '../enums/location.enum';
-
-class LocationDto {
-  /**
-   * User's country of residence
-   * @example "USA"
-   */
-  @ApiProperty({ enum: Country, example: 'USA' })
-  @IsEnum(Country, { message: 'Please select a valid country' })
-  country: Country;
-
-  /**
-   * User's city of residence
-   * @example "New York"
-   */
-  @ApiProperty({ example: 'New York' })
-  @IsNotEmpty({ message: 'City cannot be empty' })
-  @IsString()
-  city: string;
-}
 
 export class CompleteOnboardingDto {
   /**
@@ -65,10 +45,36 @@ export class CompleteOnboardingDto {
   interestsCategories: InterestCategory[];
 
   /**
-   * User's location information
+   * User's country of residence
+   * @example "USA"
    */
-  @ApiProperty({ type: LocationDto })
-  @ValidateNested()
-  @Type(() => LocationDto)
-  location: LocationDto;
+  @ApiProperty({ enum: Country, example: 'USA' })
+  @IsEnum(Country, { message: 'Please select a valid country' })
+  country: Country;
+
+  /**
+   * User's city of residence
+   * @example "New York"
+   */
+  @ApiProperty({ example: 'New York' })
+  @IsNotEmpty({ message: 'City cannot be empty' })
+  @IsString()
+  city: string;
+
+  // Calculate age from date of birth
+  get age(): number {
+    const today = new Date();
+    const birthDate = new Date(this.dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return age;
+  }
 }

@@ -1,16 +1,11 @@
-import React from 'react';
-import { AppSidebar } from '@/components/common/sidebar/sidebar';
+import { AppSidebar } from '@/components/common/navigation/sidebar/sidebar';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/common/ui/sidebar';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
-} from '@/components/common/ui/breadcrumb';
+import { Breadcrumb } from '@/components/common/navigation/topbar/breadcrumb';
 import { Separator } from '@/components/common/ui/separator';
 import { Outlet, useLocation } from 'react-router-dom';
+import { Input } from '@/components/common/ui/input';
+import { Button } from '@/components/common/ui/button';
+import { Search } from 'lucide-react';
 
 interface BreadcrumbItem {
   label: string;
@@ -32,40 +27,32 @@ export default function RootLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen w-full">
         <AppSidebar />
         <SidebarInset className="flex flex-1 flex-col">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink href="/">Home</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  {breadcrumbs.map((item, index) => (
-                    <React.Fragment key={item.path}>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        {index === breadcrumbs.length - 1 ? (
-                          <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                        ) : (
-                          <BreadcrumbLink href={item.path}>{item.label}</BreadcrumbLink>
-                        )}
-                      </BreadcrumbItem>
-                    </React.Fragment>
-                  ))}
-                </BreadcrumbList>
-              </Breadcrumb>
+          <header className="sticky top-0 z-[1000] flex h-16 shrink-0 items-center gap-2 border-b bg-white backdrop-blur supports-[backdrop-filter]:bg-white">
+            <div className="flex w-full flex-row items-center justify-between px-4">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="mr-2 h-4" />
+                <Breadcrumb breadcrumbs={breadcrumbs} />
+              </div>
+
+              {/* search input */}
+              <div className="flex items-center gap-2">
+                <Input placeholder="Search" className="w-64 rounded-lg" />
+                <Button variant="outline" className="rounded-lg">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </header>
 
-          <main className="flex-1 p-6">
+          <main className="container h-full flex-1 bg-gray-10 px-8">
             <Outlet />
           </main>
 
-          <footer className="border-t bg-background">
+          <footer className="border-t bg-white">
             <div className="container py-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">

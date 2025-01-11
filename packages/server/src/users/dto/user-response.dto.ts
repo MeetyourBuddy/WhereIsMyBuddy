@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
 import { Country } from '../enums/location.enum';
 import { InterestCategory } from '../enums/interests.enum';
@@ -10,6 +11,7 @@ export class UserResponseDto {
    * @example "507f1f77bcf86cd799439011"
    */
   @Expose()
+  @ApiProperty()
   id: string;
 
   /**
@@ -17,20 +19,39 @@ export class UserResponseDto {
    * @example "john@example.com"
    */
   @Expose()
+  @ApiProperty()
   email: string;
 
   /**
-   * User's username
-   * @example "john_doe"
+   * User's full name
+   * @example "John Doe"
    */
   @Expose()
-  username: string;
+  @ApiProperty()
+  name: string;
+
+  /**
+   * User's date of birth
+   * @example "1990-01-01T00:00:00Z"
+   */
+  @Expose()
+  @ApiPropertyOptional({ type: Date })
+  dateOfBirth?: Date;
+
+  /**
+   * User's age calculated from date of birth
+   * @example 33
+   */
+  @Expose()
+  @ApiPropertyOptional()
+  age?: number;
 
   /**
    * URL to user's profile picture
    * @example "https://example.com/profile.jpg"
    */
   @Expose()
+  @ApiPropertyOptional()
   profilePicture?: string;
 
   /**
@@ -38,6 +59,7 @@ export class UserResponseDto {
    * @example "Software developer passionate about technology"
    */
   @Expose()
+  @ApiPropertyOptional()
   bio?: string;
 
   /**
@@ -45,6 +67,7 @@ export class UserResponseDto {
    * @example "+1 555-555-5555"
    */
   @Expose()
+  @ApiPropertyOptional()
   phoneNumber?: string;
 
   /**
@@ -52,6 +75,7 @@ export class UserResponseDto {
    * @example "USA"
    */
   @Expose()
+  @ApiPropertyOptional({ enum: Country })
   country?: Country;
 
   /**
@@ -59,27 +83,31 @@ export class UserResponseDto {
    * @example "New York"
    */
   @Expose()
+  @ApiPropertyOptional()
   city?: string;
 
   /**
    * User's interests categories
-   * @example ["Technology", "Travel"]
+   * @example ["TECHNOLOGY", "GAMING"]
    */
   @Expose()
+  @ApiPropertyOptional({ type: [String], enum: InterestCategory })
   interestsCategories?: InterestCategory[];
 
   /**
-   * User's interests commodities
-   * @example ["Apple", "Google"]
+   * User's specific interests within categories
+   * @example ["Web Development", "Mobile Apps"]
    */
   @Expose()
+  @ApiPropertyOptional({ type: [String] })
   interestsCommodities?: string[];
 
   /**
    * User's preferred language
-   * @example "English"
+   * @example "ENGLISH"
    */
   @Expose()
+  @ApiPropertyOptional({ enum: Language })
   preferredLanguage?: Language;
 
   /**
@@ -87,6 +115,7 @@ export class UserResponseDto {
    * @example true
    */
   @Expose()
+  @ApiProperty()
   isActive: boolean;
 
   /**
@@ -94,6 +123,7 @@ export class UserResponseDto {
    * @example true
    */
   @Expose()
+  @ApiProperty()
   isEmailVerified: boolean;
 
   /**
@@ -101,6 +131,7 @@ export class UserResponseDto {
    * @example true
    */
   @Expose()
+  @ApiProperty()
   hasCompletedOnboarding: boolean;
 
   /**
@@ -108,61 +139,102 @@ export class UserResponseDto {
    * @example "local"
    */
   @Expose()
+  @ApiProperty({ enum: ['local', 'google'] })
   provider: 'local' | 'google';
 
   /**
-   * User's profile link
-   * @example "https://example.com/profile"
+   * User's unique profile link
+   * @example "user-abc123"
    */
   @Expose()
+  @ApiProperty()
   profileLink: string;
 
   /**
-   * User's profile QR code
-   * @example "https://example.com/profile.qr"
+   * User's unique QR code identifier
+   * @example "qr-xyz789"
    */
   @Expose()
+  @ApiProperty()
   profileQR: string;
+
+  /**
+   * User's goals and aspirations
+   * @example "Looking to collaborate on open source projects"
+   */
+  @Expose()
+  @ApiPropertyOptional()
+  goals?: string;
+
+  /**
+   * User's gender
+   * @example "male"
+   */
+  @Expose()
+  @ApiPropertyOptional({ enum: ['male', 'female', 'other'] })
+  gender?: 'male' | 'female' | 'other';
 
   /**
    * User's collaboration status
    * @example "open"
    */
   @Expose()
+  @ApiProperty({ enum: ['open', 'occupied', 'undecided'] })
   collaborationStatus: 'open' | 'occupied' | 'undecided';
 
   /**
-   * User's LinkedIn URL
-   * @example "https://www.linkedin.com/in/john-doe"
+   * User's LinkedIn profile URL
+   * @example "https://linkedin.com/in/john-doe"
    */
   @Expose()
+  @ApiPropertyOptional()
   linkedInUrl?: string;
 
   /**
-   * User's Twitter URL
-   * @example "https://www.twitter.com/john-doe"
+   * User's GitHub profile URL
+   * @example "https://github.com/john-doe"
    */
   @Expose()
-  twitterUrl?: string;
+  @ApiPropertyOptional()
+  githubUrl?: string;
 
   /**
-   * User's Instagram URL
-   * @example "https://www.instagram.com/john-doe"
+   * User's portfolio website URL
+   * @example "https://johndoe.dev"
    */
   @Expose()
+  @ApiPropertyOptional()
+  portfolioUrl?: string;
+
+  /**
+   * User's Instagram profile URL
+   * @example "https://instagram.com/john.doe"
+   */
+  @Expose()
+  @ApiPropertyOptional()
   instagramUrl?: string;
 
   /**
-   * Timestamp when the user was created
-   * @example "2024-03-17T10:00:00Z"
+   * User's timezone
+   * @example "America/New_York"
    */
   @Expose()
+  @ApiPropertyOptional()
+  timezone?: string;
+
+  /**
+   * Timestamp when the user was created
+   * @example "2024-01-01T00:00:00Z"
+   */
+  @Expose()
+  @ApiProperty()
   createdAt: Date;
 
   /**
    * Timestamp when the user was last updated
-   * @example "2024-03-17T10:00:00Z"
+   * @example "2024-01-01T00:00:00Z"
    */
   @Expose()
+  @ApiProperty()
   updatedAt: Date;
 }

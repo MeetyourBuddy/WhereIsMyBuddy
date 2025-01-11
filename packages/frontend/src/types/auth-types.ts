@@ -15,15 +15,53 @@ export interface TokenPair {
 }
 
 export interface IUser {
-  _id: string;
+  id: string;
   email: string;
   name: string;
-  createdAt: string;
-  updatedAt: string;
+  bio?: string;
+  phoneNumber?: string;
+  profileImage?: string;
+  preferredLanguage?: Language;
+  country?: Country;
+  city?: string;
+  interestsCategories?: InterestCategory[];
+  interestsCommodities?: string[];
+  collaborationStatus?: 'open' | 'occupied' | 'undecided';
+  linkedInUrl?: string;
+  instagramUrl?: string;
+  isActive?: boolean;
+  goals?: string;
+  gender?: 'male' | 'female' | 'other';
+  githubUrl?: string;
+  portfolioUrl?: string;
+  timezone?: string;
+  isEmailVerified?: boolean;
+  hasCompletedOnboarding?: boolean;
+  provider?: string;
+  profileLink?: string;
+  profileQR?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  bannerImage?: string;
 }
 
-export interface AuthResponse extends TokenPair {
-  user: IUser;
+export enum Language {}
+// Add language enum values
+
+export enum Country {}
+// Add country enum values
+
+export enum InterestCategory {}
+// Add interest category enum values
+
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  data: {
+    tokens: TokenPair;
+    user: IUser;
+  };
+  timestamp: string;
 }
 
 export interface LogoutResponse {

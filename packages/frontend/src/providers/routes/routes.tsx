@@ -7,9 +7,11 @@ import ProtectedRoute from './protected-routes';
 import NotFound from '@/pages/not-found/not-found';
 import Onboarding from '@/pages/onboarding/onboarding';
 import OAuthHandler from '@/pages/auth/oauth';
-import Activity from '@/pages/activity/activity';
 import AuthLayout from '@/layouts/auth-layout';
 import BaseLayout from '@/layouts/base-layout';
+import ProfilePage from '@/pages/profile/profile';
+import Dashboard from '@/pages/dashhboard/dashboard';
+import Activity from '@/pages/activity/activity';
 
 const Router = () => (
   <Routes>
@@ -25,9 +27,9 @@ const Router = () => (
     <Route element={<ProtectedRoute />}>
       <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<BaseLayout />}>
+        <Route path="/" element={<Dashboard />} />
         <Route path="/activity" element={<Activity />} />
-        <Route path="/activity/feed" element={<Activity />} />
-        <Route path="/" element={<div>Home</div>} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/change-password" element={<ChangePassword />} />
       </Route>
     </Route>

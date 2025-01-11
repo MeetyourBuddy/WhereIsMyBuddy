@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsBoolean,
   IsArray,
+  ValidateIf,
 } from 'class-validator';
 import { Language } from '../enums/language.enum';
 import { Country } from '../enums/location.enum';
@@ -15,7 +16,7 @@ export class UpdateUserDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  username?: string;
+  name?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -29,8 +30,9 @@ export class UpdateUserDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @ValidateIf((o, value) => value !== '')
   @IsUrl()
-  profilePicture?: string;
+  profileImage?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -66,16 +68,13 @@ export class UpdateUserDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @ValidateIf((o, value) => value !== '')
   @IsUrl()
   linkedInUrl?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUrl()
-  twitterUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
+  @ValidateIf((o, value) => value !== '')
   @IsUrl()
   instagramUrl?: string;
 
@@ -83,4 +82,31 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  goals?: string;
+
+  @ApiPropertyOptional({ enum: ['male', 'female', 'other'] })
+  @IsOptional()
+  @IsEnum(['male', 'female', 'other'])
+  gender?: 'male' | 'female' | 'other';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @ValidateIf((o, value) => value !== '')
+  @IsUrl()
+  githubUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @ValidateIf((o, value) => value !== '')
+  @IsUrl()
+  portfolioUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  timezone?: string;
 }

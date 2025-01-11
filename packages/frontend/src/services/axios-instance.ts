@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { API_CONFIG } from './config';
-import { tokenService } from '../token/token-service';
+import { API_CONFIG } from '@services/api/config';
+import { tokenService } from '@services/token/token-service';
 import { AuthResponse } from '@/types/auth-types';
 
 const axiosInstance: AxiosInstance = axios.create({
@@ -22,10 +22,11 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
-    const data = response.data as Partial<AuthResponse>;
+    const tokens = response.data.data.tokens;
 
-    if (data.accessToken) {
-      tokenService.setTokens(data.accessToken, data.refreshToken);
+    if (tokens) {
+      console.log('response hereeeeeeeee', tokens.accessToken);
+      tokenService.setTokens(tokens.accessToken, tokens.refreshToken);
     }
 
     return response;
@@ -47,7 +48,10 @@ axiosInstance.interceptors.response.use(
             refreshToken
           });
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data.tokens;
+
+          console.log('accessToken in the interceptor', accessToken);
+          console.log('newRefreshToken in the interceptor', newRefreshToken);
 
           tokenService.setTokens(accessToken, newRefreshToken);
           originalRequest.headers.set('Authorization', `Bearer ${accessToken}`);
@@ -56,7 +60,7 @@ axiosInstance.interceptors.response.use(
         }
       } catch (error) {
         tokenService.clearTokens();
-        window.location.href = '/login';
+        window.location.href = '/signin';
       }
     }
 

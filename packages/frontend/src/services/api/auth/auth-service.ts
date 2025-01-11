@@ -1,63 +1,35 @@
-import axiosInstance from '../axios-instance';
+import axiosInstance from '@services/axios-instance';
 import { tokenService } from '@services/token/token-service';
-import {
-  AuthResponse,
-  SignInCredentials,
-  SignUpData,
-  IUser,
-  LogoutResponse
-} from '@/types/auth-types';
+import { AuthResponse, SignInCredentials, SignUpData, LogoutResponse } from '@/types/auth-types';
 import { AxiosResponse } from 'axios';
 
 class AuthService {
-  async login(credentials: SignInCredentials): Promise<AxiosResponse<AuthResponse>> {
+  async login(credentials: SignInCredentials): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
-    const { accessToken, refreshToken } = response.data;
-
-    if (accessToken) {
-      tokenService.setTokens(accessToken, refreshToken);
-    }
-
-    return response;
+    return response.data;
   }
 
-  async register(userData: SignUpData): Promise<AxiosResponse<AuthResponse>> {
+  async register(userData: SignUpData): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/register', userData);
-    const { accessToken, refreshToken } = response.data;
-
-    if (accessToken) {
-      tokenService.setTokens(accessToken, refreshToken);
-    }
-
-    return response;
+    return response.data;
   }
 
-  async googleLogin(credential: string): Promise<AxiosResponse<AuthResponse>> {
+  async googleLogin(credential: string): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/google/callback', {
       credential
     });
-
-    const { accessToken, refreshToken } = response.data;
-
-    if (accessToken) {
-      tokenService.setTokens(accessToken, refreshToken);
-    }
-
-    return response;
+    return response.data;
   }
 
   async logout(): Promise<AxiosResponse<LogoutResponse>> {
-    const response = await axiosInstance.post<LogoutResponse>('/auth/logout');
-
-    if (response.status === 200) {
+    try {
+      const response = await axiosInstance.post<LogoutResponse>('/auth/logout');
       tokenService.clearTokens();
+      return response;
+    } catch (error) {
+      tokenService.clearTokens();
+      throw error;
     }
-
-    return response;
-  }
-
-  getMe(): Promise<AxiosResponse<IUser>> {
-    return axiosInstance.get<IUser>('/auth/me');
   }
 }
 
