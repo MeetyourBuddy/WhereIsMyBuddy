@@ -55,3 +55,5 @@ export interface IActivityStats {
   participationRate: number;
   isJoinable: boolean;
 }
+
+}
