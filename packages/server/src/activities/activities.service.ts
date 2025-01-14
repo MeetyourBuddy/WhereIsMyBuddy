@@ -24,6 +24,8 @@ import {
 } from './interfaces/populated-documents.interface';
 import { CheckInType } from './schemas/checkin.schema';
 import { DurationUnit } from './schemas/activity.schema';
+import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
+import { ActivityRole } from './schemas/activity.schema';
 
 @Injectable()
 export class ActivitiesService {
@@ -51,6 +53,13 @@ export class ActivitiesService {
     return endDate;
   }
 
+  private transformToDto<T>(document: any, dto: new () => T): T {
+    return plainToClass(dto, document.toJSON(), {
+      excludeExtraneousValues: true,
+      exposeUnsetFields: false,
+    });
+  }
+
   async create(
     userId: string,
     createActivityDto: CreateActivityDto,
@@ -60,19 +69,21 @@ export class ActivitiesService {
       createActivityDto.durationUnit,
     );
 
-    const startDate = createActivityDto.startDate || new Date();
-    const endDate = this.calculateEndDate(startDate, durationInDays);
-
     const createdActivity = new this.activityModel({
       ...createActivityDto,
-      admin: userId,
+      participants: [
+        {
+          user: userId,
+          role: ActivityRole.ADMIN,
+        },
+      ],
       currentSize: 1,
-      participants: [userId],
-      proposedDurationInDays: durationInDays, // Optional: store normalized duration
+      admin: userId,
+      proposedDurationInDays: durationInDays,
     });
 
     const activity = await createdActivity.save();
-    const responseData = plainToClass(ActivityResponseDto, activity.toJSON());
+    const responseData = this.transformToDto(activity, ActivityResponseDto);
 
     return {
       success: true,
@@ -90,15 +101,21 @@ export class ActivitiesService {
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activityModel
       .findById(id)
-      .populate('admin', 'name email profilePicture')
-      .populate('participants', 'name email profilePicture')
+      .populate({
+        path: 'admin',
+        select: 'name email profilePicture',
+      })
+      .populate({
+        path: 'participants.user',
+        select: 'name email profilePicture',
+      })
       .exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
 
-    const responseData = plainToClass(ActivityResponseDto, activity.toJSON());
+    const responseData = this.transformToDto(activity, ActivityResponseDto);
 
     return {
       success: true,
@@ -122,11 +139,21 @@ export class ActivitiesService {
         updateActivityDto.proposedDuration || activity.proposedDuration,
         updateActivityDto.durationUnit || activity.durationUnit,
       );
-      updateActivityDto.proposedDurationInDays = durationInDays; // Optional
+      updateActivityDto.proposedDurationInDays = durationInDays;
     }
 
     const updatedActivity = await this.activityModel
-      .findByIdAndUpdate(id, updateActivityDto, { new: true })
+      .findByIdAndUpdate(
+        id,
+        {
+          ...updateActivityDto,
+          ...(updateActivityDto.isActive === false &&
+            !updateActivityDto.endedAt && {
+              endedAt: new Date(),
+            }),
+        },
+        { new: true },
+      )
       .populate('admin', 'name email profilePicture')
       .populate('participants', 'name email profilePicture')
       .exec();
@@ -135,9 +162,9 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    const responseData = plainToClass(
+    const responseData = this.transformToDto(
+      updatedActivity,
       ActivityResponseDto,
-      updatedActivity.toJSON(),
     );
 
     return {
@@ -146,7 +173,9 @@ export class ActivitiesService {
       data: responseData,
       metadata: {
         availableSeats: updatedActivity.maxSize - updatedActivity.currentSize,
-        isJoinable: updatedActivity.currentSize < updatedActivity.maxSize,
+        isJoinable:
+          updatedActivity.isActive &&
+          updatedActivity.currentSize < updatedActivity.maxSize,
       },
     };
   }
@@ -174,9 +203,9 @@ export class ActivitiesService {
       { path: 'activity' },
     ]);
 
-    const responseData = plainToClass(
+    const responseData = this.transformToDto(
+      populatedCheckIn,
       CheckInResponseDto,
-      populatedCheckIn.toJSON(),
     );
 
     return {
@@ -197,7 +226,7 @@ export class ActivitiesService {
       .exec();
 
     const responseData = checkIns.map((checkIn) =>
-      plainToClass(CheckInResponseDto, checkIn.toJSON()),
+      this.transformToDto(checkIn, CheckInResponseDto),
     );
 
     return {
@@ -232,7 +261,7 @@ export class ActivitiesService {
       throw new NotFoundException('Check-in not found');
     }
 
-    const responseData = plainToClass(CheckInResponseDto, checkIn.toJSON());
+    const responseData = this.transformToDto(checkIn, CheckInResponseDto);
 
     return {
       success: true,
@@ -262,7 +291,7 @@ export class ActivitiesService {
       throw new NotFoundException('Check-in not found');
     }
 
-    const responseData = plainToClass(CheckInResponseDto, checkIn.toJSON());
+    const responseData = this.transformToDto(checkIn, CheckInResponseDto);
 
     return {
       success: true,
@@ -487,5 +516,44 @@ export class ActivitiesService {
         averageDurationInDays,
       },
     };
+  }
+
+  async updateParticipantRole(
+    activityId: string,
+    updateRoleDto: UpdateParticipantRoleDto,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activityModel.findById(activityId);
+
+    const participantIndex = activity.participants.findIndex(
+      (p) => p.user.toString() === updateRoleDto.userId,
+    );
+
+    if (participantIndex === -1) {
+      throw new NotFoundException('Participant not found');
+    }
+
+    activity.participants[participantIndex].role = updateRoleDto.role;
+    await activity.save();
+
+    return this.findOne(activityId);
+  }
+
+  async endActivity(
+    activityId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activityModel.findByIdAndUpdate(
+      activityId,
+      {
+        isActive: false,
+        endedAt: new Date(),
+      },
+      { new: true },
+    );
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    return this.findOne(activityId);
   }
 }

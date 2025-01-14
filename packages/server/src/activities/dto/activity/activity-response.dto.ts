@@ -8,7 +8,19 @@ import {
   JoinType,
   CheckinFrequency,
   DurationUnit,
+  ActivityRole,
 } from '../../schemas/activity.schema';
+
+@Exclude()
+export class ParticipantDto {
+  @Expose()
+  @ApiProperty({ type: () => UserResponseDto })
+  user: UserResponseDto;
+
+  @Expose()
+  @ApiProperty({ enum: ActivityRole })
+  role: ActivityRole;
+}
 
 @Exclude()
 export class ActivityResponseDto {
@@ -18,7 +30,7 @@ export class ActivityResponseDto {
    */
   @Expose()
   @ApiProperty()
-  id: string;
+  _id: string;
 
   /**
    * Title of the activity
@@ -135,8 +147,8 @@ export class ActivityResponseDto {
    * List of participants
    */
   @Expose()
-  @ApiProperty({ type: [UserResponseDto] })
-  participants: UserResponseDto[];
+  @ApiProperty({ type: [ParticipantDto] })
+  participants: ParticipantDto[];
 
   /**
    * Activity status
@@ -183,4 +195,8 @@ export class ActivityResponseDto {
   @Expose()
   @ApiPropertyOptional()
   proposedDurationInDays?: number;
+
+  @Expose()
+  @ApiPropertyOptional()
+  endedAt?: Date;
 }

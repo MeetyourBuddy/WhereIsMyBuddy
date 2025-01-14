@@ -27,6 +27,11 @@ export enum DurationUnit {
   MONTHS = 'months',
 }
 
+export enum ActivityRole {
+  ADMIN = 'admin',
+  MEMBER = 'member',
+}
+
 @Schema({
   timestamps: true,
 })
@@ -105,14 +110,32 @@ export class Activity {
   })
   rules: Array<{ rule: string; isDefault: boolean }>;
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
-  participants: (User | MongooseSchema.Types.ObjectId)[];
+  @Prop({
+    type: [
+      {
+        user: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
+        role: {
+          type: String,
+          enum: ActivityRole,
+          default: ActivityRole.MEMBER,
+        },
+      },
+    ],
+    default: [],
+  })
+  participants: Array<{
+    user: User | MongooseSchema.Types.ObjectId;
+    role: ActivityRole;
+  }>;
 
   @Prop({ default: 0 })
   currentSize: number;
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ type: Date })
+  endedAt?: Date;
 }
 
 export const ActivitySchema = SchemaFactory.createForClass(Activity);

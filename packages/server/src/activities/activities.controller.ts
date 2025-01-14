@@ -26,20 +26,21 @@ import { ActivityResponseDto } from './dto/activity/activity-response.dto';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
 import { ActivityServiceResponse } from './interfaces/common.interface';
-import { ICheckInQueryParams } from './interfaces/checkin.interface';
 import { isValidCheckInType } from './validators/checkin.validators';
 import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import {
   IStatsQueryParams,
   IActivityStats,
 } from './interfaces/activity-stats.interface';
+import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
+import { ActivityRole } from './schemas/activity.schema';
 
 @ApiTags('Activities')
 @Controller('activities')
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
-  @Post()
+  @Post('createNewActivity')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new activity' })
@@ -84,10 +85,18 @@ export class ActivitiesController {
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activitiesService.findOne(id);
 
-    if (activity.data.admin.id.toString() !== req.user.id) {
-      throw new ForbiddenException(
-        'You are not authorized to update this activity',
-      );
+    // Check if user is an admin of the activity
+    const isAdmin = activity.data.participants.some(
+      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
+    );
+
+    if (!isAdmin) {
+      throw new ForbiddenException('Only admins can update this activity');
+    }
+
+    // If activity is being ended, add endedAt date
+    if (updateActivityDto.isActive === false) {
+      updateActivityDto.endedAt = new Date();
     }
 
     return this.activitiesService.update(id, updateActivityDto);
@@ -115,7 +124,7 @@ export class ActivitiesController {
     // Validate that user is a participant
     const activity = await this.activitiesService.findOne(activityId);
     const isParticipant = activity.data.participants.some(
-      (p) => p.id.toString() === req.user.id,
+      (p) => p.user.id === req.user.id,
     );
 
     if (!isParticipant) {
@@ -141,13 +150,12 @@ export class ActivitiesController {
   async getActivityCheckIns(
     @Request() req,
     @Param('activityId') activityId: string,
-    @Query() query: ICheckInQueryParams,
   ): Promise<ActivityServiceResponse<CheckInResponseDto[]>> {
     // Validate that user has access to the activity
     const activity = await this.activitiesService.findOne(activityId);
     const isParticipantOrAdmin =
-      activity.data.participants.some((p) => p.id.toString() === req.user.id) ||
-      activity.data.admin.id.toString() === req.user.id;
+      activity.data.participants.some((p) => p.user.id === req.user.id) ||
+      activity.data.admin.id === req.user.id;
 
     if (!isParticipantOrAdmin) {
       throw new ForbiddenException('You do not have access to these check-ins');
@@ -174,8 +182,8 @@ export class ActivitiesController {
 
     // Validate user has access to the check-in
     if (
-      checkIn.data.user.id.toString() !== req.user.id &&
-      checkIn.data.activity.admin.id.toString() !== req.user.id
+      checkIn.data.user.id !== req.user.id &&
+      checkIn.data.activity.admin.id !== req.user.id
     ) {
       throw new ForbiddenException('You do not have access to this check-in');
     }
@@ -251,8 +259,8 @@ export class ActivitiesController {
     const activity = await this.activitiesService.findOne(activityId);
 
     const isParticipantOrAdmin =
-      activity.data.participants.some((p) => p.id.toString() === req.user.id) ||
-      activity.data.admin.id.toString() === req.user.id;
+      activity.data.participants.some((p) => p.user.id === req.user.id) ||
+      activity.data.admin.id === req.user.id;
 
     if (!isParticipantOrAdmin) {
       throw new ForbiddenException(
@@ -261,5 +269,48 @@ export class ActivitiesController {
     }
 
     return this.activitiesService.getActivityStats(activityId, query);
+  }
+
+  @Put(':id/participants/:userId/role')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async updateParticipantRole(
+    @Request() req,
+    @Param('id') activityId: string,
+    @Param('userId') userId: string,
+    @Body() updateRoleDto: UpdateParticipantRoleDto,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activitiesService.findOne(activityId);
+    const isAdmin = activity.data.participants.some(
+      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
+    );
+
+    if (!isAdmin) {
+      throw new ForbiddenException('Only admins can update participant roles');
+    }
+
+    return this.activitiesService.updateParticipantRole(
+      activityId,
+      updateRoleDto,
+    );
+  }
+
+  @Put(':id/end')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async endActivity(
+    @Request() req,
+    @Param('id') activityId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activitiesService.findOne(activityId);
+    const isAdmin = activity.data.participants.some(
+      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
+    );
+
+    if (!isAdmin) {
+      throw new ForbiddenException('Only admins can end the activity');
+    }
+
+    return this.activitiesService.endActivity(activityId);
   }
 }
