@@ -234,7 +234,6 @@ export class ActivitiesService {
       updatedActivity,
     const responseData = plainToClass(
       ActivityResponseDto,
-      updatedActivity.toJSON(),
     );
     const responseData = plainToClass(
       ActivityResponseDto,
@@ -616,9 +615,9 @@ export class ActivitiesService {
       { path: 'activity' },
     ]);
 
-    const responseData = plainToClass(
+    const responseData = this.transformToDto(
+      populatedCheckIn,
       CheckInResponseDto,
-      populatedCheckIn.toJSON(),
     );
 
     return {
@@ -639,7 +638,7 @@ export class ActivitiesService {
       .exec();
 
     const responseData = checkIns.map((checkIn) =>
-      plainToClass(CheckInResponseDto, checkIn.toJSON()),
+      this.transformToDto(checkIn, CheckInResponseDto),
     );
 
     return {
@@ -674,7 +673,7 @@ export class ActivitiesService {
       throw new NotFoundException('Check-in not found');
     }
 
-    const responseData = plainToClass(CheckInResponseDto, checkIn.toJSON());
+    const responseData = this.transformToDto(checkIn, CheckInResponseDto);
 
     return {
       success: true,
@@ -704,7 +703,7 @@ export class ActivitiesService {
       throw new NotFoundException('Check-in not found');
     }
 
-    const responseData = plainToClass(CheckInResponseDto, checkIn.toJSON());
+    const responseData = this.transformToDto(checkIn, CheckInResponseDto);
 
     return {
       success: true,
