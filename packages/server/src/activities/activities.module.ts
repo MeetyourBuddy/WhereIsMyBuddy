@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Activity, ActivitySchema } from './schemas/activity.schema';
 import { CheckIn, CheckInSchema } from './schemas/checkin.schema';
 import { ActivitiesController } from './activities.controller';
-import { Activity, ActivitySchema } from './schemas/activity.schema';
+import { ActivitiesService } from './activities.service';
 
 @Module({
   imports: [
@@ -13,8 +13,6 @@ import { Activity, ActivitySchema } from './schemas/activity.schema';
     ]),
   ],
   controllers: [ActivitiesController],
-  providers: [ActivitiesService],
-  exports: [ActivitiesService],
   providers: [ActivitiesService],
   exports: [ActivitiesService],
 })
