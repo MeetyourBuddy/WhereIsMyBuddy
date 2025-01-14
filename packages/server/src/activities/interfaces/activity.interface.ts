@@ -28,6 +28,7 @@ export interface IActivityResponse {
   participants: Array<Types.ObjectId | User>;
   isActive: boolean;
   availableSeats: number;
+  availableSeats: number;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,4 +1,4 @@
-import axiosInstance from '../axios-instance';
+import axiosInstance from '@services/axios-instance';
 import { tokenService } from '@services/token/token-service';
 import { AuthResponse, SignInCredentials, SignUpData, LogoutResponse } from '@/types/auth-types';
 import { AxiosResponse } from 'axios';

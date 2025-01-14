@@ -38,6 +38,7 @@ export enum ActivityRole {
   timestamps: true,
 })
 export class Activity extends Document {
+export class Activity extends Document {
   @Prop({ required: true, trim: true })
   title: string;
 

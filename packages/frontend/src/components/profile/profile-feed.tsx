@@ -31,10 +31,6 @@ interface ProfileFeedProps {
   onSubmit: (data: Profile) => Promise<void>;
 }
 
-interface ProfileFeedProps {
-  onSubmit: (data: Profile) => Promise<void>;
-}
-
 const ProfileSection = ({
   title,
   icon,
@@ -50,9 +46,6 @@ const ProfileSection = ({
           {icon}
           <CardTitle>{title}</CardTitle>
         </div>
-        <Button type="button" variant="ghost" size="icon" onClick={() => onEditClick(sectionKey)}>
-          <Edit2 className="h-4 w-4" />
-        </Button>
         <Button type="button" variant="ghost" size="icon" onClick={() => onEditClick(sectionKey)}>
           <Edit2 className="h-4 w-4" />
         </Button>
@@ -89,14 +82,6 @@ const ProfileFeed = ({ onSubmit }: ProfileFeedProps) => {
       await onSubmit(data);
       setEditingSection(null);
     } catch (error) {
-      console.error('Submission error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsSubmitting(false);
       console.error('Submission error:', error);
       toast({
         title: 'Error',
@@ -191,60 +176,7 @@ const ProfileFeed = ({ onSubmit }: ProfileFeedProps) => {
           <QRCodeSection />
         </div>
       </ProfileSection>
-      {/* Profile Details Section */}
-      <ProfileSection
-        title="Profile Details"
-        icon={<Globe className="h-5 w-5" />}
-        sectionKey="profile"
-        isEditing={editingSection === 'profile'}
-        onEditClick={handleEditClick}
-      >
-        <div className="space-y-4">
-          <FormTextarea name="bio" label="Bio" placeholder="Tell us about yourself" />
-          <FormInput
-            name="profileLink"
-            label="Profile Link"
-            placeholder="Your profile URL"
-            customError="Profile link is required"
-            disabled={true}
-            hasInputIcon={true}
-            rightIcon="copy"
-          />
-          <FormSelect
-            name="collaborationStatus"
-            label="Collaboration Status"
-            placeholder="Select status"
-            options={[
-              { label: 'Open', value: 'open' },
-              { label: 'Closed', value: 'closed' },
-              { label: 'Undecided', value: 'undecided' }
-            ]}
-          />
-          <QRCodeSection />
-        </div>
-      </ProfileSection>
 
-      {/* Social Links Section */}
-      <ProfileSection
-        title="Social & Professional Links"
-        icon={<Link className="h-5 w-5" />}
-        sectionKey="social"
-        isEditing={editingSection === 'social'}
-        onEditClick={handleEditClick}
-      >
-        <div className="space-y-4">
-          {['Portfolio', 'GitHub', 'LinkedIn'].map((platform) => (
-            <FormInput
-              key={platform}
-              name={`${platform.toLowerCase()}Url`}
-              label={platform}
-              placeholder={`Your ${platform} URL`}
-              hasLabelInput={true}
-              leftLabel="https://"
-            />
-          ))}
-        </div>
-      </ProfileSection>
       {/* Social Links Section */}
       <ProfileSection
         title="Social & Professional Links"
@@ -358,26 +290,7 @@ const ProfileFeed = ({ onSubmit }: ProfileFeedProps) => {
       >
         <FormTextarea name="goals" label="Collaboration Goals" placeholder="What are your goals?" />
       </ProfileSection>
-      {/* Aspirations Section */}
-      <ProfileSection
-        title="Aspirations"
-        icon={<Target className="h-5 w-5" />}
-        sectionKey="aspirations"
-        isEditing={editingSection === 'aspirations'}
-        onEditClick={handleEditClick}
-      >
-        <FormTextarea name="goals" label="Collaboration Goals" placeholder="What are your goals?" />
-      </ProfileSection>
 
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={!isDirty || isSubmitting}
-        onClick={() => console.log('Button clicked', { isDirty, isSubmitting })}
-      >
-        {isSubmitting ? 'Saving...' : 'Save Profile'}
-      </Button>
-    </form>
       <Button
         type="submit"
         className="w-full"

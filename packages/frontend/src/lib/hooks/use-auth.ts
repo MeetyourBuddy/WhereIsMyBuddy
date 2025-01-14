@@ -20,13 +20,11 @@ export function useAuth() {
     mutationFn: authService.login,
     onSuccess: (userData) => {
       const user = userData?.data?.user;
-
-      // Update both auth context and profile store
       setUser(user);
       setProfile(user as IUserData);
 
       toast({
-        title: 'Authentication!',
+        title: 'Authentication',
         description: 'Login successful!'
       });
 
@@ -42,16 +40,12 @@ export function useAuth() {
       console.error(error);
       setError(error?.message || 'Login failed');
       toast({
-        title: 'Authentication!',
+        title: 'Authentication',
         description: 'Login failed'
       });
     },
-    onMutate: () => {
-      setLoading(true);
-    },
-    onSettled: () => {
-      setLoading(false);
-    }
+    onMutate: () => setLoading(true),
+    onSettled: () => setLoading(false)
   });
 
   // Register mutation
@@ -59,13 +53,11 @@ export function useAuth() {
     mutationFn: authService.register,
     onSuccess: (userData) => {
       const user = userData?.data?.user;
-
-      // Update both auth context and profile store
       setUser(user);
       setProfile(user as IUserData);
 
       toast({
-        title: 'Authentication!',
+        title: 'Authentication',
         description: 'User registration successful!'
       });
 
@@ -76,16 +68,12 @@ export function useAuth() {
       console.error(error);
       setError(error?.message || 'Registration failed');
       toast({
-        title: 'Authentication!',
+        title: 'Authentication',
         description: 'User registration failed'
       });
     },
-    onMutate: () => {
-      setLoading(true);
-    },
-    onSettled: () => {
-      setLoading(false);
-    }
+    onMutate: () => setLoading(true),
+    onSettled: () => setLoading(false)
   });
 
   // Logout mutation
@@ -93,14 +81,12 @@ export function useAuth() {
     mutationFn: authService.logout,
     onSuccess: () => {
       // Clear all auth-related state
-      // Clear all auth-related state
       setUser(null);
       clearProfile();
       queryClient.clear();
       tokenService.clearTokens();
 
       toast({
-        title: 'Authentication',
         title: 'Authentication',
         description: 'Logged out successfully!'
       });
@@ -120,24 +106,13 @@ export function useAuth() {
         title: 'Authentication Error',
         description: 'Logout failed, but you have been logged out locally.',
         variant: 'destructive'
-        title: 'Authentication Error',
-        description: 'Logout failed, but you have been logged out locally.',
-        variant: 'destructive'
       });
 
       navigate('/signin');
     },
-    onMutate: () => {
-      setLoading(true);
-    },
-    onSettled: () => {
-      setLoading(false);
-    }
+    onMutate: () => setLoading(true),
+    onSettled: () => setLoading(false)
   });
-
-  const logout = () => {
-    logoutMutation.mutate();
-  };
 
   const logout = () => {
     logoutMutation.mutate();
