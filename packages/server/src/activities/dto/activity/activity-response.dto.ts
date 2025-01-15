@@ -140,9 +140,6 @@ export class ActivityResponseDto {
         isDefault: { type: 'boolean' },
       },
     },
-        isDefault: { type: 'boolean' },
-      },
-    },
   })
   rules: Array<{ rule: string; isDefault: boolean }>;
 

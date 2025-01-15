@@ -16,11 +16,13 @@ export interface IActivityStats {
   participantStats: IParticipantStats[];
   checkInsByType: Record<CheckInType, number>;
   averageCompletionTime: number;
-  mostActiveDay?: string;
-  mostPopularCheckInType?: CheckInType;
+  mostActiveDay: string;
+  mostPopularCheckInType: CheckInType;
   longestStreak: number;
   totalDurationInDays: number;
   averageDurationInDays: number;
+  availableSeats: number;
+  isJoinable: boolean;
 }
 
 export interface IStatsQueryParams {

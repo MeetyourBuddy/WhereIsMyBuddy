@@ -8,7 +8,7 @@ export interface IUserResponse {
   name: string;
   dateOfBirth?: Date;
   age?: number;
-  profilePicture?: string;
+  profileImage?: string;
   bio?: string;
   phoneNumber?: string;
   country?: Country;
@@ -29,8 +29,8 @@ export interface IUserResponse {
   githubUrl?: string;
   portfolioUrl?: string;
   instagramUrl?: string;
-  githubUrl?: string;
-  portfolioUrl?: string;
   createdAt: Date;
   updatedAt: Date;
+  profilePicture?: string;
+  timezone?: string;
 }

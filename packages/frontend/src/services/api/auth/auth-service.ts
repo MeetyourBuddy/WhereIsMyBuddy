@@ -6,8 +6,7 @@ import { AxiosResponse } from 'axios';
 class AuthService {
   async login(credentials: SignInCredentials): Promise<AuthResponse> {
     const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
-
-    return response;
+    return response.data;
   }
 
   async register(userData: SignUpData): Promise<AuthResponse> {
