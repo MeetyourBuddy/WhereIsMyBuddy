@@ -20,7 +20,8 @@ import {
   PlusCircleIcon,
   CopyIcon,
   CalendarIcon,
-  SendIcon
+  SendIcon,
+  EyeIcon
 } from 'lucide-react';
 
 export const Icons = {
@@ -46,6 +47,7 @@ export const Icons = {
   plusCircle: PlusCircleIcon,
   copy: CopyIcon,
   send: SendIcon,
+  eye: EyeIcon,
   support: ({ ...props }) => (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path
