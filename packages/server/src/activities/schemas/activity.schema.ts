@@ -14,12 +14,22 @@ export enum JoinType {
   FIXED = 'fixed',
 }
 
-export enum ContactFrequency {
+export enum CheckinFrequency {
   DAILY = 'daily',
   WEEKLY = 'weekly',
   BIWEEKLY = 'biweekly',
   MONTHLY = 'monthly',
   OTHER = 'other',
+}
+
+export enum DurationUnit {
+  DAYS = 'days',
+  MONTHS = 'months',
+}
+
+export enum ActivityRole {
+  ADMIN = 'admin',
+  MEMBER = 'member',
 }
 
 @Schema({
@@ -33,21 +43,32 @@ export class Activity extends Document {
   description: string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-  admin: User;
+  admin: User | MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true })
-  proposedDuration: number; // number of days
+  proposedDuration: number;
+
+  @Prop({
+    type: String,
+    enum: DurationUnit,
+    required: true,
+    default: DurationUnit.DAYS,
+  })
+  durationUnit: DurationUnit;
+
+  @Prop({ required: false })
+  proposedDurationInDays?: number;
 
   @Prop({ trim: true })
   bannerImage?: string;
 
   @Prop({
     type: String,
-    enum: ContactFrequency,
+    enum: CheckinFrequency,
     required: false,
-    default: ContactFrequency.WEEKLY,
+    default: CheckinFrequency.WEEKLY,
   })
-  contactFrequency: ContactFrequency;
+  contactFrequency: CheckinFrequency;
 
   @Prop({
     type: String,
@@ -90,24 +111,37 @@ export class Activity extends Document {
   rules: Array<{ rule: string; isDefault: boolean }>;
 
   @Prop({
-    type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }],
+    type: [
+      {
+        user: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
+        role: {
+          type: String,
+          enum: ActivityRole,
+          default: ActivityRole.MEMBER,
+        },
+      },
+    ],
     default: [],
   })
-  participants: User[];
+  participants: Array<{
+    user: User | MongooseSchema.Types.ObjectId;
+    role: ActivityRole;
+  }>;
 
   @Prop({ default: 0 })
   currentSize: number;
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ type: Date })
+  endedAt?: Date;
 }
 
 export const ActivitySchema = SchemaFactory.createForClass(Activity);
 
-// Add index for better query performance
 ActivitySchema.index({ title: 'text', description: 'text', tags: 'text' });
 
-// Add virtual field for available seats
 ActivitySchema.virtual('availableSeats').get(function () {
   return this.maxSize - this.currentSize;
 });

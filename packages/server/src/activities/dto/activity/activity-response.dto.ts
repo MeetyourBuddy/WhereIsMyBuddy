@@ -2,12 +2,25 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
-import { UserResponseDto } from '../../users/dto/user-response.dto';
+import { UserResponseDto } from '../../../users/dto/user-response.dto';
 import {
   ActivityType,
   JoinType,
-  ContactFrequency,
-} from '../schemas/activity.schema';
+  CheckinFrequency,
+  DurationUnit,
+  ActivityRole,
+} from '../../schemas/activity.schema';
+
+@Exclude()
+export class ParticipantDto {
+  @Expose()
+  @ApiProperty({ type: () => UserResponseDto })
+  user: UserResponseDto;
+
+  @Expose()
+  @ApiProperty({ enum: ActivityRole })
+  role: ActivityRole;
+}
 
 @Exclude()
 export class ActivityResponseDto {
@@ -17,7 +30,7 @@ export class ActivityResponseDto {
    */
   @Expose()
   @ApiProperty()
-  id: string;
+  _id: string;
 
   /**
    * Title of the activity
@@ -63,8 +76,8 @@ export class ActivityResponseDto {
    * @example "WEEKLY"
    */
   @Expose()
-  @ApiProperty({ enum: ContactFrequency })
-  contactFrequency: ContactFrequency;
+  @ApiProperty({ enum: CheckinFrequency })
+  contactFrequency: CheckinFrequency;
 
   /**
    * Type of activity (public/private)
@@ -134,8 +147,8 @@ export class ActivityResponseDto {
    * List of participants
    */
   @Expose()
-  @ApiProperty({ type: [UserResponseDto] })
-  participants: UserResponseDto[];
+  @ApiProperty({ type: [ParticipantDto] })
+  participants: ParticipantDto[];
 
   /**
    * Activity status
@@ -170,4 +183,20 @@ export class ActivityResponseDto {
   @Expose()
   @ApiProperty()
   updatedAt: Date;
+
+  /**
+   * Duration unit of the activity
+   * @example "DAYS"
+   */
+  @Expose()
+  @ApiProperty({ enum: DurationUnit })
+  durationUnit: DurationUnit;
+
+  @Expose()
+  @ApiPropertyOptional()
+  proposedDurationInDays?: number;
+
+  @Expose()
+  @ApiPropertyOptional()
+  endedAt?: Date;
 }

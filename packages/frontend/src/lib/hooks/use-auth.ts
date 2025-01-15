@@ -20,13 +20,11 @@ export function useAuth() {
     mutationFn: authService.login,
     onSuccess: (userData) => {
       const user = userData?.data?.user;
-
-      // Update both auth context and profile store
       setUser(user);
       setProfile(user as IUserData);
 
       toast({
-        title: 'Authentication!',
+        title: 'Authentication',
         description: 'Login successful!'
       });
 
@@ -42,16 +40,12 @@ export function useAuth() {
       console.error(error);
       setError(error?.message || 'Login failed');
       toast({
-        title: 'Authentication!',
+        title: 'Authentication',
         description: 'Login failed'
       });
     },
-    onMutate: () => {
-      setLoading(true);
-    },
-    onSettled: () => {
-      setLoading(false);
-    }
+    onMutate: () => setLoading(true),
+    onSettled: () => setLoading(false)
   });
 
   // Register mutation
@@ -59,13 +53,11 @@ export function useAuth() {
     mutationFn: authService.register,
     onSuccess: (userData) => {
       const user = userData?.data?.user;
-
-      // Update both auth context and profile store
       setUser(user);
       setProfile(user as IUserData);
 
       toast({
-        title: 'Authentication!',
+        title: 'Authentication',
         description: 'User registration successful!'
       });
 
@@ -76,16 +68,12 @@ export function useAuth() {
       console.error(error);
       setError(error?.message || 'Registration failed');
       toast({
-        title: 'Authentication!',
+        title: 'Authentication',
         description: 'User registration failed'
       });
     },
-    onMutate: () => {
-      setLoading(true);
-    },
-    onSettled: () => {
-      setLoading(false);
-    }
+    onMutate: () => setLoading(true),
+    onSettled: () => setLoading(false)
   });
 
   // Logout mutation
@@ -122,12 +110,8 @@ export function useAuth() {
 
       navigate('/signin');
     },
-    onMutate: () => {
-      setLoading(true);
-    },
-    onSettled: () => {
-      setLoading(false);
-    }
+    onMutate: () => setLoading(true),
+    onSettled: () => setLoading(false)
   });
 
   const logout = () => {

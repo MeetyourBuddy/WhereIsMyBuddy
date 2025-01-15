@@ -9,22 +9,17 @@ export interface PaginatedResponse<T> {
 }
 
 export interface PaginationMetadata {
-  total: number;
-  offset: number;
-  limit: number;
-  hasMore: boolean;
+  total?: number;
+  offset?: number;
+  limit?: number;
+  hasMore?: boolean;
 }
 
 export interface ServiceResponse<T> {
   success: boolean;
-  message: string;
+  message?: string;
   data: T;
-  metadata?: {
-    total?: number;
-    offset?: number;
-    limit?: number;
-    hasMore?: boolean;
-  };
+  metadata?: PaginationMetadata;
 }
 
 export interface Tokens {

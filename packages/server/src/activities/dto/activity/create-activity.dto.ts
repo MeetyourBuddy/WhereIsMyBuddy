@@ -1,7 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsNumber, IsOptional, IsDate, IsArray, Min } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsDate,
+  IsArray,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ActivityType, JoinType, ContactFrequency } from '../schemas/activity.schema';
+import {
+  ActivityType,
+  JoinType,
+  CheckinFrequency,
+  DurationUnit,
+} from '../../schemas/activity.schema';
 
 export class CreateActivityDto {
   @ApiProperty({ example: 'Learn Spanish Together' })
@@ -12,20 +25,28 @@ export class CreateActivityDto {
   @IsString()
   description: string;
 
-  @ApiProperty({ example: 30, description: 'Duration in days' })
+  @ApiProperty({ description: 'Duration value' })
   @IsNumber()
   @Min(1)
   proposedDuration: number;
+
+  @ApiProperty({
+    enum: DurationUnit,
+    description: 'Unit of duration (days or months)',
+    example: DurationUnit.DAYS,
+  })
+  @IsEnum(DurationUnit)
+  durationUnit: DurationUnit;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   bannerImage?: string;
 
-  @ApiPropertyOptional({ enum: ContactFrequency })
+  @ApiPropertyOptional({ enum: CheckinFrequency })
   @IsOptional()
-  @IsEnum(ContactFrequency)
-  contactFrequency?: ContactFrequency;
+  @IsEnum(CheckinFrequency)
+  contactFrequency?: CheckinFrequency;
 
   @ApiProperty({ enum: ActivityType })
   @IsEnum(ActivityType)
@@ -58,4 +79,4 @@ export class CreateActivityDto {
   @IsArray()
   @IsString({ each: true })
   rules?: string[];
-} 
+}
