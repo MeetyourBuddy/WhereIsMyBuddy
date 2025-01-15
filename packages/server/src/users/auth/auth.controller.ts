@@ -68,7 +68,7 @@ export class AuthController {
   })
   async refreshTokens(
     @GetUser('sub') userId: string,
-    @Body('refreshToken') refreshToken: string,
+    @GetUser('refreshToken') refreshToken: string,
   ): Promise<Tokens> {
     return this.authService.refreshTokens(userId, refreshToken);
   }

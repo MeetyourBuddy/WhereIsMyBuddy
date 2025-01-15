@@ -12,6 +12,7 @@ import BaseLayout from '@/layouts/base-layout';
 import ProfilePage from '@/pages/profile/profile';
 import Dashboard from '@/pages/dashhboard/dashboard';
 import Activity from '@/pages/activity/activity';
+import UserProfileCard from '@/pages/profile/profile-card';
 
 const Router = () => (
   <Routes>
@@ -30,6 +31,7 @@ const Router = () => (
         <Route path="/" element={<Dashboard />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/card" element={<UserProfileCard />} />
         <Route path="/change-password" element={<ChangePassword />} />
       </Route>
     </Route>

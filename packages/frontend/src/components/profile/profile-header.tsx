@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/common/ui/avatar';
 import { Camera } from 'lucide-react';
 import { PreviewModal } from '@/components/common/modal/preview-modal';
-
+import { IconButton } from '../common/ui/icon-button';
+import { useNavigate } from 'react-router-dom';
 interface ProfileHeaderProps {
   name: string;
   email?: string;
@@ -26,7 +27,7 @@ const ProfileHeader = ({
   const [bannerPreviewUrl, setBannerPreviewUrl] = useState(bannerUrl || '');
   const [selectedBannerFile, setSelectedBannerFile] = useState<File | null>(null);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
-
+  const navigate = useNavigate();
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -106,6 +107,14 @@ const ProfileHeader = ({
             <h6 className="font-bold">{name}</h6>
             <p className="text-paragraph-md italic text-muted-foreground">{email}</p>
           </div>
+        </div>
+        <div className="absolute bottom-[-55px] right-0 flex items-end">
+          <IconButton
+            className="max-w-[200px] rounded-xl px-4 py-2 text-xs font-bold text-white"
+            rightIcon="eye"
+            onClick={() => navigate(`/profile/card`)}
+            label="View Profile"
+          />
         </div>
       </div>
 

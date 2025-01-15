@@ -19,6 +19,7 @@ class TokenService {
   }
 
   getRefreshToken(): string | undefined {
+    console.log('refreshToken', Cookies.get(COOKIE_CONFIG.refreshToken.name));
     return Cookies.get(COOKIE_CONFIG.refreshToken.name);
   }
 
