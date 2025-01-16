@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/common/ui/avatar';
-import { Camera } from 'lucide-react';
+import { Camera, Trash2, Image } from 'lucide-react';
 import { PreviewModal } from '@/components/common/modal/preview-modal';
 import { IconButton } from '../common/ui/icon-button';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ interface ProfileHeaderProps {
   bannerUrl?: string;
   onAvatarUpdate: (newAvatarUrl: string, file: File) => Promise<void>;
   onBannerUpdate: (newBannerUrl: string, file: File) => Promise<void>;
+  onBannerDelete?: () => Promise<void>;
 }
 
 const ProfileHeader = ({
@@ -19,7 +20,8 @@ const ProfileHeader = ({
   avatarUrl,
   bannerUrl,
   onAvatarUpdate,
-  onBannerUpdate
+  onBannerUpdate,
+  onBannerDelete
 }: ProfileHeaderProps) => {
   const [previewUrl, setPreviewUrl] = useState(avatarUrl);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -77,17 +79,49 @@ const ProfileHeader = ({
     }
   };
 
+  const handleBannerDelete = async () => {
+    if (onBannerDelete) {
+      try {
+        await onBannerDelete();
+        setBannerPreviewUrl('');
+        setSelectedBannerFile(null);
+      } catch (error) {
+        console.error('Failed to delete banner:', error);
+      }
+    }
+  };
+
   return (
     <>
       <div className="relative mb-[70px] h-[160px] w-full">
         <div
-          className="h-full w-full bg-warning-10 bg-cover bg-center"
+          className="relative h-full w-full cursor-pointer bg-warning-10 bg-cover bg-center"
           style={{ backgroundImage: bannerUrl ? `url(${bannerUrl})` : undefined }}
+          onClick={() => document.getElementById('banner-upload')?.click()}
         >
-          <label className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
-            <Camera className="h-8 w-8 text-white" />
-            <input type="file" className="hidden" accept="image/*" onChange={handleBannerSelect} />
-          </label>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+            <Image className="h-8 w-8 text-white" />
+          </div>
+
+          {bannerUrl && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleBannerDelete();
+              }}
+              className="absolute right-4 top-4 rounded-full bg-black/60 p-2 transition-colors hover:bg-black/80"
+            >
+              <Trash2 className="h-5 w-5 text-white" />
+            </button>
+          )}
+
+          <input
+            id="banner-upload"
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={handleBannerSelect}
+          />
         </div>
 
         <div className="absolute left-6 top-1/3 flex items-end">
@@ -112,7 +146,7 @@ const ProfileHeader = ({
           <IconButton
             className="max-w-[200px] rounded-xl px-4 py-2 text-xs font-bold text-white"
             rightIcon="eye"
-            onClick={() => navigate(`/profile/card`)}
+            onClick={() => navigate(`/profile`)}
             label="View Profile"
           />
         </div>

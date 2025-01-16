@@ -11,39 +11,57 @@ export class RefreshTokenGuard extends AuthGuard('jwt-refresh') {
   private readonly logger = new Logger(RefreshTokenGuard.name);
 
   canActivate(context: ExecutionContext) {
-    // Get the token from the Authorization header
     const request = context.switchToHttp().getRequest();
-    const token = request.headers.authorization?.replace('Bearer ', '');
+    const authHeader = request.headers.authorization;
 
-    if (!token) {
+    this.logger.debug('Received authorization header', {
+      header: authHeader?.substring(0, 20) + '...', // Log first 20 chars for debugging
+    });
+
+    // Improved token extraction and validation
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      this.logger.error('Invalid authorization header format');
+      throw new UnauthorizedException('Invalid authorization header format');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+
+    if (!token || token.trim() === '') {
       this.logger.error('No refresh token provided');
       throw new UnauthorizedException('No refresh token provided');
     }
+
+    // Store token in request for potential use in strategy
+    request.refreshToken = token;
 
     return super.canActivate(context);
   }
 
   handleRequest<TUser = any>(err: any, user: any, info: any): TUser {
-    // Handle specific JWT errors
-    if (
-      info?.name === 'JsonWebTokenError' ||
-      info?.message === 'invalid signature'
-    ) {
-      this.logger.error('Invalid refresh token signature');
-      throw new UnauthorizedException('Invalid refresh token signature');
+    // More detailed error logging
+    if (info || err) {
+      this.logger.error('Token validation failed', {
+        error: err?.message,
+        info: info?.message,
+        errorName: info?.name,
+      });
+    }
+
+    // Handle specific JWT errors with more detailed messages
+    if (info?.name === 'JsonWebTokenError') {
+      throw new UnauthorizedException(
+        'Invalid refresh token format or signature',
+      );
     }
 
     if (info?.name === 'TokenExpiredError') {
-      this.logger.error('Refresh token has expired');
       throw new UnauthorizedException('Refresh token has expired');
     }
 
     if (err || !user) {
-      this.logger.error('Refresh token validation failed', {
-        error: err?.message || 'No user found',
-        info: info?.message,
-      });
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException(
+        err?.message || 'Refresh token validation failed',
+      );
     }
 
     this.logger.debug('Refresh token validation successful', {

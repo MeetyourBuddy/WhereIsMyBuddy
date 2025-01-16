@@ -40,7 +40,7 @@ import { ActivityRole } from './schemas/activity.schema';
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
-  @Post('createNewActivity')
+  @Post('create')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new activity' })

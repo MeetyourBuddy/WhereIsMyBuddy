@@ -15,6 +15,7 @@ import {
   CheckinFrequency,
   DurationUnit,
 } from '../../schemas/activity.schema';
+import { CheckInResponseDto } from '../checkin/checkin-response.dto';
 
 export class CreateActivityDto {
   @ApiProperty({ example: 'Learn Spanish Together' })
@@ -72,11 +73,17 @@ export class CreateActivityDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  categories?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   tags?: string[];
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  rules?: string[];
+  rules?: { rule: string; isDefault: boolean }[];
 }

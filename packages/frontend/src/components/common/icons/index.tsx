@@ -2,7 +2,6 @@ import {
   NewspaperIcon,
   UserCircleIcon,
   SettingsIcon,
-  StarIcon,
   HomeIcon,
   TicketIcon,
   ChevronLeftIcon,
@@ -21,7 +20,11 @@ import {
   CopyIcon,
   CalendarIcon,
   SendIcon,
-  EyeIcon
+  EyeIcon,
+  StarIcon,
+  PencilIcon,
+  ImageIcon,
+  CheckIcon
 } from 'lucide-react';
 
 export const Icons = {
@@ -48,6 +51,10 @@ export const Icons = {
   copy: CopyIcon,
   send: SendIcon,
   eye: EyeIcon,
+  star: StarIcon,
+  edit: PencilIcon,
+  image: ImageIcon,
+  check: CheckIcon,
   support: ({ ...props }) => (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path
