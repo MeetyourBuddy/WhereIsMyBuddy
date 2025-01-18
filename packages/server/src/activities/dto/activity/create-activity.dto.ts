@@ -15,7 +15,6 @@ import {
   CheckinFrequency,
   DurationUnit,
 } from '../../schemas/activity.schema';
-import { CheckInResponseDto } from '../checkin/checkin-response.dto';
 
 export class CreateActivityDto {
   @ApiProperty({ example: 'Learn Spanish Together' })
