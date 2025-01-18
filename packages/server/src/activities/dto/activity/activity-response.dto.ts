@@ -128,6 +128,14 @@ export class ActivityResponseDto {
   tags: string[];
 
   /**
+   * Activity categories
+   * @example ["technology", "travel", "health"]
+   */
+  @Expose()
+  @ApiPropertyOptional({ type: [String] })
+  categories?: string[];
+
+  /**
    * Activity rules
    */
   @Expose()

@@ -18,7 +18,7 @@ const profileImage = '/avatars/user-profile.png';
 export const ProfileCard = ({ profile, onConnect }: ProfileCardProps) => {
   return (
     <CardContainer className="inter-var">
-      <CardBody className="group/card relative h-auto w-auto rounded-xl border border-black/[0.1] p-6 dark:border-white/[0.2] dark:bg-black dark:hover:shadow-2xl dark:hover:shadow-primary/[0.1] sm:w-[30rem]">
+      <CardBody className="group/card relative h-auto w-auto rounded-xl border border-black/[0.1] bg-white p-6 dark:border-white/[0.2] dark:bg-black dark:hover:shadow-2xl dark:hover:shadow-primary/[0.1] sm:w-[30rem]">
         {/* Header with Avatar and Basic Info */}
         <CardItem translateZ="50" className="flex w-full flex-col items-center gap-6">
           <Avatar className="h-[100px] w-[100px] bg-gradient-to-r from-green-500 to-primary ring-2 ring-primary/20">
@@ -97,7 +97,7 @@ export const ProfileCard = ({ profile, onConnect }: ProfileCardProps) => {
             onClick={onConnect}
             className="max-w-[200px] rounded-xl bg-black px-4 py-2 text-xs font-bold text-white dark:bg-white dark:text-black"
             rightIcon="send"
-            label="Connect"
+            label="Share Profile"
           />
         </CardItem>
       </CardBody>

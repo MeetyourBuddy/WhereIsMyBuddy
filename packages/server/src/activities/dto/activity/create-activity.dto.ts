@@ -72,11 +72,17 @@ export class CreateActivityDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  categories?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   tags?: string[];
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  rules?: string[];
+  rules?: { rule: string; isDefault: boolean }[];
 }
