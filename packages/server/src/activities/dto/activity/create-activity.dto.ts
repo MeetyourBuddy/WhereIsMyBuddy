@@ -7,13 +7,17 @@ import {
   IsDate,
   IsArray,
   Min,
+  Max,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
   ActivityType,
   JoinType,
-  CheckinFrequency,
+  CheckinFrequencyUnit,
   DurationUnit,
+  CheckInType,
+  DayOfWeek,
 } from '../../schemas/activity.schema';
 
 export class CreateActivityDto {
@@ -42,11 +46,6 @@ export class CreateActivityDto {
   @IsOptional()
   @IsString()
   bannerImage?: string;
-
-  @ApiPropertyOptional({ enum: CheckinFrequency })
-  @IsOptional()
-  @IsEnum(CheckinFrequency)
-  contactFrequency?: CheckinFrequency;
 
   @ApiProperty({ enum: ActivityType })
   @IsEnum(ActivityType)
@@ -84,5 +83,61 @@ export class CreateActivityDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  rules?: { rule: string; isDefault: boolean }[];
+  rules?: string[];
+
+  @ApiProperty({
+    type: [String],
+    enum: CheckInType,
+    description: 'Types of check-ins allowed for this activity',
+    example: ['photo', 'hours', 'text'],
+  })
+  @IsArray()
+  @IsEnum(CheckInType, { each: true })
+  @IsOptional()
+  allowedCheckInTypes?: CheckInType[];
+
+  @ApiProperty({ minimum: 1 })
+  @IsNumber()
+  @Min(1)
+  checkinFrequency: number;
+
+  @ApiProperty({ enum: CheckinFrequencyUnit })
+  @IsEnum(CheckinFrequencyUnit)
+  checkinFrequencyUnit: CheckinFrequencyUnit;
+
+  @ApiPropertyOptional({ enum: DayOfWeek, isArray: true })
+  @IsOptional()
+  @IsEnum(DayOfWeek, { each: true })
+  @ValidateIf(
+    (o) =>
+      o.checkinFrequencyUnit === CheckinFrequencyUnit.WEEKLY ||
+      o.checkinFrequencyUnit === CheckinFrequencyUnit.BIWEEKLY,
+  )
+  checkinDays?: DayOfWeek[];
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 31 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(31)
+  @ValidateIf((o) => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
+  checkinDateOfMonth?: number;
+
+  @ApiPropertyOptional({ enum: DayOfWeek })
+  @IsOptional()
+  @IsEnum(DayOfWeek)
+  @ValidateIf((o) => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
+  checkinDayOfWeek?: DayOfWeek;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 4 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(4)
+  @ValidateIf(
+    (o) =>
+      o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY &&
+      o.checkinDayOfWeek,
+  )
+  checkinWeekOfMonth?: number;
 }

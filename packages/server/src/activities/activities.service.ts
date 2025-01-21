@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
@@ -26,6 +30,8 @@ import { CheckInType } from './schemas/checkin.schema';
 import { DurationUnit } from './schemas/activity.schema';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
 import { ActivityRole } from './schemas/activity.schema';
+import { CheckinFrequencyUnit } from './schemas/activity.schema';
+import { DayOfWeek } from './schemas/activity.schema';
 
 @Injectable()
 export class ActivitiesService {
@@ -63,10 +69,74 @@ export class ActivitiesService {
     return endDate;
   }
 
+  private validateCheckinFrequencySettings(
+    createActivityDto: CreateActivityDto | UpdateActivityDto,
+  ): void {
+    const {
+      checkinFrequencyUnit,
+      checkinDays,
+      checkinDateOfMonth,
+      checkinDayOfWeek,
+      checkinWeekOfMonth,
+    } = createActivityDto;
+
+    switch (checkinFrequencyUnit) {
+      case CheckinFrequencyUnit.WEEKLY:
+      case CheckinFrequencyUnit.BIWEEKLY:
+        if (!checkinDays?.length) {
+          throw new BadRequestException(
+            `${checkinFrequencyUnit} frequency requires specifying check-in days`,
+          );
+        }
+        break;
+
+      case CheckinFrequencyUnit.MONTHLY:
+        const hasDateOfMonth = typeof checkinDateOfMonth === 'number';
+        const hasDayOfWeek = checkinDayOfWeek && checkinWeekOfMonth;
+
+        if (!hasDateOfMonth && !hasDayOfWeek) {
+          throw new BadRequestException(
+            'Monthly frequency requires either a date of month or a day of week with week of month',
+          );
+        }
+
+        if (hasDateOfMonth && hasDayOfWeek) {
+          throw new BadRequestException(
+            'Cannot specify both date of month and day of week for monthly frequency',
+          );
+        }
+        break;
+    }
+  }
+
+  // Helper method to prepare activity response
+  private async prepareActivityResponse(
+    activity: ActivityDocument,
+    message: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const nextCheckInDue = this.calculateNextCheckInDate(activity);
+    const responseData = this.transformToDto(activity, ActivityResponseDto);
+    (responseData as any).nextCheckInDue = nextCheckInDue;
+
+    return {
+      success: true,
+      message,
+      data: responseData,
+      metadata: {
+        availableSeats: activity.maxSize - activity.currentSize,
+        isJoinable:
+          activity.isActive && activity.currentSize < activity.maxSize,
+      },
+    };
+  }
+
   async create(
     userId: string,
     createActivityDto: CreateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    // Validate check-in frequency settings
+    this.validateCheckinFrequencySettings(createActivityDto);
+
     const durationInDays = this.calculateDurationInDays(
       createActivityDto.proposedDuration,
       createActivityDto.durationUnit,
@@ -77,8 +147,6 @@ export class ActivitiesService {
 
     const createdActivity = new this.activityModel({
       ...createActivityDto,
-      startDate,
-      endDate,
       participants: [
         {
           user: new Types.ObjectId(userId),
@@ -88,20 +156,73 @@ export class ActivitiesService {
       currentSize: 1,
       admin: new Types.ObjectId(userId),
       proposedDurationInDays: durationInDays,
+      startDate,
+      endDate,
     });
 
     const activity = await createdActivity.save();
-    const responseData = this.transformToDto(activity, ActivityResponseDto);
+    return this.prepareActivityResponse(
+      activity,
+      'Activity created successfully',
+    );
+  }
 
-    return {
-      success: true,
-      message: 'Activity created successfully',
-      data: responseData,
-      metadata: {
-        availableSeats: activity.maxSize - activity.currentSize,
-        isJoinable: true,
-      },
-    };
+  private calculateNextCheckInDate(activity: Activity): Date | null {
+    const now = new Date();
+    const nextDate = new Date(now);
+    nextDate.setHours(0, 0, 0, 0); // Start of day
+
+    switch (activity.checkinFrequencyUnit) {
+      case CheckinFrequencyUnit.DAILY:
+        nextDate.setDate(nextDate.getDate() + 1);
+        return nextDate;
+
+      case CheckinFrequencyUnit.WEEKLY:
+      case CheckinFrequencyUnit.BIWEEKLY:
+        if (!activity.checkinDays?.length) return null;
+
+        // Convert day names to numbers (0-6)
+        const dayNumbers = activity.checkinDays.map((day) =>
+          [
+            'sunday',
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+          ].indexOf(day.toLowerCase()),
+        );
+
+        // Find the next allowed day
+        let daysToAdd = 1;
+        while (!dayNumbers.includes((nextDate.getDay() + daysToAdd) % 7)) {
+          daysToAdd++;
+        }
+        nextDate.setDate(nextDate.getDate() + daysToAdd);
+        return nextDate;
+
+      case CheckinFrequencyUnit.MONTHLY:
+        if (activity.checkinDateOfMonth) {
+          nextDate.setDate(activity.checkinDateOfMonth);
+          if (nextDate < now) {
+            nextDate.setMonth(nextDate.getMonth() + 1);
+          }
+          return nextDate;
+        }
+
+        if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
+          // Implementation for "last Thursday" type patterns
+          // This is a simplified version
+          nextDate.setDate(1); // Start of month
+          nextDate.setMonth(nextDate.getMonth() + 1); // Next month
+          return nextDate;
+        }
+        return null;
+
+      default:
+        return null;
+    }
   }
 
   async findOne(
@@ -123,69 +244,46 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    const responseData = this.transformToDto(activity, ActivityResponseDto);
-
-    return {
-      success: true,
-      message: 'Activity retrieved successfully',
-      data: responseData,
-      metadata: {
-        availableSeats: activity.maxSize - activity.currentSize,
-        isJoinable: activity.currentSize < activity.maxSize,
-      },
-    };
+    return this.prepareActivityResponse(
+      activity,
+      'Activity retrieved successfully',
+    );
   }
 
   async update(
-    id: string,
+    activityId: string,
     updateActivityDto: UpdateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(id);
+    const activity = await this.activityModel.findById(activityId);
 
-    if (updateActivityDto.proposedDuration || updateActivityDto.durationUnit) {
-      const durationInDays = this.calculateDurationInDays(
-        updateActivityDto.proposedDuration || activity.proposedDuration,
-        updateActivityDto.durationUnit || activity.durationUnit,
-      );
-      updateActivityDto.proposedDurationInDays = durationInDays;
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
     }
 
+    const relevantFields = {
+      checkinFrequencyUnit: activity.checkinFrequencyUnit,
+      checkinDays: activity.checkinDays,
+      checkinDateOfMonth: activity.checkinDateOfMonth,
+      checkinDayOfWeek: activity.checkinDayOfWeek,
+      checkinWeekOfMonth: activity.checkinWeekOfMonth,
+      ...updateActivityDto,
+    };
+
+    this.validateCheckinFrequencySettings(relevantFields);
+
     const updatedActivity = await this.activityModel
-      .findByIdAndUpdate(
-        id,
-        {
-          ...updateActivityDto,
-          ...(updateActivityDto.isActive === false &&
-            !updateActivityDto.endedAt && {
-              endedAt: new Date(),
-            }),
-        },
-        { new: true },
-      )
+      .findByIdAndUpdate(activityId, updateActivityDto, { new: true })
       .populate('admin', 'name email profilePicture')
-      .populate('participants', 'name email profilePicture')
-      .exec();
+      .populate('participants.user', 'name email profilePicture');
 
     if (!updatedActivity) {
       throw new NotFoundException('Activity not found');
     }
 
-    const responseData = this.transformToDto(
+    return this.prepareActivityResponse(
       updatedActivity,
-      ActivityResponseDto,
+      'Activity updated successfully',
     );
-
-    return {
-      success: true,
-      message: 'Activity updated successfully',
-      data: responseData,
-      metadata: {
-        availableSeats: updatedActivity.maxSize - updatedActivity.currentSize,
-        isJoinable:
-          updatedActivity.isActive &&
-          updatedActivity.currentSize < updatedActivity.maxSize,
-      },
-    };
   }
 
   async createCheckIn(
@@ -198,10 +296,56 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
+    if (!this.isCheckInAllowedForDate(activity, createCheckInDto.date)) {
+      throw new BadRequestException(
+        'Check-in is not allowed for this date based on activity schedule',
+      );
+    }
+
+    // Validate activity is still active
+    if (!activity.isActive) {
+      throw new BadRequestException('Cannot check in to an inactive activity');
+    }
+
+    // Validate activity hasn't ended
+    if (activity.endedAt && new Date(activity.endedAt) < new Date()) {
+      throw new BadRequestException('Cannot check in to an ended activity');
+    }
+
+    // Validate check-in date
+    if (createCheckInDto.date > new Date()) {
+      throw new BadRequestException('Check-in date cannot be in the future');
+    }
+
+    // Validate user is a participant
+    const isParticipant = activity.participants.some(
+      (p) => p.user.toString() === userId,
+    );
+    if (!isParticipant) {
+      throw new BadRequestException(
+        'Only participants can check in to an activity',
+      );
+    }
+
     const checkIn = new this.checkInModel({
-      ...createCheckInDto,
       user: userId,
       activity: activityId,
+      type: createCheckInDto.type,
+      content: createCheckInDto.content,
+      date: createCheckInDto.date,
+      comment: createCheckInDto.comment,
+      ...(createCheckInDto.type === CheckInType.PHOTO && {
+        photo: createCheckInDto.photo,
+      }),
+      ...(createCheckInDto.type === CheckInType.CHECKLIST && {
+        checklist: createCheckInDto.checklist,
+      }),
+      ...(createCheckInDto.type === CheckInType.HOURS && {
+        hours: createCheckInDto.hours,
+      }),
+      ...(createCheckInDto.type === CheckInType.OTHER && {
+        other: createCheckInDto.other,
+      }),
     });
 
     const savedCheckIn = await checkIn.save();
@@ -225,6 +369,11 @@ export class ActivitiesService {
   async getActivityCheckIns(
     activityId: string,
   ): Promise<ActivityServiceResponse<CheckInResponseDto[]>> {
+    const activity = await this.activityModel.findById(activityId);
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
     const checkIns = await this.checkInModel
       .find({ activity: activityId })
       .populate('user', 'name email profilePicture')
@@ -236,16 +385,13 @@ export class ActivitiesService {
       this.transformToDto(checkIn, CheckInResponseDto),
     );
 
+    const { metadata } = await this.prepareActivityResponse(activity, '');
+
     return {
       success: true,
       message: 'Check-ins retrieved successfully',
       data: responseData,
-      metadata: {
-        availableSeats: 0,
-        isJoinable: true,
-        durationInDays: 0,
-        remainingDays: 0,
-      },
+      metadata,
     };
   }
 
@@ -278,25 +424,71 @@ export class ActivitiesService {
   }
 
   async updateCheckIn(
+    userId: string,
     checkInId: string,
     updateCheckInDto: UpdateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
+    // First get the check-in to validate ownership and get activity info
+    const existingCheckIn = await this.checkInModel
+      .findById(checkInId)
+      .populate('activity')
+      .exec();
+
+    if (!existingCheckIn) {
+      throw new NotFoundException('Check-in not found');
+    }
+
+    // Validate check-in ownership
+    if (existingCheckIn.user.toString() !== userId) {
+      throw new BadRequestException('You can only update your own check-ins');
+    }
+
+    // Get activity from populated check-in
+    const activity = existingCheckIn.activity as Activity;
+
+    // Validate activity is still active
+    if (!activity.isActive) {
+      throw new BadRequestException(
+        'Cannot update check-in for an inactive activity',
+      );
+    }
+
+    // Validate activity hasn't ended
+    if (activity.endedAt && new Date(activity.endedAt) < new Date()) {
+      throw new BadRequestException(
+        'Cannot update check-in for an ended activity',
+      );
+    }
+
+    // Validate check-in date if it's being updated
+    if (updateCheckInDto.date && updateCheckInDto.date > new Date()) {
+      throw new BadRequestException('Check-in date cannot be in the future');
+    }
+
+    // Validate check-in date against activity schedule
+    if (!this.isCheckInAllowedForDate(activity, updateCheckInDto.date)) {
+      throw new BadRequestException(
+        'Check-in date is not allowed for this activity',
+      );
+    }
+
     const checkIn = await this.checkInModel
       .findByIdAndUpdate(
         checkInId,
         {
           ...updateCheckInDto,
-          isCompleted: isCheckInComplete(updateCheckInDto),
+          ...(updateCheckInDto.content && {
+            isCompleted: isCheckInComplete({
+              ...existingCheckIn.toObject(),
+              ...updateCheckInDto,
+            }),
+          }),
         },
         { new: true },
       )
       .populate('user', 'name email profilePicture')
       .populate('activity')
       .exec();
-
-    if (!checkIn) {
-      throw new NotFoundException('Check-in not found');
-    }
 
     const responseData = this.transformToDto(checkIn, CheckInResponseDto);
 
@@ -339,16 +531,15 @@ export class ActivitiesService {
 
     const populatedActivity = activity as unknown as PopulatedActivity;
 
-    // Build query for check-ins
     const checkInQuery: Record<string, any> = { activity: activityId };
 
     if (query.startDate) {
-      checkInQuery.createdAt = { $gte: new Date(query.startDate) };
+      checkInQuery.date = { $gte: new Date(query.startDate) };
     }
 
     if (query.endDate) {
-      checkInQuery.createdAt = {
-        ...checkInQuery.createdAt,
+      checkInQuery.date = {
+        ...checkInQuery.date,
         $lte: new Date(query.endDate),
       };
     }
@@ -373,13 +564,11 @@ export class ActivitiesService {
 
     const populatedCheckIns = checkIns as unknown as PopulatedCheckIn[];
 
-    // Calculate base statistics
     const totalCheckIns = checkIns.length;
     const completedCheckIns = checkIns.filter((c) => c.isCompleted).length;
     const completionRate =
       totalCheckIns > 0 ? (completedCheckIns / totalCheckIns) * 100 : 0;
 
-    // Calculate participant statistics
     let participantStats: IParticipantStats[] = await Promise.all(
       populatedActivity.participants.map(async (participant: PopulatedUser) => {
         const userCheckIns = populatedCheckIns.filter(
@@ -388,7 +577,6 @@ export class ActivitiesService {
 
         const userCompletedCheckIns = userCheckIns.filter((c) => c.isCompleted);
 
-        // Calculate streak with proper type checking
         const sortedCheckIns = [...userCheckIns].sort((a, b) => {
           const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
           const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
@@ -401,7 +589,6 @@ export class ActivitiesService {
           else break;
         }
 
-        // Calculate average completion time with proper type checking
         const completionTimes = userCheckIns
           .filter(
             (c) =>
@@ -435,7 +622,6 @@ export class ActivitiesService {
       }),
     );
 
-    // Apply sorting if requested
     if (query.sortBy) {
       participantStats = participantStats.sort((a, b) => {
         const order = query.sortOrder === 'desc' ? -1 : 1;
@@ -443,23 +629,19 @@ export class ActivitiesService {
       });
     }
 
-    // Calculate check-ins by type
     const checkInsByType = populatedCheckIns.reduce(
       (acc, checkIn) => {
-        checkIn.types.forEach((type) => {
-          acc[type as CheckInType] = (acc[type as CheckInType] || 0) + 1;
-        });
+        const type = checkIn.type;
+        acc[type] = (acc[type] || 0) + 1;
         return acc;
       },
       {} as Record<CheckInType, number>,
     );
 
-    // Find most popular check-in type
     const mostPopularCheckInType = Object.entries(checkInsByType).reduce(
       (a, b) => (a[1] > b[1] ? a : b),
     )[0] as CheckInType;
 
-    // Calculate most active day
     const checkInsByDay = populatedCheckIns.reduce(
       (acc, checkIn) => {
         if (checkIn.createdAt instanceof Date) {
@@ -478,10 +660,8 @@ export class ActivitiesService {
       ['Unknown', 0],
     )[0];
 
-    // Calculate longest streak
     const longestStreak = Math.max(0, ...participantStats.map((p) => p.streak));
 
-    // Calculate average completion time with proper type checking
     const completionTimes = populatedCheckIns
       .filter(
         (c) =>
@@ -496,7 +676,6 @@ export class ActivitiesService {
         ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
         : 0;
 
-    // Calculate duration statistics
     const totalDurationInDays =
       populatedActivity.proposedDurationInDays ||
       this.calculateDurationInDays(
@@ -542,9 +721,17 @@ export class ActivitiesService {
     }
 
     activity.participants[participantIndex].role = updateRoleDto.role;
-    await activity.save();
+    const updatedActivity = await activity.save();
 
-    return this.findOne(activityId);
+    const responseData = this.transformToDto(
+      updatedActivity,
+      ActivityResponseDto,
+    );
+    return {
+      success: true,
+      message: 'Participant role updated successfully',
+      data: responseData,
+    };
   }
 
   async endActivity(
@@ -563,6 +750,49 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    return this.findOne(activityId);
+    const responseData = this.transformToDto(activity, ActivityResponseDto);
+    return {
+      success: true,
+      message: 'Activity ended successfully',
+      data: responseData,
+    };
+  }
+
+  private validateCheckInDate(date: Date): boolean {
+    const now = new Date();
+    return date <= now;
+  }
+
+  private isCheckInAllowedForDate(
+    activity: Activity,
+    checkInDate: Date,
+  ): boolean {
+    const dayOfWeek = checkInDate.toLocaleLowerCase(); // gets 'monday', 'tuesday', etc.
+    const dateOfMonth = checkInDate.getDate();
+    const weekOfMonth = Math.ceil(dateOfMonth / 7); // rough calculation of week number
+
+    switch (activity.checkinFrequencyUnit) {
+      case CheckinFrequencyUnit.DAILY:
+        return true;
+
+      case CheckinFrequencyUnit.WEEKLY:
+      case CheckinFrequencyUnit.BIWEEKLY:
+        return activity.checkinDays?.includes(dayOfWeek as DayOfWeek) ?? false;
+
+      case CheckinFrequencyUnit.MONTHLY:
+        if (activity.checkinDateOfMonth) {
+          return dateOfMonth === activity.checkinDateOfMonth;
+        }
+        if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
+          return (
+            dayOfWeek === activity.checkinDayOfWeek &&
+            weekOfMonth === activity.checkinWeekOfMonth
+          );
+        }
+        return false;
+
+      default:
+        return true; // OTHER frequency type
+    }
   }
 }

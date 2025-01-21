@@ -1,11 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEnum,
-  IsArray,
   IsOptional,
   IsString,
   IsNumber,
   ValidateNested,
+  IsNotEmpty,
+  IsDate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CheckInType } from '../../schemas/checkin.schema';
@@ -55,10 +56,25 @@ export class OtherDto {
 }
 
 export class CreateCheckInDto {
-  @ApiProperty({ enum: CheckInType, isArray: true })
-  @IsArray()
-  @IsEnum(CheckInType, { each: true })
-  types: CheckInType[];
+  @ApiProperty({ enum: CheckInType })
+  @IsEnum(CheckInType)
+  type: CheckInType;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+
+  @ApiProperty({ type: Date })
+  @IsDate()
+  @Type(() => Date)
+  @IsNotEmpty()
+  date: Date;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  comment?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
