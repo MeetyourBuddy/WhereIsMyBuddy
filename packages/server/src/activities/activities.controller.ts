@@ -116,8 +116,8 @@ export class ActivitiesController {
     @Param('activityId') activityId: string,
     @Body() createCheckInDto: CreateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    // Validate check-in types
-    if (!createCheckInDto.types.every((type) => isValidCheckInType(type))) {
+    // Validate check-in type
+    if (!isValidCheckInType(createCheckInDto.type)) {
       throw new BadRequestException('Invalid check-in type');
     }
 
@@ -191,29 +191,19 @@ export class ActivitiesController {
     return checkIn;
   }
 
-  @Put(':activityId/checkins/:checkInId')
+  @Put('checkins/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a check-in' })
-  @ApiResponse({
-    status: 200,
-    description: 'Check-in updated successfully',
-    type: CheckInResponseDto,
-  })
   async updateCheckIn(
     @Request() req,
-    @Param('activityId') activityId: string,
-    @Param('checkInId') checkInId: string,
+    @Param('id') checkInId: string,
     @Body() updateCheckInDto: UpdateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    const checkIn = await this.activitiesService.getCheckIn(checkInId);
-
-    // Only the check-in creator can update it
-    if (checkIn.data.user.id.toString() !== req.user.id) {
-      throw new ForbiddenException('You can only update your own check-ins');
-    }
-
-    return this.activitiesService.updateCheckIn(checkInId, updateCheckInDto);
+    return this.activitiesService.updateCheckIn(
+      req.user.userId,
+      checkInId,
+      updateCheckInDto,
+    );
   }
 
   @Delete(':activityId/checkins/:checkInId')

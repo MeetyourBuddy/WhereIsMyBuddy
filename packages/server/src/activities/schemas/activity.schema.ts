@@ -32,6 +32,14 @@ export enum ActivityRole {
   MEMBER = 'member',
 }
 
+export enum CheckInType {
+  PHOTO = 'photo',
+  CHECKLIST = 'checklist',
+  HOURS = 'hours',
+  TEXT = 'text',
+  OTHER = 'other',
+}
+
 @Schema({
   timestamps: true,
 })
@@ -136,6 +144,17 @@ export class Activity extends Document {
 
   @Prop({ type: Date })
   endedAt?: Date;
+
+  @Prop({
+    type: [
+      {
+        type: String,
+        enum: CheckInType,
+      },
+    ],
+    default: [CheckInType.PHOTO],
+  })
+  allowedCheckInTypes: CheckInType[];
 }
 
 export const ActivitySchema = SchemaFactory.createForClass(Activity);
