@@ -31,6 +31,7 @@ import { DurationUnit } from './schemas/activity.schema';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
 import { ActivityRole } from './schemas/activity.schema';
 import { CheckinFrequencyUnit } from './schemas/activity.schema';
+import { DayOfWeek } from './schemas/activity.schema';
 
 @Injectable()
 export class ActivitiesService {
@@ -225,6 +226,12 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
+    if (!this.isCheckInAllowedForDate(activity, createCheckInDto.date)) {
+      throw new BadRequestException(
+        'Check-in is not allowed for this date based on activity schedule',
+      );
+    }
+
     // Validate activity is still active
     if (!activity.isActive) {
       throw new BadRequestException('Cannot check in to an inactive activity');
@@ -384,6 +391,11 @@ export class ActivitiesService {
     // Validate check-in date if it's being updated
     if (updateCheckInDto.date && updateCheckInDto.date > new Date()) {
       throw new BadRequestException('Check-in date cannot be in the future');
+    }
+
+    // Validate check-in date against activity schedule
+    if (!this.isCheckInAllowedForDate(activity, updateCheckInDto.date)) {
+      throw new BadRequestException('Check-in date is not allowed for this activity');
     }
 
     const checkIn = await this.checkInModel
@@ -662,5 +674,33 @@ export class ActivitiesService {
   private validateCheckInDate(date: Date): boolean {
     const now = new Date();
     return date <= now;
+  }
+
+  private isCheckInAllowedForDate(activity: Activity, checkInDate: Date): boolean {
+    const dayOfWeek = checkInDate.toLocaleLowerCase();  // gets 'monday', 'tuesday', etc.
+    const dateOfMonth = checkInDate.getDate();
+    const weekOfMonth = Math.ceil(dateOfMonth / 7);  // rough calculation of week number
+
+    switch (activity.checkinFrequencyUnit) {
+      case CheckinFrequencyUnit.DAILY:
+        return true;
+
+      case CheckinFrequencyUnit.WEEKLY:
+      case CheckinFrequencyUnit.BIWEEKLY:
+        return activity.checkinDays?.includes(dayOfWeek as DayOfWeek) ?? false;
+
+      case CheckinFrequencyUnit.MONTHLY:
+        if (activity.checkinDateOfMonth) {
+          return dateOfMonth === activity.checkinDateOfMonth;
+        }
+        if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
+          return dayOfWeek === activity.checkinDayOfWeek && 
+                 weekOfMonth === activity.checkinWeekOfMonth;
+        }
+        return false;
+
+      default:
+        return true; // OTHER frequency type
+    }
   }
 }
