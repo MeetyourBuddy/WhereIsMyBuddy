@@ -33,7 +33,7 @@ import { ActivitiesModule } from './activities/activities.module';
       useFactory: (config: ConfigService) => ({
         secret: config.get('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: config.get('JWT_ACCESS_EXPIRES_IN'),
+          expiresIn: config.get('JWT_ACCESS_EXPIRES_IN') || '3600s',
         },
       }),
     }),

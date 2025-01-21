@@ -65,7 +65,7 @@ const ProfileFeed = ({ onSubmit }: ProfileFeedProps) => {
   const {
     watch,
     handleSubmit,
-    formState: { isDirty, errors }
+    formState: { isDirty }
   } = methods;
 
   const selectedCountry = watch('country') as Country | undefined;

@@ -71,12 +71,19 @@ export class CreateActivityDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  categories?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   tags?: string[];
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+
   rules?: string[];
 
   @ApiProperty({
@@ -126,4 +133,5 @@ export class CreateActivityDto {
   @Max(4)
   @ValidateIf(o => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY && o.checkinDayOfWeek)
   checkinWeekOfMonth?: number;
+
 }

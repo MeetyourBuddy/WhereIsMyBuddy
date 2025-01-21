@@ -9,10 +9,10 @@ import Onboarding from '@/pages/onboarding/onboarding';
 import OAuthHandler from '@/pages/auth/oauth';
 import AuthLayout from '@/layouts/auth-layout';
 import BaseLayout from '@/layouts/base-layout';
-import ProfilePage from '@/pages/profile/profile';
 import Dashboard from '@/pages/dashhboard/dashboard';
-import Activity from '@/pages/activity/activity';
+import { Activity, CreateActivityPage } from '@/pages/activity';
 import UserProfileCard from '@/pages/profile/profile-card';
+import UpdateProfilePage from '@/pages/profile/update-profile';
 
 const Router = () => (
   <Routes>
@@ -30,8 +30,9 @@ const Router = () => (
       <Route element={<BaseLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/activity" element={<Activity />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/profile/card" element={<UserProfileCard />} />
+        <Route path="/profile" element={<UserProfileCard />} />
+        <Route path="/profile/update" element={<UpdateProfilePage />} />
+        <Route path="/activity/create" element={<CreateActivityPage />} />
         <Route path="/change-password" element={<ChangePassword />} />
       </Route>
     </Route>

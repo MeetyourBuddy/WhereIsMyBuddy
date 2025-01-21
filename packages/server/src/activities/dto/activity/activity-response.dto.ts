@@ -138,7 +138,9 @@ export class ActivityResponseDto {
   tags: string[];
 
   /**
+  
    * Activity rules and guidelines
+
    */
   @Expose()
   @ApiProperty({ type: [Object] })

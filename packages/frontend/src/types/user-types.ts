@@ -1,3 +1,5 @@
+import { Country, InterestCategory, Language } from '@/lib/constants';
+
 export interface IUserData {
   id: string;
   email: string;
@@ -23,4 +25,37 @@ export interface IUserData {
   city?: string;
   country?: string;
   gender?: 'male' | 'female' | 'other';
+}
+
+export interface IUserResponse {
+  id: string;
+  email: string;
+  name: string;
+  dateOfBirth?: Date;
+  age?: number;
+  profileImage?: string;
+  bio?: string;
+  phoneNumber?: string;
+  country?: Country;
+  city?: string;
+  interestsCategories?: InterestCategory[];
+  interestsCommodities?: string[];
+  preferredLanguage?: Language;
+  isActive: boolean;
+  isEmailVerified: boolean;
+  hasCompletedOnboarding: boolean;
+  provider: 'local' | 'google';
+  profileLink: string;
+  profileQR: string;
+  goals?: string;
+  gender?: 'male' | 'female' | 'other';
+  collaborationStatus: 'open' | 'occupied' | 'undecided';
+  linkedInUrl?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
+  instagramUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  profilePicture?: string;
+  timezone?: string;
 }

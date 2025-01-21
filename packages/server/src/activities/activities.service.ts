@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/activity/create-activity.dto';
 import { UpdateActivityDto } from './dto/activity/update-activity.dto';
@@ -138,14 +138,16 @@ export class ActivitiesService {
 
     const createdActivity = new this.activityModel({
       ...createActivityDto,
+      startDate,
+      endDate,
       participants: [
         {
-          user: userId,
+          user: new Types.ObjectId(userId),
           role: ActivityRole.ADMIN,
         },
       ],
       currentSize: 1,
-      admin: userId,
+      admin: new Types.ObjectId(userId),
       proposedDurationInDays: durationInDays,
       startDate,
       endDate,

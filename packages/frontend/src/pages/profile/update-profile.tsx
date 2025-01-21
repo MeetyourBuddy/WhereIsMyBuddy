@@ -10,7 +10,7 @@ import { useProfile } from '@/lib/hooks/use-profile';
 import { useProfileStore } from '@/providers/store';
 import { IUserData } from '@/types/user-types';
 
-const ProfilePage = () => {
+const UpdateProfilePage = () => {
   const { user } = useAuthContext();
   const { updateProfile, profile: storeProfile } = useProfile();
   const { setProfile } = useProfileStore();
@@ -143,7 +143,7 @@ const ProfilePage = () => {
 
   return (
     <FormProvider {...methods}>
-      <div className="flex flex-col gap-4">
+      <div className="container-default flex flex-col gap-4">
         <ProfileHeader
           name={profile?.name || 'John Doe'}
           email={profile?.email || 'john.doe@example.com'}
@@ -159,4 +159,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default UpdateProfilePage;
