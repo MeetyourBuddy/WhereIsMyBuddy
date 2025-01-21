@@ -7,7 +7,10 @@ export interface ICheckInResponse {
   id: string;
   user: Types.ObjectId | User;
   activity: Types.ObjectId | Activity;
-  types: CheckInType[];
+  type: CheckInType;
+  content: string;
+  date: Date;
+  comment?: string;
   photo?: {
     imageUrl: string;
     guidelines: string;

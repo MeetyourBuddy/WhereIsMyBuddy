@@ -26,60 +26,28 @@ export class CheckIn {
   })
   activity: Activity | MongooseSchema.Types.ObjectId;
 
-  @Prop({ type: [String], enum: CheckInType, required: true })
-  types: CheckInType[];
-
   @Prop({
-    type: {
-      imageUrl: String,
-      guidelines: String,
-    },
-    required: false,
-  })
-  photo?: {
-    imageUrl: string;
-    guidelines: string;
-  };
-
-  @Prop({
-    type: [
-      {
-        item: { type: String, required: true },
-        completed: { type: Boolean, default: false },
+    type: String,
+    enum: CheckInType,
+    required: true,
+    validate: {
+      validator: async function (type: CheckInType) {
+        const activity = await this.model('Activity').findById(this.activity);
+        return activity.allowedCheckInTypes.includes(type);
       },
-    ],
-    required: false,
-  })
-  checklist?: Array<{
-    item: string;
-    completed: boolean;
-  }>;
-
-  @Prop({
-    type: {
-      hours: Number,
-      min: Number,
-      max: Number,
+      message: 'This type of check-in is not allowed for this activity',
     },
-    required: false,
   })
-  hours?: {
-    hours: number;
-    min: number;
-    max: number;
-  };
+  type: CheckInType;
 
-  @Prop({
-    type: {
-      description: String,
-      value: String,
-    },
-    required: false,
-  })
-  other?: {
-    description: string;
-    value: string;
-  };
+  @Prop({ required: true })
+  content: string; // Will store different content based on type (photo URL, hours, text, etc.)
+
+  @Prop({ required: true })
+  date: Date;
+
+  @Prop({ required: false })
+  comment: string;
 
   @Prop({ default: false })
   isCompleted: boolean;

@@ -52,6 +52,22 @@ export class CheckInResponseDto {
   };
 
   @Expose()
+  @ApiProperty({ type: Date })
+  date: Date;
+
+  @Expose()
+  @ApiPropertyOptional()
+  comment?: string;
+
+  @Expose()
+  @ApiProperty()
+  type: CheckInType;
+
+  @Expose()
+  @ApiProperty()
+  content: string;
+
+  @Expose()
   @ApiProperty()
   isCompleted: boolean;
 

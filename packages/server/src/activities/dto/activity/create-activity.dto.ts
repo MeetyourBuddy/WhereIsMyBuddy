@@ -14,6 +14,7 @@ import {
   JoinType,
   CheckinFrequency,
   DurationUnit,
+  CheckInType,
 } from '../../schemas/activity.schema';
 
 export class CreateActivityDto {
@@ -79,4 +80,15 @@ export class CreateActivityDto {
   @IsArray()
   @IsString({ each: true })
   rules?: string[];
+
+  @ApiProperty({
+    type: [String],
+    enum: CheckInType,
+    description: 'Types of check-ins allowed for this activity',
+    example: ['photo', 'hours', 'text'],
+  })
+  @IsArray()
+  @IsEnum(CheckInType, { each: true })
+  @IsOptional()
+  allowedCheckInTypes?: CheckInType[];
 }
