@@ -14,12 +14,22 @@ export enum JoinType {
   FIXED = 'fixed',
 }
 
-export enum CheckinFrequency {
+export enum CheckinFrequencyUnit {
   DAILY = 'daily',
   WEEKLY = 'weekly',
   BIWEEKLY = 'biweekly',
   MONTHLY = 'monthly',
   OTHER = 'other',
+}
+
+export enum DayOfWeek {
+  SUNDAY = 'sunday',
+  MONDAY = 'monday',
+  TUESDAY = 'tuesday',
+  WEDNESDAY = 'wednesday',
+  THURSDAY = 'thursday',
+  FRIDAY = 'friday',
+  SATURDAY = 'saturday'
 }
 
 export enum DurationUnit {
@@ -70,13 +80,28 @@ export class Activity extends Document {
   @Prop({ trim: true })
   bannerImage?: string;
 
+  @Prop({ required: true, min: 1 })
+  checkinFrequency: number;
+
   @Prop({
     type: String,
-    enum: CheckinFrequency,
-    required: false,
-    default: CheckinFrequency.WEEKLY,
+    enum: CheckinFrequencyUnit,
+    required: true,
+    default: CheckinFrequencyUnit.WEEKLY
   })
-  contactFrequency: CheckinFrequency;
+  checkinFrequencyUnit: CheckinFrequencyUnit;
+
+  @Prop({ type: [String], enum: DayOfWeek })
+  checkinDays?: DayOfWeek[];  // For weekly/biweekly
+
+  @Prop({ min: 1, max: 31 })
+  checkinDateOfMonth?: number;  // For monthly - date of month
+
+  @Prop({ type: String, enum: DayOfWeek })
+  checkinDayOfWeek?: DayOfWeek;  // For monthly - day of week (e.g., "last Thursday")
+
+  @Prop({ min: 1, max: 4 })
+  checkinWeekOfMonth?: number;  // For monthly - which week (1st, 2nd, 3rd, 4th)
 
   @Prop({
     type: String,

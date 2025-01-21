@@ -30,6 +30,7 @@ import { CheckInType } from './schemas/checkin.schema';
 import { DurationUnit } from './schemas/activity.schema';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
 import { ActivityRole } from './schemas/activity.schema';
+import { CheckinFrequencyUnit } from './schemas/activity.schema';
 
 @Injectable()
 export class ActivitiesService {
@@ -67,10 +68,45 @@ export class ActivitiesService {
     return endDate;
   }
 
+  private validateCheckinFrequencySettings(createActivityDto: CreateActivityDto | UpdateActivityDto): void {
+    const { checkinFrequencyUnit, checkinDays, checkinDateOfMonth, checkinDayOfWeek, checkinWeekOfMonth } = createActivityDto;
+
+    switch (checkinFrequencyUnit) {
+      case CheckinFrequencyUnit.WEEKLY:
+      case CheckinFrequencyUnit.BIWEEKLY:
+        if (!checkinDays?.length) {
+          throw new BadRequestException(
+            `${checkinFrequencyUnit} frequency requires specifying check-in days`,
+          );
+        }
+        break;
+
+      case CheckinFrequencyUnit.MONTHLY:
+        const hasDateOfMonth = typeof checkinDateOfMonth === 'number';
+        const hasDayOfWeek = checkinDayOfWeek && checkinWeekOfMonth;
+        
+        if (!hasDateOfMonth && !hasDayOfWeek) {
+          throw new BadRequestException(
+            'Monthly frequency requires either a date of month or a day of week with week of month',
+          );
+        }
+
+        if (hasDateOfMonth && hasDayOfWeek) {
+          throw new BadRequestException(
+            'Cannot specify both date of month and day of week for monthly frequency',
+          );
+        }
+        break;
+    }
+  }
+
   async create(
     userId: string,
     createActivityDto: CreateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    // Validate check-in frequency settings
+    this.validateCheckinFrequencySettings(createActivityDto);
+
     const durationInDays = this.calculateDurationInDays(
       createActivityDto.proposedDuration,
       createActivityDto.durationUnit,
@@ -141,54 +177,41 @@ export class ActivitiesService {
   }
 
   async update(
-    id: string,
+    activityId: string,
     updateActivityDto: UpdateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(id);
+    const activity = await this.activityModel.findById(activityId);
 
-    if (updateActivityDto.proposedDuration || updateActivityDto.durationUnit) {
-      const durationInDays = this.calculateDurationInDays(
-        updateActivityDto.proposedDuration || activity.proposedDuration,
-        updateActivityDto.durationUnit || activity.durationUnit,
-      );
-      updateActivityDto.proposedDurationInDays = durationInDays;
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
     }
 
+    const relevantFields = {
+      checkinFrequencyUnit: activity.checkinFrequencyUnit,
+      checkinDays: activity.checkinDays,
+      checkinDateOfMonth: activity.checkinDateOfMonth,
+      checkinDayOfWeek: activity.checkinDayOfWeek,
+      checkinWeekOfMonth: activity.checkinWeekOfMonth,
+      ...updateActivityDto,
+    };
+
+    this.validateCheckinFrequencySettings(relevantFields);
+
     const updatedActivity = await this.activityModel
-      .findByIdAndUpdate(
-        id,
-        {
-          ...updateActivityDto,
-          ...(updateActivityDto.isActive === false &&
-            !updateActivityDto.endedAt && {
-              endedAt: new Date(),
-            }),
-        },
-        { new: true },
-      )
+      .findByIdAndUpdate(activityId, updateActivityDto, { new: true })
       .populate('admin', 'name email profilePicture')
-      .populate('participants', 'name email profilePicture')
-      .exec();
+      .populate('participants.user', 'name email profilePicture');
 
     if (!updatedActivity) {
       throw new NotFoundException('Activity not found');
     }
 
-    const responseData = this.transformToDto(
-      updatedActivity,
-      ActivityResponseDto,
-    );
+    const responseData = this.transformToDto(updatedActivity, ActivityResponseDto);
 
     return {
       success: true,
       message: 'Activity updated successfully',
       data: responseData,
-      metadata: {
-        availableSeats: updatedActivity.maxSize - updatedActivity.currentSize,
-        isJoinable:
-          updatedActivity.isActive &&
-          updatedActivity.currentSize < updatedActivity.maxSize,
-      },
     };
   }
 
@@ -522,9 +545,8 @@ export class ActivitiesService {
 
     const checkInsByType = populatedCheckIns.reduce(
       (acc, checkIn) => {
-        checkIn.types.forEach((type) => {
-          acc[type as CheckInType] = (acc[type as CheckInType] || 0) + 1;
-        });
+        const type = checkIn.type;
+        acc[type] = (acc[type] || 0) + 1;
         return acc;
       },
       {} as Record<CheckInType, number>,
