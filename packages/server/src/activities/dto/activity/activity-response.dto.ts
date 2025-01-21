@@ -249,4 +249,12 @@ export class ActivityResponseDto {
   get availableSeats(): number {
     return this.maxSize - this.currentSize;
   }
+
+  /**
+   * Next due check-in date based on frequency settings
+   * @example "2024-01-15T00:00:00Z"
+   */
+  @Expose()
+  @ApiPropertyOptional()
+  nextCheckInDue?: Date;
 }

@@ -101,6 +101,26 @@ export class ActivitiesService {
     }
   }
 
+  // Helper method to prepare activity response
+  private async prepareActivityResponse(
+    activity: ActivityDocument,
+    message: string
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const nextCheckInDue = this.calculateNextCheckInDate(activity);
+    const responseData = this.transformToDto(activity, ActivityResponseDto);
+    (responseData as any).nextCheckInDue = nextCheckInDue;
+
+    return {
+      success: true,
+      message,
+      data: responseData,
+      metadata: {
+        availableSeats: activity.maxSize - activity.currentSize,
+        isJoinable: activity.isActive && activity.currentSize < activity.maxSize,
+      },
+    };
+  }
+
   async create(
     userId: string,
     createActivityDto: CreateActivityDto,
@@ -132,17 +152,58 @@ export class ActivitiesService {
     });
 
     const activity = await createdActivity.save();
-    const responseData = this.transformToDto(activity, ActivityResponseDto);
+    return this.prepareActivityResponse(activity, 'Activity created successfully');
+  }
 
-    return {
-      success: true,
-      message: 'Activity created successfully',
-      data: responseData,
-      metadata: {
-        availableSeats: activity.maxSize - activity.currentSize,
-        isJoinable: true,
-      },
-    };
+  private calculateNextCheckInDate(activity: Activity): Date | null {
+    const now = new Date();
+    let nextDate = new Date(now);
+    nextDate.setHours(0, 0, 0, 0);  // Start of day
+
+    switch (activity.checkinFrequencyUnit) {
+      case CheckinFrequencyUnit.DAILY:
+        nextDate.setDate(nextDate.getDate() + 1);
+        return nextDate;
+
+      case CheckinFrequencyUnit.WEEKLY:
+      case CheckinFrequencyUnit.BIWEEKLY:
+        if (!activity.checkinDays?.length) return null;
+        
+        // Convert day names to numbers (0-6)
+        const dayNumbers = activity.checkinDays.map(day => 
+          ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+            .indexOf(day.toLowerCase())
+        );
+        
+        // Find the next allowed day
+        let daysToAdd = 1;
+        while (!dayNumbers.includes((nextDate.getDay() + daysToAdd) % 7)) {
+          daysToAdd++;
+        }
+        nextDate.setDate(nextDate.getDate() + daysToAdd);
+        return nextDate;
+
+      case CheckinFrequencyUnit.MONTHLY:
+        if (activity.checkinDateOfMonth) {
+          nextDate.setDate(activity.checkinDateOfMonth);
+          if (nextDate < now) {
+            nextDate.setMonth(nextDate.getMonth() + 1);
+          }
+          return nextDate;
+        }
+        
+        if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
+          // Implementation for "last Thursday" type patterns
+          // This is a simplified version
+          nextDate.setDate(1); // Start of month
+          nextDate.setMonth(nextDate.getMonth() + 1); // Next month
+          return nextDate;
+        }
+        return null;
+
+      default:
+        return null;
+    }
   }
 
   async findOne(
@@ -164,17 +225,7 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    const responseData = this.transformToDto(activity, ActivityResponseDto);
-
-    return {
-      success: true,
-      message: 'Activity retrieved successfully',
-      data: responseData,
-      metadata: {
-        availableSeats: activity.maxSize - activity.currentSize,
-        isJoinable: activity.currentSize < activity.maxSize,
-      },
-    };
+    return this.prepareActivityResponse(activity, 'Activity retrieved successfully');
   }
 
   async update(
@@ -207,13 +258,7 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    const responseData = this.transformToDto(updatedActivity, ActivityResponseDto);
-
-    return {
-      success: true,
-      message: 'Activity updated successfully',
-      data: responseData,
-    };
+    return this.prepareActivityResponse(updatedActivity, 'Activity updated successfully');
   }
 
   async createCheckIn(
@@ -299,6 +344,11 @@ export class ActivitiesService {
   async getActivityCheckIns(
     activityId: string,
   ): Promise<ActivityServiceResponse<CheckInResponseDto[]>> {
+    const activity = await this.activityModel.findById(activityId);
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
     const checkIns = await this.checkInModel
       .find({ activity: activityId })
       .populate('user', 'name email profilePicture')
@@ -310,16 +360,13 @@ export class ActivitiesService {
       this.transformToDto(checkIn, CheckInResponseDto),
     );
 
+    const { metadata } = await this.prepareActivityResponse(activity, '');
+
     return {
       success: true,
       message: 'Check-ins retrieved successfully',
       data: responseData,
-      metadata: {
-        availableSeats: 0,
-        isJoinable: true,
-        durationInDays: 0,
-        remainingDays: 0,
-      },
+      metadata,
     };
   }
 
@@ -647,9 +694,14 @@ export class ActivitiesService {
     }
 
     activity.participants[participantIndex].role = updateRoleDto.role;
-    await activity.save();
+    const updatedActivity = await activity.save();
 
-    return this.findOne(activityId);
+    const responseData = this.transformToDto(updatedActivity, ActivityResponseDto);
+    return {
+      success: true,
+      message: 'Participant role updated successfully',
+      data: responseData,
+    };
   }
 
   async endActivity(
@@ -668,7 +720,12 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    return this.findOne(activityId);
+    const responseData = this.transformToDto(activity, ActivityResponseDto);
+    return {
+      success: true,
+      message: 'Activity ended successfully',
+      data: responseData,
+    };
   }
 
   private validateCheckInDate(date: Date): boolean {
