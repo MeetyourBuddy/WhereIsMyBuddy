@@ -69,8 +69,16 @@ export class ActivitiesService {
     return endDate;
   }
 
-  private validateCheckinFrequencySettings(createActivityDto: CreateActivityDto | UpdateActivityDto): void {
-    const { checkinFrequencyUnit, checkinDays, checkinDateOfMonth, checkinDayOfWeek, checkinWeekOfMonth } = createActivityDto;
+  private validateCheckinFrequencySettings(
+    createActivityDto: CreateActivityDto | UpdateActivityDto,
+  ): void {
+    const {
+      checkinFrequencyUnit,
+      checkinDays,
+      checkinDateOfMonth,
+      checkinDayOfWeek,
+      checkinWeekOfMonth,
+    } = createActivityDto;
 
     switch (checkinFrequencyUnit) {
       case CheckinFrequencyUnit.WEEKLY:
@@ -85,7 +93,7 @@ export class ActivitiesService {
       case CheckinFrequencyUnit.MONTHLY:
         const hasDateOfMonth = typeof checkinDateOfMonth === 'number';
         const hasDayOfWeek = checkinDayOfWeek && checkinWeekOfMonth;
-        
+
         if (!hasDateOfMonth && !hasDayOfWeek) {
           throw new BadRequestException(
             'Monthly frequency requires either a date of month or a day of week with week of month',
@@ -104,7 +112,7 @@ export class ActivitiesService {
   // Helper method to prepare activity response
   private async prepareActivityResponse(
     activity: ActivityDocument,
-    message: string
+    message: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const nextCheckInDue = this.calculateNextCheckInDate(activity);
     const responseData = this.transformToDto(activity, ActivityResponseDto);
@@ -116,7 +124,8 @@ export class ActivitiesService {
       data: responseData,
       metadata: {
         availableSeats: activity.maxSize - activity.currentSize,
-        isJoinable: activity.isActive && activity.currentSize < activity.maxSize,
+        isJoinable:
+          activity.isActive && activity.currentSize < activity.maxSize,
       },
     };
   }
@@ -154,13 +163,16 @@ export class ActivitiesService {
     });
 
     const activity = await createdActivity.save();
-    return this.prepareActivityResponse(activity, 'Activity created successfully');
+    return this.prepareActivityResponse(
+      activity,
+      'Activity created successfully',
+    );
   }
 
   private calculateNextCheckInDate(activity: Activity): Date | null {
     const now = new Date();
-    let nextDate = new Date(now);
-    nextDate.setHours(0, 0, 0, 0);  // Start of day
+    const nextDate = new Date(now);
+    nextDate.setHours(0, 0, 0, 0); // Start of day
 
     switch (activity.checkinFrequencyUnit) {
       case CheckinFrequencyUnit.DAILY:
@@ -170,13 +182,20 @@ export class ActivitiesService {
       case CheckinFrequencyUnit.WEEKLY:
       case CheckinFrequencyUnit.BIWEEKLY:
         if (!activity.checkinDays?.length) return null;
-        
+
         // Convert day names to numbers (0-6)
-        const dayNumbers = activity.checkinDays.map(day => 
-          ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-            .indexOf(day.toLowerCase())
+        const dayNumbers = activity.checkinDays.map((day) =>
+          [
+            'sunday',
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+          ].indexOf(day.toLowerCase()),
         );
-        
+
         // Find the next allowed day
         let daysToAdd = 1;
         while (!dayNumbers.includes((nextDate.getDay() + daysToAdd) % 7)) {
@@ -193,7 +212,7 @@ export class ActivitiesService {
           }
           return nextDate;
         }
-        
+
         if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
           // Implementation for "last Thursday" type patterns
           // This is a simplified version
@@ -227,7 +246,10 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    return this.prepareActivityResponse(activity, 'Activity retrieved successfully');
+    return this.prepareActivityResponse(
+      activity,
+      'Activity retrieved successfully',
+    );
   }
 
   async update(
@@ -260,7 +282,10 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    return this.prepareActivityResponse(updatedActivity, 'Activity updated successfully');
+    return this.prepareActivityResponse(
+      updatedActivity,
+      'Activity updated successfully',
+    );
   }
 
   async createCheckIn(
@@ -444,7 +469,9 @@ export class ActivitiesService {
 
     // Validate check-in date against activity schedule
     if (!this.isCheckInAllowedForDate(activity, updateCheckInDto.date)) {
-      throw new BadRequestException('Check-in date is not allowed for this activity');
+      throw new BadRequestException(
+        'Check-in date is not allowed for this activity',
+      );
     }
 
     const checkIn = await this.checkInModel
@@ -698,7 +725,10 @@ export class ActivitiesService {
     activity.participants[participantIndex].role = updateRoleDto.role;
     const updatedActivity = await activity.save();
 
-    const responseData = this.transformToDto(updatedActivity, ActivityResponseDto);
+    const responseData = this.transformToDto(
+      updatedActivity,
+      ActivityResponseDto,
+    );
     return {
       success: true,
       message: 'Participant role updated successfully',
@@ -735,10 +765,13 @@ export class ActivitiesService {
     return date <= now;
   }
 
-  private isCheckInAllowedForDate(activity: Activity, checkInDate: Date): boolean {
-    const dayOfWeek = checkInDate.toLocaleLowerCase();  // gets 'monday', 'tuesday', etc.
+  private isCheckInAllowedForDate(
+    activity: Activity,
+    checkInDate: Date,
+  ): boolean {
+    const dayOfWeek = checkInDate.toLocaleLowerCase(); // gets 'monday', 'tuesday', etc.
     const dateOfMonth = checkInDate.getDate();
-    const weekOfMonth = Math.ceil(dateOfMonth / 7);  // rough calculation of week number
+    const weekOfMonth = Math.ceil(dateOfMonth / 7); // rough calculation of week number
 
     switch (activity.checkinFrequencyUnit) {
       case CheckinFrequencyUnit.DAILY:
@@ -753,8 +786,10 @@ export class ActivitiesService {
           return dateOfMonth === activity.checkinDateOfMonth;
         }
         if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
-          return dayOfWeek === activity.checkinDayOfWeek && 
-                 weekOfMonth === activity.checkinWeekOfMonth;
+          return (
+            dayOfWeek === activity.checkinDayOfWeek &&
+            weekOfMonth === activity.checkinWeekOfMonth
+          );
         }
         return false;
 

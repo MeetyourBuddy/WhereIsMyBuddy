@@ -13,7 +13,11 @@ import {
   Max,
   ValidateIf,
 } from 'class-validator';
-import { DurationUnit, CheckinFrequencyUnit, DayOfWeek } from '../../schemas/activity.schema';
+import {
+  DurationUnit,
+  CheckinFrequencyUnit,
+  DayOfWeek,
+} from '../../schemas/activity.schema';
 import { Type } from 'class-transformer';
 
 export class UpdateActivityDto extends PartialType(CreateActivityDto) {
@@ -61,7 +65,11 @@ export class UpdateActivityDto extends PartialType(CreateActivityDto) {
   @ApiPropertyOptional({ enum: DayOfWeek, isArray: true })
   @IsOptional()
   @IsEnum(DayOfWeek, { each: true })
-  @ValidateIf(o => o.checkinFrequencyUnit === CheckinFrequencyUnit.WEEKLY || o.checkinFrequencyUnit === CheckinFrequencyUnit.BIWEEKLY)
+  @ValidateIf(
+    (o) =>
+      o.checkinFrequencyUnit === CheckinFrequencyUnit.WEEKLY ||
+      o.checkinFrequencyUnit === CheckinFrequencyUnit.BIWEEKLY,
+  )
   checkinDays?: DayOfWeek[];
 
   @ApiPropertyOptional({ minimum: 1, maximum: 31 })
@@ -69,13 +77,13 @@ export class UpdateActivityDto extends PartialType(CreateActivityDto) {
   @IsNumber()
   @Min(1)
   @Max(31)
-  @ValidateIf(o => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
+  @ValidateIf((o) => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
   checkinDateOfMonth?: number;
 
   @ApiPropertyOptional({ enum: DayOfWeek })
   @IsOptional()
   @IsEnum(DayOfWeek)
-  @ValidateIf(o => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
+  @ValidateIf((o) => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
   checkinDayOfWeek?: DayOfWeek;
 
   @ApiPropertyOptional({ minimum: 1, maximum: 4 })
@@ -83,6 +91,10 @@ export class UpdateActivityDto extends PartialType(CreateActivityDto) {
   @IsNumber()
   @Min(1)
   @Max(4)
-  @ValidateIf(o => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY && o.checkinDayOfWeek)
+  @ValidateIf(
+    (o) =>
+      o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY &&
+      o.checkinDayOfWeek,
+  )
   checkinWeekOfMonth?: number;
 }
