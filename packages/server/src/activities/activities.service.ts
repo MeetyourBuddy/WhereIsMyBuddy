@@ -147,8 +147,6 @@ export class ActivitiesService {
 
     const createdActivity = new this.activityModel({
       ...createActivityDto,
-      startDate,
-      endDate,
       participants: [
         {
           user: new Types.ObjectId(userId),

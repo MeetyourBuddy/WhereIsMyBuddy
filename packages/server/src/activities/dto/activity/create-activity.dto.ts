@@ -83,7 +83,6 @@ export class CreateActivityDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-
   rules?: string[];
 
   @ApiProperty({
@@ -141,5 +140,4 @@ export class CreateActivityDto {
       o.checkinDayOfWeek,
   )
   checkinWeekOfMonth?: number;
-
 }
