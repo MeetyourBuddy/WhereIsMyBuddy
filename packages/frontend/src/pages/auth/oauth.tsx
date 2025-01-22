@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { tokenService } from '@services/token/token-service';
 import { useAuthContext } from '@/providers/contexts/auth-context';
 import { userService } from '@/services/api/user/user-service';
+import { IServiceResponse } from '@/types';
+import { IUser } from '@/types/auth-types';
 
 interface AuthTokens {
   accessToken: string | null;
@@ -33,14 +35,14 @@ export const OAuthHandler = () => {
         }
 
         tokenService.setTokens(accessToken, refreshToken);
-        const { data: userData } = await userService.getMe();
+        const userData = await userService.getMe();
 
         if (!userData) {
           throw new Error('User data not found');
         }
 
-        setUser(userData);
-        if (userData.hasCompletedOnboarding) {
+        setUser(userData as IServiceResponse<IUser>);
+        if (userData?.data?.hasCompletedOnboarding) {
           navigate('/');
         } else {
           navigate('/onboarding');

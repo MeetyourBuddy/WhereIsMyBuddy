@@ -7,6 +7,7 @@ import { JwtPayload } from '../interfaces/auth.interface';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../../schemas/user.schema';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(
@@ -25,10 +26,30 @@ export class RefreshTokenStrategy extends PassportStrategy(
   }
 
   async validate(req: Request, payload: JwtPayload) {
+    const refreshToken = req.get('authorization')?.replace('Bearer', '').trim();
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+
     const user = await this.userModel.findById(payload.sub);
     if (!user || !user.refreshToken) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(
+        'User not found or invalid refresh token',
+      );
     }
-    return user;
+
+    const isRefreshTokenValid = await bcrypt.compare(
+      refreshToken,
+      user.refreshToken,
+    );
+    if (!isRefreshTokenValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    return {
+      ...payload,
+      refreshToken,
+    };
   }
 }

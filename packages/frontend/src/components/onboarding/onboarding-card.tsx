@@ -43,16 +43,19 @@ const OnboardingCard = () => {
     mode: 'onChange'
   });
 
-  if (!user) {
+  if (!user || !user.data) {
     return <div>Loading...</div>;
   }
 
   const { handleSubmit, watch } = methods;
 
   const onSubmit = async (data: OnboardingFormData) => {
-    console.log('Form data:', data, user.id);
+    if (!user?.data?._id) {
+      console.error('User data is missing');
+      return;
+    }
 
-    const response = await onboardingService.completeOnboarding(user.id, {
+    const response = await onboardingService.completeOnboarding(user.data._id, {
       ...data,
       dateOfBirth: data.dateOfBirth.toISOString()
     });

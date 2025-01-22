@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/common/ui/button';
 import { Calendar } from '@/components/common/ui/calendar';
-import { Checkbox } from '@/components/common/ui/checkbox';
+// import { Checkbox } from '@/components/common/ui/checkbox';
 import { Input } from '@/components/common/ui/input';
 import { Label } from '@/components/common/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/common/ui/radio-group';
@@ -67,9 +67,9 @@ const unitOptions = [
   { value: 'months', label: 'Month(s)' }
 ];
 
-const RequiredIndicator = () => <span className="text-red-500 ml-1">*</span>;
+const RequiredIndicator = () => <span className="ml-1 text-red-500">*</span>;
 
-const InfoIcon = () => <Icons.info className="w-4 h-4 text-muted-foreground ml-2" />;
+const InfoIcon = () => <Icons.info className="ml-2 h-4 w-4 text-muted-foreground" />;
 
 // Add type for the select options
 interface SelectOption {
@@ -166,23 +166,23 @@ export const CreateActivityForm = () => {
   }, [bannerImage]);
 
   return (
-    <div className="flex flex-col h-full container-default bg-white p-8">
+    <div className="container-default flex h-full flex-col bg-white p-8">
       <h2 className="scroll-m-20 font-extrabold tracking-tight">Create Activity</h2>
 
-      <div className="flex items-center justify-between mt-8">
+      <div className="mt-8 flex items-center justify-between">
         <div className="flex flex-col items-start">
           <p className="text-xl font-bold">New Activity</p>
-          <p className="text-base text-muted-foreground max-w-[400px]">
+          <p className="max-w-[400px] text-base text-muted-foreground">
             Please enter information for your new activity here. You can always come back and edit.
           </p>
         </div>
         <div className="flex items-center justify-center gap-2">
           <IconFrame
             icon="info"
-            className="w-10 h-10 bg-white border border-gray-200 "
+            className="h-10 w-10 border border-gray-200 bg-white"
             iconClassName="text-muted-foreground h-5 w-5"
           />
-          <IconButton rightIcon="star" label="Go Pro" className="w-[100px] h-8 rounded-full" />
+          <IconButton rightIcon="star" label="Go Pro" className="h-8 w-[100px] rounded-full" />
         </div>
       </div>
 
@@ -197,7 +197,7 @@ export const CreateActivityForm = () => {
                   Activity Name
                   <RequiredIndicator />
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <Input {...field} placeholder="Enter activity name" />
                   </FormControl>
@@ -214,22 +214,22 @@ export const CreateActivityForm = () => {
             render={({ field }) => (
               <FormItem className="flex gap-4">
                 <FormLabel className="w-1/3">Top Banner Image</FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <div className="flex-1 space-y-4">
                       {bannerImage ? (
                         <div className="relative">
                           <div
-                            className="relative border-2  border-gray-200 w-full h-[200px] rounded-lg overflow-hidden cursor-pointer"
+                            className="relative h-[200px] w-full cursor-pointer overflow-hidden rounded-lg border-2 border-gray-200"
                             onClick={() => setIsImagePreviewOpen(true)}
                           >
                             <img
                               src={bannerImage}
                               alt="Banner preview"
-                              className="w-full h-full object-cover"
+                              className="h-full w-full object-cover"
                             />
                           </div>
-                          <div className="flex gap-2 mt-2 justify-end">
+                          <div className="mt-2 flex justify-end gap-2">
                             <Button
                               type="button"
                               variant="outline"
@@ -251,9 +251,9 @@ export const CreateActivityForm = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-lg p-6">
-                          <Icons.image className="h-8 w-8 text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground mb-4">
+                        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 p-6">
+                          <Icons.image className="mb-2 h-8 w-8 text-muted-foreground" />
+                          <p className="mb-4 text-sm text-muted-foreground">
                             Upload a banner image for your activity
                           </p>
                           <Button
@@ -286,11 +286,11 @@ export const CreateActivityForm = () => {
             <DialogDescription className="sr-only">Image Preview</DialogDescription>
             <DialogContent className="max-w-4xl p-0">
               {bannerImage && (
-                <div className="relative w-full h-[600px]">
+                <div className="relative h-[600px] w-full">
                   <img
                     src={bannerImage}
                     alt="Banner preview"
-                    className="w-full h-full object-contain"
+                    className="h-full w-full object-contain"
                   />
                 </div>
               )}
@@ -308,27 +308,27 @@ export const CreateActivityForm = () => {
                   Page Type
                   <RequiredIndicator />
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className="flex gap-4 flex-1 flex-col"
+                      className="flex flex-1 flex-col gap-4"
                     >
-                      <div className="flex  space-x-2 ">
+                      <div className="flex space-x-2">
                         <RadioGroupItem value="public" id="public" />
-                        <Label htmlFor="public" className="flex flex-col ">
+                        <Label htmlFor="public" className="flex flex-col">
                           Public
-                          <span className="text-xs text-muted-foreground mt-1">
+                          <span className="mt-1 text-xs text-muted-foreground">
                             Anyone can view your activity.
                           </span>
                         </Label>
                       </div>
-                      <div className="flex  space-x-2">
+                      <div className="flex space-x-2">
                         <RadioGroupItem value="private" id="private" />
                         <Label htmlFor="private" className="flex flex-col">
                           Private
-                          <span className="text-xs text-muted-foreground mt-1">
+                          <span className="mt-1 text-xs text-muted-foreground">
                             Only member the group can view the details of this activity.
                           </span>
                         </Label>
@@ -352,7 +352,7 @@ export const CreateActivityForm = () => {
                   Start Date
                   <RequiredIndicator />
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -395,9 +395,9 @@ export const CreateActivityForm = () => {
                   Proposed Duration
                   <RequiredIndicator />
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
-                    <div className="flex gap-4 flex-1">
+                    <div className="flex flex-1 gap-4">
                       <Input
                         type="number"
                         {...field}
@@ -438,11 +438,11 @@ export const CreateActivityForm = () => {
             name="contactFrequency"
             render={({ field }) => (
               <FormItem className="flex gap-4">
-                <FormLabel className="w-1/3 flex">
+                <FormLabel className="flex w-1/3">
                   Meeting Frequency
                   <InfoIcon />
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger className="flex-1">
@@ -470,12 +470,12 @@ export const CreateActivityForm = () => {
             name="maxSize"
             render={({ field }) => (
               <FormItem className="flex gap-4">
-                <FormLabel className="w-1/3 flex">
+                <FormLabel className="flex w-1/3">
                   Meeting Capacity
                   <RequiredIndicator />
                   <InfoIcon />
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <Input
                       type="number"
@@ -504,7 +504,7 @@ export const CreateActivityForm = () => {
                     <InfoIcon />
                   </div>
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger className="flex-1">
@@ -539,13 +539,13 @@ export const CreateActivityForm = () => {
                     <InfoIcon />
                   </div>
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <div className="relative">
                       <Textarea
                         {...field}
                         placeholder="Describe your activity..."
-                        className="flex-1 min-h-[150px] max-h-[150px]"
+                        className="max-h-[150px] min-h-[150px] flex-1"
                         maxLength={MAX_CHARS}
                       />
                       <div className="absolute bottom-2 left-2 text-xs text-muted-foreground">
@@ -573,7 +573,7 @@ export const CreateActivityForm = () => {
                     <InfoIcon />
                   </div>
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1 space-y-4">
+                <div className="flex w-full flex-1 flex-col space-y-4">
                   <FormControl>
                     {/* Categories */}
                     <FormField
@@ -767,7 +767,7 @@ export const CreateActivityForm = () => {
                     <InfoIcon />
                   </div>
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
                     <div className="space-y-2">
                       {field.value?.map((ruleItem: Rule, index: number) => (
@@ -817,7 +817,7 @@ export const CreateActivityForm = () => {
           />
 
           {form.formState?.errors && Object.keys(form.formState.errors).length > 0 && (
-            <p className="text-sm text-red-500 flex justify-end">
+            <p className="flex justify-end text-sm text-red-500">
               You have errors in your form. Please fix them before submitting.
             </p>
           )}

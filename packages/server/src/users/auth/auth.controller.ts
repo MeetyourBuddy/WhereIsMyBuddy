@@ -73,15 +73,15 @@ export class AuthController {
     return this.authService.refreshTokens(userId, refreshToken);
   }
 
-  @Get('google')
   @Public()
+  @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth login' })
   @ApiResponse({
     status: 302,
     description: 'Redirects to Google login',
   })
-  googleAuth() {
+  async googleAuth() {
     // Guard redirects to Google
   }
 

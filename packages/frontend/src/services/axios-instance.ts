@@ -22,45 +22,44 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
-    const tokens = response.data.data.tokens;
-
-    if (tokens) {
-      console.log('response hereeeeeeeee', tokens.accessToken);
+    const tokens = response.data?.data?.tokens;
+    console.log('tokens', tokens);
+    if (tokens?.accessToken) {
+      console.log('setting tokens');
       tokenService.setTokens(tokens.accessToken, tokens.refreshToken);
     }
-
     return response;
   },
   async (error: AxiosError) => {
-    if (!error.config) {
-      return Promise.reject(error);
-    }
-
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
+    // Handle 401 and token refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         const refreshToken = tokenService.getRefreshToken();
-        if (refreshToken) {
-          const response = await axiosInstance.post<AuthResponse>('/auth/refresh', {
-            refreshToken
-          });
-
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data.tokens;
-
-          console.log('accessToken in the interceptor', accessToken);
-          console.log('newRefreshToken in the interceptor', newRefreshToken);
-
-          tokenService.setTokens(accessToken, newRefreshToken);
-          originalRequest.headers.set('Authorization', `Bearer ${accessToken}`);
-
-          return axiosInstance(originalRequest);
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
         }
-      } catch (error) {
+
+        // Create a new instance for refresh token request to avoid interceptors
+        const refreshResponse = await axios.post<AuthResponse>(
+          `${API_CONFIG.baseURL}/auth/refresh`,
+          { refreshToken },
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+
+        const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data.data.tokens;
+        tokenService.setTokens(accessToken, newRefreshToken);
+
+        // Update the original request with new token
+        originalRequest.headers.set('Authorization', `Bearer ${accessToken}`);
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
         tokenService.clearTokens();
         window.location.href = '/signin';
+        return Promise.reject(refreshError);
       }
     }
 
