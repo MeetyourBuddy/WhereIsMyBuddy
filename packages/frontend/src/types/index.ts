@@ -3,4 +3,5 @@ export interface IServiceResponse<T> {
   message?: string;
   data?: T;
   error?: string;
+  timestamp?: string;
 }

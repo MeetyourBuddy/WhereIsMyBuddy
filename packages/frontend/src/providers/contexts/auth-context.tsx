@@ -1,15 +1,16 @@
+import { IServiceResponse } from '@/types';
 import { IUser } from '@/types/auth-types';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 interface AuthContextType {
-  user: IUser | null;
-  setUser: (user: IUser | null) => void;
+  user: IServiceResponse<IUser> | null;
+  setUser: (user: IServiceResponse<IUser> | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<IUser | null>(() => {
+  const [user, setUser] = useState<IServiceResponse<IUser> | null>(() => {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
