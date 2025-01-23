@@ -16,7 +16,7 @@ export type UserDocument = User & Document;
     },
   },
 })
-export class User {
+export class User extends Document {
   // Basic Info
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email: string;

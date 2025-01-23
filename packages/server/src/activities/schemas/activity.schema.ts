@@ -180,6 +180,20 @@ export class Activity extends Document {
     default: [CheckInType.PHOTO],
   })
   allowedCheckInTypes: CheckInType[];
+
+  @Prop({
+    type: [
+      {
+        user: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
+        requestedAt: { type: Date, default: Date.now },
+      },
+    ],
+    default: [],
+  })
+  joinRequests: Array<{
+    user: User | MongooseSchema.Types.ObjectId;
+    requestedAt: Date;
+  }>;
 }
 
 export const ActivitySchema = SchemaFactory.createForClass(Activity);

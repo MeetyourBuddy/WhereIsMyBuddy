@@ -5,13 +5,25 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Activity, ActivityDocument } from './schemas/activity.schema';
+import {
+  Activity,
+  ActivityDocument,
+  ActivityType,
+  ActivityRole,
+  CheckinFrequencyUnit,
+  DayOfWeek,
+  DurationUnit,
+} from './schemas/activity.schema';
+import {
+  CheckIn,
+  CheckInDocument,
+  CheckInType,
+} from './schemas/checkin.schema';
 import { CreateActivityDto } from './dto/activity/create-activity.dto';
 import { UpdateActivityDto } from './dto/activity/update-activity.dto';
 import { ActivityResponseDto } from './dto/activity/activity-response.dto';
 import { ActivityServiceResponse } from './interfaces/common.interface';
 import { plainToClass } from 'class-transformer';
-import { CheckIn, CheckInDocument } from './schemas/checkin.schema';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
 import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
@@ -26,12 +38,7 @@ import {
   PopulatedActivity,
   PopulatedCheckIn,
 } from './interfaces/populated-documents.interface';
-import { CheckInType } from './schemas/checkin.schema';
-import { DurationUnit } from './schemas/activity.schema';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
-import { ActivityRole } from './schemas/activity.schema';
-import { CheckinFrequencyUnit } from './schemas/activity.schema';
-import { DayOfWeek } from './schemas/activity.schema';
 
 @Injectable()
 export class ActivitiesService {
@@ -767,9 +774,18 @@ export class ActivitiesService {
     activity: Activity,
     checkInDate: Date,
   ): boolean {
-    const dayOfWeek = checkInDate.toLocaleLowerCase(); // gets 'monday', 'tuesday', etc.
+    const days = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const dayOfWeek = days[checkInDate.getDay()] as DayOfWeek;
     const dateOfMonth = checkInDate.getDate();
-    const weekOfMonth = Math.ceil(dateOfMonth / 7); // rough calculation of week number
+    const weekOfMonth = Math.ceil(dateOfMonth / 7);
 
     switch (activity.checkinFrequencyUnit) {
       case CheckinFrequencyUnit.DAILY:
@@ -777,7 +793,7 @@ export class ActivitiesService {
 
       case CheckinFrequencyUnit.WEEKLY:
       case CheckinFrequencyUnit.BIWEEKLY:
-        return activity.checkinDays?.includes(dayOfWeek as DayOfWeek) ?? false;
+        return activity.checkinDays?.includes(dayOfWeek) ?? false;
 
       case CheckinFrequencyUnit.MONTHLY:
         if (activity.checkinDateOfMonth) {
@@ -792,7 +808,202 @@ export class ActivitiesService {
         return false;
 
       default:
-        return true; // OTHER frequency type
+        return true;
     }
+  }
+
+  async getActivityCalendar(
+    activityId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<ActivityServiceResponse<any>> {
+    const activity = await this.activityModel.findById(activityId);
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    const query: any = { activity: activityId };
+    if (startDate) {
+      query.date = { $gte: new Date(startDate) };
+    }
+    if (endDate) {
+      query.date = { ...query.date, $lte: new Date(endDate) };
+    }
+
+    const checkIns = await this.checkInModel
+      .find(query)
+      .populate('user', 'name email profilePicture')
+      .sort({ date: 1 })
+      .lean();
+
+    // Group check-ins by date
+    const checkInsByDate = checkIns.reduce((acc, checkIn) => {
+      const date = checkIn.date.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(checkIn);
+      return acc;
+    }, {});
+
+    // Calculate allowed check-in dates based on frequency settings
+    const allowedDates = this.calculateAllowedCheckInDates(
+      activity,
+      new Date(startDate || activity.startDate),
+      new Date(endDate || activity.endedAt || new Date()),
+    );
+
+    return {
+      success: true,
+      message: 'Calendar data retrieved successfully',
+      data: {
+        checkIns: checkInsByDate,
+        allowedDates,
+        frequency: {
+          unit: activity.checkinFrequencyUnit,
+          days: activity.checkinDays,
+          dateOfMonth: activity.checkinDateOfMonth,
+          dayOfWeek: activity.checkinDayOfWeek,
+          weekOfMonth: activity.checkinWeekOfMonth,
+        },
+      },
+    };
+  }
+
+  private calculateAllowedCheckInDates(
+    activity: Activity,
+    startDate: Date,
+    endDate: Date,
+  ): string[] {
+    const allowedDates: string[] = [];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      if (this.isCheckInAllowedForDate(activity, currentDate)) {
+        allowedDates.push(currentDate.toISOString().split('T')[0]);
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return allowedDates;
+  }
+
+  async leaveActivity(
+    activityId: string,
+    userId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activityModel.findById(activityId);
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    // Remove participant
+    activity.participants = activity.participants.filter(
+      (p) => p.user.toString() !== userId,
+    );
+
+    // Update current size
+    activity.currentSize = activity.participants.length;
+
+    const updatedActivity = await activity.save();
+
+    return this.prepareActivityResponse(
+      updatedActivity,
+      'Successfully left the activity',
+    );
+  }
+
+  async joinActivity(
+    activityId: string,
+    userId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activityModel.findById(activityId);
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    if (activity.currentSize >= activity.maxSize) {
+      throw new BadRequestException('Activity is full');
+    }
+
+    if (!activity.isActive) {
+      throw new BadRequestException('Activity is no longer active');
+    }
+
+    // For public activities, add user directly
+    if (activity.type === ActivityType.PUBLIC) {
+      activity.participants.push({
+        user: new Types.ObjectId(userId),
+        role: ActivityRole.MEMBER,
+      } as any);
+      activity.currentSize = activity.participants.length;
+
+      const updatedActivity = await activity.save();
+      return this.prepareActivityResponse(
+        updatedActivity,
+        'Successfully joined the activity',
+      );
+    }
+
+    // For private activities, add to join requests
+    const existingRequest = activity.joinRequests.find(
+      (request) => request.user.toString() === userId,
+    );
+
+    if (existingRequest) {
+      throw new BadRequestException('Join request already pending');
+    }
+
+    activity.joinRequests.push({
+      user: new Types.ObjectId(userId),
+      requestedAt: new Date(),
+    } as any);
+
+    const updatedActivity = await activity.save();
+    return this.prepareActivityResponse(
+      updatedActivity,
+      'Join request sent successfully',
+    );
+  }
+
+  async approveJoinRequest(
+    activityId: string,
+    userId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activityModel.findById(activityId);
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    if (activity.currentSize >= activity.maxSize) {
+      throw new BadRequestException('Activity is full');
+    }
+
+    // Find and remove the join request
+    const requestIndex = activity.joinRequests.findIndex(
+      (request) => request.user.toString() === userId,
+    );
+
+    if (requestIndex === -1) {
+      throw new NotFoundException('Join request not found');
+    }
+
+    activity.joinRequests.splice(requestIndex, 1);
+
+    // Add user as participant
+    activity.participants.push({
+      user: new Types.ObjectId(userId),
+      role: ActivityRole.MEMBER,
+    } as any);
+    activity.currentSize = activity.participants.length;
+
+    const updatedActivity = await activity.save();
+    return this.prepareActivityResponse(
+      updatedActivity,
+      'Successfully approved join request',
+    );
   }
 }
