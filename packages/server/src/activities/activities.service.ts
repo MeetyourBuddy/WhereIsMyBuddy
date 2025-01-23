@@ -5,13 +5,21 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Activity, ActivityDocument } from './schemas/activity.schema';
+import { 
+  Activity, 
+  ActivityDocument, 
+  ActivityType, 
+  ActivityRole,
+  CheckinFrequencyUnit,
+  DayOfWeek,
+  DurationUnit 
+} from './schemas/activity.schema';
+import { CheckIn, CheckInDocument, CheckInType } from './schemas/checkin.schema';
 import { CreateActivityDto } from './dto/activity/create-activity.dto';
 import { UpdateActivityDto } from './dto/activity/update-activity.dto';
 import { ActivityResponseDto } from './dto/activity/activity-response.dto';
 import { ActivityServiceResponse } from './interfaces/common.interface';
 import { plainToClass } from 'class-transformer';
-import { CheckIn, CheckInDocument } from './schemas/checkin.schema';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
 import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
@@ -26,12 +34,11 @@ import {
   PopulatedActivity,
   PopulatedCheckIn,
 } from './interfaces/populated-documents.interface';
-import { CheckInType } from './schemas/checkin.schema';
-import { DurationUnit } from './schemas/activity.schema';
+import { CheckInType as CheckInTypeEnum } from './schemas/checkin.schema';
+import { DurationUnit as DurationUnitEnum } from './schemas/activity.schema';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
-import { ActivityRole } from './schemas/activity.schema';
-import { CheckinFrequencyUnit } from './schemas/activity.schema';
-import { DayOfWeek } from './schemas/activity.schema';
+import { CheckinFrequencyUnit as CheckinFrequencyUnitEnum } from './schemas/activity.schema';
+import { User } from '../users/schemas/user.schema';
 
 @Injectable()
 export class ActivitiesService {
@@ -866,5 +873,124 @@ export class ActivitiesService {
     }
 
     return allowedDates;
+  }
+
+  async leaveActivity(
+    activityId: string,
+    userId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activityModel.findById(activityId);
+    
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    // Remove participant
+    activity.participants = activity.participants.filter(
+      (p) => p.user.toString() !== userId,
+    );
+    
+    // Update current size
+    activity.currentSize = activity.participants.length;
+
+    const updatedActivity = await activity.save();
+
+    return this.prepareActivityResponse(
+      updatedActivity,
+      'Successfully left the activity',
+    );
+  }
+
+  async joinActivity(
+    activityId: string,
+    userId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activityModel.findById(activityId);
+    
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    if (activity.currentSize >= activity.maxSize) {
+      throw new BadRequestException('Activity is full');
+    }
+
+    if (!activity.isActive) {
+      throw new BadRequestException('Activity is no longer active');
+    }
+
+    // For public activities, add user directly
+    if (activity.type === ActivityType.PUBLIC) {
+      activity.participants.push({
+        user: new Types.ObjectId(userId),
+        role: ActivityRole.MEMBER,
+      } as any);
+      activity.currentSize = activity.participants.length;
+      
+      const updatedActivity = await activity.save();
+      return this.prepareActivityResponse(
+        updatedActivity,
+        'Successfully joined the activity',
+      );
+    }
+
+    // For private activities, add to join requests
+    const existingRequest = activity.joinRequests.find(
+      (request) => request.user.toString() === userId,
+    );
+
+    if (existingRequest) {
+      throw new BadRequestException('Join request already pending');
+    }
+
+    activity.joinRequests.push({
+      user: new Types.ObjectId(userId),
+      requestedAt: new Date(),
+    } as any);
+
+    const updatedActivity = await activity.save();
+    return this.prepareActivityResponse(
+      updatedActivity,
+      'Join request sent successfully',
+    );
+  }
+
+  async approveJoinRequest(
+    activityId: string,
+    userId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activityModel.findById(activityId);
+    
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    if (activity.currentSize >= activity.maxSize) {
+      throw new BadRequestException('Activity is full');
+    }
+
+    // Find and remove the join request
+    const requestIndex = activity.joinRequests.findIndex(
+      (request) => request.user.toString() === userId,
+    );
+
+    if (requestIndex === -1) {
+      throw new NotFoundException('Join request not found');
+    }
+
+    activity.joinRequests.splice(requestIndex, 1);
+
+    // Add user as participant
+    activity.participants.push({
+      user: new Types.ObjectId(userId),
+      role: ActivityRole.MEMBER,
+    } as any);
+    activity.currentSize = activity.participants.length;
+
+    const updatedActivity = await activity.save();
+    return this.prepareActivityResponse(
+      updatedActivity,
+      'Successfully approved join request',
+    );
   }
 }

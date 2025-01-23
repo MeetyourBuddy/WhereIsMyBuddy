@@ -330,4 +330,95 @@ export class ActivitiesController {
 
     return this.activitiesService.getActivityCalendar(activityId, startDate, endDate);
   }
+
+  @Delete(':id/leave')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Leave an activity' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully left the activity',
+    type: ActivityResponseDto,
+  })
+  async leaveActivity(
+    @Request() req,
+    @Param('id') activityId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activitiesService.findOne(activityId);
+    
+    // Check if user is a participant
+    const isParticipant = activity.data.participants.some(
+      (p) => p.user.id === req.user.id,
+    );
+
+    if (!isParticipant) {
+      throw new BadRequestException('You are not a participant in this activity');
+    }
+
+    // Check if user is the admin
+    const isAdmin = activity.data.participants.some(
+      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
+    );
+
+    if (isAdmin) {
+      throw new BadRequestException('Activity admin cannot leave. Transfer admin role first or end the activity');
+    }
+
+    return this.activitiesService.leaveActivity(activityId, req.user.id);
+  }
+
+  @Post(':id/join')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Join or request to join an activity' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully joined or requested to join the activity',
+    type: ActivityResponseDto,
+  })
+  async joinActivity(
+    @Request() req,
+    @Param('id') activityId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activitiesService.findOne(activityId);
+
+    // Check if user is already a participant
+    const isParticipant = activity.data.participants.some(
+      (p) => p.user.id === req.user.id,
+    );
+
+    if (isParticipant) {
+      throw new BadRequestException('You are already a participant in this activity');
+    }
+
+    return this.activitiesService.joinActivity(activityId, req.user.id);
+  }
+
+  @Post(':id/requests/:userId/approve')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Approve a join request (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully approved join request',
+    type: ActivityResponseDto,
+  })
+  async approveJoinRequest(
+    @Request() req,
+    @Param('id') activityId: string,
+    @Param('userId') userId: string,
+  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    const activity = await this.activitiesService.findOne(activityId);
+    
+    // Check if user is admin
+    const isAdmin = activity.data.participants.some(
+      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
+    );
+
+    if (!isAdmin) {
+      throw new ForbiddenException('Only admins can approve join requests');
+    }
+
+    return this.activitiesService.approveJoinRequest(activityId, userId);
+  }
 }
