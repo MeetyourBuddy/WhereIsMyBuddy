@@ -763,13 +763,11 @@ export class ActivitiesService {
     return date <= now;
   }
 
-  private isCheckInAllowedForDate(
-    activity: Activity,
-    checkInDate: Date,
-  ): boolean {
-    const dayOfWeek = checkInDate.toLocaleLowerCase(); // gets 'monday', 'tuesday', etc.
+  private isCheckInAllowedForDate(activity: Activity, checkInDate: Date): boolean {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayOfWeek = days[checkInDate.getDay()] as DayOfWeek;
     const dateOfMonth = checkInDate.getDate();
-    const weekOfMonth = Math.ceil(dateOfMonth / 7); // rough calculation of week number
+    const weekOfMonth = Math.ceil(dateOfMonth / 7);
 
     switch (activity.checkinFrequencyUnit) {
       case CheckinFrequencyUnit.DAILY:
@@ -777,22 +775,96 @@ export class ActivitiesService {
 
       case CheckinFrequencyUnit.WEEKLY:
       case CheckinFrequencyUnit.BIWEEKLY:
-        return activity.checkinDays?.includes(dayOfWeek as DayOfWeek) ?? false;
+        return activity.checkinDays?.includes(dayOfWeek) ?? false;
 
       case CheckinFrequencyUnit.MONTHLY:
         if (activity.checkinDateOfMonth) {
           return dateOfMonth === activity.checkinDateOfMonth;
         }
         if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
-          return (
-            dayOfWeek === activity.checkinDayOfWeek &&
-            weekOfMonth === activity.checkinWeekOfMonth
-          );
+          return dayOfWeek === activity.checkinDayOfWeek && 
+                 weekOfMonth === activity.checkinWeekOfMonth;
         }
         return false;
 
       default:
-        return true; // OTHER frequency type
+        return true;
     }
+  }
+
+  async getActivityCalendar(
+    activityId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<ActivityServiceResponse<any>> {
+    const activity = await this.activityModel.findById(activityId);
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    const query: any = { activity: activityId };
+    if (startDate) {
+      query.date = { $gte: new Date(startDate) };
+    }
+    if (endDate) {
+      query.date = { ...query.date, $lte: new Date(endDate) };
+    }
+
+    const checkIns = await this.checkInModel
+      .find(query)
+      .populate('user', 'name email profilePicture')
+      .sort({ date: 1 })
+      .lean();
+
+    // Group check-ins by date
+    const checkInsByDate = checkIns.reduce((acc, checkIn) => {
+      const date = checkIn.date.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(checkIn);
+      return acc;
+    }, {});
+
+    // Calculate allowed check-in dates based on frequency settings
+    const allowedDates = this.calculateAllowedCheckInDates(
+      activity,
+      new Date(startDate || activity.startDate),
+      new Date(endDate || activity.endedAt || new Date()),
+    );
+
+    return {
+      success: true,
+      message: 'Calendar data retrieved successfully',
+      data: {
+        checkIns: checkInsByDate,
+        allowedDates,
+        frequency: {
+          unit: activity.checkinFrequencyUnit,
+          days: activity.checkinDays,
+          dateOfMonth: activity.checkinDateOfMonth,
+          dayOfWeek: activity.checkinDayOfWeek,
+          weekOfMonth: activity.checkinWeekOfMonth,
+        },
+      },
+    };
+  }
+
+  private calculateAllowedCheckInDates(
+    activity: Activity,
+    startDate: Date,
+    endDate: Date,
+  ): string[] {
+    const allowedDates: string[] = [];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      if (this.isCheckInAllowedForDate(activity, currentDate)) {
+        allowedDates.push(currentDate.toISOString().split('T')[0]);
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return allowedDates;
   }
 }

@@ -303,4 +303,31 @@ export class ActivitiesController {
 
     return this.activitiesService.endActivity(activityId);
   }
+
+  @Get(':activityId/calendar')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get activity check-ins in calendar format' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns check-ins grouped by date with activity schedule info',
+  })
+  async getActivityCalendar(
+    @Request() req,
+    @Param('activityId') activityId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<ActivityServiceResponse<any>> {
+    // Validate that user has access to the activity
+    const activity = await this.activitiesService.findOne(activityId);
+    const isParticipantOrAdmin =
+      activity.data.participants.some((p) => p.user.id === req.user.id) ||
+      activity.data.admin.id === req.user.id;
+
+    if (!isParticipantOrAdmin) {
+      throw new ForbiddenException('You do not have access to this activity');
+    }
+
+    return this.activitiesService.getActivityCalendar(activityId, startDate, endDate);
+  }
 }
