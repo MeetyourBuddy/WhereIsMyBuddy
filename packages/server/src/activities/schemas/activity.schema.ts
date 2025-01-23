@@ -182,14 +182,16 @@ export class Activity extends Document {
   allowedCheckInTypes: CheckInType[];
 
   @Prop({
-    type: [{
-      user: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
-      requestedAt: { type: Date, default: Date.now }
-    }],
+    type: [
+      {
+        user: { type: MongooseSchema.Types.ObjectId, ref: 'User' },
+        requestedAt: { type: Date, default: Date.now },
+      },
+    ],
     default: [],
   })
-  joinRequests: Array<{ 
-    user: User | MongooseSchema.Types.ObjectId; 
+  joinRequests: Array<{
+    user: User | MongooseSchema.Types.ObjectId;
     requestedAt: Date;
   }>;
 }

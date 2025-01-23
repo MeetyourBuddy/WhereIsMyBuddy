@@ -310,7 +310,8 @@ export class ActivitiesController {
   @ApiOperation({ summary: 'Get activity check-ins in calendar format' })
   @ApiResponse({
     status: 200,
-    description: 'Returns check-ins grouped by date with activity schedule info',
+    description:
+      'Returns check-ins grouped by date with activity schedule info',
   })
   async getActivityCalendar(
     @Request() req,
@@ -328,7 +329,11 @@ export class ActivitiesController {
       throw new ForbiddenException('You do not have access to this activity');
     }
 
-    return this.activitiesService.getActivityCalendar(activityId, startDate, endDate);
+    return this.activitiesService.getActivityCalendar(
+      activityId,
+      startDate,
+      endDate,
+    );
   }
 
   @Delete(':id/leave')
@@ -345,14 +350,16 @@ export class ActivitiesController {
     @Param('id') activityId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activitiesService.findOne(activityId);
-    
+
     // Check if user is a participant
     const isParticipant = activity.data.participants.some(
       (p) => p.user.id === req.user.id,
     );
 
     if (!isParticipant) {
-      throw new BadRequestException('You are not a participant in this activity');
+      throw new BadRequestException(
+        'You are not a participant in this activity',
+      );
     }
 
     // Check if user is the admin
@@ -361,7 +368,9 @@ export class ActivitiesController {
     );
 
     if (isAdmin) {
-      throw new BadRequestException('Activity admin cannot leave. Transfer admin role first or end the activity');
+      throw new BadRequestException(
+        'Activity admin cannot leave. Transfer admin role first or end the activity',
+      );
     }
 
     return this.activitiesService.leaveActivity(activityId, req.user.id);
@@ -388,7 +397,9 @@ export class ActivitiesController {
     );
 
     if (isParticipant) {
-      throw new BadRequestException('You are already a participant in this activity');
+      throw new BadRequestException(
+        'You are already a participant in this activity',
+      );
     }
 
     return this.activitiesService.joinActivity(activityId, req.user.id);
@@ -409,7 +420,7 @@ export class ActivitiesController {
     @Param('userId') userId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activitiesService.findOne(activityId);
-    
+
     // Check if user is admin
     const isAdmin = activity.data.participants.some(
       (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,

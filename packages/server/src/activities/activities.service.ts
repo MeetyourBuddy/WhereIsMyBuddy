@@ -5,16 +5,20 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { 
-  Activity, 
-  ActivityDocument, 
-  ActivityType, 
+import {
+  Activity,
+  ActivityDocument,
+  ActivityType,
   ActivityRole,
   CheckinFrequencyUnit,
   DayOfWeek,
-  DurationUnit 
+  DurationUnit,
 } from './schemas/activity.schema';
-import { CheckIn, CheckInDocument, CheckInType } from './schemas/checkin.schema';
+import {
+  CheckIn,
+  CheckInDocument,
+  CheckInType,
+} from './schemas/checkin.schema';
 import { CreateActivityDto } from './dto/activity/create-activity.dto';
 import { UpdateActivityDto } from './dto/activity/update-activity.dto';
 import { ActivityResponseDto } from './dto/activity/activity-response.dto';
@@ -34,11 +38,7 @@ import {
   PopulatedActivity,
   PopulatedCheckIn,
 } from './interfaces/populated-documents.interface';
-import { CheckInType as CheckInTypeEnum } from './schemas/checkin.schema';
-import { DurationUnit as DurationUnitEnum } from './schemas/activity.schema';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
-import { CheckinFrequencyUnit as CheckinFrequencyUnitEnum } from './schemas/activity.schema';
-import { User } from '../users/schemas/user.schema';
 
 @Injectable()
 export class ActivitiesService {
@@ -770,8 +770,19 @@ export class ActivitiesService {
     return date <= now;
   }
 
-  private isCheckInAllowedForDate(activity: Activity, checkInDate: Date): boolean {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  private isCheckInAllowedForDate(
+    activity: Activity,
+    checkInDate: Date,
+  ): boolean {
+    const days = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
     const dayOfWeek = days[checkInDate.getDay()] as DayOfWeek;
     const dateOfMonth = checkInDate.getDate();
     const weekOfMonth = Math.ceil(dateOfMonth / 7);
@@ -789,8 +800,10 @@ export class ActivitiesService {
           return dateOfMonth === activity.checkinDateOfMonth;
         }
         if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
-          return dayOfWeek === activity.checkinDayOfWeek && 
-                 weekOfMonth === activity.checkinWeekOfMonth;
+          return (
+            dayOfWeek === activity.checkinDayOfWeek &&
+            weekOfMonth === activity.checkinWeekOfMonth
+          );
         }
         return false;
 
@@ -880,7 +893,7 @@ export class ActivitiesService {
     userId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activityModel.findById(activityId);
-    
+
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
@@ -889,7 +902,7 @@ export class ActivitiesService {
     activity.participants = activity.participants.filter(
       (p) => p.user.toString() !== userId,
     );
-    
+
     // Update current size
     activity.currentSize = activity.participants.length;
 
@@ -906,7 +919,7 @@ export class ActivitiesService {
     userId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activityModel.findById(activityId);
-    
+
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
@@ -926,7 +939,7 @@ export class ActivitiesService {
         role: ActivityRole.MEMBER,
       } as any);
       activity.currentSize = activity.participants.length;
-      
+
       const updatedActivity = await activity.save();
       return this.prepareActivityResponse(
         updatedActivity,
@@ -960,7 +973,7 @@ export class ActivitiesService {
     userId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activityModel.findById(activityId);
-    
+
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
