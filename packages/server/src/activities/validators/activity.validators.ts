@@ -1,7 +1,7 @@
 import {
   ActivityType,
   JoinType,
-  CheckinFrequency,
+  CheckinFrequencyUnit,
   DurationUnit,
 } from '../schemas/activity.schema';
 
@@ -15,9 +15,9 @@ export const isValidJoinType = (type: string): type is JoinType => {
 
 export const isValidContactFrequency = (
   frequency: string,
-): frequency is CheckinFrequency => {
-  return Object.values(CheckinFrequency).includes(
-    frequency as CheckinFrequency,
+): frequency is CheckinFrequencyUnit => {
+  return Object.values(CheckinFrequencyUnit).includes(
+    frequency as CheckinFrequencyUnit,
   );
 };
 
@@ -47,4 +47,18 @@ export const isValidDuration = (
     default:
       return false;
   }
+};
+
+export function validateCheckinFrequency(frequency: CheckinFrequencyUnit): boolean {
+  return Object.values(CheckinFrequencyUnit).includes(frequency);
+}
+
+export const isValidCheckinFrequency = (frequency: number): boolean => {
+  return frequency > 0;
+};
+
+export const isValidCheckinFrequencyUnit = (
+  unit: string,
+): unit is CheckinFrequencyUnit => {
+  return Object.values(CheckinFrequencyUnit).includes(unit as CheckinFrequencyUnit);
 };

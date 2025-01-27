@@ -23,3 +23,5 @@ export interface PopulatedCheckIn extends Omit<CheckIn, 'user' | 'activity'> {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Defines the format of responses with populated references

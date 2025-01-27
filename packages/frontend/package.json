@@ -57,7 +57,7 @@
     "react-phone-number-input": "^3.4.10",
     "react-query": "^3.39.3",
     "react-router-dom": "^6.26.1",
-    "shadcn": "^2.1.8",
+    "shadcn": "^1.0.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8",

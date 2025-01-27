@@ -52,6 +52,9 @@ export class ActivitiesService {
       return null;
     }
     const plainObj = document.toJSON ? document.toJSON() : document;
+    if (document.id) {
+      plainObj.id = document.id.toString();
+    }
     return plainToClass(dto, plainObj, {
       excludeExtraneousValues: true,
     });
