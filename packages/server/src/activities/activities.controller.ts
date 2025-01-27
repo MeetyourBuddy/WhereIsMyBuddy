@@ -69,7 +69,7 @@ export class ActivitiesController {
     return this.activitiesService.findOne(id);
   }
 
-  @Put(':id')
+  @Put(':id/update')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update activity by ID' })
@@ -86,17 +86,12 @@ export class ActivitiesController {
     const activity = await this.activitiesService.findOne(id);
 
     // Check if user is an admin of the activity
-    const isAdmin = activity.data.participants.some(
-      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
+    const isAdmin = activity.data?.participants?.some(
+      (p) => p.user?.id === req.user.id && p.role === ActivityRole.ADMIN,
     );
 
     if (!isAdmin) {
       throw new ForbiddenException('Only admins can update this activity');
-    }
-
-    // If activity is being ended, add endedAt date
-    if (updateActivityDto.isActive === false) {
-      updateActivityDto.endedAt = new Date();
     }
 
     return this.activitiesService.update(id, updateActivityDto);
@@ -391,9 +386,9 @@ export class ActivitiesController {
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activitiesService.findOne(activityId);
 
-    // Check if user is already a participant
-    const isParticipant = activity.data.participants.some(
-      (p) => p.user.id === req.user.id,
+    // Add null check and use toString() for comparison
+    const isParticipant = activity.data?.participants?.some(
+      (p) => p.user?.toString() === req.user.id || p.user?.id === req.user.id
     );
 
     if (isParticipant) {

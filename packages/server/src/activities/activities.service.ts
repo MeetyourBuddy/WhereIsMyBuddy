@@ -240,14 +240,6 @@ export class ActivitiesService {
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activityModel
       .findById(id)
-      .populate({
-        path: 'admin',
-        select: 'name email profilePicture',
-      })
-      .populate({
-        path: 'participants.user',
-        select: 'name email profilePicture',
-      })
       .exec();
 
     if (!activity) {
@@ -281,10 +273,14 @@ export class ActivitiesService {
 
     this.validateCheckinFrequencySettings(relevantFields);
 
+    // Simplified update without unnecessary population
     const updatedActivity = await this.activityModel
-      .findByIdAndUpdate(activityId, updateActivityDto, { new: true })
-      .populate('admin', 'name email profilePicture')
-      .populate('participants.user', 'name email profilePicture');
+      .findByIdAndUpdate(
+        activityId,
+        { $set: updateActivityDto },
+        { new: true }
+      )
+      .exec();
 
     if (!updatedActivity) {
       throw new NotFoundException('Activity not found');

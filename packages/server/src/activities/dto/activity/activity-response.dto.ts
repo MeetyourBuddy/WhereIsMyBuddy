@@ -150,8 +150,16 @@ export class ActivityResponseDto {
    * List of participants with their roles
    */
   @Expose()
-  @ApiProperty({ type: [ParticipantDto] })
-  participants: ParticipantDto[];
+  @ApiProperty({ type: [Object] })
+  participants: Array<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      profilePicture?: string;
+    };
+    role: ActivityRole;
+  }>;
 
   /**
    * Whether the activity is currently active
