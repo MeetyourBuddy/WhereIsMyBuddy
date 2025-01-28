@@ -49,7 +49,9 @@ export const isValidDuration = (
   }
 };
 
-export function validateCheckinFrequency(frequency: CheckinFrequencyUnit): boolean {
+export function validateCheckinFrequency(
+  frequency: CheckinFrequencyUnit,
+): boolean {
   return Object.values(CheckinFrequencyUnit).includes(frequency);
 }
 
@@ -60,5 +62,7 @@ export const isValidCheckinFrequency = (frequency: number): boolean => {
 export const isValidCheckinFrequencyUnit = (
   unit: string,
 ): unit is CheckinFrequencyUnit => {
-  return Object.values(CheckinFrequencyUnit).includes(unit as CheckinFrequencyUnit);
+  return Object.values(CheckinFrequencyUnit).includes(
+    unit as CheckinFrequencyUnit,
+  );
 };

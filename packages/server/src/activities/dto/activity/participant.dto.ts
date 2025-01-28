@@ -5,14 +5,14 @@ import { ActivityRole } from '../../schemas/activity.schema';
 export class ParticipantDto {
   @ApiProperty({
     description: 'User information',
-    type: () => UserResponseDto
+    type: () => UserResponseDto,
   })
   user: UserResponseDto;
 
   @ApiProperty({
     description: 'Role in the activity',
     enum: ActivityRole,
-    example: ActivityRole.MEMBER
+    example: ActivityRole.MEMBER,
   })
   role: ActivityRole;
-} 
+}

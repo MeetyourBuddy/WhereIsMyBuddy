@@ -5,7 +5,6 @@ import {
   JoinType,
   CheckinFrequencyUnit,
   DurationUnit,
-  ActivityRole,
 } from '../schemas/activity.schema';
 
 // Defines the structure of Activity data in API responses

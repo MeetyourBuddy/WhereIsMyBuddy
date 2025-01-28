@@ -4,7 +4,7 @@ import { IsString, IsBoolean, IsOptional } from 'class-validator';
 export class RuleDto {
   @ApiProperty({
     description: 'The rule text',
-    example: 'Complete weekly assignments'
+    example: 'Complete weekly assignments',
   })
   @IsString()
   rule: string;
@@ -12,9 +12,9 @@ export class RuleDto {
   @ApiProperty({
     description: 'Whether this is a default rule',
     default: false,
-    required: false
+    required: false,
   })
   @IsBoolean()
   @IsOptional()
   isDefault?: boolean;
-} 
+}

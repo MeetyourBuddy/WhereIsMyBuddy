@@ -148,13 +148,13 @@ export class ActivityResponseDto {
     example: [
       {
         rule: 'Be respectful to all participants',
-        isDefault: true
+        isDefault: true,
       },
       {
         rule: 'Complete weekly assignments',
-        isDefault: false
-      }
-    ]
+        isDefault: false,
+      },
+    ],
   })
   rules: RuleDto[];
 

@@ -28,7 +28,10 @@ import { plainToClass } from 'class-transformer';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
 import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
-import { isCheckInComplete, isValidCheckInType } from './validators/checkin.validators';
+import {
+  isCheckInComplete,
+  isValidCheckInType,
+} from './validators/checkin.validators';
 import {
   IActivityStats,
   IStatsQueryParams,
@@ -124,28 +127,33 @@ export class ActivitiesService {
     }
   }
 
-  private validateAndTransformRules(rules: string[]): Array<{ rule: string; isDefault: boolean }> {
+  private validateAndTransformRules(
+    rules: string[],
+  ): Array<{ rule: string; isDefault: boolean }> {
     if (!rules?.length) return [];
 
     // Validate each rule
-    const validatedRules = rules.map(rule => {
+    const validatedRules = rules.map((rule) => {
       if (typeof rule !== 'string') {
         throw new BadRequestException('Each rule must be a string');
       }
       if (rule.trim().length === 0) {
         throw new BadRequestException('Rules cannot be empty strings');
       }
-      if (rule.length > 500) { // You can adjust this limit
-        throw new BadRequestException('Rule text is too long (max 500 characters)');
+      if (rule.length > 500) {
+        // You can adjust this limit
+        throw new BadRequestException(
+          'Rule text is too long (max 500 characters)',
+        );
       }
       return {
         rule: rule.trim(),
-        isDefault: false
+        isDefault: false,
       };
     });
 
     // Check for duplicates
-    const ruleTexts = validatedRules.map(r => r.rule.toLowerCase());
+    const ruleTexts = validatedRules.map((r) => r.rule.toLowerCase());
     if (new Set(ruleTexts).size !== ruleTexts.length) {
       throw new BadRequestException('Duplicate rules are not allowed');
     }
@@ -181,7 +189,7 @@ export class ActivitiesService {
     // Add debug logging
     console.log('Create Activity Debug:', {
       userId,
-      createActivityDto
+      createActivityDto,
     });
 
     // Validate check-in frequency settings
@@ -224,7 +232,7 @@ export class ActivitiesService {
     console.log('Created Activity Debug:', {
       userId,
       admin: createdActivity.admin,
-      participants: createdActivity.participants
+      participants: createdActivity.participants,
     });
 
     const activity = await createdActivity.save();
@@ -315,9 +323,7 @@ export class ActivitiesService {
     userId: string,
     updateActivityDto: UpdateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel
-      .findById(activityId)
-      .exec();
+    const activity = await this.activityModel.findById(activityId).exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
@@ -327,25 +333,25 @@ export class ActivitiesService {
     console.log('Update Activity Debug:', {
       userId,
       activityId,
-      participants: activity.participants.map(p => ({
+      participants: activity.participants.map((p) => ({
         userId: this.getUserId(p.user),
         role: p.role,
-        rawUser: p.user
-      }))
+        rawUser: p.user,
+      })),
     });
 
     // Check if user is an admin of the activity
     const isAdmin = activity.participants.some((p) => {
       const participantId = this.getUserId(p.user);
       const isMatch = participantId === userId && p.role === ActivityRole.ADMIN;
-      
+
       // Add debug logging
       console.log('Participant Check:', {
         participantId,
         userId,
         role: p.role,
         isMatch,
-        rawUser: p.user
+        rawUser: p.user,
       });
 
       return isMatch;
@@ -368,11 +374,7 @@ export class ActivitiesService {
 
     // Simplified update without unnecessary population
     const updatedActivity = await this.activityModel
-      .findByIdAndUpdate(
-        activityId,
-        { $set: updateActivityDto },
-        { new: true }
-      )
+      .findByIdAndUpdate(activityId, { $set: updateActivityDto }, { new: true })
       .exec();
 
     if (!updatedActivity) {
@@ -388,21 +390,21 @@ export class ActivitiesService {
   // Helper method to safely get user ID from either ObjectId or User object
   private getUserId(user: Types.ObjectId | any): string {
     if (!user) return null;
-    
+
     // If it's a string, return it
     if (typeof user === 'string') return user;
-    
+
     // If it's an ObjectId, convert to string
     if (user instanceof Types.ObjectId) {
       return user.toString();
     }
-    
+
     // If it's a populated User object
     if (typeof user === 'object') {
       if (user._id) return user._id.toString();
       if (user.id) return user.id;
     }
-    
+
     // If it's still an object but not handled above
     return user.toString();
   }
@@ -656,7 +658,7 @@ export class ActivitiesService {
       .findById(activityId)
       .populate({
         path: 'participants.user',
-        select: 'name email profilePicture'
+        select: 'name email profilePicture',
       })
       .lean()
       .exec();
@@ -711,7 +713,7 @@ export class ActivitiesService {
         const participantUser = participant.user as any;
 
         const userCheckIns = populatedCheckIns.filter(
-          (c) => c.user._id.toString() === participantUser._id.toString()
+          (c) => c.user._id.toString() === participantUser._id.toString(),
         );
 
         const userCompletedCheckIns = userCheckIns.filter((c) => c.isCompleted);
@@ -777,12 +779,13 @@ export class ActivitiesService {
       {} as Record<CheckInType, number>,
     );
 
-    const mostPopularCheckInType = Object.entries(checkInsByType).length > 0
-      ? Object.entries(checkInsByType).reduce(
-          (a, b) => (a[1] > b[1] ? a : b),
-          ['NONE' as CheckInType, 0]
-        )[0] as CheckInType
-      : null;
+    const mostPopularCheckInType =
+      Object.entries(checkInsByType).length > 0
+        ? (Object.entries(checkInsByType).reduce(
+            (a, b) => (a[1] > b[1] ? a : b),
+            ['NONE' as CheckInType, 0],
+          )[0] as CheckInType)
+        : null;
 
     const checkInsByDay = populatedCheckIns.reduce(
       (acc, checkIn) => {
@@ -797,12 +800,13 @@ export class ActivitiesService {
       {} as Record<string, number>,
     );
 
-    const mostActiveDay = Object.entries(checkInsByDay).length > 0
-      ? Object.entries(checkInsByDay).reduce(
-          (a, b) => (a[1] > b[1] ? a : b),
-          ['Unknown', 0]
-        )[0]
-      : 'None';
+    const mostActiveDay =
+      Object.entries(checkInsByDay).length > 0
+        ? Object.entries(checkInsByDay).reduce(
+            (a, b) => (a[1] > b[1] ? a : b),
+            ['Unknown', 0],
+          )[0]
+        : 'None';
 
     const longestStreak = Math.max(0, ...participantStats.map((p) => p.streak));
 
@@ -1052,21 +1056,21 @@ export class ActivitiesService {
       throw new BadRequestException('User ID is required');
     }
 
-    const activity = await this.activityModel
-      .findById(activityId)
-      .exec();
+    const activity = await this.activityModel.findById(activityId).exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
-  
+
     // Check if user is a participant
     const participantIndex = activity.participants.findIndex(
-      (p) => p.user.toString() === userId
+      (p) => p.user.toString() === userId,
     );
 
     if (participantIndex === -1) {
-      throw new BadRequestException('You are not a participant in this activity');
+      throw new BadRequestException(
+        'You are not a participant in this activity',
+      );
     }
 
     // Check if user is admin
@@ -1095,9 +1099,7 @@ export class ActivitiesService {
       throw new BadRequestException('User ID is required');
     }
 
-    const activity = await this.activityModel
-      .findById(activityId)
-      .exec();
+    const activity = await this.activityModel.findById(activityId).exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
@@ -1110,7 +1112,9 @@ export class ActivitiesService {
     });
 
     if (isParticipant) {
-      throw new BadRequestException('You are already a participant in this activity');
+      throw new BadRequestException(
+        'You are already a participant in this activity',
+      );
     }
 
     if (activity.currentSize >= activity.maxSize) {
@@ -1127,7 +1131,7 @@ export class ActivitiesService {
         user: new Types.ObjectId(userId),
         role: ActivityRole.MEMBER,
       };
-      
+
       activity.participants.push(newParticipant as any);
       activity.currentSize = activity.participants.length;
 
@@ -1140,7 +1144,7 @@ export class ActivitiesService {
 
     // For private activities, add to join requests
     const existingRequest = activity.joinRequests.find(
-      (request) => request.user.toString() === userId
+      (request) => request.user.toString() === userId,
     );
 
     if (existingRequest) {
@@ -1213,7 +1217,9 @@ export class ActivitiesService {
       // Remove the request since user is already a participant
       activity.joinRequests.splice(requestIndex, 1);
       await activity.save();
-      throw new BadRequestException('User is already a participant in this activity');
+      throw new BadRequestException(
+        'User is already a participant in this activity',
+      );
     }
 
     // Remove the request regardless of action
@@ -1235,8 +1241,9 @@ export class ActivitiesService {
     }
 
     const updatedActivity = await activity.save();
-    const actionText = action === JoinRequestAction.APPROVE ? 'approved' : 'rejected';
-    
+    const actionText =
+      action === JoinRequestAction.APPROVE ? 'approved' : 'rejected';
+
     return this.prepareActivityResponse(
       updatedActivity,
       `Successfully ${actionText} join request`,
@@ -1255,7 +1262,7 @@ export class ActivitiesService {
       }
       return p.user?.toString() === userId;
     });
-    
+
     return isAdmin || isParticipant;
   }
 
@@ -1275,23 +1282,32 @@ export class ActivitiesService {
     // For private activities, check if user is a participant
     if (activity.type === ActivityType.PRIVATE) {
       if (!userId) {
-        throw new ForbiddenException('Authentication required for private activities');
+        throw new ForbiddenException(
+          'Authentication required for private activities',
+        );
       }
 
       const isParticipant = activity.participants.some(
-        (p) => this.getUserId(p.user) === userId
+        (p) => this.getUserId(p.user) === userId,
       );
 
       if (!isParticipant) {
-        throw new ForbiddenException('Only participants can view private activity details');
+        throw new ForbiddenException(
+          'Only participants can view private activity details',
+        );
       }
     }
 
     // Add proper type casting
-    const participants: ParticipantDto[] = activity.participants.map(participant => ({
-      user: this.transformToDto(participant.user, UserResponseDto) as UserResponseDto,
-      role: participant.role
-    }));
+    const participants: ParticipantDto[] = activity.participants.map(
+      (participant) => ({
+        user: this.transformToDto(
+          participant.user,
+          UserResponseDto,
+        ) as UserResponseDto,
+        role: participant.role,
+      }),
+    );
 
     return {
       success: true,

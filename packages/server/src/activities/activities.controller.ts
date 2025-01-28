@@ -7,8 +7,6 @@ import {
   Body,
   UseGuards,
   Request,
-  ForbiddenException,
-  BadRequestException,
   Query,
   Delete,
 } from '@nestjs/common';
@@ -27,14 +25,12 @@ import { ActivityResponseDto } from './dto/activity/activity-response.dto';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
 import { ActivityServiceResponse } from './interfaces/common.interface';
-import { isValidCheckInType } from './validators/checkin.validators';
 import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import {
   IStatsQueryParams,
   IActivityStats,
 } from './interfaces/activity-stats.interface';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
-import { ActivityRole } from './schemas/activity.schema';
 import { HandleJoinRequestDto } from './dto/activity/join-request.dto';
 import { ParticipantDto } from './dto/activity/participant.dto';
 
@@ -46,9 +42,10 @@ export class ActivitiesController {
   @Post('create')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new activity',
-    description: 'Create a new activity with optional custom rules. Default rules will be automatically added.'
+    description:
+      'Create a new activity with optional custom rules. Default rules will be automatically added.',
   })
   @ApiResponse({
     status: 201,
@@ -62,50 +59,45 @@ export class ActivitiesController {
         summary: 'Minimum required fields plus common optional fields',
         value: {
           // Required fields
-          title: "Learn English Together",
-          description: "Weekly English learning sessions for beginners",
+          title: 'Learn English Together',
+          description: 'Weekly English learning sessions for beginners',
           proposedDuration: 30,
-          durationUnit: "days",
+          durationUnit: 'days',
           maxSize: 10,
-          type: "public",
+          type: 'public',
           checkinFrequency: 2,
-          checkinFrequencyUnit: "weekly",
-          allowedCheckInTypes: ["photo", "checklist", "hours", "text"],
+          checkinFrequencyUnit: 'weekly',
+          allowedCheckInTypes: ['photo', 'checklist', 'hours', 'text'],
 
           // Optional but commonly used fields
-          startDate: "2025-01-28T05:42:33.570Z",
-          joinType: "flexible",
-          checkinDays: ["monday", "wednesday"],
+          startDate: '2025-01-28T05:42:33.570Z',
+          joinType: 'flexible',
+          checkinDays: ['monday', 'wednesday'],
           rules: [
-            "Complete homework before sessions",
-            "Practice speaking daily"
+            'Complete homework before sessions',
+            'Practice speaking daily',
           ],
-          tags: ["language", "english", "learning"]
-        }
+          tags: ['language', 'english', 'learning'],
+        },
       },
       'Monthly Activity': {
         summary: 'Example with monthly check-in settings',
         value: {
-          title: "Monthly Book Club",
-          description: "Read and discuss one book per month",
+          title: 'Monthly Book Club',
+          description: 'Read and discuss one book per month',
           proposedDuration: 6,
-          durationUnit: "months",
+          durationUnit: 'months',
           maxSize: 15,
-          type: "public",
+          type: 'public',
           checkinFrequency: 1,
-          checkinFrequencyUnit: "monthly",
-          checkinDateOfMonth: 15,  // or use checkinDayOfWeek & checkinWeekOfMonth
-          allowedCheckInTypes: [
-            "photo",
-            "checklist",
-            "hours",
-            "other"
-          ],
-          rules: ["Finish book before meeting", "Prepare discussion points"],
-          tags: ["books", "reading", "discussion"]
-        }
-      }
-    }
+          checkinFrequencyUnit: 'monthly',
+          checkinDateOfMonth: 15, // or use checkinDayOfWeek & checkinWeekOfMonth
+          allowedCheckInTypes: ['photo', 'checklist', 'hours', 'other'],
+          rules: ['Finish book before meeting', 'Prepare discussion points'],
+          tags: ['books', 'reading', 'discussion'],
+        },
+      },
+    },
   })
   async createActivity(
     @Request() req,
@@ -114,7 +106,7 @@ export class ActivitiesController {
     // Add debug logging
     console.log('Create Activity Request:', {
       userId: req.user.userId,
-      createActivityDto
+      createActivityDto,
     });
 
     return this.activitiesService.create(req.user.userId, createActivityDto);
@@ -150,10 +142,14 @@ export class ActivitiesController {
     // Add debug logging
     console.log('Update Activity Request:', {
       userId: req.user.userId,
-      activityId: id
+      activityId: id,
     });
 
-    return this.activitiesService.update(id, req.user.userId, updateActivityDto);
+    return this.activitiesService.update(
+      id,
+      req.user.userId,
+      updateActivityDto,
+    );
   }
 
   @Post(':activityId/checkins')
@@ -190,7 +186,10 @@ export class ActivitiesController {
     @Request() req,
     @Param('activityId') activityId: string,
   ): Promise<ActivityServiceResponse<CheckInResponseDto[]>> {
-    return this.activitiesService.getActivityCheckIns(activityId, req.user.userId);
+    return this.activitiesService.getActivityCheckIns(
+      activityId,
+      req.user.userId,
+    );
   }
 
   @Get(':activityId/checkins/:checkInId')
@@ -367,23 +366,28 @@ export class ActivitiesController {
   @Get(':activityId/participants')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all participants of an activity',
-    description: 'For public activities, any authenticated user can access. For private activities, only participants can access.'
+    description:
+      'For public activities, any authenticated user can access. For private activities, only participants can access.',
   })
   @ApiResponse({
     status: 200,
     description: 'Returns all participants with their roles',
-    type: [ParticipantDto]
+    type: [ParticipantDto],
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - User is not a participant of this private activity'
+    description:
+      'Forbidden - User is not a participant of this private activity',
   })
   async getActivityParticipants(
     @Request() req,
     @Param('activityId') activityId: string,
   ): Promise<ActivityServiceResponse<ParticipantDto[]>> {
-    return this.activitiesService.getActivityParticipants(activityId, req.user.userId);
+    return this.activitiesService.getActivityParticipants(
+      activityId,
+      req.user.userId,
+    );
   }
 }

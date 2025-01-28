@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export enum JoinRequestAction {
   APPROVE = 'approve',
-  REJECT = 'reject'
+  REJECT = 'reject',
 }
 
 export class HandleJoinRequestDto {
@@ -14,4 +14,4 @@ export class HandleJoinRequestDto {
   @ApiProperty({ enum: JoinRequestAction })
   @IsEnum(JoinRequestAction)
   action: JoinRequestAction;
-} 
+}
