@@ -1,10 +1,10 @@
+import { IsString, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsMongoId } from 'class-validator';
 import { ActivityRole } from '../../schemas/activity.schema';
 
 export class UpdateParticipantRoleDto {
   @ApiProperty()
-  @IsMongoId()
+  @IsString()
   userId: string;
 
   @ApiProperty({ enum: ActivityRole })

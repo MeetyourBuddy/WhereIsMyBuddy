@@ -19,6 +19,7 @@ import {
   CheckInType,
   DayOfWeek,
 } from '../../schemas/activity.schema';
+import { RuleDto } from './rule.dto';
 
 export class CreateActivityDto {
   @ApiProperty({ example: 'Learn Spanish Together' })
@@ -79,7 +80,15 @@ export class CreateActivityDto {
   @IsString({ each: true })
   tags?: string[];
 
-  @ApiPropertyOptional({ type: [String] })
+  @ApiProperty({
+    description: 'Activity rules',
+    type: [RuleDto],
+    example: [
+      'Complete weekly assignments',
+      'Practice 30 minutes daily'
+    ],
+    required: false
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -89,7 +98,7 @@ export class CreateActivityDto {
     type: [String],
     enum: CheckInType,
     description: 'Types of check-ins allowed for this activity',
-    example: ['photo', 'hours', 'text'],
+    example: ['photo', 'number of hours', 'checklist'],
   })
   @IsArray()
   @IsEnum(CheckInType, { each: true })

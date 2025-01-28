@@ -132,7 +132,7 @@ export class Activity extends Document {
     type: [
       {
         rule: { type: String, required: false },
-        isDefault: { type: Boolean, default: false },
+        isDefault: { type: Boolean, default: true },
       },
     ],
     default: [
