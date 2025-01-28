@@ -240,6 +240,7 @@ export class ActivitiesService {
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activityModel
       .findById(id)
+      .populate('participants.user', '_id name email')
       .exec();
 
     if (!activity) {
@@ -891,22 +892,39 @@ export class ActivitiesService {
     activityId: string,
     userId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(activityId);
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    const activity = await this.activityModel
+      .findById(activityId)
+      .exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
-
-    // Remove participant
-    activity.participants = activity.participants.filter(
-      (p) => p.user.toString() !== userId,
+  
+    // Check if user is a participant
+    const participantIndex = activity.participants.findIndex(
+      (p) => p.user.toString() === userId
     );
 
-    // Update current size
+    if (participantIndex === -1) {
+      throw new BadRequestException('You are not a participant in this activity');
+    }
+
+    // Check if user is admin
+    if (activity.participants[participantIndex].role === ActivityRole.ADMIN) {
+      throw new BadRequestException(
+        'Activity admin cannot leave. Transfer admin role first or end the activity',
+      );
+    }
+
+    // Remove participant and update size
+    activity.participants.splice(participantIndex, 1);
     activity.currentSize = activity.participants.length;
 
     const updatedActivity = await activity.save();
-
     return this.prepareActivityResponse(
       updatedActivity,
       'Successfully left the activity',
@@ -917,10 +935,25 @@ export class ActivitiesService {
     activityId: string,
     userId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(activityId);
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    const activity = await this.activityModel
+      .findById(activityId)
+      .exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
+    }
+
+    // Check if user is already a participant
+    const isParticipant = activity.participants.some(
+      (p) => p.user.toString() === userId
+    );
+
+    if (isParticipant) {
+      throw new BadRequestException('You are already a participant in this activity');
     }
 
     if (activity.currentSize >= activity.maxSize) {
@@ -933,10 +966,12 @@ export class ActivitiesService {
 
     // For public activities, add user directly
     if (activity.type === ActivityType.PUBLIC) {
-      activity.participants.push({
+      const newParticipant = {
         user: new Types.ObjectId(userId),
         role: ActivityRole.MEMBER,
-      } as any);
+      };
+      
+      activity.participants.push(newParticipant as any);
       activity.currentSize = activity.participants.length;
 
       const updatedActivity = await activity.save();
@@ -948,7 +983,7 @@ export class ActivitiesService {
 
     // For private activities, add to join requests
     const existingRequest = activity.joinRequests.find(
-      (request) => request.user.toString() === userId,
+      (request) => request.user.toString() === userId
     );
 
     if (existingRequest) {

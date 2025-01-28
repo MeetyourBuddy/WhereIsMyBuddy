@@ -331,7 +331,7 @@ export class ActivitiesController {
     );
   }
 
-  @Delete(':id/leave')
+  @Post(':id/leave')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Leave an activity' })
@@ -344,31 +344,7 @@ export class ActivitiesController {
     @Request() req,
     @Param('id') activityId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activitiesService.findOne(activityId);
-
-    // Check if user is a participant
-    const isParticipant = activity.data.participants.some(
-      (p) => p.user.id === req.user.id,
-    );
-
-    if (!isParticipant) {
-      throw new BadRequestException(
-        'You are not a participant in this activity',
-      );
-    }
-
-    // Check if user is the admin
-    const isAdmin = activity.data.participants.some(
-      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
-    );
-
-    if (isAdmin) {
-      throw new BadRequestException(
-        'Activity admin cannot leave. Transfer admin role first or end the activity',
-      );
-    }
-
-    return this.activitiesService.leaveActivity(activityId, req.user.id);
+    return this.activitiesService.leaveActivity(activityId, req.user.userId);
   }
 
   @Post(':id/join')
@@ -384,20 +360,7 @@ export class ActivitiesController {
     @Request() req,
     @Param('id') activityId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activitiesService.findOne(activityId);
-
-    // Add null check and use toString() for comparison
-    const isParticipant = activity.data?.participants?.some(
-      (p) => p.user?.toString() === req.user.id || p.user?.id === req.user.id
-    );
-
-    if (isParticipant) {
-      throw new BadRequestException(
-        'You are already a participant in this activity',
-      );
-    }
-
-    return this.activitiesService.joinActivity(activityId, req.user.id);
+    return this.activitiesService.joinActivity(activityId, req.user.userId);
   }
 
   @Post(':id/requests/:userId/approve')
