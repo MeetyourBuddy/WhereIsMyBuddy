@@ -98,7 +98,8 @@ export class CreateActivityDto {
     type: [String],
     enum: CheckInType,
     description: 'Types of check-ins allowed for this activity',
-    example: ['photo', 'number of hours', 'checklist'],
+    example: ['photo', 'checklist', 'hours', 'other'],
+    isArray: true
   })
   @IsArray()
   @IsEnum(CheckInType, { each: true })

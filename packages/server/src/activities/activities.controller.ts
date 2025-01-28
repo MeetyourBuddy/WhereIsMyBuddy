@@ -68,9 +68,9 @@ export class ActivitiesController {
           durationUnit: "days",
           maxSize: 10,
           type: "public",
-          checkinFrequency: 1,
+          checkinFrequency: 2,
           checkinFrequencyUnit: "weekly",
-          allowedCheckInTypes: ["photo", "text"],
+          allowedCheckInTypes: ["photo", "checklist", "hours", "text"],
 
           // Optional but commonly used fields
           startDate: "2025-01-28T05:42:33.570Z",
@@ -95,7 +95,12 @@ export class ActivitiesController {
           checkinFrequency: 1,
           checkinFrequencyUnit: "monthly",
           checkinDateOfMonth: 15,  // or use checkinDayOfWeek & checkinWeekOfMonth
-          allowedCheckInTypes: ["text", "checklist"],
+          allowedCheckInTypes: [
+            "photo",
+            "checklist",
+            "hours",
+            "other"
+          ],
           rules: ["Finish book before meeting", "Prepare discussion points"],
           tags: ["books", "reading", "discussion"]
         }
