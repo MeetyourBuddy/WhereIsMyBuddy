@@ -7,8 +7,6 @@ import {
   Body,
   UseGuards,
   Request,
-  ForbiddenException,
-  BadRequestException,
   Query,
   Delete,
 } from '@nestjs/common';
@@ -17,6 +15,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
 import { ActivitiesService } from './activities.service';
@@ -26,14 +25,14 @@ import { ActivityResponseDto } from './dto/activity/activity-response.dto';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
 import { ActivityServiceResponse } from './interfaces/common.interface';
-import { isValidCheckInType } from './validators/checkin.validators';
 import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import {
   IStatsQueryParams,
   IActivityStats,
 } from './interfaces/activity-stats.interface';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
-import { ActivityRole } from './schemas/activity.schema';
+import { HandleJoinRequestDto } from './dto/activity/join-request.dto';
+import { ParticipantDto } from './dto/activity/participant.dto';
 
 @ApiTags('Activities')
 @Controller('activities')
@@ -43,17 +42,74 @@ export class ActivitiesController {
   @Post('create')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new activity' })
+  @ApiOperation({
+    summary: 'Create a new activity',
+    description:
+      'Create a new activity with optional custom rules. Default rules will be automatically added.',
+  })
   @ApiResponse({
     status: 201,
     description: 'Activity created successfully',
     type: ActivityResponseDto,
   })
+  @ApiBody({
+    type: CreateActivityDto,
+    examples: {
+      'Basic Activity': {
+        summary: 'Minimum required fields plus common optional fields',
+        value: {
+          // Required fields
+          title: 'Learn English Together',
+          description: 'Weekly English learning sessions for beginners',
+          proposedDuration: 30,
+          durationUnit: 'days',
+          maxSize: 10,
+          type: 'public',
+          checkinFrequency: 2,
+          checkinFrequencyUnit: 'weekly',
+          allowedCheckInTypes: ['photo', 'checklist', 'hours', 'text'],
+
+          // Optional but commonly used fields
+          startDate: '2025-01-28T05:42:33.570Z',
+          joinType: 'flexible',
+          checkinDays: ['monday', 'wednesday'],
+          rules: [
+            'Complete homework before sessions',
+            'Practice speaking daily',
+          ],
+          tags: ['language', 'english', 'learning'],
+        },
+      },
+      'Monthly Activity': {
+        summary: 'Example with monthly check-in settings',
+        value: {
+          title: 'Monthly Book Club',
+          description: 'Read and discuss one book per month',
+          proposedDuration: 6,
+          durationUnit: 'months',
+          maxSize: 15,
+          type: 'public',
+          checkinFrequency: 1,
+          checkinFrequencyUnit: 'monthly',
+          checkinDateOfMonth: 15, // or use checkinDayOfWeek & checkinWeekOfMonth
+          allowedCheckInTypes: ['photo', 'checklist', 'hours', 'other'],
+          rules: ['Finish book before meeting', 'Prepare discussion points'],
+          tags: ['books', 'reading', 'discussion'],
+        },
+      },
+    },
+  })
   async createActivity(
     @Request() req,
     @Body() createActivityDto: CreateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    return this.activitiesService.create(req.user.id, createActivityDto);
+    // Add debug logging
+    console.log('Create Activity Request:', {
+      userId: req.user.userId,
+      createActivityDto,
+    });
+
+    return this.activitiesService.create(req.user.userId, createActivityDto);
   }
 
   @Get(':id')
@@ -69,7 +125,7 @@ export class ActivitiesController {
     return this.activitiesService.findOne(id);
   }
 
-  @Put(':id')
+  @Put(':id/update')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update activity by ID' })
@@ -83,23 +139,17 @@ export class ActivitiesController {
     @Param('id') id: string,
     @Body() updateActivityDto: UpdateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activitiesService.findOne(id);
+    // Add debug logging
+    console.log('Update Activity Request:', {
+      userId: req.user.userId,
+      activityId: id,
+    });
 
-    // Check if user is an admin of the activity
-    const isAdmin = activity.data.participants.some(
-      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
+    return this.activitiesService.update(
+      id,
+      req.user.userId,
+      updateActivityDto,
     );
-
-    if (!isAdmin) {
-      throw new ForbiddenException('Only admins can update this activity');
-    }
-
-    // If activity is being ended, add endedAt date
-    if (updateActivityDto.isActive === false) {
-      updateActivityDto.endedAt = new Date();
-    }
-
-    return this.activitiesService.update(id, updateActivityDto);
   }
 
   @Post(':activityId/checkins')
@@ -116,23 +166,8 @@ export class ActivitiesController {
     @Param('activityId') activityId: string,
     @Body() createCheckInDto: CreateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    // Validate check-in type
-    if (!isValidCheckInType(createCheckInDto.type)) {
-      throw new BadRequestException('Invalid check-in type');
-    }
-
-    // Validate that user is a participant
-    const activity = await this.activitiesService.findOne(activityId);
-    const isParticipant = activity.data.participants.some(
-      (p) => p.user.id === req.user.id,
-    );
-
-    if (!isParticipant) {
-      throw new ForbiddenException('You must be a participant to check in');
-    }
-
     return this.activitiesService.createCheckIn(
-      req.user.id,
+      req.user.userId,
       activityId,
       createCheckInDto,
     );
@@ -151,17 +186,10 @@ export class ActivitiesController {
     @Request() req,
     @Param('activityId') activityId: string,
   ): Promise<ActivityServiceResponse<CheckInResponseDto[]>> {
-    // Validate that user has access to the activity
-    const activity = await this.activitiesService.findOne(activityId);
-    const isParticipantOrAdmin =
-      activity.data.participants.some((p) => p.user.id === req.user.id) ||
-      activity.data.admin.id === req.user.id;
-
-    if (!isParticipantOrAdmin) {
-      throw new ForbiddenException('You do not have access to these check-ins');
-    }
-
-    return this.activitiesService.getActivityCheckIns(activityId);
+    return this.activitiesService.getActivityCheckIns(
+      activityId,
+      req.user.userId,
+    );
   }
 
   @Get(':activityId/checkins/:checkInId')
@@ -178,17 +206,7 @@ export class ActivitiesController {
     @Param('activityId') activityId: string,
     @Param('checkInId') checkInId: string,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    const checkIn = await this.activitiesService.getCheckIn(checkInId);
-
-    // Validate user has access to the check-in
-    if (
-      checkIn.data.user.id !== req.user.id &&
-      checkIn.data.activity.admin.id !== req.user.id
-    ) {
-      throw new ForbiddenException('You do not have access to this check-in');
-    }
-
-    return checkIn;
+    return this.activitiesService.getCheckIn(checkInId);
   }
 
   @Put('checkins/:id')
@@ -219,16 +237,6 @@ export class ActivitiesController {
     @Param('activityId') activityId: string,
     @Param('checkInId') checkInId: string,
   ): Promise<ActivityServiceResponse<void>> {
-    const checkIn = await this.activitiesService.getCheckIn(checkInId);
-
-    // Only the check-in creator or activity admin can delete it
-    if (
-      checkIn.data.user.id.toString() !== req.user.id &&
-      checkIn.data.activity.admin.id.toString() !== req.user.id
-    ) {
-      throw new ForbiddenException('You cannot delete this check-in');
-    }
-
     return this.activitiesService.deleteCheckIn(checkInId);
   }
 
@@ -246,41 +254,26 @@ export class ActivitiesController {
     @Param('activityId') activityId: string,
     @Query() query: IStatsQueryParams,
   ): Promise<ActivityServiceResponse<IActivityStats>> {
-    const activity = await this.activitiesService.findOne(activityId);
-
-    const isParticipantOrAdmin =
-      activity.data.participants.some((p) => p.user.id === req.user.id) ||
-      activity.data.admin.id === req.user.id;
-
-    if (!isParticipantOrAdmin) {
-      throw new ForbiddenException(
-        'You do not have access to these statistics',
-      );
-    }
-
     return this.activitiesService.getActivityStats(activityId, query);
   }
 
-  @Put(':id/participants/:userId/role')
+  @Put(':id/participants/role')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update participant role (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully updated participant role',
+    type: ActivityResponseDto,
+  })
   async updateParticipantRole(
     @Request() req,
     @Param('id') activityId: string,
-    @Param('userId') userId: string,
     @Body() updateRoleDto: UpdateParticipantRoleDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activitiesService.findOne(activityId);
-    const isAdmin = activity.data.participants.some(
-      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
-    );
-
-    if (!isAdmin) {
-      throw new ForbiddenException('Only admins can update participant roles');
-    }
-
     return this.activitiesService.updateParticipantRole(
       activityId,
+      req.user.userId,
       updateRoleDto,
     );
   }
@@ -292,15 +285,6 @@ export class ActivitiesController {
     @Request() req,
     @Param('id') activityId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activitiesService.findOne(activityId);
-    const isAdmin = activity.data.participants.some(
-      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
-    );
-
-    if (!isAdmin) {
-      throw new ForbiddenException('Only admins can end the activity');
-    }
-
     return this.activitiesService.endActivity(activityId);
   }
 
@@ -319,16 +303,6 @@ export class ActivitiesController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<ActivityServiceResponse<any>> {
-    // Validate that user has access to the activity
-    const activity = await this.activitiesService.findOne(activityId);
-    const isParticipantOrAdmin =
-      activity.data.participants.some((p) => p.user.id === req.user.id) ||
-      activity.data.admin.id === req.user.id;
-
-    if (!isParticipantOrAdmin) {
-      throw new ForbiddenException('You do not have access to this activity');
-    }
-
     return this.activitiesService.getActivityCalendar(
       activityId,
       startDate,
@@ -336,7 +310,7 @@ export class ActivitiesController {
     );
   }
 
-  @Delete(':id/leave')
+  @Post(':id/leave')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Leave an activity' })
@@ -349,31 +323,7 @@ export class ActivitiesController {
     @Request() req,
     @Param('id') activityId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activitiesService.findOne(activityId);
-
-    // Check if user is a participant
-    const isParticipant = activity.data.participants.some(
-      (p) => p.user.id === req.user.id,
-    );
-
-    if (!isParticipant) {
-      throw new BadRequestException(
-        'You are not a participant in this activity',
-      );
-    }
-
-    // Check if user is the admin
-    const isAdmin = activity.data.participants.some(
-      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
-    );
-
-    if (isAdmin) {
-      throw new BadRequestException(
-        'Activity admin cannot leave. Transfer admin role first or end the activity',
-      );
-    }
-
-    return this.activitiesService.leaveActivity(activityId, req.user.id);
+    return this.activitiesService.leaveActivity(activityId, req.user.userId);
   }
 
   @Post(':id/join')
@@ -389,47 +339,55 @@ export class ActivitiesController {
     @Request() req,
     @Param('id') activityId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activitiesService.findOne(activityId);
-
-    // Check if user is already a participant
-    const isParticipant = activity.data.participants.some(
-      (p) => p.user.id === req.user.id,
-    );
-
-    if (isParticipant) {
-      throw new BadRequestException(
-        'You are already a participant in this activity',
-      );
-    }
-
-    return this.activitiesService.joinActivity(activityId, req.user.id);
+    return this.activitiesService.joinActivity(activityId, req.user.userId);
   }
 
-  @Post(':id/requests/:userId/approve')
+  @Post(':id/requests')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Approve a join request (admin only)' })
+  @ApiOperation({ summary: 'Handle join request (admin only)' })
   @ApiResponse({
     status: 200,
-    description: 'Successfully approved join request',
+    description: 'Successfully handled join request',
     type: ActivityResponseDto,
   })
-  async approveJoinRequest(
+  async handleJoinRequest(
     @Request() req,
     @Param('id') activityId: string,
-    @Param('userId') userId: string,
+    @Body() handleJoinRequestDto: HandleJoinRequestDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activitiesService.findOne(activityId);
-
-    // Check if user is admin
-    const isAdmin = activity.data.participants.some(
-      (p) => p.user.id === req.user.id && p.role === ActivityRole.ADMIN,
+    return this.activitiesService.handleJoinRequest(
+      activityId,
+      req.user.userId,
+      handleJoinRequestDto,
     );
+  }
 
-    if (!isAdmin) {
-      throw new ForbiddenException('Only admins can approve join requests');
-    }
-
-    return this.activitiesService.approveJoinRequest(activityId, userId);
+  @Get(':activityId/participants')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get all participants of an activity',
+    description:
+      'For public activities, any authenticated user can access. For private activities, only participants can access.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns all participants with their roles',
+    type: [ParticipantDto],
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - User is not a participant of this private activity',
+  })
+  async getActivityParticipants(
+    @Request() req,
+    @Param('activityId') activityId: string,
+  ): Promise<ActivityServiceResponse<ParticipantDto[]>> {
+    return this.activitiesService.getActivityParticipants(
+      activityId,
+      req.user.userId,
+    );
   }
 }

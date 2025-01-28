@@ -11,5 +11,8 @@ export interface ActivityServiceResponse<T> {
   success: boolean;
   message: string;
   data: T;
-  metadata?: ActivityMetadata;
+  metadata?: {
+    availableSeats?: number;
+    isJoinable?: boolean;
+  };
 }

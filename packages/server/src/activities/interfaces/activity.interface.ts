@@ -3,7 +3,7 @@ import { User } from '../../users/schemas/user.schema';
 import {
   ActivityType,
   JoinType,
-  CheckinFrequency,
+  CheckinFrequencyUnit,
   DurationUnit,
 } from '../schemas/activity.schema';
 
@@ -17,7 +17,7 @@ export interface IActivityResponse {
   durationUnit: DurationUnit;
   proposedDurationInDays?: number;
   bannerImage?: string;
-  contactFrequency: CheckinFrequency;
+  contactFrequency: CheckinFrequencyUnit;
   type: ActivityType;
   startDate?: Date;
   joinType: JoinType;
@@ -30,13 +30,15 @@ export interface IActivityResponse {
   availableSeats: number;
   createdAt: Date;
   updatedAt: Date;
+  checkinFrequency: number;
+  checkinFrequencyUnit: CheckinFrequencyUnit;
 }
 
 // Query parameters interface for filtering activities
 export interface IActivityQueryParams {
   type?: ActivityType;
   joinType?: JoinType;
-  contactFrequency?: CheckinFrequency;
+  contactFrequency?: CheckinFrequencyUnit;
   hasAvailableSeats?: boolean;
   tags?: string[];
   isActive?: boolean;
@@ -46,6 +48,8 @@ export interface IActivityQueryParams {
   minDuration?: number;
   maxDuration?: number;
   durationUnit?: DurationUnit;
+  checkinFrequency?: number;
+  checkinFrequencyUnit?: CheckinFrequencyUnit;
 }
 
 // Interface for activity statistics

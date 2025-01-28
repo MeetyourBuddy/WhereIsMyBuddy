@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -27,7 +28,10 @@ import { plainToClass } from 'class-transformer';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
 import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
-import { isCheckInComplete } from './validators/checkin.validators';
+import {
+  isCheckInComplete,
+  isValidCheckInType,
+} from './validators/checkin.validators';
 import {
   IActivityStats,
   IStatsQueryParams,
@@ -39,6 +43,10 @@ import {
   PopulatedCheckIn,
 } from './interfaces/populated-documents.interface';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
+import { HandleJoinRequestDto } from './dto/activity/join-request.dto';
+import { JoinRequestAction } from './dto/activity/join-request.dto';
+import { UserResponseDto } from '../users/dto/user-response.dto';
+import { ParticipantDto } from './dto/activity/participant.dto';
 
 @Injectable()
 export class ActivitiesService {
@@ -52,6 +60,9 @@ export class ActivitiesService {
       return null;
     }
     const plainObj = document.toJSON ? document.toJSON() : document;
+    if (document.id) {
+      plainObj.id = document.id.toString();
+    }
     return plainToClass(dto, plainObj, {
       excludeExtraneousValues: true,
     });
@@ -116,6 +127,40 @@ export class ActivitiesService {
     }
   }
 
+  private validateAndTransformRules(
+    rules: string[],
+  ): Array<{ rule: string; isDefault: boolean }> {
+    if (!rules?.length) return [];
+
+    // Validate each rule
+    const validatedRules = rules.map((rule) => {
+      if (typeof rule !== 'string') {
+        throw new BadRequestException('Each rule must be a string');
+      }
+      if (rule.trim().length === 0) {
+        throw new BadRequestException('Rules cannot be empty strings');
+      }
+      if (rule.length > 500) {
+        // You can adjust this limit
+        throw new BadRequestException(
+          'Rule text is too long (max 500 characters)',
+        );
+      }
+      return {
+        rule: rule.trim(),
+        isDefault: false,
+      };
+    });
+
+    // Check for duplicates
+    const ruleTexts = validatedRules.map((r) => r.rule.toLowerCase());
+    if (new Set(ruleTexts).size !== ruleTexts.length) {
+      throw new BadRequestException('Duplicate rules are not allowed');
+    }
+
+    return validatedRules;
+  }
+
   // Helper method to prepare activity response
   private async prepareActivityResponse(
     activity: ActivityDocument,
@@ -141,8 +186,23 @@ export class ActivitiesService {
     userId: string,
     createActivityDto: CreateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    // Add debug logging
+    console.log('Create Activity Debug:', {
+      userId,
+      createActivityDto,
+    });
+
     // Validate check-in frequency settings
     this.validateCheckinFrequencySettings(createActivityDto);
+
+    // Transform and validate rules
+    const customRules = this.validateAndTransformRules(createActivityDto.rules);
+
+    const defaultRules = [
+      { rule: 'Be respectful to all participants', isDefault: true },
+      { rule: 'Maintain regular communication', isDefault: true },
+      { rule: 'Inform in advance if unable to attend', isDefault: true },
+    ];
 
     const durationInDays = this.calculateDurationInDays(
       createActivityDto.proposedDuration,
@@ -154,17 +214,25 @@ export class ActivitiesService {
 
     const createdActivity = new this.activityModel({
       ...createActivityDto,
+      rules: [...defaultRules, ...customRules],
       participants: [
         {
-          user: new Types.ObjectId(userId),
+          user: userId,
           role: ActivityRole.ADMIN,
         },
       ],
       currentSize: 1,
-      admin: new Types.ObjectId(userId),
+      admin: userId,
       proposedDurationInDays: durationInDays,
       startDate,
       endDate,
+    });
+
+    // Add debug logging
+    console.log('Created Activity Debug:', {
+      userId,
+      admin: createdActivity.admin,
+      participants: createdActivity.participants,
     });
 
     const activity = await createdActivity.save();
@@ -237,14 +305,7 @@ export class ActivitiesService {
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     const activity = await this.activityModel
       .findById(id)
-      .populate({
-        path: 'admin',
-        select: 'name email profilePicture',
-      })
-      .populate({
-        path: 'participants.user',
-        select: 'name email profilePicture',
-      })
+      .populate('participants.user', '_id name email')
       .exec();
 
     if (!activity) {
@@ -259,12 +320,45 @@ export class ActivitiesService {
 
   async update(
     activityId: string,
+    userId: string,
     updateActivityDto: UpdateActivityDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(activityId);
+    const activity = await this.activityModel.findById(activityId).exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
+    }
+
+    // Add debug logging
+    console.log('Update Activity Debug:', {
+      userId,
+      activityId,
+      participants: activity.participants.map((p) => ({
+        userId: this.getUserId(p.user),
+        role: p.role,
+        rawUser: p.user,
+      })),
+    });
+
+    // Check if user is an admin of the activity
+    const isAdmin = activity.participants.some((p) => {
+      const participantId = this.getUserId(p.user);
+      const isMatch = participantId === userId && p.role === ActivityRole.ADMIN;
+
+      // Add debug logging
+      console.log('Participant Check:', {
+        participantId,
+        userId,
+        role: p.role,
+        isMatch,
+        rawUser: p.user,
+      });
+
+      return isMatch;
+    });
+
+    if (!isAdmin) {
+      throw new ForbiddenException('Only admins can update this activity');
     }
 
     const relevantFields = {
@@ -278,10 +372,10 @@ export class ActivitiesService {
 
     this.validateCheckinFrequencySettings(relevantFields);
 
+    // Simplified update without unnecessary population
     const updatedActivity = await this.activityModel
-      .findByIdAndUpdate(activityId, updateActivityDto, { new: true })
-      .populate('admin', 'name email profilePicture')
-      .populate('participants.user', 'name email profilePicture');
+      .findByIdAndUpdate(activityId, { $set: updateActivityDto }, { new: true })
+      .exec();
 
     if (!updatedActivity) {
       throw new NotFoundException('Activity not found');
@@ -293,14 +387,50 @@ export class ActivitiesService {
     );
   }
 
+  // Helper method to safely get user ID from either ObjectId or User object
+  private getUserId(user: Types.ObjectId | any): string {
+    if (!user) return null;
+
+    // If it's a string, return it
+    if (typeof user === 'string') return user;
+
+    // If it's an ObjectId, convert to string
+    if (user instanceof Types.ObjectId) {
+      return user.toString();
+    }
+
+    // If it's a populated User object
+    if (typeof user === 'object') {
+      if (user._id) return user._id.toString();
+      if (user.id) return user.id;
+    }
+
+    // If it's still an object but not handled above
+    return user.toString();
+  }
+
   async createCheckIn(
     userId: string,
     activityId: string,
     createCheckInDto: CreateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
+    // Validate check-in type
+    if (!isValidCheckInType(createCheckInDto.type)) {
+      throw new BadRequestException('Invalid check-in type');
+    }
+
     const activity = await this.activityModel.findById(activityId);
     if (!activity) {
       throw new NotFoundException('Activity not found');
+    }
+
+    // Validate that user is a participant
+    const isParticipant = activity.participants.some(
+      (p) => p.user.toString() === userId,
+    );
+
+    if (!isParticipant) {
+      throw new ForbiddenException('You must be a participant to check in');
     }
 
     if (!this.isCheckInAllowedForDate(activity, createCheckInDto.date)) {
@@ -322,16 +452,6 @@ export class ActivitiesService {
     // Validate check-in date
     if (createCheckInDto.date > new Date()) {
       throw new BadRequestException('Check-in date cannot be in the future');
-    }
-
-    // Validate user is a participant
-    const isParticipant = activity.participants.some(
-      (p) => p.user.toString() === userId,
-    );
-    if (!isParticipant) {
-      throw new BadRequestException(
-        'Only participants can check in to an activity',
-      );
     }
 
     const checkIn = new this.checkInModel({
@@ -375,10 +495,20 @@ export class ActivitiesService {
 
   async getActivityCheckIns(
     activityId: string,
+    userId: string,
   ): Promise<ActivityServiceResponse<CheckInResponseDto[]>> {
     const activity = await this.activityModel.findById(activityId);
     if (!activity) {
       throw new NotFoundException('Activity not found');
+    }
+
+    // Validate that user has access to the activity
+    const isParticipantOrAdmin =
+      activity.participants.some((p) => p.user.toString() === userId) ||
+      activity.admin.toString() === userId;
+
+    if (!isParticipantOrAdmin) {
+      throw new ForbiddenException('You do not have access to these check-ins');
     }
 
     const checkIns = await this.checkInModel
@@ -392,13 +522,11 @@ export class ActivitiesService {
       this.transformToDto(checkIn, CheckInResponseDto),
     );
 
-    const { metadata } = await this.prepareActivityResponse(activity, '');
-
+    // Remove metadata, just return the basic response
     return {
       success: true,
       message: 'Check-ins retrieved successfully',
       data: responseData,
-      metadata,
     };
   }
 
@@ -528,7 +656,10 @@ export class ActivitiesService {
   ): Promise<ActivityServiceResponse<IActivityStats>> {
     const activity = await this.activityModel
       .findById(activityId)
-      .populate<{ participants: PopulatedUser[] }>('participants', 'name')
+      .populate({
+        path: 'participants.user',
+        select: 'name email profilePicture',
+      })
       .lean()
       .exec();
 
@@ -577,9 +708,12 @@ export class ActivitiesService {
       totalCheckIns > 0 ? (completedCheckIns / totalCheckIns) * 100 : 0;
 
     let participantStats: IParticipantStats[] = await Promise.all(
-      populatedActivity.participants.map(async (participant: PopulatedUser) => {
+      activity.participants.map(async (participant) => {
+        // Add type assertion for participant.user
+        const participantUser = participant.user as any;
+
         const userCheckIns = populatedCheckIns.filter(
-          (c) => c.user._id.toString() === participant._id.toString(),
+          (c) => c.user._id.toString() === participantUser._id.toString(),
         );
 
         const userCompletedCheckIns = userCheckIns.filter((c) => c.isCompleted);
@@ -612,8 +746,8 @@ export class ActivitiesService {
             : 0;
 
         return {
-          userId: participant._id?.toString() || '',
-          name: (participant as any).name || 'Unknown',
+          userId: participantUser._id?.toString() || '',
+          name: participantUser.name || 'Unknown',
           checkInCount: userCheckIns.length,
           completionRate:
             userCheckIns.length > 0
@@ -645,9 +779,13 @@ export class ActivitiesService {
       {} as Record<CheckInType, number>,
     );
 
-    const mostPopularCheckInType = Object.entries(checkInsByType).reduce(
-      (a, b) => (a[1] > b[1] ? a : b),
-    )[0] as CheckInType;
+    const mostPopularCheckInType =
+      Object.entries(checkInsByType).length > 0
+        ? (Object.entries(checkInsByType).reduce(
+            (a, b) => (a[1] > b[1] ? a : b),
+            ['NONE' as CheckInType, 0],
+          )[0] as CheckInType)
+        : null;
 
     const checkInsByDay = populatedCheckIns.reduce(
       (acc, checkIn) => {
@@ -662,10 +800,13 @@ export class ActivitiesService {
       {} as Record<string, number>,
     );
 
-    const mostActiveDay = Object.entries(checkInsByDay).reduce(
-      (a, b) => (a[1] > b[1] ? a : b),
-      ['Unknown', 0],
-    )[0];
+    const mostActiveDay =
+      Object.entries(checkInsByDay).length > 0
+        ? Object.entries(checkInsByDay).reduce(
+            (a, b) => (a[1] > b[1] ? a : b),
+            ['Unknown', 0],
+          )[0]
+        : 'None';
 
     const longestStreak = Math.max(0, ...participantStats.map((p) => p.streak));
 
@@ -715,30 +856,49 @@ export class ActivitiesService {
 
   async updateParticipantRole(
     activityId: string,
-    updateRoleDto: UpdateParticipantRoleDto,
+    adminUserId: string,
+    { userId: targetUserId, role }: UpdateParticipantRoleDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(activityId);
+    const activity = await this.activityModel
+      .findById(activityId)
+      .populate('participants.user', 'id name email')
+      .exec();
 
-    const participantIndex = activity.participants.findIndex(
-      (p) => p.user.toString() === updateRoleDto.userId,
-    );
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    // Check if user is admin
+    const isAdmin = await this.isUserActivityAdmin(activity, adminUserId);
+    if (!isAdmin) {
+      throw new ForbiddenException('Only admins can update participant roles');
+    }
+
+    // Find the target participant
+    const participantIndex = activity.participants.findIndex((p) => {
+      if (typeof p.user === 'object' && p.user) {
+        return (p.user as any).id === targetUserId;
+      }
+      return p.user?.toString() === targetUserId;
+    });
 
     if (participantIndex === -1) {
       throw new NotFoundException('Participant not found');
     }
 
-    activity.participants[participantIndex].role = updateRoleDto.role;
+    // Prevent changing own role
+    if (targetUserId === adminUserId) {
+      throw new BadRequestException('Cannot change your own role');
+    }
+
+    // Update the role
+    activity.participants[participantIndex].role = role;
     const updatedActivity = await activity.save();
 
-    const responseData = this.transformToDto(
+    return this.prepareActivityResponse(
       updatedActivity,
-      ActivityResponseDto,
+      'Successfully updated participant role',
     );
-    return {
-      success: true,
-      message: 'Participant role updated successfully',
-      data: responseData,
-    };
   }
 
   async endActivity(
@@ -892,22 +1052,39 @@ export class ActivitiesService {
     activityId: string,
     userId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(activityId);
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    const activity = await this.activityModel.findById(activityId).exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
 
-    // Remove participant
-    activity.participants = activity.participants.filter(
-      (p) => p.user.toString() !== userId,
+    // Check if user is a participant
+    const participantIndex = activity.participants.findIndex(
+      (p) => p.user.toString() === userId,
     );
 
-    // Update current size
+    if (participantIndex === -1) {
+      throw new BadRequestException(
+        'You are not a participant in this activity',
+      );
+    }
+
+    // Check if user is admin
+    if (activity.participants[participantIndex].role === ActivityRole.ADMIN) {
+      throw new BadRequestException(
+        'Activity admin cannot leave. Transfer admin role first or end the activity',
+      );
+    }
+
+    // Remove participant and update size
+    activity.participants.splice(participantIndex, 1);
     activity.currentSize = activity.participants.length;
 
     const updatedActivity = await activity.save();
-
     return this.prepareActivityResponse(
       updatedActivity,
       'Successfully left the activity',
@@ -918,10 +1095,26 @@ export class ActivitiesService {
     activityId: string,
     userId: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(activityId);
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    const activity = await this.activityModel.findById(activityId).exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
+    }
+
+    // Check if user is already a participant or admin
+    const isParticipant = activity.participants.some((p) => {
+      const participantId = this.getUserId(p.user);
+      return participantId === userId;
+    });
+
+    if (isParticipant) {
+      throw new BadRequestException(
+        'You are already a participant in this activity',
+      );
     }
 
     if (activity.currentSize >= activity.maxSize) {
@@ -934,10 +1127,12 @@ export class ActivitiesService {
 
     // For public activities, add user directly
     if (activity.type === ActivityType.PUBLIC) {
-      activity.participants.push({
+      const newParticipant = {
         user: new Types.ObjectId(userId),
         role: ActivityRole.MEMBER,
-      } as any);
+      };
+
+      activity.participants.push(newParticipant as any);
       activity.currentSize = activity.participants.length;
 
       const updatedActivity = await activity.save();
@@ -968,42 +1163,156 @@ export class ActivitiesService {
     );
   }
 
-  async approveJoinRequest(
+  // Helper method to check admin status
+  private async isUserActivityAdmin(
+    activity: ActivityDocument,
+    userId: string,
+  ): Promise<boolean> {
+    return activity.participants.some((p) => {
+      if (typeof p.user === 'object' && p.user) {
+        return (p.user as any).id === userId && p.role === ActivityRole.ADMIN;
+      }
+      return p.user?.toString() === userId && p.role === ActivityRole.ADMIN;
+    });
+  }
+
+  async handleJoinRequest(
     activityId: string,
     userId: string,
+    { userId: targetUserId, action }: HandleJoinRequestDto,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const activity = await this.activityModel.findById(activityId);
+    const activity = await this.activityModel
+      .findById(activityId)
+      .populate('participants.user', 'id name email')
+      .exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
 
-    if (activity.currentSize >= activity.maxSize) {
-      throw new BadRequestException('Activity is full');
+    // Check if user is admin
+    const isAdmin = await this.isUserActivityAdmin(activity, userId);
+    if (!isAdmin) {
+      throw new ForbiddenException('Only admins can handle join requests');
     }
 
-    // Find and remove the join request
+    // Find the join request
     const requestIndex = activity.joinRequests.findIndex(
-      (request) => request.user.toString() === userId,
+      (request) => request.user.toString() === targetUserId,
     );
 
     if (requestIndex === -1) {
       throw new NotFoundException('Join request not found');
     }
 
+    // Check if user is already a participant using proper type checking
+    const isAlreadyParticipant = activity.participants.some((p) => {
+      if (typeof p.user === 'object' && p.user) {
+        return (p.user as any).id === targetUserId;
+      }
+      return p.user?.toString() === targetUserId;
+    });
+
+    if (isAlreadyParticipant) {
+      // Remove the request since user is already a participant
+      activity.joinRequests.splice(requestIndex, 1);
+      await activity.save();
+      throw new BadRequestException(
+        'User is already a participant in this activity',
+      );
+    }
+
+    // Remove the request regardless of action
     activity.joinRequests.splice(requestIndex, 1);
 
-    // Add user as participant
-    activity.participants.push({
-      user: new Types.ObjectId(userId),
-      role: ActivityRole.MEMBER,
-    } as any);
-    activity.currentSize = activity.participants.length;
+    if (action === JoinRequestAction.APPROVE) {
+      if (activity.currentSize >= activity.maxSize) {
+        throw new BadRequestException(
+          'Activity is full. Increase activity size before approving join requests',
+        );
+      }
+
+      // Add user as participant
+      activity.participants.push({
+        user: new Types.ObjectId(targetUserId),
+        role: ActivityRole.MEMBER,
+      } as any);
+      activity.currentSize = activity.participants.length;
+    }
 
     const updatedActivity = await activity.save();
+    const actionText =
+      action === JoinRequestAction.APPROVE ? 'approved' : 'rejected';
+
     return this.prepareActivityResponse(
       updatedActivity,
-      'Successfully approved join request',
+      `Successfully ${actionText} join request`,
     );
+  }
+
+  // Add helper method for participant or admin check
+  private async isUserParticipantOrAdmin(
+    activity: ActivityDocument,
+    userId: string,
+  ): Promise<boolean> {
+    const isAdmin = await this.isUserActivityAdmin(activity, userId);
+    const isParticipant = activity.participants.some((p) => {
+      if (typeof p.user === 'object' && p.user) {
+        return (p.user as any).id === userId;
+      }
+      return p.user?.toString() === userId;
+    });
+
+    return isAdmin || isParticipant;
+  }
+
+  async getActivityParticipants(
+    activityId: string,
+    userId?: string,
+  ): Promise<ActivityServiceResponse<ParticipantDto[]>> {
+    const activity = await this.activityModel
+      .findById(activityId)
+      .populate('participants.user', 'id name email profilePicture')
+      .exec();
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    // For private activities, check if user is a participant
+    if (activity.type === ActivityType.PRIVATE) {
+      if (!userId) {
+        throw new ForbiddenException(
+          'Authentication required for private activities',
+        );
+      }
+
+      const isParticipant = activity.participants.some(
+        (p) => this.getUserId(p.user) === userId,
+      );
+
+      if (!isParticipant) {
+        throw new ForbiddenException(
+          'Only participants can view private activity details',
+        );
+      }
+    }
+
+    // Add proper type casting
+    const participants: ParticipantDto[] = activity.participants.map(
+      (participant) => ({
+        user: this.transformToDto(
+          participant.user,
+          UserResponseDto,
+        ) as UserResponseDto,
+        role: participant.role,
+      }),
+    );
+
+    return {
+      success: true,
+      message: 'Participants retrieved successfully',
+      data: participants,
+    };
   }
 }

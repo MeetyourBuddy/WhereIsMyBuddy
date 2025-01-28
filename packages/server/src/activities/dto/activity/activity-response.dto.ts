@@ -12,6 +12,7 @@ import {
   CheckinFrequencyUnit,
   DayOfWeek,
 } from '../../schemas/activity.schema';
+import { RuleDto } from './rule.dto';
 
 @Exclude()
 export class ParticipantDto {
@@ -138,20 +139,39 @@ export class ActivityResponseDto {
   tags: string[];
 
   /**
-  
-   * Activity rules and guidelines
-
+   * Activity rules including default and custom rules
    */
   @Expose()
-  @ApiProperty({ type: [Object] })
-  rules: Array<{ rule: string; isDefault: boolean }>;
+  @ApiProperty({
+    description: 'Activity rules including default and custom rules',
+    type: [RuleDto],
+    example: [
+      {
+        rule: 'Be respectful to all participants',
+        isDefault: true,
+      },
+      {
+        rule: 'Complete weekly assignments',
+        isDefault: false,
+      },
+    ],
+  })
+  rules: RuleDto[];
 
   /**
    * List of participants with their roles
    */
   @Expose()
-  @ApiProperty({ type: [ParticipantDto] })
-  participants: ParticipantDto[];
+  @ApiProperty({ type: [Object] })
+  participants: Array<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      profilePicture?: string;
+    };
+    role: ActivityRole;
+  }>;
 
   /**
    * Whether the activity is currently active

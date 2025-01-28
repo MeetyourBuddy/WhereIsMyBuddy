@@ -79,7 +79,13 @@ export class CreateActivityDto {
   @IsString({ each: true })
   tags?: string[];
 
-  @ApiPropertyOptional({ type: [String] })
+  @ApiProperty({
+    description:
+      'Custom activity rules (default rules will be added automatically)',
+    type: [String],
+    example: ['Complete homework before sessions', 'Practice speaking daily'],
+    required: false,
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -89,7 +95,8 @@ export class CreateActivityDto {
     type: [String],
     enum: CheckInType,
     description: 'Types of check-ins allowed for this activity',
-    example: ['photo', 'hours', 'text'],
+    example: ['photo', 'checklist', 'hours', 'other'],
+    isArray: true,
   })
   @IsArray()
   @IsEnum(CheckInType, { each: true })
