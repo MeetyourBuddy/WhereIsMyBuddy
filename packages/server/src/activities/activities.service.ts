@@ -42,6 +42,8 @@ import {
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
 import { HandleJoinRequestDto } from './dto/activity/join-request.dto';
 import { JoinRequestAction } from './dto/activity/join-request.dto';
+import { UserResponseDto } from '../users/dto/user-response.dto';
+import { ParticipantDto } from './dto/activity/participant.dto';
 
 @Injectable()
 export class ActivitiesService {
@@ -518,13 +520,11 @@ export class ActivitiesService {
       this.transformToDto(checkIn, CheckInResponseDto),
     );
 
-    const { metadata } = await this.prepareActivityResponse(activity, '');
-
+    // Remove metadata, just return the basic response
     return {
       success: true,
       message: 'Check-ins retrieved successfully',
       data: responseData,
-      metadata,
     };
   }
 
@@ -654,7 +654,10 @@ export class ActivitiesService {
   ): Promise<ActivityServiceResponse<IActivityStats>> {
     const activity = await this.activityModel
       .findById(activityId)
-      .populate<{ participants: PopulatedUser[] }>('participants', 'name')
+      .populate({
+        path: 'participants.user',
+        select: 'name email profilePicture'
+      })
       .lean()
       .exec();
 
@@ -703,9 +706,12 @@ export class ActivitiesService {
       totalCheckIns > 0 ? (completedCheckIns / totalCheckIns) * 100 : 0;
 
     let participantStats: IParticipantStats[] = await Promise.all(
-      populatedActivity.participants.map(async (participant: PopulatedUser) => {
+      activity.participants.map(async (participant) => {
+        // Add type assertion for participant.user
+        const participantUser = participant.user as any;
+
         const userCheckIns = populatedCheckIns.filter(
-          (c) => c.user._id.toString() === participant._id.toString(),
+          (c) => c.user._id.toString() === participantUser._id.toString()
         );
 
         const userCompletedCheckIns = userCheckIns.filter((c) => c.isCompleted);
@@ -738,8 +744,8 @@ export class ActivitiesService {
             : 0;
 
         return {
-          userId: participant._id?.toString() || '',
-          name: (participant as any).name || 'Unknown',
+          userId: participantUser._id?.toString() || '',
+          name: participantUser.name || 'Unknown',
           checkInCount: userCheckIns.length,
           completionRate:
             userCheckIns.length > 0
@@ -771,9 +777,12 @@ export class ActivitiesService {
       {} as Record<CheckInType, number>,
     );
 
-    const mostPopularCheckInType = Object.entries(checkInsByType).reduce(
-      (a, b) => (a[1] > b[1] ? a : b),
-    )[0] as CheckInType;
+    const mostPopularCheckInType = Object.entries(checkInsByType).length > 0
+      ? Object.entries(checkInsByType).reduce(
+          (a, b) => (a[1] > b[1] ? a : b),
+          ['NONE' as CheckInType, 0]
+        )[0] as CheckInType
+      : null;
 
     const checkInsByDay = populatedCheckIns.reduce(
       (acc, checkIn) => {
@@ -788,10 +797,12 @@ export class ActivitiesService {
       {} as Record<string, number>,
     );
 
-    const mostActiveDay = Object.entries(checkInsByDay).reduce(
-      (a, b) => (a[1] > b[1] ? a : b),
-      ['Unknown', 0],
-    )[0];
+    const mostActiveDay = Object.entries(checkInsByDay).length > 0
+      ? Object.entries(checkInsByDay).reduce(
+          (a, b) => (a[1] > b[1] ? a : b),
+          ['Unknown', 0]
+        )[0]
+      : 'None';
 
     const longestStreak = Math.max(0, ...participantStats.map((p) => p.streak));
 
@@ -1246,5 +1257,46 @@ export class ActivitiesService {
     });
     
     return isAdmin || isParticipant;
+  }
+
+  async getActivityParticipants(
+    activityId: string,
+    userId?: string,
+  ): Promise<ActivityServiceResponse<ParticipantDto[]>> {
+    const activity = await this.activityModel
+      .findById(activityId)
+      .populate('participants.user', 'id name email profilePicture')
+      .exec();
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    // For private activities, check if user is a participant
+    if (activity.type === ActivityType.PRIVATE) {
+      if (!userId) {
+        throw new ForbiddenException('Authentication required for private activities');
+      }
+
+      const isParticipant = activity.participants.some(
+        (p) => this.getUserId(p.user) === userId
+      );
+
+      if (!isParticipant) {
+        throw new ForbiddenException('Only participants can view private activity details');
+      }
+    }
+
+    // Add proper type casting
+    const participants: ParticipantDto[] = activity.participants.map(participant => ({
+      user: this.transformToDto(participant.user, UserResponseDto) as UserResponseDto,
+      role: participant.role
+    }));
+
+    return {
+      success: true,
+      message: 'Participants retrieved successfully',
+      data: participants,
+    };
   }
 }

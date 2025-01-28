@@ -36,6 +36,7 @@ import {
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
 import { ActivityRole } from './schemas/activity.schema';
 import { HandleJoinRequestDto } from './dto/activity/join-request.dto';
+import { ParticipantDto } from './dto/activity/participant.dto';
 
 @ApiTags('Activities')
 @Controller('activities')
@@ -356,5 +357,28 @@ export class ActivitiesController {
       req.user.userId,
       handleJoinRequestDto,
     );
+  }
+
+  @Get(':activityId/participants')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Get all participants of an activity',
+    description: 'For public activities, any authenticated user can access. For private activities, only participants can access.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns all participants with their roles',
+    type: [ParticipantDto]
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User is not a participant of this private activity'
+  })
+  async getActivityParticipants(
+    @Request() req,
+    @Param('activityId') activityId: string,
+  ): Promise<ActivityServiceResponse<ParticipantDto[]>> {
+    return this.activitiesService.getActivityParticipants(activityId, req.user.userId);
   }
 }
