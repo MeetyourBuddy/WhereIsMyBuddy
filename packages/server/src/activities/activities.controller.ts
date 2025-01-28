@@ -58,16 +58,45 @@ export class ActivitiesController {
     type: CreateActivityDto,
     examples: {
       'Basic Activity': {
+        summary: 'Minimum required fields plus common optional fields',
         value: {
-          title: 'Learn English Together',
-          description: 'Weekly English learning sessions for beginners',
+          // Required fields
+          title: "Learn English Together",
+          description: "Weekly English learning sessions for beginners",
           proposedDuration: 30,
-          durationUnit: 'days',
+          durationUnit: "days",
           maxSize: 10,
-          type: 'public',
+          type: "public",
           checkinFrequency: 1,
-          checkinFrequencyUnit: 'weekly',
-          rules: ['Complete homework before sessions', 'Practice speaking daily']
+          checkinFrequencyUnit: "weekly",
+          allowedCheckInTypes: ["photo", "text"],
+
+          // Optional but commonly used fields
+          startDate: "2025-01-28T05:42:33.570Z",
+          joinType: "flexible",
+          checkinDays: ["monday", "wednesday"],
+          rules: [
+            "Complete homework before sessions",
+            "Practice speaking daily"
+          ],
+          tags: ["language", "english", "learning"]
+        }
+      },
+      'Monthly Activity': {
+        summary: 'Example with monthly check-in settings',
+        value: {
+          title: "Monthly Book Club",
+          description: "Read and discuss one book per month",
+          proposedDuration: 6,
+          durationUnit: "months",
+          maxSize: 15,
+          type: "public",
+          checkinFrequency: 1,
+          checkinFrequencyUnit: "monthly",
+          checkinDateOfMonth: 15,  // or use checkinDayOfWeek & checkinWeekOfMonth
+          allowedCheckInTypes: ["text", "checklist"],
+          rules: ["Finish book before meeting", "Prepare discussion points"],
+          tags: ["books", "reading", "discussion"]
         }
       }
     }

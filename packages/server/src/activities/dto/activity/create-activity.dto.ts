@@ -81,11 +81,11 @@ export class CreateActivityDto {
   tags?: string[];
 
   @ApiProperty({
-    description: 'Activity rules',
-    type: [RuleDto],
+    description: 'Custom activity rules (default rules will be added automatically)',
+    type: [String],
     example: [
-      'Complete weekly assignments',
-      'Practice 30 minutes daily'
+      'Complete homework before sessions',
+      'Practice speaking daily'
     ],
     required: false
   })
