@@ -80,20 +80,24 @@ export class ActivitiesController {
           tags: ['language', 'english', 'learning'],
         },
       },
-      'Monthly Activity': {
-        summary: 'Example with monthly check-in settings',
+      'Monthly Activity with Multiple Check-ins': {
+        summary: 'Example with multiple monthly check-in dates',
         value: {
           title: 'Monthly Book Club',
-          description: 'Read and discuss one book per month',
+          description: 'Read and discuss multiple books per month',
           proposedDuration: 6,
           durationUnit: 'months',
           maxSize: 15,
           type: 'public',
-          checkinFrequency: 1,
+          checkinFrequency: 4,  // Four check-ins per month
           checkinFrequencyUnit: 'monthly',
-          checkinDateOfMonth: 15, // or use checkinDayOfWeek & checkinWeekOfMonth
+          // Either use dates of month:
+          checkinDatesOfMonth: [5, 12, 19, 26],  // Check-ins on specific dates
+          // OR use days of week pattern:
+          checkinDaysOfWeek: ['monday', 'thursday'],  // Check-ins on Mondays and Thursdays
+          checkinWeeksOfMonth: [1, 2],  // First and second weeks
           allowedCheckInTypes: ['photo', 'checklist', 'hours', 'other'],
-          rules: ['Finish book before meeting', 'Prepare discussion points'],
+          rules: ['Complete assigned chapters before each meeting'],
           tags: ['books', 'reading', 'discussion'],
         },
       },

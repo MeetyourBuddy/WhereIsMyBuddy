@@ -94,14 +94,14 @@ export class Activity extends Document {
   @Prop({ type: [String], enum: DayOfWeek })
   checkinDays?: DayOfWeek[]; // For weekly/biweekly
 
-  @Prop({ min: 1, max: 31 })
-  checkinDateOfMonth?: number; // For monthly - date of month
+  @Prop({ type: [Number], min: 1, max: 31 })
+  checkinDatesOfMonth?: number[]; // For monthly - dates of month
 
-  @Prop({ type: String, enum: DayOfWeek })
-  checkinDayOfWeek?: DayOfWeek; // For monthly - day of week (e.g., "last Thursday")
+  @Prop({ type: [String], enum: DayOfWeek })
+  checkinDaysOfWeek?: DayOfWeek[]; // For monthly - days of week (e.g., ["monday", "thursday"])
 
-  @Prop({ min: 1, max: 4 })
-  checkinWeekOfMonth?: number; // For monthly - which week (1st, 2nd, 3rd, 4th)
+  @Prop({ type: [Number], min: 1, max: 4 })
+  checkinWeeksOfMonth?: number[]; // For monthly - which weeks (1st, 2nd, 3rd, 4th)
 
   @Prop({
     type: String,

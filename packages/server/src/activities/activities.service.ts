@@ -92,10 +92,11 @@ export class ActivitiesService {
   ): void {
     const {
       checkinFrequencyUnit,
+      checkinFrequency,
       checkinDays,
-      checkinDateOfMonth,
-      checkinDayOfWeek,
-      checkinWeekOfMonth,
+      checkinDatesOfMonth,
+      checkinDaysOfWeek,
+      checkinWeeksOfMonth,
     } = createActivityDto;
 
     switch (checkinFrequencyUnit) {
@@ -109,19 +110,35 @@ export class ActivitiesService {
         break;
 
       case CheckinFrequencyUnit.MONTHLY:
-        const hasDateOfMonth = typeof checkinDateOfMonth === 'number';
-        const hasDayOfWeek = checkinDayOfWeek && checkinWeekOfMonth;
+        const hasDateOfMonth = checkinDatesOfMonth?.length > 0;
+        const hasDayOfWeek = checkinDaysOfWeek?.length > 0 && checkinWeeksOfMonth?.length > 0;
 
         if (!hasDateOfMonth && !hasDayOfWeek) {
           throw new BadRequestException(
-            'Monthly frequency requires either a date of month or a day of week with week of month',
+            'Monthly frequency requires either dates of month or days of week with weeks of month',
           );
         }
 
         if (hasDateOfMonth && hasDayOfWeek) {
           throw new BadRequestException(
-            'Cannot specify both date of month and day of week for monthly frequency',
+            'Cannot specify both dates of month and days of week patterns for monthly frequency',
           );
+        }
+
+        // Validate array length matches checkinFrequency
+        if (hasDateOfMonth && checkinDatesOfMonth.length !== checkinFrequency) {
+          throw new BadRequestException(
+            `Number of check-in dates (${checkinDatesOfMonth.length}) must match check-in frequency (${checkinFrequency})`,
+          );
+        }
+
+        if (hasDayOfWeek) {
+          const totalCheckIns = checkinDaysOfWeek.length * checkinWeeksOfMonth.length;
+          if (totalCheckIns !== checkinFrequency) {
+            throw new BadRequestException(
+              `Total number of check-ins (${totalCheckIns}) must match check-in frequency (${checkinFrequency})`,
+            );
+          }
         }
         break;
     }
@@ -278,15 +295,15 @@ export class ActivitiesService {
         return nextDate;
 
       case CheckinFrequencyUnit.MONTHLY:
-        if (activity.checkinDateOfMonth) {
-          nextDate.setDate(activity.checkinDateOfMonth);
+        if (activity.checkinDatesOfMonth) {
+          nextDate.setDate(activity.checkinDatesOfMonth[0]);
           if (nextDate < now) {
             nextDate.setMonth(nextDate.getMonth() + 1);
           }
           return nextDate;
         }
 
-        if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
+        if (activity.checkinDaysOfWeek && activity.checkinWeeksOfMonth) {
           // Implementation for "last Thursday" type patterns
           // This is a simplified version
           nextDate.setDate(1); // Start of month
@@ -364,9 +381,9 @@ export class ActivitiesService {
     const relevantFields = {
       checkinFrequencyUnit: activity.checkinFrequencyUnit,
       checkinDays: activity.checkinDays,
-      checkinDateOfMonth: activity.checkinDateOfMonth,
-      checkinDayOfWeek: activity.checkinDayOfWeek,
-      checkinWeekOfMonth: activity.checkinWeekOfMonth,
+      checkinDatesOfMonth: activity.checkinDatesOfMonth,
+      checkinDaysOfWeek: activity.checkinDaysOfWeek,
+      checkinWeeksOfMonth: activity.checkinWeeksOfMonth,
       ...updateActivityDto,
     };
 
@@ -956,13 +973,13 @@ export class ActivitiesService {
         return activity.checkinDays?.includes(dayOfWeek) ?? false;
 
       case CheckinFrequencyUnit.MONTHLY:
-        if (activity.checkinDateOfMonth) {
-          return dateOfMonth === activity.checkinDateOfMonth;
+        if (activity.checkinDatesOfMonth) {
+          return activity.checkinDatesOfMonth.includes(dateOfMonth);
         }
-        if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
+        if (activity.checkinDaysOfWeek && activity.checkinWeeksOfMonth) {
           return (
-            dayOfWeek === activity.checkinDayOfWeek &&
-            weekOfMonth === activity.checkinWeekOfMonth
+            dayOfWeek === activity.checkinDaysOfWeek[0] &&
+            weekOfMonth === activity.checkinWeeksOfMonth[0]
           );
         }
         return false;
@@ -1022,9 +1039,9 @@ export class ActivitiesService {
         frequency: {
           unit: activity.checkinFrequencyUnit,
           days: activity.checkinDays,
-          dateOfMonth: activity.checkinDateOfMonth,
-          dayOfWeek: activity.checkinDayOfWeek,
-          weekOfMonth: activity.checkinWeekOfMonth,
+          datesOfMonth: activity.checkinDatesOfMonth,
+          dayOfWeek: activity.checkinDaysOfWeek,
+          weeksOfMonth: activity.checkinWeeksOfMonth,
         },
       },
     };

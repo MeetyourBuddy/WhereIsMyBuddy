@@ -122,29 +122,48 @@ export class CreateActivityDto {
   )
   checkinDays?: DayOfWeek[];
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 31 })
+  @ApiPropertyOptional({ 
+    type: [Number],
+    minimum: 1,
+    maximum: 31,
+    description: 'Array of dates for monthly check-ins (1-31)',
+    example: [5, 15, 25]
+  })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(31)
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Min(1, { each: true })
+  @Max(31, { each: true })
   @ValidateIf((o) => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
-  checkinDateOfMonth?: number;
+  checkinDatesOfMonth?: number[];
 
-  @ApiPropertyOptional({ enum: DayOfWeek })
+  @ApiPropertyOptional({ 
+    enum: DayOfWeek,
+    isArray: true,
+    description: 'Array of days for monthly check-ins',
+    example: ['monday', 'thursday']
+  })
   @IsOptional()
-  @IsEnum(DayOfWeek)
+  @IsEnum(DayOfWeek, { each: true })
   @ValidateIf((o) => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
-  checkinDayOfWeek?: DayOfWeek;
+  checkinDaysOfWeek?: DayOfWeek[];
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 4 })
+  @ApiPropertyOptional({ 
+    type: [Number],
+    minimum: 1,
+    maximum: 4,
+    description: 'Array of week numbers for monthly check-ins (1-4)',
+    example: [1, 3]
+  })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(4)
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Min(1, { each: true })
+  @Max(4, { each: true })
   @ValidateIf(
     (o) =>
       o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY &&
-      o.checkinDayOfWeek,
+      o.checkinDaysOfWeek?.length > 0,
   )
-  checkinWeekOfMonth?: number;
+  checkinWeeksOfMonth?: number[];
 }
