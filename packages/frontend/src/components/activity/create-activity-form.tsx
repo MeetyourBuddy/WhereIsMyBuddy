@@ -53,7 +53,6 @@ import { useNavigate } from 'react-router-dom';
 const frequencyOptions = [
   { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
-  { value: 'biweekly', label: 'Biweekly' },
   { value: 'monthly', label: 'Monthly' },
   { value: 'other', label: 'Other' }
 ];
@@ -101,20 +100,21 @@ export const CreateActivityForm = () => {
       description: '',
       proposedDuration: 1,
       durationUnit: 'days',
-      bannerImage: undefined,
-      contactFrequency: 'daily',
+      maxSize: 1,
       type: 'public',
+      checkinFrequency: 1,
+      checkinFrequencyUnit: 'daily',
+      checkinDays: [],
+      checkinDateOfMonth: [],
+      checkinDayOfWeek: [],
+      checkinWeekOfMonth: [],
+      bannerImage: '',
       startDate: new Date(),
       joinType: 'flexible',
-      maxSize: 1,
       categories: [],
-      rules: [{ rule: '', isDefault: false }] as Rule[],
-      tags: []
-      // checkinOptions: {
-      //   photo: { enabled: false, description: '' },
-      //   hours: { enabled: false, minHours: 0 },
-      //   checklist: { enabled: false, items: [] }
-      // },
+      tags: [],
+      rules: [{ rule: '', isDefault: false }],
+      allowedCheckInTypes: ['photo']
     }
   });
 
@@ -167,9 +167,7 @@ export const CreateActivityForm = () => {
 
   return (
     <div className="container-default flex h-full flex-col bg-white p-8">
-      <h2 className="scroll-m-20 font-extrabold tracking-tight">Create Activity</h2>
-
-      <div className="mt-8 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex flex-col items-start">
           <p className="text-xl font-bold">New Activity</p>
           <p className="max-w-[400px] text-base text-muted-foreground">
@@ -197,7 +195,7 @@ export const CreateActivityForm = () => {
                   Activity Name
                   <RequiredIndicator />
                 </FormLabel>
-                <div className="flex w-full flex-1 flex-col">
+                <div className="flex w-full flex-1 flex-col items-start">
                   <FormControl>
                     <Input {...field} placeholder="Enter activity name" />
                   </FormControl>
@@ -270,7 +268,13 @@ export const CreateActivityForm = () => {
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        onChange={handleImageUpload}
+                        onChange={(e) => {
+                          handleImageUpload(e);
+                          // Store the file name or URL in the form
+                          if (e.target.files?.[0]) {
+                            field.onChange(e.target.files[0].name);
+                          }
+                        }}
                       />
                     </div>
                   </FormControl>
@@ -435,14 +439,23 @@ export const CreateActivityForm = () => {
 
           <FormField
             control={form.control}
-            name="contactFrequency"
+            name="checkinFrequencyUnit"
             render={({ field }) => (
               <FormItem className="flex gap-4">
                 <FormLabel className="flex w-1/3">
-                  Meeting Frequency
+                  Check-in Frequency
                   <InfoIcon />
                 </FormLabel>
-                <div className="flex w-full flex-1 flex-col">
+                <div className="flex w-full flex-1 gap-4">
+                  <FormControl>
+                    <Input
+                      type="number"
+                      value={form.watch('checkinFrequency')}
+                      onChange={(e) => form.setValue('checkinFrequency', Number(e.target.value))}
+                      min={1}
+                      className="w-24"
+                    />
+                  </FormControl>
                   <FormControl>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger className="flex-1">
@@ -457,7 +470,66 @@ export const CreateActivityForm = () => {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormMessage />
+                </div>
+              </FormItem>
+            )}
+          />
+
+          <Separator />
+
+          {/* Add this section after the check-in frequency field */}
+          <FormField
+            control={form.control}
+            name="checkinDays"
+            render={({ field }) => (
+              <FormItem className="flex gap-4">
+                <FormLabel className="flex w-1/3">
+                  Check-in Schedule
+                  <InfoIcon />
+                </FormLabel>
+                <div className="flex w-full flex-1 flex-col space-y-4">
+                  {form.watch('checkinFrequencyUnit') === 'weekly' && (
+                    <FormControl>
+                      <MultiSelect
+                        placeholder="Select days of the week"
+                        options={[
+                          { label: 'Monday', value: 'monday' },
+                          { label: 'Tuesday', value: 'tuesday' },
+                          { label: 'Wednesday', value: 'wednesday' },
+                          { label: 'Thursday', value: 'thursday' },
+                          { label: 'Friday', value: 'friday' },
+                          { label: 'Saturday', value: 'saturday' },
+                          { label: 'Sunday', value: 'sunday' }
+                        ]}
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      />
+                    </FormControl>
+                  )}
+
+                  {form.watch('checkinFrequencyUnit') === 'monthly' && (
+                    <FormField
+                      control={form.control}
+                      name="checkinDateOfMonth"
+                      render={({ field }) => (
+                        <FormControl>
+                          <MultiSelect
+                            placeholder="Select days of the month"
+                            options={Array.from({ length: 31 }, (_, i) => ({
+                              label: `${i + 1}`,
+                              value: `${i + 1}`
+                            }))}
+                            onValueChange={(values) => {
+                              // Convert string values to numbers
+                              const numberValues = values.map((v) => parseInt(v, 10));
+                              field.onChange(numberValues);
+                            }}
+                            defaultValue={field.value?.map((v) => v.toString())}
+                          />
+                        </FormControl>
+                      )}
+                    />
+                  )}
                 </div>
               </FormItem>
             )}
@@ -635,118 +707,29 @@ export const CreateActivityForm = () => {
 
           <Separator />
 
-          {/* <FormField
+          <FormField
             control={form.control}
-            name="checkinOptions"
+            name="allowedCheckInTypes"
             render={({ field }) => (
-              <FormItem className="flex items-start gap-4">
-                <FormLabel className="w-1/3 flex">
-                  Check-in Options
+              <FormItem className="flex gap-4">
+                <FormLabel className="flex w-1/3">
+                  Allowed Check-in Types
                   <InfoIcon />
                 </FormLabel>
-                <div className="flex flex-col w-full flex-1">
+                <div className="flex w-full flex-1 flex-col">
                   <FormControl>
-                    <div className="space-y-4 flex-1"> */}
-          {/* Photo option */}
-          {/* <div className="flex space-x-2 w-full">
-                        <Checkbox
-                          checked={field.value?.photo?.enabled}
-                          onCheckedChange={(checked) =>
-                            field.onChange({
-                              ...field.value,
-                              photo: { ...field.value?.photo, enabled: checked as boolean }
-                            })
-                          }
-                        />
-                        <div className="flex flex-col w-full">
-                          <Label>Post a photo</Label>
-                          <div className="flex flex-col items-start mt-2">
-                            <p className="text-xs text-muted-foreground mb-1">
-                              What defines a valid photo?
-                            </p>
-                            <Input
-                              value={field.value?.photo?.description}
-                              onChange={(e) =>
-                                field.onChange({
-                                  ...field.value,
-                                  photo: { ...field.value?.photo, description: e.target.value }
-                                })
-                              }
-                              placeholder="Description"
-                              className="w-full"
-                            />
-                          </div>
-                        </div>
-                      </div> */}
-
-          {/* Hours option */}
-          {/* <div className="flex space-x-2 w-full">
-                        <Checkbox
-                          checked={field.value?.hours?.enabled}
-                          onCheckedChange={(checked) =>
-                            field.onChange({
-                              ...field.value,
-                              hours: { ...field.value?.hours, enabled: checked as boolean }
-                            })
-                          }
-                        />
-                        <div className="flex flex-col w-full">
-                          <Label>Number of hours</Label>
-                          <div className="flex flex-col items-start mt-2">
-                            <p className="text-xs text-muted-foreground mb-1">
-                              Select minimum number of hours
-                            </p>
-                            <Input
-                              type="number"
-                              value={field.value?.hours?.minHours}
-                              onChange={(e) =>
-                                field.onChange({
-                                  ...field.value,
-                                  hours: {
-                                    ...field.value?.hours,
-                                    minHours: parseInt(e.target.value)
-                                  }
-                                })
-                              }
-                              placeholder="Min. hours"
-                              className="w-full"
-                            />
-                          </div>
-                        </div>
-                      </div> */}
-
-          {/* Checklist option */}
-          {/* <div className="flex space-x-2 w-full">
-                        <Checkbox
-                          checked={field.value?.checklist?.enabled}
-                          onCheckedChange={(checked) =>
-                            field.onChange({
-                              ...field.value,
-                              checklist: { ...field.value?.checklist, enabled: checked as boolean }
-                            })
-                          }
-                        />
-                        <div className="flex flex-col w-full">
-                          <Label>Checklist</Label>
-                          <div className="flex flex-col items-start mt-2">
-                            <p className="text-xs text-muted-foreground mb-1">
-                              List items below separated by commas
-                            </p>
-                            <Input
-                              value={field.value?.checklist?.items}
-                              onChange={(e) =>
-                                field.onChange({
-                                  ...field.value,
-                                  checklist: { ...field.value?.checklist, items: e.target.value }
-                                })
-                              }
-                              placeholder="Item1, Item2, Item3"
-                              className="w-full"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <MultiSelect
+                      placeholder="Select check-in types"
+                      options={[
+                        { label: 'Photo', value: 'photo' },
+                        { label: 'Checklist', value: 'checklist' },
+                        { label: 'Hours', value: 'hours' },
+                        { label: 'Text', value: 'text' },
+                        { label: 'Other', value: 'other' }
+                      ]}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    />
                   </FormControl>
                   <FormMessage />
                 </div>
@@ -754,7 +737,7 @@ export const CreateActivityForm = () => {
             )}
           />
 
-          <Separator /> */}
+          <Separator />
 
           <FormField
             control={form.control}

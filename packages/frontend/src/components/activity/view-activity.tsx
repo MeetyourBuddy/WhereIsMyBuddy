@@ -113,7 +113,7 @@ const checkInStats = [
 
 export const ViewActivity = () => {
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container h-full max-w-full px-4 py-6">
       <div className="flex flex-col gap-4 md:flex-row">
         {/* Left Column - 2/3 width */}
         <Card className="flex-1 md:w-2/3">

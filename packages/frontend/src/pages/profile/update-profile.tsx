@@ -9,6 +9,7 @@ import { useAuthContext } from '@/providers/contexts/auth-context';
 import { useProfile } from '@/lib/hooks/use-profile';
 import { useProfileStore } from '@/providers/store';
 import { IUserData } from '@/types/user-types';
+import { ContentLayout } from '@/components/admin-panel/content-layout';
 
 const UpdateProfilePage = () => {
   const { user } = useAuthContext();
@@ -142,20 +143,22 @@ const UpdateProfilePage = () => {
   };
 
   return (
-    <FormProvider {...methods}>
-      <div className="container-default flex flex-col gap-4">
-        <ProfileHeader
-          name={profile?.name || 'John Doe'}
-          email={profile?.email || 'john.doe@example.com'}
-          avatarUrl={profile?.profileImage || '/avatars/user-profile.png'}
-          bannerUrl={profile?.bannerImage}
-          onAvatarUpdate={handleAvatarUpdate}
-          onBannerUpdate={handleBannerUpdate}
-        />
+    <ContentLayout title="Update Profile">
+      <FormProvider {...methods}>
+        <div className="container-default flex flex-col gap-4 bg-white px-6">
+          <ProfileHeader
+            name={profile?.name || 'John Doe'}
+            email={profile?.email || 'john.doe@example.com'}
+            avatarUrl={profile?.profileImage || '/avatars/user-profile.png'}
+            bannerUrl={profile?.bannerImage}
+            onAvatarUpdate={handleAvatarUpdate}
+            onBannerUpdate={handleBannerUpdate}
+          />
 
-        <ProfileFeed onSubmit={handleProfileUpdate} />
-      </div>
-    </FormProvider>
+          <ProfileFeed onSubmit={handleProfileUpdate} />
+        </div>
+      </FormProvider>
+    </ContentLayout>
   );
 };
 

@@ -21,10 +21,14 @@ export default defineConfig({
       '@services': resolve(__dirname, './src/services'),
       '@config': resolve(__dirname, './src/config'),
       '@providers': resolve(__dirname, './src/providers'),
-      '@hooks': resolve(__dirname, './src/lib/hooks')
+      '@hooks': resolve(__dirname, './src/lib/hooks'),
+      '@layouts': resolve(__dirname, './src/layouts')
     }
   },
   define: {
     'process.env': {}
+  },
+  optimizeDeps: {
+    exclude: ['react-hook-form', '@hookform/resolvers/zod']
   }
 });

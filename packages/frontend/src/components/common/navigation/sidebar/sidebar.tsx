@@ -10,9 +10,9 @@ import {
   Loader2,
   LayoutDashboard
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
 import { NavUser } from './nav-user';
-import { NavMain } from './nav-main';
 import {
   Sidebar,
   SidebarContent,
@@ -66,8 +66,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthContext();
 
   const userData = {
-    name: user?.name || 'John Doe',
-    email: user?.email || 'johndoe@mail.com',
+    name: user?.data?.name || 'John Doe',
+    email: user?.data?.email || 'johndoe@mail.com',
     avatar: '/avatars/user-profile.png'
   };
 
@@ -89,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavLogo />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <SidebarNavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />
@@ -97,5 +97,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
+  );
+}
+
+export function SidebarNavMain({
+  items
+}: {
+  items: Array<{ title: string; url: string; icon: any }>;
+}) {
+  return (
+    <nav className="flex flex-col gap-1">
+      {items.map((item) => (
+        <NavLink
+          key={item.url}
+          to={item.url}
+          className={({ isActive }) =>
+            `flex items-center gap-3 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50 ${
+              isActive ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-50' : ''
+            }`
+          }
+        >
+          <item.icon className="h-4 w-4" />
+          <span>{item.title}</span>
+        </NavLink>
+      ))}
+    </nav>
   );
 }
