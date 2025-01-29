@@ -6,10 +6,13 @@ import { UserResponseDto } from '../../../users/dto/user-response.dto';
 import {
   ActivityType,
   JoinType,
-  CheckinFrequency,
   DurationUnit,
   ActivityRole,
+  CheckInType,
+  CheckinFrequencyUnit,
+  DayOfWeek,
 } from '../../schemas/activity.schema';
+import { RuleDto } from './rule.dto';
 
 @Exclude()
 export class ParticipantDto {
@@ -30,7 +33,7 @@ export class ActivityResponseDto {
    */
   @Expose()
   @ApiProperty()
-  _id: string;
+  id: string;
 
   /**
    * Title of the activity
@@ -56,12 +59,28 @@ export class ActivityResponseDto {
   admin: UserResponseDto;
 
   /**
-   * Duration of the activity in days
+   * Duration value of the activity
    * @example 30
    */
   @Expose()
   @ApiProperty()
   proposedDuration: number;
+
+  /**
+   * Unit of duration (days or months)
+   * @example "days"
+   */
+  @Expose()
+  @ApiProperty({ enum: DurationUnit })
+  durationUnit: DurationUnit;
+
+  /**
+   * Calculated duration in days
+   * @example 30
+   */
+  @Expose()
+  @ApiPropertyOptional()
+  proposedDurationInDays?: number;
 
   /**
    * Banner image URL for the activity
@@ -70,14 +89,6 @@ export class ActivityResponseDto {
   @Expose()
   @ApiPropertyOptional()
   bannerImage?: string;
-
-  /**
-   * Frequency of contact between participants
-   * @example "WEEKLY"
-   */
-  @Expose()
-  @ApiProperty({ enum: CheckinFrequency })
-  contactFrequency: CheckinFrequency;
 
   /**
    * Type of activity (public/private)
@@ -92,8 +103,8 @@ export class ActivityResponseDto {
    * @example "2024-01-01T00:00:00Z"
    */
   @Expose()
-  @ApiPropertyOptional()
-  startDate?: Date;
+  @ApiProperty({ type: Date })
+  startDate: Date;
 
   /**
    * Join type (flexible/fixed)
@@ -120,46 +131,50 @@ export class ActivityResponseDto {
   currentSize: number;
 
   /**
-   * Activity tags
+   * Activity tags for categorization and search
    * @example ["language", "spanish", "learning"]
    */
   @Expose()
-  @ApiPropertyOptional({ type: [String] })
+  @ApiProperty({ type: [String] })
   tags: string[];
 
   /**
-   * Activity categories
-   * @example ["technology", "travel", "health"]
-   */
-  @Expose()
-  @ApiPropertyOptional({ type: [String] })
-  categories?: string[];
-
-  /**
-   * Activity rules
+   * Activity rules including default and custom rules
    */
   @Expose()
   @ApiProperty({
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        rule: { type: 'string' },
-        isDefault: { type: 'boolean' },
+    description: 'Activity rules including default and custom rules',
+    type: [RuleDto],
+    example: [
+      {
+        rule: 'Be respectful to all participants',
+        isDefault: true,
       },
-    },
+      {
+        rule: 'Complete weekly assignments',
+        isDefault: false,
+      },
+    ],
   })
-  rules: Array<{ rule: string; isDefault: boolean }>;
+  rules: RuleDto[];
 
   /**
-   * List of participants
+   * List of participants with their roles
    */
   @Expose()
-  @ApiProperty({ type: [ParticipantDto] })
-  participants: ParticipantDto[];
+  @ApiProperty({ type: [Object] })
+  participants: Array<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      profilePicture?: string;
+    };
+    role: ActivityRole;
+  }>;
 
   /**
-   * Activity status
+   * Whether the activity is currently active
    * @example true
    */
   @Expose()
@@ -167,14 +182,69 @@ export class ActivityResponseDto {
   isActive: boolean;
 
   /**
-   * Available seats in the activity
-   * @example 7
+   * Date when the activity was ended (if applicable)
+   * @example "2024-12-31T23:59:59Z"
+   */
+  @Expose()
+  @ApiPropertyOptional({ type: Date })
+  endedAt?: Date;
+
+  /**
+   * Types of check-ins allowed for this activity
+   * @example ["photo", "checklist", "hours"]
+   */
+  @Expose()
+  @ApiProperty({ type: [String], enum: CheckInType })
+  allowedCheckInTypes: CheckInType[];
+
+  /**
+   * Number of times check-ins should occur within the frequency unit
+   * @example 2
    */
   @Expose()
   @ApiProperty()
-  get availableSeats(): number {
-    return this.maxSize - this.currentSize;
-  }
+  checkinFrequency: number;
+
+  /**
+   * Unit of check-in frequency (daily, weekly, biweekly, monthly)
+   * @example "weekly"
+   */
+  @Expose()
+  @ApiProperty({ enum: CheckinFrequencyUnit })
+  checkinFrequencyUnit: CheckinFrequencyUnit;
+
+  /**
+   * Days of the week for check-ins (for weekly/biweekly frequency)
+   * @example ["monday", "thursday"]
+   */
+  @Expose()
+  @ApiPropertyOptional({ enum: DayOfWeek, isArray: true })
+  checkinDays?: DayOfWeek[];
+
+  /**
+   * Date of the month for check-ins (for monthly frequency)
+   * @example 15
+   */
+  @Expose()
+  @ApiPropertyOptional()
+  checkinDateOfMonth?: number;
+
+  /**
+   * Day of the week for monthly check-ins
+   * @example "thursday"
+   */
+  @Expose()
+  @ApiPropertyOptional({ enum: DayOfWeek })
+  checkinDayOfWeek?: DayOfWeek;
+
+  /**
+   * Week of the month for check-ins (1-4)
+   * @example 4
+   * @description Used with checkinDayOfWeek for "last Thursday of month" type patterns
+   */
+  @Expose()
+  @ApiPropertyOptional()
+  checkinWeekOfMonth?: number;
 
   /**
    * Creation timestamp
@@ -193,18 +263,20 @@ export class ActivityResponseDto {
   updatedAt: Date;
 
   /**
-   * Duration unit of the activity
-   * @example "DAYS"
+   * Number of available seats in the activity
+   * @example 7
    */
   @Expose()
-  @ApiProperty({ enum: DurationUnit })
-  durationUnit: DurationUnit;
+  @ApiProperty()
+  get availableSeats(): number {
+    return this.maxSize - this.currentSize;
+  }
 
+  /**
+   * Next due check-in date based on frequency settings
+   * @example "2024-01-15T00:00:00Z"
+   */
   @Expose()
   @ApiPropertyOptional()
-  proposedDurationInDays?: number;
-
-  @Expose()
-  @ApiPropertyOptional()
-  endedAt?: Date;
+  nextCheckInDue?: Date;
 }
