@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 
 // Import layouts
 import AuthLayout from '@/layouts/auth-layout';
-import BaseLayout from '@/layouts/base-layout';
+import AppLayout from '@/layouts/app-layout';
 
 // Import pages - Auth
 import Signin from '@/pages/auth/signin';
@@ -39,9 +39,9 @@ const Router = () => (
 
     {/* Protected routes wrapped with ProtectedRoute */}
     <Route element={<ProtectedRoute />}>
-      {/* Protected routes with BaseLayout */}
-      <Route element={<BaseLayout />}>
-        <Route path="/" element={<Dashboard />} />
+      {/* Protected routes with AppLayout */}
+      <Route element={<AppLayout />}>
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/activity" element={<MyActivityPage />} />
         <Route path="/activity/create" element={<CreateActivityPage />} />

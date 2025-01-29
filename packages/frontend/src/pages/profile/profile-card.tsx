@@ -4,7 +4,7 @@ import { useProfile } from '@/lib/hooks/use-profile';
 import { IUserData } from '@/types/user-types';
 import { IconButton } from '@/components/common/ui/icon-button';
 import { useNavigate } from 'react-router-dom';
-
+import { ContentLayout } from '@/components/admin-panel/content-layout';
 const UserProfileCard = () => {
   const { profile: storeProfile } = useProfile();
   const { user } = useAuthContext();
@@ -15,17 +15,19 @@ const UserProfileCard = () => {
   if (!profile) return null;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center">
-      <div className="mt-6 flex w-full items-center justify-end">
-        <IconButton
-          onClick={() => navigate('/profile/update')}
-          rightIcon="edit"
-          label="Edit Profile"
-          className="w-[150px]"
-        />
+    <ContentLayout title="Profile">
+      <div className="flex h-full w-full flex-col items-center justify-center">
+        <div className="mt-6 flex w-full items-center justify-end">
+          <IconButton
+            onClick={() => navigate('/profile/update')}
+            rightIcon="edit"
+            label="Edit Profile"
+            className="w-[150px]"
+          />
+        </div>
+        <ProfileCard profile={profile} />
       </div>
-      <ProfileCard profile={profile} />
-    </div>
+    </ContentLayout>
   );
 };
 

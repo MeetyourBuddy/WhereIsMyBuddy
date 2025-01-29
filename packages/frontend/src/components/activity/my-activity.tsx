@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useOutsideClick } from '@/lib/hooks/use-outside-click';
 import { IconButton } from '../common/ui/icon-button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Calendar, Clock, Timer } from 'lucide-react';
 import { Separator } from '../common/ui/separator';
 
@@ -13,8 +13,7 @@ export const MyActivity = () => {
 
   return (
     <div className="container-default flex flex-col gap-4 bg-white p-6">
-      <div className="mb-6 flex w-full items-center justify-between">
-        <h3 className="font-bold">My Activity</h3>
+      <div className="mb-6 flex w-full items-center justify-end">
         <IconButton
           leftIcon="edit"
           label="Create Activity"
@@ -82,12 +81,14 @@ export function ExpandableCardDemo() {
                     </motion.p>
                   </div>
 
-                  <motion.a
-                    href={active.ctaLink}
-                    className="rounded-full bg-green-500 px-4 py-3 text-sm font-bold text-white"
-                  >
-                    {active.ctaText}
-                  </motion.a>
+                  <motion.div>
+                    <Link
+                      to={active.ctaLink}
+                      className="rounded-full bg-green-500 px-4 py-3 text-sm font-bold text-white"
+                    >
+                      {active.ctaText}
+                    </Link>
+                  </motion.div>
                 </div>
                 <div className="relative px-4 pt-4">
                   <motion.div className="flex h-40 flex-col items-start gap-4 overflow-auto pb-10 text-xs text-neutral-600 [-ms-overflow-style:none] [-webkit-overflow-scrolling:touch] [mask:linear-gradient(to_bottom,white,white,transparent)] [scrollbar-width:none] dark:text-neutral-400 md:h-fit md:text-sm lg:text-base">
