@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { IActivity, IActivityResponse } from '@/types/activity-types';
+import type { IActivity, IActivityResponse, IActivityRule } from '@/types/activity-types';
 import { IServiceResponse } from '@/types';
 import { activityService } from '@/services/api/activity/activity-service';
 
@@ -35,7 +35,10 @@ export const useActivityStore = create<ActivityState>()(
             durationUnit: response.data?.durationUnit,
             type: response.data?.type,
             maxSize: response.data?.maxSize,
-            rules: response.data?.rules?.map((r) => r.rule)
+            rules: response.data?.rules?.map((r) => ({
+              rule: r.rule,
+              isDefault: false
+            })) as IActivityRule[]
           };
           set((state) => ({ activities: [...state.activities, activityData] }));
         }

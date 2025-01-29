@@ -14,7 +14,7 @@ export function useProfile() {
       const response = await userService.getMe();
 
       if (response.success) {
-        const userData = response.data.data as IUserData;
+        const userData = response?.data?.data as IUserData;
         setProfile(userData);
         return userData;
       }
@@ -37,7 +37,7 @@ export function useProfile() {
       if (!response.success) {
         throw new Error(response.message);
       }
-      return response.data.data as IUserData;
+      return response?.data?.data as IUserData;
     },
     {
       onSuccess: (data) => {

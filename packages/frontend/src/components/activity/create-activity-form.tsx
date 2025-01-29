@@ -101,20 +101,20 @@ export const CreateActivityForm = () => {
       description: '',
       proposedDuration: 1,
       durationUnit: 'days',
-      type: 'public',
-      maxSize: 1,
-      contactFrequency: 'daily',
-      joinType: 'flexible',
-      rules: [{ rule: '', isDefault: false }] as Rule[],
-      tags: [],
       bannerImage: undefined,
+      contactFrequency: 'daily',
+      type: 'public',
+      startDate: new Date(),
+      joinType: 'flexible',
+      maxSize: 1,
+      categories: [],
+      rules: [{ rule: '', isDefault: false }] as Rule[],
+      tags: []
       // checkinOptions: {
       //   photo: { enabled: false, description: '' },
       //   hours: { enabled: false, minHours: 0 },
       //   checklist: { enabled: false, items: [] }
       // },
-      categories: [],
-      startDate: new Date()
     }
   });
 
