@@ -39,7 +39,7 @@ export function Navbar({ title }: NavbarProps) {
             <Input type="search" placeholder="Search..." className="h-10 pl-10" />
           </div>
           <Separator className="h-[32px] border-2 border-gray-200" orientation="vertical" />
-          <ModeToggle />
+          {/* <ModeToggle /> */}
           <UserNav user={userData} handleLogout={handleLogout} />
         </div>
       </div>
