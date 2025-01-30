@@ -422,29 +422,60 @@ export class ActivitiesService {
     activityId: string,
     createCheckInDto: CreateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    const activity = await this.activityModel.findById(activityId);
+    // Add debug logging
+    console.log('Create Check-in Debug:', {
+      userId,
+      activityId,
+      createCheckInDto
+    });
+
+    const activity = await this.activityModel
+      .findById(activityId)
+      .populate('participants.user', '_id') // Populate just the _id to ensure consistent structure
+      .exec();
+
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
 
-    validateCheckInContent(
-      createCheckInDto.type,
-      createCheckInDto.content,
-      activity,
-    );
+    // Add debug logging
+    console.log('Activity found:', {
+      activityId: activity._id,
+      participants: activity.participants.map(p => ({
+        user: p.user,
+        role: p.role
+      }))
+    });
+
+    const isParticipant = this.isUserParticipant(activity, userId);
+    
+    // Add debug logging
+    console.log('Participant check result:', {
+      userId,
+      isParticipant
+    });
+
+    if (!isParticipant) {
+      throw new ForbiddenException('Only participants can create check-ins');
+    }
+
+    // Validate check-in content
+    validateCheckInContent(createCheckInDto.type, createCheckInDto.content, activity);
 
     const checkIn = new this.checkInModel({
-      user: new Types.ObjectId(userId),
-      activity: new Types.ObjectId(activityId),
-      date: createCheckInDto.date,
+      user: userId,
+      activity: activityId,
       type: createCheckInDto.type,
       content: createCheckInDto.content,
+      date: new Date(), // Automatically set to current time
     });
 
     const savedCheckIn = await checkIn.save();
+    
     return {
       success: true,
-      data: this.mapToCheckInResponse(savedCheckIn),
+      message: 'Check-in created successfully',
+      data: this.transformToDto(savedCheckIn, CheckInResponseDto),
     };
   }
 
@@ -1372,5 +1403,30 @@ export class ActivitiesService {
       success: true,
       data: joinRequests,
     };
+  }
+
+  private isUserParticipant(activity: ActivityDocument, userId: string): boolean {
+    // Add debug logging
+    console.log('Checking participant status:', {
+      userId,
+      participants: activity.participants.map(p => ({
+        participantId: this.getUserId(p.user),
+        role: p.role
+      }))
+    });
+
+    return activity.participants.some((p) => {
+      const participantId = this.getUserId(p.user);
+      const isMatch = participantId === userId;
+      
+      // Add debug logging
+      console.log('Participant comparison:', {
+        participantId,
+        userId,
+        isMatch
+      });
+      
+      return isMatch;
+    });
   }
 }

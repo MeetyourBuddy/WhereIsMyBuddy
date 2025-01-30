@@ -1,48 +1,95 @@
-import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  IsString,
   IsEnum,
   ValidateNested,
-  IsDate,
+  IsString,
+  IsNumber,
+  IsArray,
+  IsBoolean,
   IsOptional,
-  MaxLength,
 } from 'class-validator';
 import { CheckInType } from '../../interfaces/checkin-type.interface';
-import {
-  PhotoContentDto,
-  ChecklistContentDto,
-  HoursContentDto,
-} from './checkin-content.dto';
+
+// Define specific content DTOs
+class PhotoContentDto {
+  @ApiProperty({
+    description: 'URL of the uploaded photo',
+    example: 'https://example.com/photo.jpg',
+  })
+  @IsString()
+  imageUrl: string;
+
+  @ApiProperty({
+    description: 'Optional caption for the photo',
+    required: false,
+    example: 'My progress photo',
+  })
+  @IsOptional()
+  @IsString()
+  caption?: string;
+}
+
+class ChecklistItemDto {
+  @ApiProperty({
+    description: 'Text description of the item',
+    example: 'Complete daily exercise',
+  })
+  @IsString()
+  text: string;
+
+  @ApiProperty({
+    description: 'Whether the item is completed',
+    example: true,
+  })
+  @IsBoolean()
+  completed: boolean;
+}
+
+class ChecklistContentDto {
+  @ApiProperty({
+    type: [ChecklistItemDto],
+    description: 'List of checklist items',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ChecklistItemDto)
+  items: ChecklistItemDto[];
+}
+
+class HoursContentDto {
+  @ApiProperty({
+    description: 'Number of hours completed',
+    example: 2.5,
+  })
+  @IsNumber()
+  hours: number;
+
+  @ApiProperty({
+    description: 'Optional notes about the hours',
+    required: false,
+    example: 'Studied Spanish',
+  })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
 
 export class CreateCheckInDto {
   @ApiProperty({
-    description: 'The activity ID this check-in belongs to',
-  })
-  @IsString()
-  activityId: string;
-
-  @ApiProperty({
-    description: 'Date of the check-in',
-    type: Date,
-  })
-  @Type(() => Date)
-  @IsDate()
-  date: Date;
-
-  @ApiProperty({
     enum: CheckInType,
     description: 'Type of check-in',
+    example: CheckInType.PHOTO,
   })
   @IsEnum(CheckInType)
   type: CheckInType;
 
   @ApiProperty({
-    description: 'Content of the check-in',
+    description: 'Content of the check-in based on type',
     oneOf: [
-      { $ref: getSchemaPath(PhotoContentDto) },
-      { $ref: getSchemaPath(ChecklistContentDto) },
-      { $ref: getSchemaPath(HoursContentDto) },
+      { $ref: '#/components/schemas/PhotoContentDto' },
+      { $ref: '#/components/schemas/ChecklistContentDto' },
+      { $ref: '#/components/schemas/HoursContentDto' },
     ],
   })
   @ValidateNested()
@@ -59,10 +106,4 @@ export class CreateCheckInDto {
     }
   })
   content: PhotoContentDto | ChecklistContentDto | HoursContentDto;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  @ApiProperty({ required: false })
-  status?: string;
 }

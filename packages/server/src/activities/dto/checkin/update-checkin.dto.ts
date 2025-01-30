@@ -1,9 +1,10 @@
-import { getSchemaPath, ApiProperty } from '@nestjs/swagger';
+import { getSchemaPath, ApiProperty, ApiBody } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsOptional,
   ValidateNested,
+  IsDate,
   IsString,
   MaxLength,
 } from 'class-validator';
@@ -25,36 +26,21 @@ export class UpdateCheckInDto {
   type?: CheckInType;
 
   @ApiProperty({
-    description: 'Content of the check-in',
+    description: 'Updated content of the check-in',
     required: false,
-    oneOf: [
-      { $ref: getSchemaPath(PhotoContentDto) },
-      { $ref: getSchemaPath(ChecklistContentDto) },
-      { $ref: getSchemaPath(HoursContentDto) },
-    ],
   })
   @IsOptional()
   @ValidateNested()
-  @Type((opts) => {
-    switch (opts.object?.type) {
-      case CheckInType.PHOTO:
-        return PhotoContentDto;
-      case CheckInType.CHECKLIST:
-        return ChecklistContentDto;
-      case CheckInType.HOURS:
-        return HoursContentDto;
-      default:
-        return PhotoContentDto;
-    }
-  })
-  content?: PhotoContentDto | ChecklistContentDto | HoursContentDto;
+  @Type(() => Object)
+  content?: any;
 
   @ApiProperty({
-    description: 'Date of the check-in',
+    description: 'Updated date of the check-in',
     type: Date,
     required: false,
   })
   @IsOptional()
+  @IsDate()
   @Type(() => Date)
   date?: Date;
 
