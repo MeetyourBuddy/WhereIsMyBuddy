@@ -49,6 +49,7 @@ import { useActivityStore } from '@/providers/store/use-activity-store';
 import { IActivity } from '@/types/activity-types';
 import { toast } from '@/lib/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { Checkbox } from '@/components/common/ui/checkbox';
 
 const frequencyOptions = [
   { value: 'daily', label: 'Daily' },
@@ -79,6 +80,16 @@ interface SelectOption {
 interface Rule {
   rule: string;
   isDefault: boolean;
+}
+
+interface CheckInOption {
+  type: 'photo' | 'checklist' | 'text';
+  description?: string;
+  checklistItems?: Array<{
+    title: string;
+    description: string;
+  }>;
+  isEnabled: boolean;
 }
 
 export const CreateActivityForm = () => {
@@ -114,7 +125,29 @@ export const CreateActivityForm = () => {
       categories: [],
       tags: [],
       rules: [{ rule: '', isDefault: false }],
-      allowedCheckInTypes: ['photo']
+      allowedCheckInTypes: {
+        photo: {
+          type: 'photo',
+          description: '',
+          isEnabled: false
+        },
+        checklist: {
+          type: 'checklist',
+          description: '',
+          checklistItems: [{ title: '', description: '' }],
+          isEnabled: false
+        },
+        text: {
+          type: 'text',
+          description: '',
+          isEnabled: false
+        },
+        hours: {
+          type: 'hours',
+          description: '',
+          isEnabled: false
+        }
+      }
     }
   });
 
@@ -713,25 +746,264 @@ export const CreateActivityForm = () => {
             render={({ field }) => (
               <FormItem className="flex gap-4">
                 <FormLabel className="flex w-1/3">
-                  Allowed Check-in Types
+                  Check-in Options
                   <InfoIcon />
                 </FormLabel>
-                <div className="flex w-full flex-1 flex-col">
-                  <FormControl>
-                    <MultiSelect
-                      placeholder="Select check-in types"
-                      options={[
-                        { label: 'Photo', value: 'photo' },
-                        { label: 'Checklist', value: 'checklist' },
-                        { label: 'Hours', value: 'hours' },
-                        { label: 'Text', value: 'text' },
-                        { label: 'Other', value: 'other' }
-                      ]}
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    />
-                  </FormControl>
-                  <FormMessage />
+                <div className="flex w-full flex-1 flex-col space-y-6">
+                  {/* Photo Check-in Option */}
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center gap-2">
+                      <FormField
+                        control={form.control}
+                        name="allowedCheckInTypes.photo.isEnabled"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="photo-checkin"
+                                />
+                                <Label htmlFor="photo-checkin" className="font-medium">
+                                  Photo Check-in
+                                </Label>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {form.watch('allowedCheckInTypes.photo.isEnabled') && (
+                      <div className="mt-4">
+                        <FormField
+                          control={form.control}
+                          name="allowedCheckInTypes.photo.description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  placeholder="Enter instructions for photo check-in..."
+                                  className="h-20"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Checklist Option */}
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center gap-2">
+                      <FormField
+                        control={form.control}
+                        name="allowedCheckInTypes.checklist.isEnabled"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={(checked) => {
+                                    field.onChange(checked);
+                                    // Add default item when enabled
+                                    if (checked) {
+                                      form.setValue(
+                                        'allowedCheckInTypes.checklist.checklistItems',
+                                        [{ title: '', description: '' }]
+                                      );
+                                    }
+                                  }}
+                                  id="checklist"
+                                />
+                                <Label htmlFor="checklist" className="font-medium">
+                                  Checklist
+                                </Label>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {form.watch('allowedCheckInTypes.checklist.isEnabled') && (
+                      <div className="mt-4 space-y-4">
+                        {form
+                          .watch('allowedCheckInTypes.checklist.checklistItems')
+                          ?.map((item, index) => (
+                            <div key={index} className="space-y-4 rounded-lg border p-4">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-muted-foreground">
+                                  Item {index + 1}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const items = [
+                                      ...form.watch('allowedCheckInTypes.checklist.checklistItems')
+                                    ];
+                                    if (items.length > 1) {
+                                      // Prevent deleting the last item
+                                      items.splice(index, 1);
+                                      form.setValue(
+                                        'allowedCheckInTypes.checklist.checklistItems',
+                                        items
+                                      );
+                                    }
+                                  }}
+                                  className={cn(
+                                    'h-8 w-8',
+                                    // Hide delete button for the first item when it's the only one
+                                    field.value.length === 1 && index === 0 ? 'hidden' : ''
+                                  )}
+                                >
+                                  <Icons.delete className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <FormField
+                                control={form.control}
+                                name={`allowedCheckInTypes.checklist.checklistItems.${index}.title`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input {...field} placeholder="Checklist item title" />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`allowedCheckInTypes.checklist.checklistItems.${index}.description`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Textarea
+                                        {...field}
+                                        placeholder="Checklist item description"
+                                        className="h-20"
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const items = [
+                              ...(form.watch('allowedCheckInTypes.checklist.checklistItems') || [])
+                            ];
+                            items.push({ title: '', description: '' });
+                            form.setValue('allowedCheckInTypes.checklist.checklistItems', items);
+                          }}
+                          className="w-full"
+                        >
+                          <Icons.plusCircle className="mr-2 h-4 w-4" />
+                          Add Checklist Item
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Text Check-in Option */}
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center gap-2">
+                      <FormField
+                        control={form.control}
+                        name="allowedCheckInTypes.text.isEnabled"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="text-checkin"
+                                />
+                                <Label htmlFor="text-checkin" className="font-medium">
+                                  Text Check-in
+                                </Label>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {form.watch('allowedCheckInTypes.text.isEnabled') && (
+                      <div className="mt-4">
+                        <FormField
+                          control={form.control}
+                          name="allowedCheckInTypes.text.description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  placeholder="Enter instructions for text check-in..."
+                                  className="h-20"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hours Check-in Option */}
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center gap-2">
+                      <FormField
+                        control={form.control}
+                        name="allowedCheckInTypes.hours.isEnabled"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2">
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="hours-checkin"
+                                />
+                                <Label htmlFor="hours-checkin" className="font-medium">
+                                  Hours Check-in
+                                </Label>
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {form.watch('allowedCheckInTypes.hours.isEnabled') && (
+                      <div className="mt-4">
+                        <FormField
+                          control={form.control}
+                          name="allowedCheckInTypes.hours.description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  placeholder="Enter instructions for hours check-in..."
+                                  className="h-20"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </FormItem>
             )}
@@ -780,7 +1052,7 @@ export const CreateActivityForm = () => {
                           </Button>
                         </div>
                       ))}
-                      <Button
+                      <IconButton
                         type="button"
                         variant="outline"
                         className="w-[150px]"
@@ -788,9 +1060,9 @@ export const CreateActivityForm = () => {
                           const newRule: Rule = { rule: '', isDefault: false };
                           field.onChange([...field.value, newRule]);
                         }}
-                      >
-                        Add Rule
-                      </Button>
+                        leftIcon="plusCircle"
+                        label="Add Rule"
+                      />
                     </div>
                   </FormControl>
                   <FormMessage />
