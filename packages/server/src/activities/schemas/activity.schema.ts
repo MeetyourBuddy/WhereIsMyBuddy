@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import { User } from '../../users/schemas/user.schema';
+import * as mongoose from 'mongoose';
 
 export type ActivityDocument = Activity & Document;
 
@@ -46,8 +47,22 @@ export enum CheckInType {
   PHOTO = 'photo',
   CHECKLIST = 'checklist',
   HOURS = 'hours',
-  TEXT = 'text',
-  OTHER = 'other',
+}
+
+interface PhotoValidation {
+  guidelines: string; // What qualifies as a valid photo
+  requiredElements?: string[]; // Optional specific elements that must be in photo
+}
+
+interface ChecklistValidation {
+  items: Array<{
+    text: string;
+    required: boolean;
+  }>;
+}
+
+interface HoursValidation {
+  description: string; // Description of what counts as valid hours
 }
 
 @Schema({
@@ -173,13 +188,52 @@ export class Activity extends Document {
   @Prop({
     type: [
       {
-        type: String,
-        enum: CheckInType,
+        type: {
+          type: String,
+          enum: CheckInType,
+          required: true,
+        },
+        validation: {
+          type: mongoose.Schema.Types.Mixed,
+          required: true,
+          validate: {
+            validator: function (validation: any) {
+              switch (this.type) {
+                case CheckInType.PHOTO:
+                  return (
+                    validation.guidelines &&
+                    typeof validation.guidelines === 'string'
+                  );
+                case CheckInType.CHECKLIST:
+                  return (
+                    Array.isArray(validation.items) &&
+                    validation.items.every(
+                      (item: any) =>
+                        item.text &&
+                        typeof item.text === 'string' &&
+                        typeof item.required === 'boolean',
+                    )
+                  );
+                case CheckInType.HOURS:
+                  return (
+                    validation.description &&
+                    typeof validation.description === 'string'
+                  );
+                default:
+                  return false;
+              }
+            },
+            message: 'Invalid validation configuration for check-in type',
+          },
+        },
       },
     ],
-    default: [CheckInType.PHOTO],
+    default: [],
   })
-  allowedCheckInTypes: CheckInType[];
+  allowedCheckInTypes: Array<{
+    type: CheckInType;
+    validation: PhotoValidation | ChecklistValidation | HoursValidation;
+  }>;
 
   @Prop({
     type: [

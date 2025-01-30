@@ -16,6 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
+  ApiProperty,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
 import { ActivitiesService } from './activities.service';
@@ -23,16 +24,38 @@ import { CreateActivityDto } from './dto/activity/create-activity.dto';
 import { UpdateActivityDto } from './dto/activity/update-activity.dto';
 import { ActivityResponseDto } from './dto/activity/activity-response.dto';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
+import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
 import { ActivityServiceResponse } from './interfaces/common.interface';
-import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
-import {
-  IStatsQueryParams,
-  IActivityStats,
-} from './interfaces/activity-stats.interface';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
 import { HandleJoinRequestDto } from './dto/activity/join-request.dto';
 import { ParticipantDto } from './dto/activity/participant.dto';
+import { CheckInType } from './interfaces/checkin-type.interface';
+import {
+  PhotoContent,
+  ChecklistContent,
+  HoursContent,
+} from './interfaces/checkin-content.interface';
+import {
+  IActivityStats,
+  IStatsQueryParams,
+} from './interfaces/activity-stats.interface';
+import { ActivityStatsDto } from './dto/activity/activity-stats.dto';
+import { ActivityCalendarResponseDto } from './dto/activity/activity-calendar-response.dto';
+import { ActivityCalendarResponse } from './interfaces/activity-calendar.interface';
+import { IsDateString, IsOptional } from 'class-validator';
+
+export class GetCheckInsQueryDto {
+  @IsOptional()
+  @IsDateString()
+  @ApiProperty({ required: false })
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  @ApiProperty({ required: false })
+  endDate?: string;
+}
 
 @ApiTags('Activities')
 @Controller('activities')
@@ -58,7 +81,6 @@ export class ActivitiesController {
       'Basic Activity': {
         summary: 'Minimum required fields plus common optional fields',
         value: {
-          // Required fields
           title: 'Learn English Together',
           description: 'Weekly English learning sessions for beginners',
           proposedDuration: 30,
@@ -67,17 +89,45 @@ export class ActivitiesController {
           type: 'public',
           checkinFrequency: 2,
           checkinFrequencyUnit: 'weekly',
-          allowedCheckInTypes: ['photo', 'checklist', 'hours', 'text'],
-
-          // Optional but commonly used fields
+          allowedCheckInTypes: [
+            {
+              type: 'photo',
+              validation: {
+                guidelines: 'Take a clear photo of your completed workbook page',
+                requiredElements: ['timestamp', 'workbook page number']
+              }
+            },
+            {
+              type: 'checklist',
+              validation: {
+                items: [
+                  {
+                    text: 'Complete vocabulary exercises',
+                    required: true
+                  },
+                  {
+                    text: 'Watch English video content',
+                    required: false
+                  }
+                ]
+              }
+            },
+            {
+              type: 'hours',
+              validation: {
+                description: 'Log your English study hours',
+                minHours: 1
+              }
+            }
+          ],
           startDate: '2025-01-28T05:42:33.570Z',
           joinType: 'flexible',
           checkinDays: ['monday', 'wednesday'],
           rules: [
             'Complete homework before sessions',
-            'Practice speaking daily',
+            'Practice speaking daily'
           ],
-          tags: ['language', 'english', 'learning'],
+          tags: ['language', 'english', 'learning']
         },
       },
       'Monthly Activity with Multiple Check-ins': {
@@ -89,16 +139,84 @@ export class ActivitiesController {
           durationUnit: 'months',
           maxSize: 15,
           type: 'public',
-          checkinFrequency: 4,  // Four check-ins per month
+          checkinFrequency: 1,
           checkinFrequencyUnit: 'monthly',
-          // Either use dates of month:
-          checkinDatesOfMonth: [5, 12, 19, 26],  // Check-ins on specific dates
-          // OR use days of week pattern:
-          checkinDaysOfWeek: ['monday', 'thursday'],  // Check-ins on Mondays and Thursdays
-          checkinWeeksOfMonth: [1, 2],  // First and second weeks
-          allowedCheckInTypes: ['photo', 'checklist', 'hours', 'other'],
-          rules: ['Complete assigned chapters before each meeting'],
-          tags: ['books', 'reading', 'discussion'],
+          allowedCheckInTypes: [
+            {
+              type: 'checklist',
+              validation: {
+                items: [
+                  {
+                    text: 'Finished reading assigned chapters',
+                    required: true
+                  },
+                  {
+                    text: 'Made chapter notes',
+                    required: true
+                  },
+                  {
+                    text: 'Wrote chapter summary',
+                    required: false
+                  }
+                ]
+              }
+            },
+            {
+              type: 'hours',
+              validation: {
+                description: 'Time spent reading the book',
+                minHours: 2,
+                maxHours: 10
+              }
+            }
+          ],
+          checkinDatesOfMonth: [1, 15],
+          checkinDaysOfWeek: ['saturday'],
+          checkinWeeksOfMonth: [2, 4],
+          tags: ['reading', 'books', 'discussion']
+        },
+      },
+      'Activity with Detailed Check-in Types': {
+        summary:
+          'Example with various check-in types and their validation rules',
+        value: {
+          title: 'Learn Spanish',
+          description: 'Weekly Spanish learning sessions',
+          // ... other basic fields ...
+          allowedCheckInTypes: [
+            {
+              type: 'photo',
+              validation: {
+                guidelines: 'Take a photo of your completed workbook page',
+                requiredElements: ['timestamp', 'workbook page number'],
+              },
+            },
+            {
+              type: 'checklist',
+              validation: {
+                items: [
+                  {
+                    text: 'Complete vocabulary exercises',
+                    required: true,
+                  },
+                  {
+                    text: 'Watch Spanish video content',
+                    required: false,
+                  },
+                  {
+                    text: 'Practice with language partner',
+                    required: true,
+                  },
+                ],
+              },
+            },
+            {
+              type: 'hours',
+              validation: {
+                description: 'Enter the number of hours spent studying Spanish',
+              },
+            },
+          ],
         },
       },
     },
@@ -156,7 +274,7 @@ export class ActivitiesController {
     );
   }
 
-  @Post(':activityId/checkins')
+  @Post(':id/checkin')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a check-in for an activity' })
@@ -165,9 +283,46 @@ export class ActivitiesController {
     description: 'Check-in created successfully',
     type: CheckInResponseDto,
   })
+  @ApiBody({
+    type: CreateCheckInDto,
+    examples: {
+      'Photo Check-in': {
+        value: {
+          type: CheckInType.PHOTO,
+          content: {
+            imageUrl: 'https://example.com/photo.jpg',
+            caption: 'My progress photo',
+          } as PhotoContent,
+          date: new Date().toISOString(),
+        },
+      },
+      'Checklist Check-in': {
+        value: {
+          type: CheckInType.CHECKLIST,
+          content: {
+            items: [
+              { text: 'Task 1', completed: true },
+              { text: 'Task 2', completed: false },
+            ],
+          } as ChecklistContent,
+          date: new Date().toISOString(),
+        },
+      },
+      'Hours Check-in': {
+        value: {
+          type: CheckInType.HOURS,
+          content: {
+            hours: 2.5,
+            notes: 'Studied Spanish',
+          } as HoursContent,
+          date: new Date().toISOString(),
+        },
+      },
+    },
+  })
   async createCheckIn(
     @Request() req,
-    @Param('activityId') activityId: string,
+    @Param('id') activityId: string,
     @Body() createCheckInDto: CreateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
     return this.activitiesService.createCheckIn(
@@ -180,19 +335,22 @@ export class ActivitiesController {
   @Get(':activityId/checkins')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all check-ins for an activity' })
+  @ApiOperation({ summary: 'Get check-ins for an activity' })
   @ApiResponse({
     status: 200,
-    description: 'Returns all check-ins for the activity',
+    description: 'Returns list of check-ins',
     type: [CheckInResponseDto],
   })
-  async getActivityCheckIns(
+  async getCheckIns(
     @Request() req,
     @Param('activityId') activityId: string,
+    @Query() query: GetCheckInsQueryDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto[]>> {
-    return this.activitiesService.getActivityCheckIns(
-      activityId,
+    return this.activitiesService.getCheckIns(
       req.user.userId,
+      activityId,
+      query.startDate ? new Date(query.startDate) : undefined,
+      query.endDate ? new Date(query.endDate) : undefined,
     );
   }
 
@@ -202,7 +360,7 @@ export class ActivitiesController {
   @ApiOperation({ summary: 'Get a specific check-in' })
   @ApiResponse({
     status: 200,
-    description: 'Returns the specified check-in',
+    description: 'Returns check-in details',
     type: CheckInResponseDto,
   })
   async getCheckIn(
@@ -210,19 +368,53 @@ export class ActivitiesController {
     @Param('activityId') activityId: string,
     @Param('checkInId') checkInId: string,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    return this.activitiesService.getCheckIn(checkInId);
+    return this.activitiesService.getCheckIn(
+      req.user.userId,
+      activityId,
+      checkInId,
+    );
   }
 
-  @Put('checkins/:id')
+  @Put(':activityId/checkins/:checkInId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a check-in' })
+  @ApiResponse({
+    status: 200,
+    description: 'Check-in updated successfully',
+    type: CheckInResponseDto,
+  })
+  @ApiBody({
+    type: UpdateCheckInDto,
+    examples: {
+      'Update Photo Caption': {
+        value: {
+          content: {
+            caption: 'Updated progress photo caption',
+          } as Partial<PhotoContent>,
+        },
+      },
+      'Update Checklist Items': {
+        value: {
+          content: {
+            items: [
+              { text: 'Task 1', completed: true },
+              { text: 'Task 2', completed: true },
+            ],
+          } as ChecklistContent,
+        },
+      },
+    },
+  })
   async updateCheckIn(
     @Request() req,
-    @Param('id') checkInId: string,
+    @Param('activityId') activityId: string,
+    @Param('checkInId') checkInId: string,
     @Body() updateCheckInDto: UpdateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
     return this.activitiesService.updateCheckIn(
       req.user.userId,
+      activityId,
       checkInId,
       updateCheckInDto,
     );
@@ -241,7 +433,11 @@ export class ActivitiesController {
     @Param('activityId') activityId: string,
     @Param('checkInId') checkInId: string,
   ): Promise<ActivityServiceResponse<void>> {
-    return this.activitiesService.deleteCheckIn(checkInId);
+    return this.activitiesService.deleteCheckIn(
+      req.user.userId,
+      activityId,
+      checkInId,
+    );
   }
 
   @Get(':activityId/stats')
@@ -251,7 +447,7 @@ export class ActivitiesController {
   @ApiResponse({
     status: 200,
     description: 'Activity statistics retrieved successfully',
-    type: ActivityResponseDto,
+    type: ActivityStatsDto,
   })
   async getActivityStats(
     @Request() req,
@@ -300,13 +496,14 @@ export class ActivitiesController {
     status: 200,
     description:
       'Returns check-ins grouped by date with activity schedule info',
+    type: ActivityCalendarResponseDto,
   })
   async getActivityCalendar(
     @Request() req,
     @Param('activityId') activityId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-  ): Promise<ActivityServiceResponse<any>> {
+  ): Promise<ActivityServiceResponse<ActivityCalendarResponse>> {
     return this.activitiesService.getActivityCalendar(
       activityId,
       startDate,

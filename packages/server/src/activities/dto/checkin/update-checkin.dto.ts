@@ -1,30 +1,66 @@
-import { PartialType, OmitType } from '@nestjs/swagger';
-import { CreateCheckInDto } from './create-checkin.dto';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsDate, IsString, IsBoolean } from 'class-validator';
+import { getSchemaPath, ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import {
+  IsEnum,
+  IsOptional,
+  ValidateNested,
+  IsString,
+  MaxLength,
+} from 'class-validator';
+import { CheckInType } from '../../interfaces/checkin-type.interface';
+import {
+  PhotoContentDto,
+  ChecklistContentDto,
+  HoursContentDto,
+} from './checkin-content.dto';
 
-export class UpdateCheckInDto extends PartialType(
-  OmitType(CreateCheckInDto, ['type']),
-) {
-  @ApiPropertyOptional({ type: Date })
+export class UpdateCheckInDto {
+  @ApiProperty({
+    enum: CheckInType,
+    description: 'Type of check-in',
+    required: false,
+  })
   @IsOptional()
-  @IsDate()
+  @IsEnum(CheckInType)
+  type?: CheckInType;
+
+  @ApiProperty({
+    description: 'Content of the check-in',
+    required: false,
+    oneOf: [
+      { $ref: getSchemaPath(PhotoContentDto) },
+      { $ref: getSchemaPath(ChecklistContentDto) },
+      { $ref: getSchemaPath(HoursContentDto) },
+    ],
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type((opts) => {
+    switch (opts.object?.type) {
+      case CheckInType.PHOTO:
+        return PhotoContentDto;
+      case CheckInType.CHECKLIST:
+        return ChecklistContentDto;
+      case CheckInType.HOURS:
+        return HoursContentDto;
+      default:
+        return PhotoContentDto;
+    }
+  })
+  content?: PhotoContentDto | ChecklistContentDto | HoursContentDto;
+
+  @ApiProperty({
+    description: 'Date of the check-in',
+    type: Date,
+    required: false,
+  })
+  @IsOptional()
   @Type(() => Date)
   date?: Date;
 
-  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  comment?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  content?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  isCompleted?: boolean;
+  @MaxLength(500)
+  @ApiProperty({ required: false })
+  status?: string;
 }

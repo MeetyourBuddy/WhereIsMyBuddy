@@ -1,4 +1,4 @@
-import { CheckInType } from '../schemas/checkin.schema';
+import { CheckInType } from './checkin-type.interface';
 
 export interface IParticipantStats {
   userId: string;
@@ -17,7 +17,7 @@ export interface IActivityStats {
   checkInsByType: Record<CheckInType, number>;
   averageCompletionTime: number;
   mostActiveDay: string;
-  mostPopularCheckInType: CheckInType;
+  mostPopularCheckInType: CheckInType | null;
   longestStreak: number;
   totalDurationInDays: number;
   averageDurationInDays: number;
@@ -26,11 +26,10 @@ export interface IActivityStats {
 }
 
 export interface IStatsQueryParams {
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string;
+  endDate?: string;
   participantId?: string;
   checkInType?: CheckInType;
-  isCompleted?: boolean;
-  sortBy?: 'checkInCount' | 'completionRate' | 'streak';
+  sortBy?: keyof IParticipantStats;
   sortOrder?: 'asc' | 'desc';
 }
