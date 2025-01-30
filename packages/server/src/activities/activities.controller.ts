@@ -44,6 +44,7 @@ import { ActivityStatsDto } from './dto/activity/activity-stats.dto';
 import { ActivityCalendarResponseDto } from './dto/activity/activity-calendar-response.dto';
 import { ActivityCalendarResponse } from './interfaces/activity-calendar.interface';
 import { IsDateString, IsOptional } from 'class-validator';
+import { JoinRequestResponseDto } from './dto/activity/join-request-response.dto';
 
 export class GetCheckInsQueryDto {
   @IsOptional()
@@ -542,7 +543,33 @@ export class ActivitiesController {
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
     return this.activitiesService.joinActivity(activityId, req.user.userId);
   }
-
+  @Get(':id/requests')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ 
+    summary: 'Get activity join requests (admin only)',
+    description: 'Retrieve all pending join requests for an activity'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of join requests retrieved successfully',
+    type: [JoinRequestResponseDto],
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'User is not an admin of this activity',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Activity not found',
+  })
+  async getJoinRequests(
+    @Request() req,
+    @Param('id') activityId: string,
+  ): Promise<ActivityServiceResponse<JoinRequestResponseDto[]>> {
+    return this.activitiesService.getJoinRequests(activityId, req.user.userId);
+  }
+  
   @Post(':id/requests')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -591,4 +618,6 @@ export class ActivitiesController {
       req.user.userId,
     );
   }
+
+ 
 }

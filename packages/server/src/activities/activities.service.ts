@@ -42,6 +42,7 @@ import { ParticipantDto } from './dto/activity/participant.dto';
 import { CheckInType } from './interfaces/checkin-type.interface';
 import { CheckInContent } from './interfaces/checkin-content.interface';
 import { ActivityCalendarResponse } from './interfaces/activity-calendar.interface';
+import { JoinRequestResponseDto } from './dto/activity/join-request-response.dto';
 
 @Injectable()
 export class ActivitiesService {
@@ -1331,5 +1332,45 @@ export class ActivitiesService {
     if (!validTypes.includes(type)) {
       throw new BadRequestException(`Invalid check-in type: ${type}`);
     }
+  }
+
+  async getJoinRequests(
+    activityId: string,
+    userId: string,
+  ): Promise<ActivityServiceResponse<JoinRequestResponseDto[]>> {
+    const activity = await this.activityModel
+      .findById(activityId)
+      .populate('joinRequests.user', 'name email profilePicture')
+      .exec();
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    // Check if user is admin
+    const userParticipant = activity.participants.find(
+      (p) => p.user.toString() === userId && p.role === ActivityRole.ADMIN,
+    );
+
+    if (!userParticipant) {
+      throw new ForbiddenException(
+        'Only activity admins can view join requests',
+      );
+    }
+
+    const joinRequests = activity.joinRequests.map((request) => {
+      const user = request.user as PopulatedUser;
+      return {
+        userId: user._id.toString(),
+        userName: user.name,
+        userProfilePicture: user.profilePicture,
+        requestedAt: request.requestedAt,
+      };
+    });
+
+    return {
+      success: true,
+      data: joinRequests,
+    };
   }
 }
