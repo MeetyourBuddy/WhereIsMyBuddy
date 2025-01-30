@@ -4,8 +4,7 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
+  BreadcrumbPage
 } from '@/components/common/ui/breadcrumb';
 import { useLocation, NavLink } from 'react-router-dom';
 
@@ -32,7 +31,9 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
               <BreadcrumbLink asChild>
                 <NavLink to={href}>{formattedPath}</NavLink>
               </BreadcrumbLink>
-              <BreadcrumbSeparator />
+              <span aria-hidden="true" className="mx-2">
+                /
+              </span>
             </>
           ) : (
             <BreadcrumbPage>{formattedPath}</BreadcrumbPage>
@@ -45,14 +46,16 @@ export function ContentLayout({ title, children }: ContentLayoutProps) {
   return (
     <div className="min-h-screen">
       <Navbar title={title} />
-      <div className="container min-h-screen bg-white px-4 sm:px-8">
+      <div className="container min-h-screen bg-gray-5 px-4 sm:px-8">
         <Breadcrumb className="py-4">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <NavLink to="/dashboard">Home</NavLink>
+                <NavLink to="/">Home</NavLink>
               </BreadcrumbLink>
-              <BreadcrumbSeparator />
+              <span aria-hidden="true" className="mx-2">
+                /
+              </span>
             </BreadcrumbItem>
             {generateBreadcrumbs()}
           </BreadcrumbList>

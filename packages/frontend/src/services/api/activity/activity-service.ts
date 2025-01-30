@@ -26,7 +26,7 @@ class ActivityService {
 
   async updateActivity(id: string, data: IActivity): Promise<IServiceResponse<IActivityResponse>> {
     const { data: responseData } = await axiosInstance.put<IActivityResponse>(
-      `/activities/${id}`,
+      `/activities/${id}/update`,
       data
     );
     return {

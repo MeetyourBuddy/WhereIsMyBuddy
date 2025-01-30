@@ -5,16 +5,25 @@ import { useSidebar } from '@/hooks/use-sidebar';
 import { useStore } from '@/hooks/use-store';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
-import Logo_alt from '../common/icons/Logo_alt';
+import { Icons } from '../common/icons';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 export function Sidebar() {
   const sidebar = useStore(useSidebar, (x) => x);
+  const { logout } = useAuth();
+
   if (!sidebar) return null;
+
   const { isOpen, toggleOpen, getOpenState, setIsHover, settings } = sidebar;
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-20 h-full -translate-x-full transition-[width] duration-300 ease-in-out lg:translate-x-0',
+        'fixed left-0 top-0 z-20 -translate-x-full transition-[width] duration-300 ease-in-out lg:translate-x-0',
         !getOpenState() ? 'w-[90px]' : 'w-72',
         settings.disabled && 'hidden'
       )}
@@ -23,7 +32,7 @@ export function Sidebar() {
       <div
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
-        className="relative flex h-full flex-col overflow-y-auto bg-primary px-3 py-4 shadow-md"
+        className="relative flex h-full flex-col overflow-y-auto bg-sidebar px-3 py-4 text-sidebar-foreground shadow-md"
       >
         <Button
           className={cn(
@@ -33,19 +42,19 @@ export function Sidebar() {
           variant="link"
           asChild
         >
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <Logo_alt className="mr-1 h-8 w-8" />
-            <h3
+          <Link to="/dashboard" className="flex items-center gap-4">
+            <Icons.logo className="" />
+            <h2
               className={cn(
-                'whitespace-nowrap font-bold transition-[transform,opacity,display] duration-300 ease-in-out',
+                'whitespace-nowrap font-bold text-sidebar-accent-foreground transition-[transform,opacity,display] duration-300 ease-in-out',
                 !getOpenState() ? 'hidden -translate-x-96 opacity-0' : 'translate-x-0 opacity-100'
               )}
             >
               Buddy?
-            </h3>
+            </h2>
           </Link>
         </Button>
-        <Menu isOpen={getOpenState()} />
+        <Menu isOpen={getOpenState()} handleLogout={handleLogout} />
       </div>
     </aside>
   );

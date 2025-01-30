@@ -37,6 +37,11 @@ export function ExpandableCardDemo() {
     } else {
       document.body.style.overflow = 'auto';
     }
+
+    // Add cleanup function
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
   }, [active]);
 
   useOutsideClick(ref, () => setActive(null));
@@ -84,7 +89,11 @@ export function ExpandableCardDemo() {
                   <motion.div>
                     <Link
                       to={active.ctaLink}
-                      className="rounded-full bg-green-500 px-4 py-3 text-sm font-bold text-white"
+                      onClick={() => {
+                        document.body.style.overflow = 'auto';
+                        setActive(null);
+                      }}
+                      className="rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white"
                     >
                       {active.ctaText}
                     </Link>
