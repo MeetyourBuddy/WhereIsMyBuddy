@@ -15,11 +15,7 @@ import {
   DayOfWeek,
   DurationUnit,
 } from './schemas/activity.schema';
-import {
-  CheckIn,
-  CheckInDocument,
-  CheckInType,
-} from './schemas/checkin.schema';
+import { CheckIn, CheckInDocument } from './schemas/checkin.schema';
 import { CreateActivityDto } from './dto/activity/create-activity.dto';
 import { UpdateActivityDto } from './dto/activity/update-activity.dto';
 import { ActivityResponseDto } from './dto/activity/activity-response.dto';
@@ -28,10 +24,7 @@ import { plainToClass } from 'class-transformer';
 import { CreateCheckInDto } from './dto/checkin/create-checkin.dto';
 import { UpdateCheckInDto } from './dto/checkin/update-checkin.dto';
 import { CheckInResponseDto } from './dto/checkin/checkin-response.dto';
-import {
-  isCheckInComplete,
-  isValidCheckInType,
-} from './validators/checkin.validators';
+import { validateCheckInContent } from './validators/checkin.validators';
 import {
   IActivityStats,
   IStatsQueryParams,
@@ -39,7 +32,6 @@ import {
 } from './interfaces/activity-stats.interface';
 import {
   PopulatedUser,
-  PopulatedActivity,
   PopulatedCheckIn,
 } from './interfaces/populated-documents.interface';
 import { UpdateParticipantRoleDto } from './dto/activity/update-participant.dto';
@@ -47,6 +39,10 @@ import { HandleJoinRequestDto } from './dto/activity/join-request.dto';
 import { JoinRequestAction } from './dto/activity/join-request.dto';
 import { UserResponseDto } from '../users/dto/user-response.dto';
 import { ParticipantDto } from './dto/activity/participant.dto';
+import { CheckInType } from './interfaces/checkin-type.interface';
+import { CheckInContent } from './interfaces/checkin-content.interface';
+import { ActivityCalendarResponse } from './interfaces/activity-calendar.interface';
+import { JoinRequestResponseDto } from './dto/activity/join-request-response.dto';
 
 @Injectable()
 export class ActivitiesService {
@@ -92,10 +88,11 @@ export class ActivitiesService {
   ): void {
     const {
       checkinFrequencyUnit,
+      checkinFrequency,
       checkinDays,
-      checkinDateOfMonth,
-      checkinDayOfWeek,
-      checkinWeekOfMonth,
+      checkinDatesOfMonth,
+      checkinDaysOfWeek,
+      checkinWeeksOfMonth,
     } = createActivityDto;
 
     switch (checkinFrequencyUnit) {
@@ -109,19 +106,37 @@ export class ActivitiesService {
         break;
 
       case CheckinFrequencyUnit.MONTHLY:
-        const hasDateOfMonth = typeof checkinDateOfMonth === 'number';
-        const hasDayOfWeek = checkinDayOfWeek && checkinWeekOfMonth;
+        const hasDateOfMonth = checkinDatesOfMonth?.length > 0;
+        const hasDayOfWeek =
+          checkinDaysOfWeek?.length > 0 && checkinWeeksOfMonth?.length > 0;
 
         if (!hasDateOfMonth && !hasDayOfWeek) {
           throw new BadRequestException(
-            'Monthly frequency requires either a date of month or a day of week with week of month',
+            'Monthly frequency requires either dates of month or days of week with weeks of month',
           );
         }
 
         if (hasDateOfMonth && hasDayOfWeek) {
           throw new BadRequestException(
-            'Cannot specify both date of month and day of week for monthly frequency',
+            'Cannot specify both dates of month and days of week patterns for monthly frequency',
           );
+        }
+
+        // Validate array length matches checkinFrequency
+        if (hasDateOfMonth && checkinDatesOfMonth.length !== checkinFrequency) {
+          throw new BadRequestException(
+            `Number of check-in dates (${checkinDatesOfMonth.length}) must match check-in frequency (${checkinFrequency})`,
+          );
+        }
+
+        if (hasDayOfWeek) {
+          const totalCheckIns =
+            checkinDaysOfWeek.length * checkinWeeksOfMonth.length;
+          if (totalCheckIns !== checkinFrequency) {
+            throw new BadRequestException(
+              `Total number of check-ins (${totalCheckIns}) must match check-in frequency (${checkinFrequency})`,
+            );
+          }
         }
         break;
     }
@@ -162,23 +177,15 @@ export class ActivitiesService {
   }
 
   // Helper method to prepare activity response
-  private async prepareActivityResponse(
+  private prepareActivityResponse(
     activity: ActivityDocument,
     message: string,
-  ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
-    const nextCheckInDue = this.calculateNextCheckInDate(activity);
+  ): ActivityServiceResponse<ActivityResponseDto> {
     const responseData = this.transformToDto(activity, ActivityResponseDto);
-    (responseData as any).nextCheckInDue = nextCheckInDue;
-
     return {
       success: true,
       message,
       data: responseData,
-      metadata: {
-        availableSeats: activity.maxSize - activity.currentSize,
-        isJoinable:
-          activity.isActive && activity.currentSize < activity.maxSize,
-      },
     };
   }
 
@@ -278,15 +285,15 @@ export class ActivitiesService {
         return nextDate;
 
       case CheckinFrequencyUnit.MONTHLY:
-        if (activity.checkinDateOfMonth) {
-          nextDate.setDate(activity.checkinDateOfMonth);
+        if (activity.checkinDatesOfMonth) {
+          nextDate.setDate(activity.checkinDatesOfMonth[0]);
           if (nextDate < now) {
             nextDate.setMonth(nextDate.getMonth() + 1);
           }
           return nextDate;
         }
 
-        if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
+        if (activity.checkinDaysOfWeek && activity.checkinWeeksOfMonth) {
           // Implementation for "last Thursday" type patterns
           // This is a simplified version
           nextDate.setDate(1); // Start of month
@@ -303,19 +310,24 @@ export class ActivitiesService {
   async findOne(
     id: string,
   ): Promise<ActivityServiceResponse<ActivityResponseDto>> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid activity ID');
+    }
+
     const activity = await this.activityModel
       .findById(id)
-      .populate('participants.user', '_id name email')
+      .populate('participants.user', 'name email profilePicture')
       .exec();
 
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
 
-    return this.prepareActivityResponse(
-      activity,
-      'Activity retrieved successfully',
-    );
+    const responseData = this.transformToDto(activity, ActivityResponseDto);
+    return {
+      success: true,
+      data: responseData,
+    };
   }
 
   async update(
@@ -364,9 +376,9 @@ export class ActivitiesService {
     const relevantFields = {
       checkinFrequencyUnit: activity.checkinFrequencyUnit,
       checkinDays: activity.checkinDays,
-      checkinDateOfMonth: activity.checkinDateOfMonth,
-      checkinDayOfWeek: activity.checkinDayOfWeek,
-      checkinWeekOfMonth: activity.checkinWeekOfMonth,
+      checkinDatesOfMonth: activity.checkinDatesOfMonth,
+      checkinDaysOfWeek: activity.checkinDaysOfWeek,
+      checkinWeeksOfMonth: activity.checkinWeeksOfMonth,
       ...updateActivityDto,
     };
 
@@ -391,21 +403,17 @@ export class ActivitiesService {
   private getUserId(user: Types.ObjectId | any): string {
     if (!user) return null;
 
-    // If it's a string, return it
     if (typeof user === 'string') return user;
 
-    // If it's an ObjectId, convert to string
     if (user instanceof Types.ObjectId) {
       return user.toString();
     }
 
-    // If it's a populated User object
     if (typeof user === 'object') {
       if (user._id) return user._id.toString();
       if (user.id) return user.id;
     }
 
-    // If it's still an object but not handled above
     return user.toString();
   }
 
@@ -414,239 +422,165 @@ export class ActivitiesService {
     activityId: string,
     createCheckInDto: CreateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    // Validate check-in type
-    if (!isValidCheckInType(createCheckInDto.type)) {
-      throw new BadRequestException('Invalid check-in type');
-    }
-
     const activity = await this.activityModel.findById(activityId);
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
 
-    // Validate that user is a participant
-    const isParticipant = activity.participants.some(
-      (p) => p.user.toString() === userId,
+    validateCheckInContent(
+      createCheckInDto.type,
+      createCheckInDto.content,
+      activity,
     );
 
-    if (!isParticipant) {
-      throw new ForbiddenException('You must be a participant to check in');
-    }
-
-    if (!this.isCheckInAllowedForDate(activity, createCheckInDto.date)) {
-      throw new BadRequestException(
-        'Check-in is not allowed for this date based on activity schedule',
-      );
-    }
-
-    // Validate activity is still active
-    if (!activity.isActive) {
-      throw new BadRequestException('Cannot check in to an inactive activity');
-    }
-
-    // Validate activity hasn't ended
-    if (activity.endedAt && new Date(activity.endedAt) < new Date()) {
-      throw new BadRequestException('Cannot check in to an ended activity');
-    }
-
-    // Validate check-in date
-    if (createCheckInDto.date > new Date()) {
-      throw new BadRequestException('Check-in date cannot be in the future');
-    }
-
     const checkIn = new this.checkInModel({
-      user: userId,
-      activity: activityId,
+      user: new Types.ObjectId(userId),
+      activity: new Types.ObjectId(activityId),
+      date: createCheckInDto.date,
       type: createCheckInDto.type,
       content: createCheckInDto.content,
-      date: createCheckInDto.date,
-      comment: createCheckInDto.comment,
-      ...(createCheckInDto.type === CheckInType.PHOTO && {
-        photo: createCheckInDto.photo,
-      }),
-      ...(createCheckInDto.type === CheckInType.CHECKLIST && {
-        checklist: createCheckInDto.checklist,
-      }),
-      ...(createCheckInDto.type === CheckInType.HOURS && {
-        hours: createCheckInDto.hours,
-      }),
-      ...(createCheckInDto.type === CheckInType.OTHER && {
-        other: createCheckInDto.other,
-      }),
     });
 
     const savedCheckIn = await checkIn.save();
-    const populatedCheckIn = await savedCheckIn.populate([
-      { path: 'user', select: 'name email profilePicture' },
-      { path: 'activity' },
-    ]);
-
-    const responseData = this.transformToDto(
-      populatedCheckIn,
-      CheckInResponseDto,
-    );
-
     return {
       success: true,
-      message: 'Check-in created successfully',
-      data: responseData,
+      data: this.mapToCheckInResponse(savedCheckIn),
     };
   }
 
-  async getActivityCheckIns(
-    activityId: string,
+  async getCheckIns(
     userId: string,
+    activityId: string,
+    startDate?: Date,
+    endDate?: Date,
   ): Promise<ActivityServiceResponse<CheckInResponseDto[]>> {
-    const activity = await this.activityModel.findById(activityId);
-    if (!activity) {
-      throw new NotFoundException('Activity not found');
-    }
+    const query: Record<string, any> = {
+      activity: Types.ObjectId.isValid(activityId)
+        ? new Types.ObjectId(activityId)
+        : activityId,
+    };
 
-    // Validate that user has access to the activity
-    const isParticipantOrAdmin =
-      activity.participants.some((p) => p.user.toString() === userId) ||
-      activity.admin.toString() === userId;
-
-    if (!isParticipantOrAdmin) {
-      throw new ForbiddenException('You do not have access to these check-ins');
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = startDate;
+      if (endDate) query.date.$lte = endDate;
     }
 
     const checkIns = await this.checkInModel
-      .find({ activity: activityId })
-      .populate('user', 'name email profilePicture')
-      .populate('activity')
-      .sort({ createdAt: -1 })
-      .exec();
+      .find(query)
+      .populate('user')
+      .sort({ date: -1 });
 
-    const responseData = checkIns.map((checkIn) =>
-      this.transformToDto(checkIn, CheckInResponseDto),
-    );
-
-    // Remove metadata, just return the basic response
     return {
       success: true,
-      message: 'Check-ins retrieved successfully',
-      data: responseData,
+      data: checkIns.map((checkIn) => this.mapToCheckInResponse(checkIn)),
     };
   }
 
+  private validateObjectId(id: string, entityName: string): void {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`Invalid ${entityName} ID`);
+    }
+  }
+
   async getCheckIn(
+    userId: string,
+    activityId: string,
     checkInId: string,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
+    this.validateObjectId(activityId, 'activity');
+    this.validateObjectId(checkInId, 'check-in');
+
     const checkIn = await this.checkInModel
-      .findById(checkInId)
-      .populate('user', 'name email profilePicture')
-      .populate({
-        path: 'activity',
-        populate: {
-          path: 'admin',
-          select: 'name email profilePicture',
-        },
+      .findOne({
+        _id: checkInId,
+        activity: activityId,
       })
-      .exec();
+      .populate('user');
 
     if (!checkIn) {
       throw new NotFoundException('Check-in not found');
     }
 
-    const responseData = this.transformToDto(checkIn, CheckInResponseDto);
-
     return {
       success: true,
-      message: 'Check-in retrieved successfully',
-      data: responseData,
+      data: this.mapToCheckInResponse(checkIn),
     };
   }
 
   async updateCheckIn(
     userId: string,
+    activityId: string,
     checkInId: string,
     updateCheckInDto: UpdateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    // First get the check-in to validate ownership and get activity info
-    const existingCheckIn = await this.checkInModel
-      .findById(checkInId)
-      .populate('activity')
-      .exec();
+    const checkIn = await this.checkInModel.findOne({
+      _id: checkInId,
+      activity: activityId,
+      user: userId,
+    });
 
-    if (!existingCheckIn) {
+    if (!checkIn) {
       throw new NotFoundException('Check-in not found');
     }
 
-    // Validate check-in ownership
-    if (existingCheckIn.user.toString() !== userId) {
-      throw new BadRequestException('You can only update your own check-ins');
+    const activity = await this.activityModel.findById(activityId);
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
     }
 
-    // Get activity from populated check-in
-    const activity = existingCheckIn.activity as Activity;
-
-    // Validate activity is still active
-    if (!activity.isActive) {
-      throw new BadRequestException(
-        'Cannot update check-in for an inactive activity',
-      );
+    // If type or content is being updated, validate the new content
+    if (updateCheckInDto.type || updateCheckInDto.content) {
+      const type = updateCheckInDto.type || checkIn.type;
+      const content = updateCheckInDto.content || checkIn.content;
+      validateCheckInContent(type, content as CheckInContent, activity);
     }
 
-    // Validate activity hasn't ended
-    if (activity.endedAt && new Date(activity.endedAt) < new Date()) {
-      throw new BadRequestException(
-        'Cannot update check-in for an ended activity',
-      );
-    }
-
-    // Validate check-in date if it's being updated
-    if (updateCheckInDto.date && updateCheckInDto.date > new Date()) {
-      throw new BadRequestException('Check-in date cannot be in the future');
-    }
-
-    // Validate check-in date against activity schedule
-    if (!this.isCheckInAllowedForDate(activity, updateCheckInDto.date)) {
-      throw new BadRequestException(
-        'Check-in date is not allowed for this activity',
-      );
-    }
-
-    const checkIn = await this.checkInModel
-      .findByIdAndUpdate(
-        checkInId,
-        {
-          ...updateCheckInDto,
-          ...(updateCheckInDto.content && {
-            isCompleted: isCheckInComplete({
-              ...existingCheckIn.toObject(),
-              ...updateCheckInDto,
-            }),
-          }),
-        },
-        { new: true },
-      )
-      .populate('user', 'name email profilePicture')
-      .populate('activity')
-      .exec();
-
-    const responseData = this.transformToDto(checkIn, CheckInResponseDto);
+    Object.assign(checkIn, updateCheckInDto);
+    const updatedCheckIn = await checkIn.save();
 
     return {
       success: true,
-      message: 'Check-in updated successfully',
-      data: responseData,
+      data: this.mapToCheckInResponse(updatedCheckIn),
     };
   }
 
   async deleteCheckIn(
+    userId: string,
+    activityId: string,
     checkInId: string,
   ): Promise<ActivityServiceResponse<void>> {
-    const result = await this.checkInModel.findByIdAndDelete(checkInId);
+    const checkIn = await this.checkInModel.findOne({
+      _id: checkInId,
+      activity: activityId,
+      user: userId,
+    });
 
-    if (!result) {
+    if (!checkIn) {
       throw new NotFoundException('Check-in not found');
     }
 
+    await this.checkInModel.deleteOne({ _id: checkInId });
+
     return {
       success: true,
-      message: 'Check-in deleted successfully',
-      data: null,
+    };
+  }
+
+  private mapToCheckInResponse(checkIn: CheckInDocument): CheckInResponseDto {
+    return {
+      id: checkIn._id.toString(),
+      activityId: checkIn.activity.toString(),
+      userId: checkIn.user.toString(),
+      date: checkIn.date,
+      type: checkIn.type,
+      content: checkIn.content,
+      status: checkIn.status,
+      isVerified: checkIn.isVerified,
+      verifiedBy: checkIn.verifiedBy?.toString(),
+      verifiedAt: checkIn.verifiedAt,
+      createdAt: checkIn.get('createdAt'),
+      updatedAt: checkIn.get('updatedAt'),
     };
   }
 
@@ -667,9 +601,28 @@ export class ActivitiesService {
       throw new NotFoundException('Activity not found');
     }
 
-    const populatedActivity = activity as unknown as PopulatedActivity;
+    const checkIns = await this.getFilteredCheckIns(activityId, query);
+    const stats = await this.calculateActivityStats(
+      activity as unknown as ActivityDocument & {
+        participants: Array<{ user: PopulatedUser }>;
+      },
+      checkIns,
+      query,
+    );
 
-    const checkInQuery: Record<string, any> = { activity: activityId };
+    return {
+      success: true,
+      data: stats,
+    };
+  }
+
+  private async getFilteredCheckIns(
+    activityId: string,
+    query: IStatsQueryParams,
+  ): Promise<PopulatedCheckIn[]> {
+    const checkInQuery: Record<string, any> = {
+      activity: new Types.ObjectId(activityId),
+    };
 
     if (query.startDate) {
       checkInQuery.date = { $gte: new Date(query.startDate) };
@@ -683,175 +636,163 @@ export class ActivitiesService {
     }
 
     if (query.participantId) {
-      checkInQuery.user = query.participantId;
+      checkInQuery.user = new Types.ObjectId(query.participantId);
     }
 
     if (query.checkInType) {
-      checkInQuery.types = query.checkInType;
-    }
-
-    if (query.isCompleted !== undefined) {
-      checkInQuery.isCompleted = query.isCompleted;
+      checkInQuery.type = query.checkInType;
     }
 
     const checkIns = await this.checkInModel
       .find(checkInQuery)
-      .populate<{ user: PopulatedUser }>('user', 'name')
+      .populate<{ user: PopulatedUser }>({
+        path: 'user',
+        select: 'name email profilePicture',
+      })
       .lean()
       .exec();
 
-    const populatedCheckIns = checkIns as unknown as PopulatedCheckIn[];
+    return checkIns as unknown as PopulatedCheckIn[];
+  }
 
-    const totalCheckIns = checkIns.length;
-    const completedCheckIns = checkIns.filter((c) => c.isCompleted).length;
-    const completionRate =
-      totalCheckIns > 0 ? (completedCheckIns / totalCheckIns) * 100 : 0;
-
-    let participantStats: IParticipantStats[] = await Promise.all(
-      activity.participants.map(async (participant) => {
-        // Add type assertion for participant.user
-        const participantUser = participant.user as any;
-
-        const userCheckIns = populatedCheckIns.filter(
-          (c) => c.user._id.toString() === participantUser._id.toString(),
-        );
-
-        const userCompletedCheckIns = userCheckIns.filter((c) => c.isCompleted);
-
-        const sortedCheckIns = [...userCheckIns].sort((a, b) => {
-          const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
-          const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
-          return dateB - dateA;
-        });
-
-        let streak = 0;
-        for (const checkIn of sortedCheckIns) {
-          if (checkIn.isCompleted) streak++;
-          else break;
-        }
-
-        const completionTimes = userCheckIns
-          .filter(
-            (c) =>
-              c.isCompleted &&
-              c.createdAt instanceof Date &&
-              c.updatedAt instanceof Date,
-          )
-          .map((c) => c.updatedAt.getTime() - c.createdAt.getTime());
-
-        const avgCompletionTime =
-          completionTimes.length > 0
-            ? completionTimes.reduce((a, b) => a + b, 0) /
-              completionTimes.length
-            : 0;
-
-        return {
-          userId: participantUser._id?.toString() || '',
-          name: participantUser.name || 'Unknown',
-          checkInCount: userCheckIns.length,
-          completionRate:
-            userCheckIns.length > 0
-              ? (userCompletedCheckIns.length / userCheckIns.length) * 100
-              : 0,
-          streak,
-          lastCheckIn:
-            sortedCheckIns[0]?.createdAt instanceof Date
-              ? sortedCheckIns[0].createdAt
-              : undefined,
-          averageCompletionTime: avgCompletionTime,
-        };
-      }),
+  private async calculateActivityStats(
+    activity: ActivityDocument & {
+      participants: Array<{ user: PopulatedUser }>;
+    },
+    checkIns: PopulatedCheckIn[],
+    query: IStatsQueryParams,
+  ): Promise<IActivityStats> {
+    const participantStats = await this.calculateParticipantStats(
+      activity as unknown as Activity, // Type assertion since we know the structure matches
+      checkIns,
     );
+    const checkInsByType = this.calculateCheckInsByType(checkIns);
+    const mostPopularCheckInType =
+      this.getMostPopularCheckInType(checkInsByType);
+    const checkInsByDay = this.calculateCheckInsByDay(checkIns);
+    const mostActiveDay = this.getMostActiveDay(checkInsByDay);
 
     if (query.sortBy) {
-      participantStats = participantStats.sort((a, b) => {
+      participantStats.sort((a, b) => {
         const order = query.sortOrder === 'desc' ? -1 : 1;
-        return (a[query.sortBy] - b[query.sortBy]) * order;
+        const aValue = a[query.sortBy];
+        const bValue = b[query.sortBy];
+
+        if (aValue === undefined || bValue === undefined) {
+          return 0;
+        }
+
+        if (aValue instanceof Date && bValue instanceof Date) {
+          return (aValue.getTime() - bValue.getTime()) * order;
+        }
+
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return (aValue - bValue) * order;
+        }
+
+        const aStr = String(aValue);
+        const bStr = String(bValue);
+        return aStr.localeCompare(bStr) * order;
       });
     }
 
-    const checkInsByType = populatedCheckIns.reduce(
-      (acc, checkIn) => {
-        const type = checkIn.type;
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      },
-      {} as Record<CheckInType, number>,
+    const totalDurationInDays = this.calculateDurationInDays(
+      activity.proposedDuration,
+      activity.durationUnit,
     );
 
-    const mostPopularCheckInType =
-      Object.entries(checkInsByType).length > 0
-        ? (Object.entries(checkInsByType).reduce(
-            (a, b) => (a[1] > b[1] ? a : b),
-            ['NONE' as CheckInType, 0],
-          )[0] as CheckInType)
-        : null;
+    return {
+      totalCheckIns: checkIns.length,
+      completionRate: this.calculateOverallCompletionRate(checkIns, activity),
+      participantStats,
+      checkInsByType,
+      averageCompletionTime: this.calculateAverageCompletionTime(checkIns),
+      mostActiveDay,
+      mostPopularCheckInType,
+      longestStreak: Math.max(0, ...participantStats.map((p) => p.streak)),
+      totalDurationInDays,
+      averageDurationInDays: totalDurationInDays / activity.participants.length,
+      availableSeats: activity.maxSize - activity.currentSize,
+      isJoinable: activity.isActive && activity.maxSize > activity.currentSize,
+    };
+  }
 
-    const checkInsByDay = populatedCheckIns.reduce(
+  private calculateStreak(checkIns: PopulatedCheckIn[]): number {
+    if (!checkIns.length) return 0;
+
+    const sortedCheckIns = [...checkIns].sort(
+      (a, b) => b.date.getTime() - a.date.getTime(),
+    );
+
+    let streak = 1;
+    for (let i = 1; i < sortedCheckIns.length; i++) {
+      const dayDiff = Math.floor(
+        (sortedCheckIns[i - 1].date.getTime() -
+          sortedCheckIns[i].date.getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+      if (dayDiff === 1) streak++;
+      else break;
+    }
+    return streak;
+  }
+
+  private calculateAverageCompletionTime(checkIns: PopulatedCheckIn[]): number {
+    const validCheckIns = checkIns.filter(
+      (c) => c.createdAt instanceof Date && c.updatedAt instanceof Date,
+    );
+
+    if (!validCheckIns.length) return 0;
+
+    const totalTime = validCheckIns.reduce(
+      (sum, c) => sum + (c.updatedAt.getTime() - c.createdAt.getTime()),
+      0,
+    );
+
+    return totalTime / validCheckIns.length;
+  }
+
+  private calculateCheckInsByDay(
+    checkIns: PopulatedCheckIn[],
+  ): Record<string, number> {
+    return checkIns.reduce(
       (acc, checkIn) => {
-        if (checkIn.createdAt instanceof Date) {
-          const day = checkIn.createdAt.toLocaleDateString('en-US', {
-            weekday: 'long',
-          });
-          acc[day] = (acc[day] || 0) + 1;
-        }
+        const day = checkIn.date.toLocaleDateString('en-US', {
+          weekday: 'long',
+        });
+        acc[day] = (acc[day] || 0) + 1;
         return acc;
       },
       {} as Record<string, number>,
     );
+  }
 
-    const mostActiveDay =
-      Object.entries(checkInsByDay).length > 0
-        ? Object.entries(checkInsByDay).reduce(
-            (a, b) => (a[1] > b[1] ? a : b),
-            ['Unknown', 0],
-          )[0]
-        : 'None';
+  private getMostActiveDay(checkInsByDay: Record<string, number>): string {
+    if (!Object.keys(checkInsByDay).length) return 'None';
+    return Object.entries(checkInsByDay).reduce((a, b) =>
+      a[1] > b[1] ? a : b,
+    )[0];
+  }
 
-    const longestStreak = Math.max(0, ...participantStats.map((p) => p.streak));
-
-    const completionTimes = populatedCheckIns
-      .filter(
-        (c) =>
-          c.isCompleted &&
-          c.createdAt instanceof Date &&
-          c.updatedAt instanceof Date,
-      )
-      .map((c) => c.updatedAt.getTime() - c.createdAt.getTime());
-
-    const averageCompletionTime =
-      completionTimes.length > 0
-        ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
-        : 0;
-
-    const totalDurationInDays =
-      populatedActivity.proposedDurationInDays ||
-      this.calculateDurationInDays(
-        populatedActivity.proposedDuration,
-        populatedActivity.durationUnit,
-      );
-
-    const averageDurationInDays =
-      totalDurationInDays / (populatedActivity.participants.length || 1);
-
-    return {
-      success: true,
-      message: 'Activity statistics retrieved successfully',
-      data: {
-        totalCheckIns,
-        completionRate,
-        participantStats,
-        checkInsByType,
-        averageCompletionTime,
-        mostActiveDay,
-        mostPopularCheckInType,
-        longestStreak,
-        totalDurationInDays,
-        averageDurationInDays,
-        availableSeats: activity.maxSize - activity.currentSize,
-        isJoinable: activity.currentSize < activity.maxSize,
+  private calculateCheckInsByType(
+    checkIns: PopulatedCheckIn[],
+  ): Record<CheckInType, number> {
+    return Object.values(CheckInType).reduce(
+      (acc, type) => {
+        acc[type] = checkIns.filter((checkIn) => checkIn.type === type).length;
+        return acc;
       },
-    };
+      {} as Record<CheckInType, number>,
+    );
+  }
+
+  private getMostPopularCheckInType(
+    checkInsByType: Record<CheckInType, number>,
+  ): CheckInType | null {
+    if (!Object.keys(checkInsByType).length) return null;
+    return Object.entries(checkInsByType).reduce((a, b) =>
+      a[1] > b[1] ? a : b,
+    )[0] as CheckInType;
   }
 
   async updateParticipantRole(
@@ -956,13 +897,13 @@ export class ActivitiesService {
         return activity.checkinDays?.includes(dayOfWeek) ?? false;
 
       case CheckinFrequencyUnit.MONTHLY:
-        if (activity.checkinDateOfMonth) {
-          return dateOfMonth === activity.checkinDateOfMonth;
+        if (activity.checkinDatesOfMonth) {
+          return activity.checkinDatesOfMonth.includes(dateOfMonth);
         }
-        if (activity.checkinDayOfWeek && activity.checkinWeekOfMonth) {
+        if (activity.checkinDaysOfWeek && activity.checkinWeeksOfMonth) {
           return (
-            dayOfWeek === activity.checkinDayOfWeek &&
-            weekOfMonth === activity.checkinWeekOfMonth
+            dayOfWeek === activity.checkinDaysOfWeek[0] &&
+            weekOfMonth === activity.checkinWeeksOfMonth[0]
           );
         }
         return false;
@@ -976,7 +917,7 @@ export class ActivitiesService {
     activityId: string,
     startDate?: string,
     endDate?: string,
-  ): Promise<ActivityServiceResponse<any>> {
+  ): Promise<ActivityServiceResponse<ActivityCalendarResponse>> {
     const activity = await this.activityModel.findById(activityId);
     if (!activity) {
       throw new NotFoundException('Activity not found');
@@ -1021,10 +962,10 @@ export class ActivitiesService {
         allowedDates,
         frequency: {
           unit: activity.checkinFrequencyUnit,
-          days: activity.checkinDays,
-          dateOfMonth: activity.checkinDateOfMonth,
-          dayOfWeek: activity.checkinDayOfWeek,
-          weekOfMonth: activity.checkinWeekOfMonth,
+          days: activity.checkinDays || [],
+          datesOfMonth: activity.checkinDatesOfMonth || [],
+          dayOfWeek: activity.checkinDaysOfWeek || [],
+          weeksOfMonth: activity.checkinWeeksOfMonth || [],
         },
       },
     };
@@ -1034,13 +975,13 @@ export class ActivitiesService {
     activity: Activity,
     startDate: Date,
     endDate: Date,
-  ): string[] {
-    const allowedDates: string[] = [];
+  ): Date[] {
+    const allowedDates: Date[] = [];
     const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
       if (this.isCheckInAllowedForDate(activity, currentDate)) {
-        allowedDates.push(currentDate.toISOString().split('T')[0]);
+        allowedDates.push(new Date(currentDate));
       }
       currentDate.setDate(currentDate.getDate() + 1);
     }
@@ -1165,7 +1106,7 @@ export class ActivitiesService {
 
   // Helper method to check admin status
   private async isUserActivityAdmin(
-    activity: ActivityDocument,
+    activity: ActivityDocument | Activity,
     userId: string,
   ): Promise<boolean> {
     return activity.participants.some((p) => {
@@ -1313,6 +1254,123 @@ export class ActivitiesService {
       success: true,
       message: 'Participants retrieved successfully',
       data: participants,
+    };
+  }
+
+  private calculateOverallCompletionRate(
+    checkIns: PopulatedCheckIn[],
+    activity: Activity,
+  ): number {
+    if (!checkIns.length) return 0;
+
+    const completedCheckIns = checkIns.filter((c) => {
+      try {
+        validateCheckInContent(c.type, c.content as CheckInContent, activity);
+        return true;
+      } catch {
+        return false;
+      }
+    }).length;
+
+    return (completedCheckIns / checkIns.length) * 100;
+  }
+
+  private async calculateParticipantStats(
+    activity: Activity,
+    checkIns: PopulatedCheckIn[],
+  ): Promise<IParticipantStats[]> {
+    return Promise.all(
+      activity.participants.map(async (participant) => {
+        const participantCheckIns = checkIns.filter(
+          (c) => c.user._id.toString() === this.getUserId(participant.user),
+        );
+
+        const totalParticipantCheckIns = participantCheckIns.length;
+        const completedParticipantCheckIns = participantCheckIns.filter((c) => {
+          try {
+            validateCheckInContent(
+              c.type,
+              c.content as CheckInContent,
+              activity,
+            );
+            return true;
+          } catch {
+            return false;
+          }
+        }).length;
+
+        const participantCompletionRate =
+          totalParticipantCheckIns > 0
+            ? (completedParticipantCheckIns / totalParticipantCheckIns) * 100
+            : 0;
+
+        const lastCheckIn = participantCheckIns.sort(
+          (a, b) => b.date.getTime() - a.date.getTime(),
+        )[0];
+
+        return {
+          userId: this.getUserId(participant.user),
+          name: (participant.user as PopulatedUser).name,
+          checkInCount: totalParticipantCheckIns,
+          completionRate: participantCompletionRate,
+          streak: this.calculateStreak(participantCheckIns),
+          lastCheckIn: lastCheckIn?.date,
+          averageCompletionTime:
+            this.calculateAverageCompletionTime(participantCheckIns),
+        };
+      }),
+    );
+  }
+
+  private validateCheckInType(type: CheckInType): void {
+    const validTypes = [
+      CheckInType.PHOTO,
+      CheckInType.CHECKLIST,
+      CheckInType.HOURS,
+    ];
+
+    if (!validTypes.includes(type)) {
+      throw new BadRequestException(`Invalid check-in type: ${type}`);
+    }
+  }
+
+  async getJoinRequests(
+    activityId: string,
+    userId: string,
+  ): Promise<ActivityServiceResponse<JoinRequestResponseDto[]>> {
+    const activity = await this.activityModel
+      .findById(activityId)
+      .populate('joinRequests.user', 'name email profilePicture')
+      .exec();
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    // Check if user is admin
+    const userParticipant = activity.participants.find(
+      (p) => p.user.toString() === userId && p.role === ActivityRole.ADMIN,
+    );
+
+    if (!userParticipant) {
+      throw new ForbiddenException(
+        'Only activity admins can view join requests',
+      );
+    }
+
+    const joinRequests = activity.joinRequests.map((request) => {
+      const user = request.user as PopulatedUser;
+      return {
+        userId: user._id.toString(),
+        userName: user.name,
+        userProfilePicture: user.profilePicture,
+        requestedAt: request.requestedAt,
+      };
+    });
+
+    return {
+      success: true,
+      data: joinRequests,
     };
   }
 }

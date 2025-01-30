@@ -1,4 +1,8 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import {
   IsString,
   IsEnum,
@@ -9,6 +13,8 @@ import {
   Min,
   Max,
   ValidateIf,
+  IsBoolean,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
@@ -16,92 +22,197 @@ import {
   JoinType,
   CheckinFrequencyUnit,
   DurationUnit,
-  CheckInType,
   DayOfWeek,
 } from '../../schemas/activity.schema';
+import { CheckInType } from '../../interfaces/checkin-type.interface';
 
-export class CreateActivityDto {
-  @ApiProperty({ example: 'Learn Spanish Together' })
+class PhotoValidationDto {
+  @ApiProperty({
+    description: 'Guidelines for what qualifies as a valid photo',
+    example: 'Photo must clearly show your completed work for the day',
+  })
   @IsString()
-  title: string;
+  guidelines: string;
 
-  @ApiProperty({ example: 'Weekly Spanish learning sessions for beginners' })
+  @ApiPropertyOptional({
+    description: 'Specific elements that must be in the photo',
+    example: ['timestamp', 'workbook page number'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  requiredElements?: string[];
+}
+
+class ChecklistItemValidationDto {
+  @ApiProperty({
+    description: 'Text description of the checklist item',
+    example: 'Complete daily exercises',
+  })
+  @IsString()
+  text: string;
+
+  @ApiProperty({
+    description: 'Whether this item is required',
+    example: true,
+  })
+  @IsBoolean()
+  required: boolean;
+}
+
+class ChecklistValidationDto {
+  @ApiProperty({
+    description: 'List of checklist items',
+    type: [ChecklistItemValidationDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => ChecklistItemValidationDto)
+  items: ChecklistItemValidationDto[];
+}
+
+class HoursValidationDto {
+  @ApiProperty({
+    description: 'Description of what counts as valid hours',
+    example: 'Time spent actively studying or practicing',
+  })
   @IsString()
   description: string;
 
-  @ApiProperty({ description: 'Duration value' })
+  @ApiPropertyOptional({
+    description: 'Minimum hours required per check-in',
+    example: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minHours?: number;
+}
+
+export class CheckInTypeConfigDto {
+  @ApiProperty({
+    enum: CheckInType,
+    description: 'Type of check-in',
+    example: CheckInType.PHOTO,
+  })
+  @IsEnum(CheckInType)
+  type: CheckInType;
+
+  @ApiProperty({
+    description: 'Validation rules for this check-in type',
+    oneOf: [
+      { $ref: getSchemaPath(PhotoValidationDto) },
+      { $ref: getSchemaPath(ChecklistValidationDto) },
+      { $ref: getSchemaPath(HoursValidationDto) },
+    ],
+  })
+  @ValidateNested()
+  @Type((opts) => {
+    switch (opts.object?.type) {
+      case CheckInType.PHOTO:
+        return PhotoValidationDto;
+      case CheckInType.CHECKLIST:
+        return ChecklistValidationDto;
+      case CheckInType.HOURS:
+        return HoursValidationDto;
+      default:
+        return PhotoValidationDto;
+    }
+  })
+  validation: PhotoValidationDto | ChecklistValidationDto | HoursValidationDto;
+}
+
+export class CreateActivityDto {
+  @ApiProperty({
+    description: 'Title of the activity',
+    example: 'Daily Fitness Challenge',
+  })
+  @IsString()
+  title: string;
+
+  @ApiProperty({
+    description: 'Detailed description of the activity',
+    example: 'A 30-day fitness challenge with daily workouts and progress tracking',
+  })
+  @IsString()
+  description: string;
+
+  @ApiProperty({
+    description: 'Duration of the activity',
+    minimum: 1,
+    example: 30,
+  })
   @IsNumber()
   @Min(1)
   proposedDuration: number;
 
   @ApiProperty({
     enum: DurationUnit,
-    description: 'Unit of duration (days or months)',
+    description: 'Unit of duration (days/months)',
     example: DurationUnit.DAYS,
   })
   @IsEnum(DurationUnit)
   durationUnit: DurationUnit;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  bannerImage?: string;
-
-  @ApiProperty({ enum: ActivityType })
-  @IsEnum(ActivityType)
-  type: ActivityType;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  startDate?: Date;
-
-  @ApiPropertyOptional({ enum: JoinType })
-  @IsOptional()
-  @IsEnum(JoinType)
-  joinType?: JoinType;
-
-  @ApiProperty({ example: 10 })
+  @ApiProperty({
+    description: 'Maximum number of participants',
+    minimum: 1,
+    example: 20,
+  })
   @IsNumber()
   @Min(1)
   maxSize: number;
 
-  @ApiPropertyOptional({ type: [String] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  categories?: string[];
-
-  @ApiPropertyOptional({ type: [String] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
-
   @ApiProperty({
-    description:
-      'Custom activity rules (default rules will be added automatically)',
-    type: [String],
-    example: ['Complete homework before sessions', 'Practice speaking daily'],
-    required: false,
+    enum: ActivityType,
+    description: 'Type of activity (public/private)',
+    example: ActivityType.PUBLIC,
+  })
+  @IsEnum(ActivityType)
+  type: ActivityType;
+
+  @ApiPropertyOptional({
+    enum: JoinType,
+    description: 'Join type (flexible/fixed)',
+    example: JoinType.FLEXIBLE,
+  })
+  @IsOptional()
+  @IsEnum(JoinType)
+  joinType?: JoinType;
+
+  @ApiPropertyOptional({
+    description: 'Start date of the activity',
+    example: '2024-01-01T00:00:00Z',
+  })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  startDate?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Activity rules',
+    example: ['Complete daily workouts', 'Log progress photos'],
   })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   rules?: string[];
 
-  @ApiProperty({
-    type: [String],
-    enum: CheckInType,
-    description: 'Types of check-ins allowed for this activity',
-    example: ['photo', 'checklist', 'hours', 'other'],
-    isArray: true,
+  @ApiPropertyOptional({
+    description: 'Activity tags for categorization',
+    example: ['fitness', 'health', 'workout'],
   })
-  @IsArray()
-  @IsEnum(CheckInType, { each: true })
   @IsOptional()
-  allowedCheckInTypes?: CheckInType[];
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  @ApiProperty({
+    type: [CheckInTypeConfigDto],
+    description: 'Types of check-ins allowed with their validation rules',
+  })
+  @ValidateNested({ each: true })
+  @Type(() => CheckInTypeConfigDto)
+  allowedCheckInTypes: CheckInTypeConfigDto[];
 
   @ApiProperty({ minimum: 1 })
   @IsNumber()
@@ -122,29 +233,48 @@ export class CreateActivityDto {
   )
   checkinDays?: DayOfWeek[];
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 31 })
+  @ApiPropertyOptional({
+    type: [Number],
+    minimum: 1,
+    maximum: 31,
+    description: 'Array of dates for monthly check-ins (1-31)',
+    example: [5, 15, 25],
+  })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(31)
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Min(1, { each: true })
+  @Max(31, { each: true })
   @ValidateIf((o) => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
-  checkinDateOfMonth?: number;
+  checkinDatesOfMonth?: number[];
 
-  @ApiPropertyOptional({ enum: DayOfWeek })
+  @ApiPropertyOptional({
+    enum: DayOfWeek,
+    isArray: true,
+    description: 'Array of days for monthly check-ins',
+    example: ['monday', 'thursday'],
+  })
   @IsOptional()
-  @IsEnum(DayOfWeek)
+  @IsEnum(DayOfWeek, { each: true })
   @ValidateIf((o) => o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY)
-  checkinDayOfWeek?: DayOfWeek;
+  checkinDaysOfWeek?: DayOfWeek[];
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 4 })
+  @ApiPropertyOptional({
+    type: [Number],
+    minimum: 1,
+    maximum: 4,
+    description: 'Array of week numbers for monthly check-ins (1-4)',
+    example: [1, 3],
+  })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(4)
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Min(1, { each: true })
+  @Max(4, { each: true })
   @ValidateIf(
     (o) =>
       o.checkinFrequencyUnit === CheckinFrequencyUnit.MONTHLY &&
-      o.checkinDayOfWeek,
+      o.checkinDaysOfWeek?.length > 0,
   )
-  checkinWeekOfMonth?: number;
+  checkinWeeksOfMonth?: number[];
 }
