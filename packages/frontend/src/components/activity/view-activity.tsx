@@ -5,8 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/common/ui
 import { IconButton } from '../common/ui/icon-button';
 import { CheckInCard } from './check-in-card';
 import { AvatarStack } from '../common/ui/avatar-stack';
+import { useNavigate } from 'react-router-dom';
 
+// TODO: Remove this - this is a mock activity
 const activity: ViewActivityProps['activity'] = {
+  id: '1',
   title: 'Learn React and Lucide Icons',
   description:
     'This is an actvity for the learning of the react and javascript language along with the use of the lucide icons. This is to encourage collaboration and to learn new things.',
@@ -53,6 +56,7 @@ const members = [
 
 interface ViewActivityProps {
   activity: {
+    id: string;
     title: string;
     description: string;
     bannerUrl: string;
@@ -112,11 +116,12 @@ const checkInStats = [
 ];
 
 export const ViewActivity = () => {
+  const navigate = useNavigate();
   return (
-    <div className="container h-full max-w-full px-4 py-6">
+    <div className="container-default min-h-full max-w-full px-4 py-6">
       <div className="flex flex-col gap-4 md:flex-row">
         {/* Left Column - 2/3 width */}
-        <Card className="flex-1 md:w-2/3">
+        <Card className="h-full flex-1 md:w-2/3">
           <CardContent className="space-y-6 p-6">
             {/* Banner */}
             <div className="h-48 w-full overflow-hidden rounded-lg">
@@ -129,7 +134,18 @@ export const ViewActivity = () => {
 
             {/* Title and Description */}
             <div className="space-y-4">
-              <h1 className="text-3xl font-bold">{activity.title}</h1>
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold">{activity.title}</h1>
+                <IconButton
+                  rightIcon="edit"
+                  variant="outline"
+                  label="Edit Activity"
+                  className="h-10 w-auto"
+                  onClick={() => {
+                    navigate(`/activity/${activity.id}/update`);
+                  }}
+                />
+              </div>
               <p className="text-gray-600">{activity.description}</p>
             </div>
 

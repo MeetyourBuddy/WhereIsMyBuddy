@@ -18,9 +18,10 @@ import {
 
 interface MenuProps {
   isOpen: boolean | undefined;
+  handleLogout: () => void;
 }
 
-export function Menu({ isOpen }: MenuProps) {
+export function Menu({ isOpen, handleLogout }: MenuProps) {
   const location = useLocation();
   const pathname = location.pathname;
   const menuList = getMenuList();
@@ -59,11 +60,19 @@ export function Menu({ isOpen }: MenuProps) {
                         <TooltipTrigger asChild>
                           <Button
                             variant={
-                              (active === undefined && pathname.startsWith(href)) || active
-                                ? 'outline'
+                              (active === undefined &&
+                                (href === '/' ? pathname === '/' : pathname.startsWith(href))) ||
+                              active
+                                ? 'default'
                                 : 'ghost'
                             }
-                            className="group mb-1 h-10 w-full justify-start hover:text-secondary"
+                            className={cn(
+                              'group mb-2 h-10 w-full justify-start text-sidebar-accent-foreground transition-transform hover:scale-105 hover:bg-sidebar-accent active:scale-95',
+                              ((active === undefined &&
+                                (href === '/' ? pathname === '/' : pathname.startsWith(href))) ||
+                                active) &&
+                                'scale-105 bg-sidebar-accent'
+                            )}
                             asChild
                           >
                             <Link to={href}>
@@ -71,18 +80,26 @@ export function Menu({ isOpen }: MenuProps) {
                                 <Icon
                                   size={18}
                                   className={cn(
-                                    'group-hover:text-secondary',
-                                    (active === undefined && pathname.startsWith(href)) || active
-                                      ? 'text-secondary'
+                                    'text-sidebar-accent-foreground group-hover:text-white',
+                                    (active === undefined &&
+                                      (href === '/'
+                                        ? pathname === '/'
+                                        : pathname.startsWith(href))) ||
+                                      active
+                                      ? 'text-white'
                                       : ''
                                   )}
                                 />
                               </span>
                               <p
                                 className={cn(
-                                  'max-w-[200px] truncate group-hover:text-secondary',
-                                  (active === undefined && pathname.startsWith(href)) || active
-                                    ? 'text-secondary'
+                                  'max-w-[200px] truncate text-sidebar-accent-foreground group-hover:text-white',
+                                  (active === undefined &&
+                                    (href === '/'
+                                      ? pathname === '/'
+                                      : pathname.startsWith(href))) ||
+                                    active
+                                    ? 'text-white'
                                     : '',
                                   isOpen === false
                                     ? '-translate-x-96 opacity-0'
@@ -116,17 +133,13 @@ export function Menu({ isOpen }: MenuProps) {
             <TooltipProvider disableHoverableContent>
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => {}}
-                    variant="outline"
-                    className="mt-5 h-10 w-full justify-center"
-                  >
+                  <Button onClick={handleLogout} className="mb-6 mt-5 h-10 w-full justify-start">
                     <span className={cn(isOpen === false ? '' : 'mr-4')}>
                       <LogOut size={18} />
                     </span>
                     <p
                       className={cn(
-                        'whitespace-nowrap',
+                        'whitespace-nowrap text-sidebar-accent-foreground',
                         isOpen === false ? 'hidden opacity-0' : 'opacity-100'
                       )}
                     >

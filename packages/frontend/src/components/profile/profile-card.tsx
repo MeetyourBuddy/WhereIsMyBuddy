@@ -89,7 +89,7 @@ export const ProfileCard = ({ profile, onConnect }: ProfileCardProps) => {
           </CardItem>
 
           {/* Collaboration Status and Share Button - Now at bottom */}
-          <CardItem translateZ="30" className="mb-20 w-full">
+          <CardItem translateZ="30" className="my-16 w-full">
             <div className="text-center">
               <Badge
                 variant="secondary"

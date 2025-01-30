@@ -13,7 +13,12 @@ import OAuthHandler from '@/pages/auth/oauth';
 import ChangePassword from '@/pages/auth/change-password';
 
 // Import pages - Activity
-import { MyActivityPage, CreateActivityPage, ViewActivityPage } from '@/pages/activity';
+import {
+  MyActivityPage,
+  CreateActivityPage,
+  ViewActivityPage,
+  EditActivityPage
+} from '@/pages/activity';
 
 // Import pages - Profile
 import UserProfileCard from '@/pages/profile/profile-card';
@@ -41,11 +46,12 @@ const Router = () => (
     <Route element={<ProtectedRoute />}>
       {/* Protected routes with AppLayout */}
       <Route element={<AppLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/" element={<Dashboard />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/activity" element={<MyActivityPage />} />
         <Route path="/activity/create" element={<CreateActivityPage />} />
         <Route path="/activity/:id" element={<ViewActivityPage />} />
+        <Route path="/activity/:id/update" element={<EditActivityPage />} />
         <Route path="/profile" element={<UserProfileCard />} />
         <Route path="/profile/update" element={<UpdateProfilePage />} />
         <Route path="/change-password" element={<ChangePassword />} />

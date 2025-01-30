@@ -49,6 +49,12 @@ import { useActivityStore } from '@/providers/store/use-activity-store';
 import { IActivity } from '@/types/activity-types';
 import { toast } from '@/lib/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import {
+  DurationUnit,
+  ActivityType,
+  CheckinFrequency,
+  JoinType
+} from '@/lib/validation/activity-validation';
 
 const frequencyOptions = [
   { value: 'daily', label: 'Daily' },
@@ -56,6 +62,7 @@ const frequencyOptions = [
   { value: 'monthly', label: 'Monthly' },
   { value: 'other', label: 'Other' }
 ];
+
 const joinTypeOptions = [
   { value: 'fixed', label: 'Fixed' },
   { value: 'flexible', label: 'Flexible' }
@@ -81,14 +88,15 @@ interface Rule {
   isDefault: boolean;
 }
 
-export const CreateActivityForm = () => {
+export const EditActivityForm = ({ id }: { id: string }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const { getActivity, updateActivity } = useActivityStore();
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const MAX_CHARS = 500;
   const navigate = useNavigate();
-
-  const { createActivity } = useActivityStore();
 
   // Add state to track available tag options
   const [availableTagOptions, setAvailableTagOptions] = useState<SelectOption[]>([]);
@@ -99,18 +107,18 @@ export const CreateActivityForm = () => {
       title: '',
       description: '',
       proposedDuration: 1,
-      durationUnit: 'days',
+      durationUnit: DurationUnit.DAYS,
       maxSize: 1,
-      type: 'public',
+      type: ActivityType.PUBLIC,
       checkinFrequency: 1,
-      checkinFrequencyUnit: 'daily',
+      checkinFrequencyUnit: CheckinFrequency.DAILY,
       checkinDays: [],
       checkinDateOfMonth: [],
       checkinDayOfWeek: [],
       checkinWeekOfMonth: [],
-      bannerImage: '',
+      bannerImage: undefined,
       startDate: new Date(),
-      joinType: 'flexible',
+      joinType: JoinType.FLEXIBLE,
       categories: [],
       tags: [],
       rules: [{ rule: '', isDefault: false }],
@@ -118,25 +126,94 @@ export const CreateActivityForm = () => {
     }
   });
 
-  console.log('form errors', form.formState.errors);
-  const onSubmit = async (data: CreateActivityFormData) => {
-    try {
-      console.log('Form data:', data);
-      const response = await createActivity(data as Omit<IActivity, 'id'>);
+  // Add useEffect to fetch activity data
+  useEffect(() => {
+    const fetchActivity = async () => {
+      if (!id) return;
 
-      if (response.success) {
+      try {
+        const activity = await getActivity(id);
+        if (activity.data) {
+          // Populate form with existing activity data
+          form.reset({
+            title: activity.data.activity.title,
+            description: activity.data.activity.description,
+            proposedDuration: activity.data.activity.proposedDuration,
+            durationUnit: activity.data.activity.durationUnit,
+            maxSize: activity.data.activity.maxSize,
+            type: activity.data.activity.type,
+            checkinFrequency: activity.data.activity.checkinFrequency,
+            checkinFrequencyUnit: activity.data.activity.checkinFrequencyUnit,
+            checkinDays: activity.data.activity.checkinDays,
+            checkinDateOfMonth: activity.data.activity.checkinDateOfMonth,
+            checkinDayOfWeek: activity.data.activity.checkinDayOfWeek,
+            checkinWeekOfMonth: activity.data.activity.checkinWeekOfMonth,
+            bannerImage: activity.data.activity.bannerImage,
+            startDate: new Date(activity.data.activity.startDate),
+            joinType: activity.data.activity.joinType,
+            categories: activity.data.activity.categories,
+            tags: activity.data.activity.tags,
+            rules: activity.data.activity.rules,
+            allowedCheckInTypes: activity.data.activity.allowedCheckInTypes
+          });
+
+          // Set banner image if exists
+          if (activity.data.activity.bannerImage) {
+            setBannerImage(activity.data.activity.bannerImage);
+          }
+
+          // Update available tags based on categories
+          if (activity.data.activity.categories?.length) {
+            const newTagOptions = activity.data.activity.categories.flatMap(
+              (category: InterestCategory) =>
+                getCommoditiesForCategory(category).map((item) => ({
+                  label: item.label,
+                  value: item.value
+                }))
+            );
+            setAvailableTagOptions(newTagOptions);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching activity:', error);
         toast({
-          title: 'Activity created successfully',
-          description: 'Your activity has been created and is now live.',
-          variant: 'default'
+          title: 'Error',
+          description: 'Failed to load activity details',
+          variant: 'destructive'
         });
-        form.reset();
-        navigate(`/activity`);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    }
-  };
+    };
+
+    fetchActivity();
+  }, [id, getActivity, form]);
+
+  // Modify onSubmit to handle updates
+  //   const onSubmit = async (data: CreateActivityFormData) => {
+  //     if (!id) return;
+
+  //     try {
+  //       const response = await updateActivity(id, data as Omit<IActivity, 'id'>);
+
+  //       if (response) {
+  //         toast({
+  //           title: 'Activity updated successfully',
+  //           description: 'Your activity has been updated.',
+  //           variant: 'default'
+
+  //         });
+  //         navigate(`/activity/${id}`);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error updating activity:', error);
+  //       toast({
+  //         title: 'Error',
+  //         description: 'Failed to update activity',
+  //         variant: 'destructive'
+  //       });
+  //     }
+  //   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -165,13 +242,22 @@ export const CreateActivityForm = () => {
     };
   }, [bannerImage]);
 
+  // Add loading state
+  if (isLoading) {
+    return (
+      <div className="container-default flex h-full items-center justify-center bg-white p-8">
+        <Icons.loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="container-default flex min-h-full flex-col bg-white p-8">
+    <div className="container-default flex h-full flex-col bg-white p-8">
       <div className="flex items-center justify-between">
         <div className="flex flex-col items-start">
-          <p className="text-xl font-bold">New Activity</p>
+          <p className="text-xl font-bold">Edit Activity</p>
           <p className="max-w-[400px] text-base text-muted-foreground">
-            Please enter information for your new activity here. You can always come back and edit.
+            Update your activity information below.
           </p>
         </div>
         <div className="flex items-center justify-center gap-2">
@@ -185,7 +271,10 @@ export const CreateActivityForm = () => {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-6">
+        <form
+          // onSubmit={form.handleSubmit(onSubmit)}
+          className="mt-8 space-y-6"
+        >
           <FormField
             control={form.control}
             name="title"
@@ -811,12 +900,13 @@ export const CreateActivityForm = () => {
               className="w-[150px]"
               rightIcon="x"
               label="Cancel"
+              onClick={() => navigate(`/activity/${id}`)}
             />
             <IconButton
               type="submit"
               className="w-[150px]"
-              rightIcon="check"
-              label="Publish"
+              rightIcon="save"
+              label="Save"
               disabled={form.formState.isSubmitting}
             />
           </div>

@@ -8,8 +8,12 @@ interface ActivityState {
   activities: IActivity[];
   isLoading: boolean;
   error: string | null;
+  getActivity: (id: string) => Promise<IServiceResponse<IActivityResponse>>;
   createActivity: (activity: Omit<IActivity, 'id'>) => Promise<IServiceResponse<IActivityResponse>>;
-  updateActivity: (id: string, updates: Partial<IActivity>) => void;
+  updateActivity: (
+    id: string,
+    updates: Partial<IActivity>
+  ) => Promise<IServiceResponse<IActivityResponse>>;
   deleteActivity: (id: string) => void;
   closeActivity: (id: string) => void;
   // addParticipant: (activityId: string, participantId: string) => void;
@@ -24,6 +28,10 @@ export const useActivityStore = create<ActivityState>()(
       activities: [],
       isLoading: false,
       error: null,
+      getActivity: async (id: string) => {
+        const response = await activityService.getActivity(id);
+        return response;
+      },
       createActivity: async (activity) => {
         const response = await activityService.createActivity(activity);
         if (response.success && response.data) {
@@ -44,12 +52,17 @@ export const useActivityStore = create<ActivityState>()(
         }
         return response;
       },
-      updateActivity: (id, updates) =>
-        set((state) => ({
-          activities: state.activities.map((activity) =>
-            activity.id === id ? { ...activity, ...updates } : activity
-          )
-        })),
+      updateActivity: async (id, updates) => {
+        const response = await activityService.updateActivity(id, updates as IActivity);
+        if (response.success && response.data) {
+          set((state) => ({
+            activities: state.activities.map((activity) =>
+              activity.id === id ? { ...activity, ...response.data } : activity
+            )
+          }));
+        }
+        return response;
+      },
       deleteActivity: (id) =>
         set((state) => ({
           activities: state.activities.filter((activity) => activity.id !== id)

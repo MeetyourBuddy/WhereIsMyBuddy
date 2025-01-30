@@ -25,10 +25,12 @@ interface UserNavProps {
   user: {
     name: string;
     email: string;
+    avatar: string;
   };
+  handleLogout: () => void;
 }
 
-export function UserNav({ user }: UserNavProps) {
+export function UserNav({ user, handleLogout }: UserNavProps) {
   return (
     <DropdownMenu>
       <TooltipProvider disableHoverableContent>
@@ -37,8 +39,10 @@ export function UserNav({ user }: UserNavProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="#" alt="Avatar" />
-                  <AvatarFallback className="bg-transparent">JD</AvatarFallback>
+                  <AvatarImage src={user.avatar} alt="Avatar" />
+                  <AvatarFallback className="bg-transparent">
+                    {user.name.charAt(0) + user.name.charAt(1)}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -57,7 +61,7 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem className="hover:cursor-pointer" asChild>
-            <Link to="/dashboard" className="flex items-center">
+            <Link to="/" className="flex items-center">
               <LayoutGrid className="mr-3 h-4 w-4 text-muted-foreground" />
               Dashboard
             </Link>
@@ -70,7 +74,7 @@ export function UserNav({ user }: UserNavProps) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
+        <DropdownMenuItem className="hover:cursor-pointer" onClick={handleLogout}>
           <LogOut className="mr-3 h-4 w-4 text-muted-foreground" />
           Sign out
         </DropdownMenuItem>
