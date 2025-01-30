@@ -24,6 +24,30 @@ export const JoinType = {
   FLEXIBLE: 'flexible'
 } as const;
 
+export const CheckinType = {
+  photo: {
+    type: 'photo',
+    description: '',
+    isEnabled: false
+  },
+  checklist: {
+    type: 'checklist',
+    description: '',
+    checklistItems: [{ title: '', description: '' }],
+    isEnabled: false
+  },
+  text: {
+    type: 'text',
+    description: '',
+    isEnabled: false
+  },
+  hours: {
+    type: 'hours',
+    description: '',
+    isEnabled: false
+  }
+} as const;
+
 export const createActivitySchema = z.object({
   title: z
     .string()
@@ -100,9 +124,34 @@ export const createActivitySchema = z.object({
     })
   ),
 
-  allowedCheckInTypes: z
-    .array(z.enum(['photo', 'checklist', 'hours', 'text', 'other']))
-    .default(['photo'])
+  allowedCheckInTypes: z.object({
+    photo: z.object({
+      type: z.literal('photo'),
+      description: z.string(),
+      isEnabled: z.boolean()
+    }),
+    checklist: z.object({
+      type: z.literal('checklist'),
+      description: z.string(),
+      checklistItems: z.array(
+        z.object({
+          title: z.string(),
+          description: z.string()
+        })
+      ),
+      isEnabled: z.boolean()
+    }),
+    text: z.object({
+      type: z.literal('text'),
+      description: z.string(),
+      isEnabled: z.boolean()
+    }),
+    hours: z.object({
+      type: z.literal('hours'),
+      description: z.string(),
+      isEnabled: z.boolean()
+    })
+  })
 });
 
 export type CreateActivityFormData = z.infer<typeof createActivitySchema>;
