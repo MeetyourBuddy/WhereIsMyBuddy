@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { Activity, ActivityRole } from '../schemas/activity.schema';
-import { CheckIn } from '../schemas/checkin.schema';
+import { CheckInType } from './checkin-type.interface';
+import { CheckInContent } from './checkin-content.interface';
 
 export interface PopulatedUser {
   _id: Types.ObjectId;
@@ -19,10 +20,13 @@ export interface PopulatedActivity extends Omit<Activity, 'participants'> {
   }>;
 }
 
-export interface PopulatedCheckIn extends Omit<CheckIn, 'user' | 'activity'> {
+export interface PopulatedCheckIn {
   _id: Types.ObjectId;
   user: PopulatedUser;
-  activity: PopulatedActivity;
+  activity: Types.ObjectId;
+  date: Date;
+  type: CheckInType;
+  content: CheckInContent;
   createdAt: Date;
   updatedAt: Date;
 }

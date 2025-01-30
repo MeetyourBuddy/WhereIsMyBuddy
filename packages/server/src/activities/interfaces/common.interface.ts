@@ -9,10 +9,7 @@ export interface ActivityMetadata {
 
 export interface ActivityServiceResponse<T> {
   success: boolean;
-  message: string;
-  data: T;
-  metadata?: {
-    availableSeats?: number;
-    isJoinable?: boolean;
-  };
+  message?: string;
+  data?: T;
+  error?: string;
 }
