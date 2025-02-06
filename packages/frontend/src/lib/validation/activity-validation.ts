@@ -141,11 +141,6 @@ export const createActivitySchema = z.object({
       ),
       isEnabled: z.boolean()
     }),
-    text: z.object({
-      type: z.literal('text'),
-      description: z.string(),
-      isEnabled: z.boolean()
-    }),
     hours: z.object({
       type: z.literal('hours'),
       description: z.string(),

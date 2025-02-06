@@ -82,16 +82,6 @@ interface Rule {
   isDefault: boolean;
 }
 
-interface CheckInOption {
-  type: 'photo' | 'checklist' | 'text';
-  description?: string;
-  checklistItems?: Array<{
-    title: string;
-    description: string;
-  }>;
-  isEnabled: boolean;
-}
-
 export const CreateActivityForm = () => {
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
@@ -137,11 +127,6 @@ export const CreateActivityForm = () => {
           checklistItems: [{ title: '', description: '' }],
           isEnabled: false
         },
-        text: {
-          type: 'text',
-          description: '',
-          isEnabled: false
-        },
         hours: {
           type: 'hours',
           description: '',
@@ -155,7 +140,13 @@ export const CreateActivityForm = () => {
   const onSubmit = async (data: CreateActivityFormData) => {
     try {
       console.log('Form data:', data);
-      const response = await createActivity(data as Omit<IActivity, 'id'>);
+      const formData = {
+        ...data,
+        allowedCheckInTypes: Object.entries(data.allowedCheckInTypes)
+          .filter(([_, value]) => value.isEnabled)
+          .map(([key]) => key)
+      };
+      const response = await createActivity(formData as unknown as Omit<IActivity, 'id'>);
 
       if (response.success) {
         toast({
@@ -860,7 +851,10 @@ export const CreateActivityForm = () => {
                                   className={cn(
                                     'h-8 w-8',
                                     // Hide delete button for the first item when it's the only one
-                                    field.value.length === 1 && index === 0 ? 'hidden' : ''
+                                    form.watch('allowedCheckInTypes.checklist.checklistItems')
+                                      ?.length === 1 && index === 0
+                                      ? 'hidden'
+                                      : ''
                                   )}
                                 >
                                   <Icons.delete className="h-4 w-4" />
@@ -909,52 +903,6 @@ export const CreateActivityForm = () => {
                           <Icons.plusCircle className="mr-2 h-4 w-4" />
                           Add Checklist Item
                         </Button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Text Check-in Option */}
-                  <div className="rounded-lg border p-4">
-                    <div className="flex items-center gap-2">
-                      <FormField
-                        control={form.control}
-                        name="allowedCheckInTypes.text.isEnabled"
-                        render={({ field }) => (
-                          <FormItem className="flex items-center space-x-2">
-                            <FormControl>
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  id="text-checkin"
-                                />
-                                <Label htmlFor="text-checkin" className="font-medium">
-                                  Text Check-in
-                                </Label>
-                              </div>
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {form.watch('allowedCheckInTypes.text.isEnabled') && (
-                      <div className="mt-4">
-                        <FormField
-                          control={form.control}
-                          name="allowedCheckInTypes.text.description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Textarea
-                                  {...field}
-                                  placeholder="Enter instructions for text check-in..."
-                                  className="h-20"
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
                       </div>
                     )}
                   </div>
