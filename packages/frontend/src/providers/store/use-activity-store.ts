@@ -33,7 +33,14 @@ export const useActivityStore = create<ActivityState>()(
         return response;
       },
       createActivity: async (activity) => {
-        const response = await activityService.createActivity(activity);
+        const formattedActivity = {
+          ...activity,
+          allowedCheckInTypes: Object.entries(activity.allowedCheckInTypes || {})
+            .filter(([_, value]) => value.isEnabled)
+            .map(([key]) => key)
+        };
+
+        const response = await activityService.createActivity(formattedActivity);
         if (response.success && response.data) {
           const activityData: IActivity = {
             id: response.data?.id,
