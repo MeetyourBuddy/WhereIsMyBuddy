@@ -35,7 +35,8 @@
       "@pages/*": ["src/pages/*"],
       "@services/*": ["src/services/*"],
       "@config/*": ["src/config/*"],
-      "@providers/*": ["src/providers/*"]
+      "@providers/*": ["src/providers/*"],
+      "@layouts/*": ["src/layouts/*"]
     }
   },
   "include": ["src", "src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],

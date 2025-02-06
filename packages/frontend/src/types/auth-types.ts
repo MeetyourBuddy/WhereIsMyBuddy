@@ -15,7 +15,7 @@ export interface TokenPair {
 }
 
 export interface IUser {
-  id: string;
+  _id: string;
   email: string;
   name: string;
   bio?: string;

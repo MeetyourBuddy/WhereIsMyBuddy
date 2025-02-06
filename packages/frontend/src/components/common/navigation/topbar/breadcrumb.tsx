@@ -1,10 +1,10 @@
 import {
   BreadcrumbItem,
   BreadcrumbSeparator,
-  BreadcrumbPage,
-  BreadcrumbLink
+  BreadcrumbPage
 } from '@/components/common/ui/breadcrumb';
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 
 import { BreadcrumbList } from '@/components/common/ui/breadcrumb';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,9 @@ export const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
       <nav ref={ref} aria-label="breadcrumb" className={cn('flex', className)} {...props}>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+            <NavLink to="/" className="hover:text-foreground">
+              Dashboard
+            </NavLink>
           </BreadcrumbItem>
           {breadcrumbs?.map((item, index) => (
             <React.Fragment key={item.path}>
@@ -33,7 +35,9 @@ export const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
                 {index === breadcrumbs.length - 1 ? (
                   <BreadcrumbPage>{item.label}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink href={item.path}>{item.label}</BreadcrumbLink>
+                  <NavLink to={item.path} className="hover:text-foreground">
+                    {item.label}
+                  </NavLink>
                 )}
               </BreadcrumbItem>
             </React.Fragment>

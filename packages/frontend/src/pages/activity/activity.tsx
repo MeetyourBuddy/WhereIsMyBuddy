@@ -1,14 +1,9 @@
-import { Button } from '@/components/common/ui/button';
-import { Link } from 'react-router-dom';
-
-export const Activity = () => {
+import { MyActivity } from '@/components/activity/my-activity';
+import { ContentLayout } from '@/components/admin-panel/content-layout';
+export const MyActivityPage = () => {
   return (
-    <div>
-      <h2 className="mt-6 scroll-m-20 font-extrabold tracking-tight">Activity Feed</h2>
-
-      <Button asChild className="mt-6">
-        <Link to="/activity/create">Create Activity</Link>
-      </Button>
-    </div>
+    <ContentLayout title="Activity">
+      <MyActivity />
+    </ContentLayout>
   );
 };

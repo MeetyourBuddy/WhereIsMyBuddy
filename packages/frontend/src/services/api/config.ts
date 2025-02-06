@@ -1,7 +1,5 @@
-import { config } from '@/config';
-
 export const API_CONFIG = {
-  baseURL: config.api.baseURL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
@@ -13,19 +11,19 @@ export const COOKIE_CONFIG = {
   token: {
     name: 'accessToken',
     options: {
-      secure: true,
-      sameSite: 'strict' as const,
+      expires: 3600, // seconds
       path: '/',
-      expires: 7
+      secure: import.meta.env.PROD,
+      sameSite: 'strict'
     }
   },
   refreshToken: {
     name: 'refreshToken',
     options: {
-      secure: true,
-      sameSite: 'strict' as const,
+      expires: 604800, // 7 days in seconds
       path: '/',
-      expires: 30
+      secure: import.meta.env.PROD,
+      sameSite: 'strict'
     }
   }
 } as const;

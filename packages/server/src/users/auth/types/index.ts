@@ -62,3 +62,12 @@ export interface AuthResponse {
   refreshToken?: string;
   user: PublicUser;
 }
+
+export interface GoogleUser {
+  email: string;
+  firstName: string;
+  lastName: string;
+  picture: string;
+  googleId: string;
+  accessToken: string;
+}

@@ -42,6 +42,11 @@ export interface IActivity {
   maxSize: number;
   tags?: string[];
   rules?: IActivityRule[];
+  allowedCheckInTypes?: string[];
+  checkinDays?: string[];
+  checkinDateOfMonth?: number;
+  checkinDayOfWeek?: string;
+  checkinWeekOfMonth?: number;
   //   participants: string[];
 }
 
@@ -55,17 +60,17 @@ export interface IParticipant {
   role: ActivityRole;
 }
 
-export interface IActivityResponse {
+export interface IActivityResult {
   id: string;
   title: string;
   description: string;
   admin: IUserResponse;
   proposedDuration: number;
   durationUnit: DurationUnit;
+  proposedDurationInDays?: number;
   bannerImage?: string;
-  contactFrequency: CheckinFrequency;
   type: ActivityType;
-  startDate?: string;
+  startDate: string;
   joinType: JoinType;
   maxSize: number;
   currentSize: number;
@@ -73,11 +78,26 @@ export interface IActivityResponse {
   rules: IActivityRule[];
   participants: IParticipant[];
   isActive: boolean;
-  availableSeats: number;
+  endedAt?: string;
+  allowedCheckInTypes?: string[];
+  checkinFrequency?: number;
+  checkinFrequencyUnit?: string;
+  checkinDays?: string[];
+  checkinDateOfMonth?: number;
+  checkinDayOfWeek?: string;
+  checkinWeekOfMonth?: number;
   createdAt: string;
   updatedAt: string;
-  proposedDurationInDays?: number;
-  endedAt?: string;
+  availableSeats: number;
+  nextCheckInDue?: string;
+}
+
+export interface IActivityResponse {
+  data: {
+    activity: IActivityResult;
+  };
+  success: boolean;
+  message: string;
 }
 
 // export interface IActivityResponse {

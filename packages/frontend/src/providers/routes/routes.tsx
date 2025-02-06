@@ -1,42 +1,64 @@
+// Import external dependencies
 import { Routes, Route } from 'react-router-dom';
-import Signin from '@/pages/auth/signin';
-import ChangePassword from '@/pages/auth/change-password';
-import Signup from '@/pages/auth/signup';
-import Forgotpassword from '@/pages/auth/forgot-password';
-import ProtectedRoute from './protected-routes';
-import NotFound from '@/pages/not-found/not-found';
-import Onboarding from '@/pages/onboarding/onboarding';
-import OAuthHandler from '@/pages/auth/oauth';
+
+// Import layouts
 import AuthLayout from '@/layouts/auth-layout';
-import BaseLayout from '@/layouts/base-layout';
-import Dashboard from '@/pages/dashhboard/dashboard';
-import { Activity, CreateActivityPage } from '@/pages/activity';
+import AppLayout from '@/layouts/app-layout';
+
+// Import pages - Auth
+import Signin from '@/pages/auth/signin';
+import Signup from '@/pages/auth/signup';
+import ForgotPassword from '@/pages/auth/forgot-password';
+import OAuthHandler from '@/pages/auth/oauth';
+import ChangePassword from '@/pages/auth/change-password';
+
+// Import pages - Activity
+import {
+  MyActivityPage,
+  CreateActivityPage,
+  ViewActivityPage,
+  EditActivityPage
+} from '@/pages/activity';
+
+// Import pages - Profile
 import UserProfileCard from '@/pages/profile/profile-card';
 import UpdateProfilePage from '@/pages/profile/update-profile';
 
+// Import pages - Other
+import Onboarding from '@/pages/onboarding/onboarding';
+import Dashboard from '@/pages/dashhboard/dashboard';
+import NotFound from '@/pages/not-found/not-found';
+
+// Import utilities
+import ProtectedRoute from './protected-routes';
+
 const Router = () => (
   <Routes>
-    {/* Auth routes with AuthLayout */}
+    {/* Auth routes wrapped with AuthLayout */}
     <Route element={<AuthLayout />}>
       <Route path="/signin" element={<Signin />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/oauth" element={<OAuthHandler />} />
-      <Route path="/forgot-password" element={<Forgotpassword />} />
     </Route>
 
-    {/* Protected routes with BaseLayout */}
+    {/* Protected routes wrapped with ProtectedRoute */}
     <Route element={<ProtectedRoute />}>
-      <Route path="/onboarding" element={<Onboarding />} />
-      <Route element={<BaseLayout />}>
+      {/* Protected routes with AppLayout */}
+      <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/activity" element={<Activity />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/activity" element={<MyActivityPage />} />
+        <Route path="/activity/create" element={<CreateActivityPage />} />
+        <Route path="/activity/:id" element={<ViewActivityPage />} />
+        <Route path="/activity/:id/update" element={<EditActivityPage />} />
         <Route path="/profile" element={<UserProfileCard />} />
         <Route path="/profile/update" element={<UpdateProfilePage />} />
-        <Route path="/activity/create" element={<CreateActivityPage />} />
         <Route path="/change-password" element={<ChangePassword />} />
       </Route>
     </Route>
 
+    {/* Fallback route for unmatched paths */}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

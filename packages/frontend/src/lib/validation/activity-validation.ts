@@ -24,6 +24,30 @@ export const JoinType = {
   FLEXIBLE: 'flexible'
 } as const;
 
+export const CheckinType = {
+  photo: {
+    type: 'photo',
+    description: '',
+    isEnabled: false
+  },
+  checklist: {
+    type: 'checklist',
+    description: '',
+    checklistItems: [{ title: '', description: '' }],
+    isEnabled: false
+  },
+  text: {
+    type: 'text',
+    description: '',
+    isEnabled: false
+  },
+  hours: {
+    type: 'hours',
+    description: '',
+    isEnabled: false
+  }
+} as const;
+
 export const createActivitySchema = z.object({
   title: z
     .string()
@@ -40,26 +64,33 @@ export const createActivitySchema = z.object({
     .min(1, 'Duration must be at least 1')
     .max(365, 'Duration cannot exceed 365'),
 
-  durationUnit: z.enum([DurationUnit.DAYS, DurationUnit.WEEKS, DurationUnit.MONTHS], {
+  durationUnit: z.enum([DurationUnit.DAYS, DurationUnit.MONTHS], {
     errorMap: () => ({ message: 'Please select a valid duration unit' })
   }),
 
   bannerImage: z.string().optional(),
 
-  contactFrequency: z
-    .enum(
-      [
-        CheckinFrequency.DAILY,
-        CheckinFrequency.WEEKLY,
-        CheckinFrequency.BIWEEKLY,
-        CheckinFrequency.MONTHLY,
-        CheckinFrequency.OTHER
-      ],
-      {
-        errorMap: () => ({ message: 'Please select a valid frequency' })
-      }
-    )
-    .optional(),
+  checkinFrequency: z.number().min(1, 'Check-in frequency must be at least 1'),
+
+  checkinFrequencyUnit: z.enum(
+    [
+      CheckinFrequency.DAILY,
+      CheckinFrequency.WEEKLY,
+      CheckinFrequency.MONTHLY,
+      CheckinFrequency.OTHER
+    ],
+    {
+      errorMap: () => ({ message: 'Please select a valid frequency unit' })
+    }
+  ),
+
+  checkinDays: z.array(z.string()).optional(),
+
+  checkinDateOfMonth: z.array(z.number()).min(1).max(31).optional(),
+
+  checkinDayOfWeek: z.array(z.string()).optional(),
+
+  checkinWeekOfMonth: z.array(z.number()).min(1).max(4).optional(),
 
   type: z.enum([ActivityType.PUBLIC, ActivityType.PRIVATE], {
     errorMap: () => ({ message: 'Please select a valid activity type' })
@@ -73,11 +104,9 @@ export const createActivitySchema = z.object({
       return date >= new Date();
     }, 'Start date cannot be in the past'),
 
-  joinType: z
-    .enum([JoinType.FIXED, JoinType.FLEXIBLE], {
-      errorMap: () => ({ message: 'Please select a valid join type' })
-    })
-    .optional(),
+  joinType: z.enum([JoinType.FIXED, JoinType.FLEXIBLE], {
+    errorMap: () => ({ message: 'Please select a valid join type' })
+  }),
 
   maxSize: z
     .number()
@@ -88,40 +117,36 @@ export const createActivitySchema = z.object({
 
   tags: z.array(z.string()).min(1, 'At least one tag is required'),
 
-  // participants: z.array(z.string()).optional(),
-
   rules: z.array(
     z.object({
       rule: z.string(),
       isDefault: z.boolean()
     })
-  )
+  ),
 
-  // Additional form-specific validations
-  // checkinOptions: z
-  //   .object({
-  //     photo: z
-  //       .object({
-  //         enabled: z.boolean(),
-  //         description: z.string().optional()
-  //       })
-  //       .optional(),
-
-  //     hours: z
-  //       .object({
-  //         enabled: z.boolean(),
-  //         minHours: z.number().min(0).optional()
-  //       })
-  //       .optional(),
-
-  //     checklist: z
-  //       .object({
-  //         enabled: z.boolean(),
-  //         items: z.array(z.string()).optional()
-  //       })
-  //       .optional()
-  //   })
-  //   .optional()
+  allowedCheckInTypes: z.object({
+    photo: z.object({
+      type: z.literal('photo'),
+      description: z.string(),
+      isEnabled: z.boolean()
+    }),
+    checklist: z.object({
+      type: z.literal('checklist'),
+      description: z.string(),
+      checklistItems: z.array(
+        z.object({
+          title: z.string(),
+          description: z.string()
+        })
+      ),
+      isEnabled: z.boolean()
+    }),
+    hours: z.object({
+      type: z.literal('hours'),
+      description: z.string(),
+      isEnabled: z.boolean()
+    })
+  })
 });
 
 export type CreateActivityFormData = z.infer<typeof createActivitySchema>;
