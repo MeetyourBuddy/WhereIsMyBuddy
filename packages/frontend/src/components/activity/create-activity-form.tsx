@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/common/ui/button';
 import { Calendar } from '@/components/common/ui/calendar';
-// import { Checkbox } from '@/components/common/ui/checkbox';
 import { Input } from '@/components/common/ui/input';
 import { Label } from '@/components/common/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/common/ui/radio-group';

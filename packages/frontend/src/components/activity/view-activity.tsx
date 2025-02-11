@@ -6,6 +6,7 @@ import { IconButton } from '../common/ui/icon-button';
 import { CheckInCard } from './check-in-card';
 import { AvatarStack } from '../common/ui/avatar-stack';
 import { useNavigate } from 'react-router-dom';
+import { MembersTable } from './members-table';
 
 // TODO: Remove this - this is a mock activity
 const activity: ViewActivityProps['activity'] = {
@@ -47,11 +48,46 @@ const activity: ViewActivityProps['activity'] = {
 };
 
 const members = [
-  { name: 'John Doe', image: '/avatars/mrnice.png' },
-  { name: 'Jane Smith', image: '/avatars/msnice.png' },
-  { name: 'Bob Johnson', image: '/avatars/mrnobody.png' },
-  { name: 'Alice Brown', image: '/avatars/msnobody.png' },
-  { name: 'Charlie Wilson', image: '/avatars/mra.png' }
+  {
+    name: 'John Doe',
+    image: '/avatars/mrnice.png',
+    username: 'johndoe',
+    standing: '1st',
+    checkIns: 18,
+    profileUrl: '/profile/johndoe'
+  },
+  {
+    name: 'Jane Smith',
+    image: '/avatars/msnice.png',
+    username: 'jan3esmith',
+    standing: '3rd',
+    checkIns: 10,
+    profileUrl: '/profile/janesmith'
+  },
+  {
+    name: 'Bob Johnson',
+    image: '/avatars/mrnobody.png',
+    username: 'bobjohnson',
+    standing: '4th',
+    checkIns: 8,
+    profileUrl: '/profile/bobjohnson'
+  },
+  {
+    name: 'Alice Brown',
+    image: '/avatars/msnobody.png',
+    username: 'alicebrown',
+    standing: '2nd',
+    checkIns: 16,
+    profileUrl: '/profile/alicebrown'
+  },
+  {
+    name: 'Charlie Wilson',
+    image: '/avatars/mra.png',
+    username: 'charliewilson',
+    standing: '5th',
+    checkIns: 6,
+    profileUrl: '/profile/charliewilson'
+  }
 ];
 
 interface ViewActivityProps {
@@ -87,33 +123,6 @@ interface ViewActivityProps {
     tags: string[];
   };
 }
-
-const checkInStats = [
-  {
-    checkedIn: 15,
-    notCheckedIn: 8,
-    skipping: 3,
-    onBreak: 2
-  },
-  {
-    checkedIn: 10,
-    notCheckedIn: 2,
-    skipping: 1,
-    onBreak: 1
-  },
-  {
-    checkedIn: 15,
-    notCheckedIn: 8,
-    skipping: 0,
-    onBreak: 0
-  },
-  {
-    checkedIn: 9,
-    notCheckedIn: 1,
-    skipping: 0,
-    onBreak: 0
-  }
-];
 
 export const ViewActivity = () => {
   const navigate = useNavigate();
@@ -176,35 +185,39 @@ export const ViewActivity = () => {
               </CardContent>
             </Card>
 
-            {/* Progress Chart Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="personal" className="w-full">
-                  <TabsList className="mb-4 grid w-full grid-cols-2">
-                    <TabsTrigger value="personal">My Progress</TabsTrigger>
-                    <TabsTrigger value="group">Group Progress</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="personal">
-                    <div className="flex h-64 items-center justify-center rounded-lg bg-gray-100">
-                      Personal Progress Chart Placeholder
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="group">
-                    <div className="flex h-64 items-center justify-center rounded-lg bg-gray-100">
-                      Group Progress Chart Placeholder
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+            {/* Add Tabs Section */}
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="mb-4 grid w-full grid-cols-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="members">Members</TabsTrigger>
+                <TabsTrigger value="gallery">Gallery</TabsTrigger>
+                <TabsTrigger value="calendar">Calendar</TabsTrigger>
+              </TabsList>
 
-            {/* Replace the Check-in Card with the new component */}
-            {checkInStats.map((checkInStat, index) => (
-              <CheckInCard key={index} checkInStats={checkInStat} />
-            ))}
+              <TabsContent value="overview" className="space-y-4">
+                <CheckInCard />
+              </TabsContent>
+
+              <TabsContent value="members">
+                <MembersTable members={members} />
+              </TabsContent>
+
+              <TabsContent value="gallery">
+                <Card>
+                  <CardContent className="py-4">
+                    <p className="text-sm text-muted-foreground">Gallery content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="calendar">
+                <Card>
+                  <CardContent className="py-4">
+                    <p className="text-sm text-muted-foreground">Calendar content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
