@@ -33,7 +33,8 @@ import {
   MessageCircleIcon,
   ThumbsUpIcon,
   Loader2,
-  SaveIcon
+  SaveIcon,
+  Share2Icon
 } from 'lucide-react';
 
 export const Icons = {
@@ -74,6 +75,7 @@ export const Icons = {
   bookmark: BookmarkIcon,
   loader2: Loader2,
   save: SaveIcon,
+  share: Share2Icon,
   support: ({ ...props }) => (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path
