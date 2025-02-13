@@ -49,6 +49,7 @@ const activity: ViewActivityProps['activity'] = {
 
 const members = [
   {
+    id: '1',
     name: 'John Doe',
     image: '/avatars/mrnice.png',
     username: 'johndoe',
@@ -57,6 +58,7 @@ const members = [
     profileUrl: '/profile/johndoe'
   },
   {
+    id: '2',
     name: 'Jane Smith',
     image: '/avatars/msnice.png',
     username: 'jan3esmith',
@@ -65,6 +67,7 @@ const members = [
     profileUrl: '/profile/janesmith'
   },
   {
+    id: '3',
     name: 'Bob Johnson',
     image: '/avatars/mrnobody.png',
     username: 'bobjohnson',
@@ -73,6 +76,7 @@ const members = [
     profileUrl: '/profile/bobjohnson'
   },
   {
+    id: '4',
     name: 'Alice Brown',
     image: '/avatars/msnobody.png',
     username: 'alicebrown',
@@ -81,6 +85,7 @@ const members = [
     profileUrl: '/profile/alicebrown'
   },
   {
+    id: '5',
     name: 'Charlie Wilson',
     image: '/avatars/mra.png',
     username: 'charliewilson',
