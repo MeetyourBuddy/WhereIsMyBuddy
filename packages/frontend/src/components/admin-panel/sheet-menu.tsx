@@ -11,8 +11,15 @@ import {
   SheetTitle
 } from '@/components/common/ui/sheet';
 import Logo_alt from '../common/icons/Logo_alt';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 export function SheetMenu() {
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <Sheet>
       <SheetTrigger className="lg:hidden" asChild>
@@ -29,7 +36,7 @@ export function SheetMenu() {
             </Link>
           </Button>
         </SheetHeader>
-        <Menu isOpen />
+        <Menu isOpen handleLogout={handleLogout} />
       </SheetContent>
     </Sheet>
   );

@@ -17,7 +17,7 @@ import { authValidationSchema } from '../../lib/validation/auth-validation';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { SignInCredentials, SignUpData } from '@/types/auth-types';
 import { config } from '@/config';
-
+import { Link } from 'react-router-dom';
 type FormData = SignInCredentials | SignUpData;
 
 const AuthForm = () => {
@@ -99,9 +99,9 @@ const AuthForm = () => {
 
         {!isSignup && (
           <div className="text-right text-sm">
-            <a href="/forgot-password" className="text-primary hover:underline">
+            <Link to="/forgot-password" className="text-primary hover:underline">
               Forgot Password?
-            </a>
+            </Link>
           </div>
         )}
 
@@ -126,9 +126,9 @@ const AuthForm = () => {
 
           <p className="pt-6">
             {`Don't you have an account? `}
-            <a href={isSignup ? '/signin' : '/signup'} className="text-primary hover:underline">
+            <Link to={isSignup ? '/signin' : '/signup'} className="text-primary hover:underline">
               {isSignup ? 'Sign in' : 'Sign up'}
-            </a>
+            </Link>
           </p>
         </div>
       </form>

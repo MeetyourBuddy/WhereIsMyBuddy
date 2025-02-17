@@ -20,8 +20,9 @@ import { Skeleton } from '../common/ui/skeleton';
 export function DashboardCard() {
   const items = [
     {
-      title: 'The Dawn of Innovation',
-      description: 'Explore the birth of groundbreaking ideas and inventions.',
+      title: 'Weekly 5K Run Club',
+      description:
+        'Join fellow runners every Saturday morning for an energizing 5K run and post-run coffee.',
       header: <Skeleton />,
       className: 'md:col-span-2',
       icon: <IconClipboardCopy className="h-4 w-4 text-neutral-500" />,
@@ -29,8 +30,9 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1456324504439-367cee3b3c32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'The Digital Revolution',
-      description: 'Dive into the transformative power of technology.',
+      title: 'Meditation Circle',
+      description:
+        'Practice mindfulness together in our daily 30-minute guided meditation sessions.',
       header: <Skeleton />,
       className: 'md:col-span-1',
       icon: <IconFileBroken className="h-4 w-4 text-neutral-500" />,
@@ -38,8 +40,9 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'The Art of Design',
-      description: 'Discover the beauty of thoughtful and functional design.',
+      title: 'Code & Coffee',
+      description:
+        'Weekly meetups to learn programming together, from beginners to advanced developers.',
       header: <Skeleton />,
       className: 'md:col-span-1',
       icon: <IconSignature className="h-4 w-4 text-neutral-500" />,
@@ -47,8 +50,8 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1509343256512-d77a5cb3791b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'The Power of Communication',
-      description: 'Understand the impact of effective communication in our lives.',
+      title: 'Book Club Discussions',
+      description: 'Monthly book discussions exploring personal growth and development literature.',
       header: <Skeleton />,
       className: 'md:col-span-2',
       icon: <IconTableColumn className="h-4 w-4 text-neutral-500" />,
@@ -56,8 +59,8 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'Data Analytics Mastery',
-      description: 'Harness the power of data to drive informed decisions.',
+      title: 'Language Exchange',
+      description: 'Practice new languages with native speakers in our weekly conversation groups.',
       header: <Skeleton />,
       className: 'md:col-span-2',
       icon: <IconChartBar className="h-4 w-4 text-neutral-500" />,
@@ -65,8 +68,9 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'Sustainable Solutions',
-      description: 'Exploring eco-friendly approaches for a better tomorrow.',
+      title: 'Urban Photography Walks',
+      description:
+        'Explore the city while learning photography techniques with fellow enthusiasts.',
       header: <Skeleton />,
       className: 'md:col-span-1',
       icon: <IconLeaf className="h-4 w-4 text-neutral-500" />,
@@ -74,8 +78,9 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'AI & Machine Learning',
-      description: 'Unlocking the potential of artificial intelligence.',
+      title: 'Cooking Workshop',
+      description:
+        'Learn to cook international cuisines together in our community kitchen sessions.',
       header: <Skeleton />,
       className: 'md:col-span-1',
       icon: <IconBrain className="h-4 w-4 text-neutral-500" />,
@@ -83,8 +88,9 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1555255707-c07966088b7b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'Cloud Architecture',
-      description: 'Building scalable and resilient cloud solutions.',
+      title: 'Music Jam Sessions',
+      description:
+        'Weekly gatherings for musicians of all levels to practice and perform together.',
       header: <Skeleton />,
       className: 'md:col-span-2',
       icon: <IconCloud className="h-4 w-4 text-neutral-500" />,
@@ -92,8 +98,9 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'Cybersecurity Essentials',
-      description: 'Protecting digital assets in an interconnected world.',
+      title: 'Yoga for Everyone',
+      description:
+        'Daily group yoga sessions for all skill levels, focusing on wellness and community.',
       header: <Skeleton />,
       className: 'md:col-span-2',
       icon: <IconShieldLock className="h-4 w-4 text-neutral-500" />,
@@ -101,8 +108,8 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'UX Research',
-      description: 'Understanding user needs through systematic investigation.',
+      title: 'Art & Wine Evenings',
+      description: 'Monthly social painting sessions combining creativity with wine tasting.',
       header: <Skeleton />,
       className: 'md:col-span-1',
       icon: <IconUsers className="h-4 w-4 text-neutral-500" />,
@@ -110,8 +117,9 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'Agile Methodologies',
-      description: 'Implementing flexible and collaborative development approaches.',
+      title: 'Public Speaking Club',
+      description:
+        'Bi-weekly meetings to practice presentation skills and build confidence together.',
       header: <Skeleton />,
       className: 'md:col-span-1',
       icon: <IconRefresh className="h-4 w-4 text-neutral-500" />,
@@ -119,8 +127,8 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1531498860502-7c67cf02f657?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'DevOps Culture',
-      description: 'Bridging development and operations for better delivery.',
+      title: 'Garden Collective',
+      description: 'Community gardening project teaching sustainable growing practices.',
       header: <Skeleton />,
       className: 'md:col-span-2',
       icon: <IconTools className="h-4 w-4 text-neutral-500" />,
@@ -128,8 +136,8 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'Blockchain Technology',
-      description: 'Exploring decentralized solutions and smart contracts.',
+      title: 'Financial Literacy Group',
+      description: 'Learn about investing and personal finance management with peer support.',
       header: <Skeleton />,
       className: 'md:col-span-2',
       icon: <IconCube className="h-4 w-4 text-neutral-500" />,
@@ -137,8 +145,8 @@ export function DashboardCard() {
         'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
     },
     {
-      title: 'API Integration',
-      description: 'Connecting systems through robust API architectures.',
+      title: 'DIY Craft Circle',
+      description: 'Weekly crafting sessions where we learn new skills and create together.',
       header: <Skeleton />,
       className: 'md:col-span-1',
       icon: <IconPlugConnected className="h-4 w-4 text-neutral-500" />,
