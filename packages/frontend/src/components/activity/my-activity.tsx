@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useOutsideClick } from '@/lib/hooks/use-outside-click';
 import { IconButton } from '../common/ui/icon-button';
@@ -28,7 +28,6 @@ export const MyActivity = () => {
 
 export function ExpandableCardDemo() {
   const [active, setActive] = useState<(typeof cards)[number] | null>(null);
-  const id = useId();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -212,13 +211,13 @@ export const CloseIcon = () => {
 
 const cards = [
   {
-    title: 'Weekly Book Club Discussion',
-    description: 'Join us for engaging literary conversations',
+    title: 'Running Club',
+    description: 'Join us for a run every Saturday at 8am',
     src: '/background/action.jpg',
     groupType: 'Public',
     ctaText: 'Join Now',
-    ctaLink: '/activity/book-club',
-    tags: ['reading', 'discussion', 'community'],
+    ctaLink: '/activity/running-club',
+    tags: ['running', 'community'],
     joinType: 'Flexible',
     startDate: '2024-04-01T18:00:00',
     duration: 60,
@@ -226,8 +225,9 @@ const cards = [
     content: () => {
       return (
         <p>
-          Weekly book discussions focusing on contemporary fiction. This month we're reading "The
-          Midnight Library" by Matt Haig. Open to readers of all levels.
+          Join our weekly running sessions suitable for all fitness levels. We meet every Saturday
+          morning for group runs, followed by coffee and socializing. Perfect for both beginners and
+          experienced runners looking to stay motivated and meet fellow runners.
         </p>
       );
     }

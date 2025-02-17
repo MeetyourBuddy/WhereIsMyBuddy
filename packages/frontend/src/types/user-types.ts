@@ -1,7 +1,7 @@
 import { Country, InterestCategory, Language } from '@/lib/constants';
 
 export interface IUserData {
-  _id: string;
+  id: string;
   email: string;
   name: string;
   interestsCategories?: string[];
@@ -28,7 +28,7 @@ export interface IUserData {
 }
 
 export interface IUserResponse {
-  _id: string;
+  id: string;
   email: string;
   name: string;
   dateOfBirth?: Date;

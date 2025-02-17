@@ -12,6 +12,7 @@ import {
 } from '@/components/common/ui/form';
 import { Input } from '@/components/common/ui/input';
 import type { z } from 'zod';
+import { Link } from 'react-router-dom';
 
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
@@ -53,9 +54,9 @@ const ForgotPasswordForm = () => {
         <div className="flex flex-col items-center space-y-6">
           <p className="pt-6">
             Go back to{' '}
-            <a href="/signin" className="text-primary">
+            <Link to="/signin" className="text-primary">
               Sign In
-            </a>
+            </Link>
           </p>
         </div>
       </form>

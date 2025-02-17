@@ -32,34 +32,136 @@ import NotFound from '@/pages/not-found/not-found';
 // Import utilities
 import ProtectedRoute from './protected-routes';
 
+// Import components
+import { Suspense } from 'react';
+import { LoadingFallback } from '@/components/common/loading-fallback';
+
 const Router = () => (
   <Routes>
     {/* Auth routes wrapped with AuthLayout */}
     <Route element={<AuthLayout />}>
-      <Route path="/signin" element={<Signin />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/oauth" element={<OAuthHandler />} />
+      <Route
+        path="/signin"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Signin />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Signup />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <ForgotPassword />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/oauth"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <OAuthHandler />
+          </Suspense>
+        }
+      />
     </Route>
 
     {/* Protected routes wrapped with ProtectedRoute */}
     <Route element={<ProtectedRoute />}>
       {/* Protected routes with AppLayout */}
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/activity" element={<MyActivityPage />} />
-        <Route path="/activity/create" element={<CreateActivityPage />} />
-        <Route path="/activity/:id" element={<ViewActivityPage />} />
-        <Route path="/activity/:id/update" element={<EditActivityPage />} />
-        <Route path="/profile" element={<UserProfileCard />} />
-        <Route path="/profile/update" element={<UpdateProfilePage />} />
-        <Route path="/change-password" element={<ChangePassword />} />
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <Dashboard />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <Onboarding />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/activity"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <MyActivityPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/activity/create"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <CreateActivityPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/activity/:id"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ViewActivityPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/activity/:id/update"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <EditActivityPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <UserProfileCard />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/profile/update"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <UpdateProfilePage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/change-password"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ChangePassword />
+            </Suspense>
+          }
+        />
       </Route>
     </Route>
 
     {/* Fallback route for unmatched paths */}
-    <Route path="*" element={<NotFound />} />
+    <Route
+      path="*"
+      element={
+        <Suspense fallback={<LoadingFallback />}>
+          <NotFound />
+        </Suspense>
+      }
+    />
   </Routes>
 );
 

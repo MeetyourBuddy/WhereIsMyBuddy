@@ -23,8 +23,8 @@ const onboardingData = [
     description: 'This information helps us find matches based on your time zone'
   },
   {
-    title: 'What is your preferred frequency of contact?',
-    description: 'This information helps us find matches that are compatible with your schedule'
+    title: 'When is your birthday?',
+    description: 'This information helps us find matches based on your age'
   },
   {
     title: 'Tell us about your interests',
@@ -43,19 +43,29 @@ const OnboardingCard = () => {
     mode: 'onChange'
   });
 
-  if (!user || !user.data) {
-    return <div>Loading...</div>;
+  console.log('User auth state:', {
+    userExists: !!user,
+    userData: user,
+    userId: user?.id
+  });
+
+  if (!user?.id) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <div className="text-lg">Unable to load user data. Please try again.</div>
+      </div>
+    );
   }
 
   const { handleSubmit, watch } = methods;
 
   const onSubmit = async (data: OnboardingFormData) => {
-    if (!user?.data?._id) {
+    if (!user?.id) {
       console.error('User data is missing');
       return;
     }
 
-    const response = await onboardingService.completeOnboarding(user.data._id, {
+    const response = await onboardingService.completeOnboarding(user?.id, {
       ...data,
       dateOfBirth: data.dateOfBirth.toISOString()
     });
@@ -64,7 +74,7 @@ const OnboardingCard = () => {
       setProfile(response.data as IUserData);
     }
 
-    navigate('/activity');
+    navigate('/');
   };
 
   const handleNext = () => {

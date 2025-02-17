@@ -7,14 +7,18 @@ import { CheckInCard } from './check-in-card';
 import { AvatarStack } from '../common/ui/avatar-stack';
 import { useNavigate } from 'react-router-dom';
 import { MembersTable } from './members-table';
-
+import { GalleryGrid } from './gallery-grid';
+import { GalleryImage } from './gallery-card';
+import { checkInCardMockData } from '@/lib/mock-data/activity';
+import { useState } from 'react';
+import { CheckInModal } from './check-in-modal';
 // TODO: Remove this - this is a mock activity
 const activity: ViewActivityProps['activity'] = {
   id: '1',
-  title: 'Learn React and Lucide Icons',
+  title: 'Running Club',
   description:
-    'This is an actvity for the learning of the react and javascript language along with the use of the lucide icons. This is to encourage collaboration and to learn new things.',
-  bannerUrl: '/background/balloons.jpg',
+    'This is an activity for the running club. We will be running 5k every week. We will be meeting at the park every Saturday at 8am. Please join us!',
+  bannerUrl: '/background/action.jpg',
   stats: {
     leader: {
       position: 1,
@@ -22,7 +26,7 @@ const activity: ViewActivityProps['activity'] = {
     },
     yourPosition: {
       position: 4,
-      name: 'Jane Doe'
+      name: 'Preeti'
     },
     daysLeft: 2
   },
@@ -95,6 +99,82 @@ const members = [
   }
 ];
 
+// Add this mock data near the top with other mock data
+const mockGalleryImages: GalleryImage[] = [
+  {
+    id: '1',
+    url: '/gallery/1.jpg',
+    createdAt: new Date('2024-03-15'),
+    alt: 'Activity celebration'
+  },
+  {
+    id: '2',
+    url: '/gallery/2.jpg',
+    createdAt: new Date('2024-03-10'),
+    alt: 'Team meeting'
+  },
+  {
+    id: '3',
+    url: '/gallery/3.jpg',
+    createdAt: new Date('2024-02-28'),
+    alt: 'Workshop session'
+  },
+  {
+    id: '4',
+    url: '/gallery/4.jpg',
+    createdAt: new Date('2024-02-15'),
+    alt: 'Group activity'
+  },
+  {
+    id: '5',
+    url: '/gallery/5.jpg',
+    createdAt: new Date('2024-02-15'),
+    alt: 'Group activity'
+  },
+  {
+    id: '6',
+    url: '/gallery/6.jpg',
+    createdAt: new Date('2024-02-15'),
+    alt: 'Group activity'
+  },
+  {
+    id: '7',
+    url: '/gallery/7.jpg',
+    createdAt: new Date('2024-02-15'),
+    alt: 'Group activity'
+  },
+  {
+    id: '8',
+    url: '/gallery/8.jpg',
+    createdAt: new Date('2024-02-15'),
+    alt: 'Group activity'
+  },
+  {
+    id: '9',
+    url: '/gallery/9.jpg',
+    createdAt: new Date('2024-01-15'),
+    alt: 'Group activity'
+  },
+  {
+    id: '10',
+    url: '/gallery/10.jpg',
+    createdAt: new Date('2024-01-15'),
+    alt: 'Group activity'
+  },
+  {
+    id: '11',
+    url: '/gallery/11.jpg',
+    createdAt: new Date('2024-01-15'),
+    alt: 'Group activity'
+  },
+  {
+    id: '12',
+    url: '/gallery/12.jpg',
+    createdAt: new Date('2024-01-15'),
+    alt: 'Group activity'
+  }
+];
+
 interface ViewActivityProps {
   activity: {
     id: string;
@@ -130,7 +210,9 @@ interface ViewActivityProps {
 }
 
 export const ViewActivity = () => {
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const navigate = useNavigate();
+
   return (
     <div className="container-default min-h-full max-w-full px-4 py-6">
       <div className="flex flex-col gap-4 md:flex-row">
@@ -200,7 +282,9 @@ export const ViewActivity = () => {
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
-                <CheckInCard />
+                {Object.entries(checkInCardMockData).map(([key, checkIn]) => (
+                  <CheckInCard key={key} {...checkIn} />
+                ))}
               </TabsContent>
 
               <TabsContent value="members">
@@ -209,8 +293,8 @@ export const ViewActivity = () => {
 
               <TabsContent value="gallery">
                 <Card>
-                  <CardContent className="py-4">
-                    <p className="text-sm text-muted-foreground">Gallery content coming soon...</p>
+                  <CardContent className="py-6">
+                    <GalleryGrid images={mockGalleryImages} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -230,7 +314,17 @@ export const ViewActivity = () => {
         <Card className="h-full md:w-1/3">
           <CardContent className="space-y-6 p-6">
             <h3 className="text-2xl font-bold">Activity Details</h3>
-            <IconButton rightIcon="check" label="Check-In" />
+            <IconButton
+              rightIcon="check"
+              label="Check-In"
+              onClick={() => setIsCheckInModalOpen(true)}
+            />
+            {isCheckInModalOpen && (
+              <CheckInModal
+                isOpen={isCheckInModalOpen}
+                onClose={() => setIsCheckInModalOpen(false)}
+              />
+            )}
             {/* Members Section */}
             <Card>
               <CardContent className="p-6">

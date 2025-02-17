@@ -11,7 +11,7 @@ import {
   FormMessage
 } from '@/components/common/ui/form';
 import { Input } from '@/components/common/ui/input';
-
+import { Link } from 'react-router-dom';
 // Define type for the form values
 type ChangePasswordValues = {
   oldPassword: string;
@@ -87,9 +87,9 @@ const ChangePasswordForm = () => {
         <div className="flex flex-col items-center space-y-6">
           <p className="pt-6">
             Go back to{' '}
-            <a href="/settings" className="text-primary">
+            <Link to="/settings" className="text-primary">
               Settings
-            </a>
+            </Link>
           </p>
         </div>
       </form>

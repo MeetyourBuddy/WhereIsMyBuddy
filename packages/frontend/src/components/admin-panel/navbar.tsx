@@ -1,4 +1,3 @@
-import { ModeToggle } from '@/components/mode-toggle';
 import { UserNav } from '@/components/admin-panel/user-nav';
 import { SheetMenu } from '@/components/admin-panel/sheet-menu';
 import { Input } from '@/components/common/ui/input';
@@ -17,8 +16,8 @@ export function Navbar({ title }: NavbarProps) {
   console.log(user);
 
   const userData = {
-    name: user?.name || 'John Doe',
-    email: user?.email || 'johndoe@mail.com',
+    name: user?.name || 'Preeti',
+    email: user?.email || 'preeti@mail.com',
     avatar: '/avatars/user-profile.png'
   };
 

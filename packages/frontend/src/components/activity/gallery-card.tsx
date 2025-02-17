@@ -1,9 +1,8 @@
 import { format } from 'date-fns';
-import Image from 'next/image';
-import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Card } from '@/components/common/ui/card';
+import { Separator } from '@/components/common/ui/separator';
 
-interface GalleryImage {
+export interface GalleryImage {
   id: string;
   url: string;
   createdAt: Date;
@@ -16,6 +15,9 @@ interface GalleryCardProps {
 }
 
 export function GalleryCard({ images, month }: GalleryCardProps) {
+  // Add a random featured index between 0 and images.length - 1
+  const featuredIndex = Math.floor(Math.random() * images.length);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -28,14 +30,13 @@ export function GalleryCard({ images, month }: GalleryCardProps) {
           <Card
             key={image.id}
             className={`overflow-hidden transition-transform hover:scale-[1.02] ${
-              index === 0 ? 'md:col-span-2 md:row-span-2' : ''
+              index === featuredIndex ? 'md:col-span-2 md:row-span-2' : ''
             }`}
           >
-            <Image
+            <img
               src={image.url}
               alt={image.alt || `Image from ${format(image.createdAt, 'PP')}`}
-              fill
-              className="object-cover"
+              className="h-full w-full object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           </Card>
