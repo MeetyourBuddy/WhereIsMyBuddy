@@ -7,40 +7,47 @@ import {
   ChecklistContent,
   HoursContent,
 } from '../interfaces/checkin-content.interface';
+import { CreateCheckInDto } from '../dto/checkin/create-checkin.dto';
 
 export function validateCheckInContent(
-  type: CheckInType,
-  content: CheckInContent,
+  checkInDto: CreateCheckInDto,
   activity: Activity,
 ): void {
-  const checkInConfig = activity.allowedCheckInTypes.find(
-    (config) => config.type === type,
-  );
+  const requiredTypes = activity.allowedCheckInTypes.map(config => config.type);
+  
+  // Check if all required types are provided
+  for (const requiredType of requiredTypes) {
+    switch (requiredType) {
+      case CheckInType.PHOTO:
+        if (!checkInDto.photo) {
+          throw new BadRequestException('Photo check-in is required');
+        }
+        validatePhotoContent(
+          checkInDto.photo,
+          activity.allowedCheckInTypes.find(t => t.type === CheckInType.PHOTO).validation
+        );
+        break;
 
-  if (!checkInConfig) {
-    throw new BadRequestException(
-      `Check-in type ${type} is not allowed for this activity`,
-    );
-  }
+      case CheckInType.CHECKLIST:
+        if (!checkInDto.checklist) {
+          throw new BadRequestException('Checklist check-in is required');
+        }
+        validateChecklistContent(
+          checkInDto.checklist,
+          activity.allowedCheckInTypes.find(t => t.type === CheckInType.CHECKLIST).validation
+        );
+        break;
 
-  switch (type) {
-    case CheckInType.PHOTO:
-      validatePhotoContent(content as PhotoContent, checkInConfig.validation);
-      break;
-
-    case CheckInType.CHECKLIST:
-      validateChecklistContent(
-        content as ChecklistContent,
-        checkInConfig.validation,
-      );
-      break;
-
-    case CheckInType.HOURS:
-      validateHoursContent(content as HoursContent);
-      break;
-
-    default:
-      throw new BadRequestException(`Invalid check-in type: ${type}`);
+      case CheckInType.HOURS:
+        if (!checkInDto.hours) {
+          throw new BadRequestException('Hours check-in is required');
+        }
+        validateHoursContent(
+          checkInDto.hours,
+          activity.allowedCheckInTypes.find(t => t.type === CheckInType.HOURS).validation
+        );
+        break;
+    }
   }
 }
 
@@ -92,7 +99,7 @@ function validateChecklistContent(
   }
 }
 
-function validateHoursContent(content: HoursContent): void {
+function validateHoursContent(content: HoursContent, validation: any): void {
   if (typeof content.hours !== 'number' || content.hours <= 0) {
     throw new BadRequestException('Valid hours value is required');
   }

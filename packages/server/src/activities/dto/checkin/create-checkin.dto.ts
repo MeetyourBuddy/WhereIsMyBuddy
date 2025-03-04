@@ -8,6 +8,7 @@ import {
   IsArray,
   IsBoolean,
   IsOptional,
+  IsObject,
 } from 'class-validator';
 import { CheckInType } from '../../interfaces/checkin-type.interface';
 
@@ -106,4 +107,37 @@ export class CreateCheckInDto {
     }
   })
   content: PhotoContentDto | ChecklistContentDto | HoursContentDto;
+
+  @ApiProperty({
+    description: 'Photo check-in content if required',
+    required: false,
+    type: PhotoContentDto,
+  })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PhotoContentDto)
+  photo?: PhotoContentDto;
+
+  @ApiProperty({
+    description: 'Checklist check-in content if required',
+    required: false,
+    type: ChecklistContentDto,
+  })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => ChecklistContentDto)
+  checklist?: ChecklistContentDto;
+
+  @ApiProperty({
+    description: 'Hours check-in content if required',
+    required: false,
+    type: HoursContentDto,
+  })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => HoursContentDto)
+  hours?: HoursContentDto;
 }

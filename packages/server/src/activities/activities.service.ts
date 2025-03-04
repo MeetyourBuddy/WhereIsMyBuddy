@@ -422,59 +422,36 @@ export class ActivitiesService {
     activityId: string,
     createCheckInDto: CreateCheckInDto,
   ): Promise<ActivityServiceResponse<CheckInResponseDto>> {
-    // Add debug logging
-    console.log('Create Check-in Debug:', {
-      userId,
-      activityId,
-      createCheckInDto
-    });
-
-    const activity = await this.activityModel
-      .findById(activityId)
-      .populate('participants.user', '_id') // Populate just the _id to ensure consistent structure
-      .exec();
-
+    const activity = await this.activityModel.findById(activityId);
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
 
-    // Add debug logging
-    console.log('Activity found:', {
-      activityId: activity._id,
-      participants: activity.participants.map(p => ({
-        user: p.user,
-        role: p.role
-      }))
-    });
-
-    const isParticipant = this.isUserParticipant(activity, userId);
-    
-    // Add debug logging
-    console.log('Participant check result:', {
-      userId,
-      isParticipant
-    });
-
-    if (!isParticipant) {
+    // Validate user is participant
+    if (!this.isUserParticipant(activity, userId)) {
       throw new ForbiddenException('Only participants can create check-ins');
     }
 
-    // Validate check-in content
-    validateCheckInContent(createCheckInDto.type, createCheckInDto.content, activity);
+    // Validate all required check-in types are provided
+    validateCheckInContent(createCheckInDto, activity);
 
+    // Create check-in document with all provided content
     const checkIn = new this.checkInModel({
       user: userId,
       activity: activityId,
-      type: createCheckInDto.type,
-      content: createCheckInDto.content,
-      date: new Date(), // Automatically set to current time
+      date: new Date(),
+      content: {
+        photo: createCheckInDto.photo,
+        checklist: createCheckInDto.checklist,
+        hours: createCheckInDto.hours,
+      }
     });
 
     const savedCheckIn = await checkIn.save();
     
     return {
       success: true,
-      message: 'Check-in created successfully',
+      message: 'Check-in completed successfully with all required types',
       data: this.transformToDto(savedCheckIn, CheckInResponseDto),
     };
   }
