@@ -11,6 +11,10 @@ import {
   TrendingUp,
   Star,
   MessageCircle,
+  Wrench,
+  Settings,
+  Link,
+  CheckCircle,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +29,23 @@ import ActivityPartners from "@/components/activities/ActivityPartners";
 import MessageBoard from "@/components/activities/MessageBoard";
 import CheckInDialog from "@/components/activities/CheckInDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { differenceInDays } from "date-fns";
+import { Badge, badgeVariants } from "@/components/ui/badge";
+import { VariantProps } from "class-variance-authority";
+
+const getActivityStatus = (startDate: Date, endDate: Date) => {
+  const now = new Date();
+  const daysToStart = differenceInDays(startDate, now);
+  const daysToEnd = differenceInDays(endDate, now);
+
+  if (daysToStart > 0)
+    return { status: "starting-soon", label: "Starting Soon", variant: "info" };
+  if (daysToEnd >= 0 && daysToEnd <= 7)
+    return { status: "ending-soon", label: "Ending Soon", variant: "warning" };
+  if (daysToEnd < 0)
+    return { status: "ended", label: "Ended", variant: "danger" };
+  return { status: "ongoing", label: "Ongoing", variant: "success" };
+};
 
 const ActivityPage = () => {
   const { activityId } = useParams<{ activityId: string }>();
@@ -46,7 +67,6 @@ const ActivityPage = () => {
     participants: 12,
     checkins: 243,
     progress: 64,
-    // bannerImage: "public/lovable-uploads/cdc21302-a15c-49dd-8f19-9ac1c4936d4c.png",
     bannerImage:
       "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2940",
     streakCount: 5,
@@ -54,16 +74,27 @@ const ActivityPage = () => {
     daysCompleted: 14,
   };
 
+  const { status, label, variant } = getActivityStatus(
+    activity.startDate,
+    activity.endDate
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-buddy-purple/5 via-white to-buddy-blue/5 relative">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5MzUxRTkiIGZpbGwtb3BhY2l0eT0iMC4wMSI+PHBhdGggZD0iTTM2IDM0aDN2M2gtM3Ztf00zMCAzaDN2M2gtM3pNMTcgMTdoM3YzaC0zek0zNiAxN2gzdjNoLTN6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
+      <div className="absolute inset-0 z-[-10] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5MzUxRTkiIGZpbGwtb3BhY2l0eT0iMC4wMSI+PHBhdGggZD0iTTM2IDM0aDN2M2gtM3Ztf00zMCAzaDN2M2gtM3pNMTcgMTdoM3YzaC0zek0zNiAxN2gzdjNoLTN6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
 
       <div className="relative mb-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-buddy-purple/70 to-buddy-blue/70 mix-blend-multiply" />
+        <div className="absolute inset-0 z-[-10] bg-gradient-to-r from-buddy-purple/70 to-buddy-blue/70 mix-blend-multiply" />
         <div
           className="relative h-64 md:h-80 w-full bg-cover bg-center"
           style={{ backgroundImage: `url(${activity.bannerImage})` }}
         >
+          <Badge
+            className="absolute top-4 right-4 py-1 px-3 z-10"
+            variant={variant as VariantProps<typeof badgeVariants>["variant"]}
+          >
+            {label}
+          </Badge>
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30"></div>
           <div className="flex items-end h-full pb-8 px-4 md:px-8 lg:px-12 w-full max-w-7xl mx-auto">
             <div className="w-full text-white">
@@ -87,22 +118,28 @@ const ActivityPage = () => {
                     {activity.description}
                   </p>
                 </div>
-                <div className="flex gap-2 mt-4 md:mt-0">
-                  <CheckInDialog>
+                <div className="flex gap-2 mt-4 md:mt-0 z-[10]">
+                  <CheckInDialog
+                    onCheckInComplete={() => console.log("Check-in completed")}
+                  >
                     <Button
                       variant="default"
                       className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-5 text-white"
                     >
-                      <ClipboardCheck className="w-4 h-4 mr-2" />
+                      <CheckCircle className="mr-2 h-4 w-4" />
                       Check-in Now
                     </Button>
                   </CheckInDialog>
                   <Button
                     variant="outline"
                     className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
+                    onClick={() => {
+                      // Navigate to edit page
+                      window.location.href = `/activities/edit/${activity.id}`;
+                    }}
                   >
-                    <Users className="w-4 h-4 mr-2" />
-                    Invite Partners
+                    <Settings className="w-4 h-4 mr-2" />
+                    Manage Activity
                   </Button>
                 </div>
               </div>

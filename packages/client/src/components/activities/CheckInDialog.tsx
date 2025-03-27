@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,9 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
             <DialogTitle className="text-xl font-semibold text-buddy-gray-800">
               Check In Now
             </DialogTitle>
+            <DialogDescription className="text-buddy-gray-600 sr-only">
+              Share your progress or thoughts
+            </DialogDescription>
           </DialogHeader>
         </div>
 

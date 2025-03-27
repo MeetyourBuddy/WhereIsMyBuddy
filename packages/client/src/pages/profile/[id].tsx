@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import ProfileCard from "@/components/profile/ProfileCard";
@@ -13,7 +12,8 @@ const mockProfiles = {
     name: "Jordan Lee",
     username: "jordanlee",
     bio: "Fitness enthusiast and coding mentor. Love hiking on weekends and teaching programming during weekdays.",
-    image: "/lovable-uploads/cdc21302-a15c-49dd-8f19-9ac1c4936d4c.png",
+    image:
+      "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
     location: "San Francisco, CA",
     interests: ["Fitness", "Coding", "Hiking", "Teaching", "Photography"],
     joinedDate: "January 2023",
@@ -46,12 +46,14 @@ const ProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Check if user is coming from within the app or external link
-  const isInternalNavigation = location.state?.fromApp || location.key !== 'default';
-  
+  const isInternalNavigation =
+    location.state?.fromApp || location.key !== "default";
+
   // In a real app, you would fetch profile data based on the ID
-  const profile = mockProfiles[id as keyof typeof mockProfiles] || mockProfiles["1"];
+  const profile =
+    mockProfiles[id as keyof typeof mockProfiles] || mockProfiles["1"];
 
   const handleBack = () => {
     navigate(-1);
@@ -63,9 +65,9 @@ const ProfilePage = () => {
       <Header isLoggedIn={true} />
       <div className="container max-w-4xl mx-auto py-8 px-4 relative">
         {isInternalNavigation && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="mb-4 text-buddy-gray-600 hover:text-buddy-gray-900"
             onClick={handleBack}
           >
