@@ -541,7 +541,7 @@ export class ActivitiesService {
     if (updateCheckInDto.type || updateCheckInDto.content) {
       const type = updateCheckInDto.type || checkIn.type;
       const content = updateCheckInDto.content || checkIn.content;
-      validateCheckInContent(type, content as CheckInContent, activity);
+      validateCheckInContent({ type, ...content } as CreateCheckInDto, activity);
     }
 
     Object.assign(checkIn, updateCheckInDto);
@@ -1273,7 +1273,7 @@ export class ActivitiesService {
 
     const completedCheckIns = checkIns.filter((c) => {
       try {
-        validateCheckInContent(c.type, c.content as CheckInContent, activity);
+        validateCheckInContent(c as CreateCheckInDto, activity);
         return true;
       } catch {
         return false;
@@ -1296,11 +1296,7 @@ export class ActivitiesService {
         const totalParticipantCheckIns = participantCheckIns.length;
         const completedParticipantCheckIns = participantCheckIns.filter((c) => {
           try {
-            validateCheckInContent(
-              c.type,
-              c.content as CheckInContent,
-              activity,
-            );
+            validateCheckInContent(c as CreateCheckInDto, activity);
             return true;
           } catch {
             return false;

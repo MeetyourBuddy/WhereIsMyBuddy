@@ -86,11 +86,45 @@ export const createActivitySchema = z.object({
 
   checkinDays: z.array(z.string()).optional(),
 
-  checkinDateOfMonth: z.array(z.number()).min(1).max(31).optional(),
+  checkinDateOfMonth: z
+    .array(z.number())
+    .min(1)
+    .max(31)
+    .optional()
+    .superRefine((val, ctx) => {
+      type Input = typeof ctx.parent;
+      const parent: Input = ctx.parent;
+      if (
+        parent.checkinFrequencyUnit === CheckinFrequency.MONTHLY &&
+        (!val || val.length === 0) &&
+        (!parent.checkinWeekOfMonth || parent.checkinWeekOfMonth.length === 0)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Monthly check-ins require either dates of month or weeks of month'
+        });
+      }
+    }),
 
-  checkinDayOfWeek: z.array(z.string()).optional(),
-
-  checkinWeekOfMonth: z.array(z.number()).min(1).max(4).optional(),
+  checkinWeekOfMonth: z
+    .array(z.number())
+    .min(1)
+    .max(4)
+    .optional()
+    .superRefine((val, ctx) => {
+      type Input = typeof ctx.parent;
+      const parent: Input = ctx.parent;
+      if (
+        parent.checkinFrequencyUnit === CheckinFrequency.MONTHLY &&
+        (!val || val.length === 0) &&
+        (!parent.checkinDateOfMonth || parent.checkinDateOfMonth.length === 0)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Monthly check-ins require either dates of month or weeks of month'
+        });
+      }
+    }),
 
   type: z.enum([ActivityType.PUBLIC, ActivityType.PRIVATE], {
     errorMap: () => ({ message: 'Please select a valid activity type' })
@@ -101,7 +135,7 @@ export const createActivitySchema = z.object({
     .optional()
     .refine((date) => {
       if (!date) return true;
-      return date >= new Date();
+      return date > new Date();
     }, 'Start date cannot be in the past'),
 
   joinType: z.enum([JoinType.FIXED, JoinType.FLEXIBLE], {

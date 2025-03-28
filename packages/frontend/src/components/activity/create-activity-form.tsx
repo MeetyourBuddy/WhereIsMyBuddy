@@ -138,24 +138,24 @@ export const CreateActivityForm = () => {
   console.log('form errors', form.formState.errors);
   const onSubmit = async (data: CreateActivityFormData) => {
     try {
-      console.log('Form data:', data);
       const formData = {
         ...data,
         allowedCheckInTypes: Object.entries(data.allowedCheckInTypes)
           .filter(([_, value]) => value.isEnabled)
           .map(([key]) => key)
       };
-      const response = await createActivity(formData as unknown as Omit<IActivity, 'id'>);
+      console.log('formData', formData);
+      // const response = await createActivity(formData as unknown as Omit<IActivity, 'id'>);
 
-      if (response.success) {
-        toast({
-          title: 'Activity created successfully',
-          description: 'Your activity has been created and is now live.',
-          variant: 'default'
-        });
-        form.reset();
-        navigate(`/activity`);
-      }
+      // if (response.success) {
+      //   toast({
+      //     title: 'Activity created successfully',
+      //     description: 'Your activity has been created and is now live.',
+      //     variant: 'default'
+      //   });
+      //   form.reset();
+      //   navigate(`/activity`);
+      // }
     } catch (error) {
       console.error('Error submitting form:', error);
     }

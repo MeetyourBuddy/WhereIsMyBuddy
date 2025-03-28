@@ -75,6 +75,27 @@ class ActivityService {
       message: 'Activity deleted successfully'
     };
   }
+
+  async createCheckIn(activityId: string, checkInData: any): Promise<IServiceResponse<any>> {
+    const { data: responseData } = await axiosInstance.post(
+      `/activities/${activityId}/checkin`,
+      checkInData
+    );
+    return {
+      success: true,
+      data: responseData,
+      message: 'Check-in created successfully'
+    };
+  }
+
+  async getActivityCheckIns(activityId: string): Promise<IServiceResponse<any>> {
+    const { data: responseData } = await axiosInstance.get(`/activities/${activityId}/checkins`);
+    return {
+      success: true,
+      data: responseData,
+      message: 'Check-ins fetched successfully'
+    };
+  }
 }
 
 export const activityService = new ActivityService();
