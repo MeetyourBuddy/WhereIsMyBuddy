@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Compass,
@@ -6,25 +5,26 @@ import {
   Calendar,
   Bell,
   Users,
-  Plus,
+  UserPlus,
+  Star,
   ArrowRight,
   TrendingUp,
-  Star,
+  Plus,
   Activity,
-  UserPlus,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import { Separator } from "@/components/ui/separator";
-import AppLayout from "@/components/layout/AppLayout";
 import Avatar from "@/components/common/Avatar";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/store/auth.store";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+
+  const { user } = useAuth();
 
   const suggestedActivities = [
     {
@@ -142,7 +142,7 @@ const Dashboard = () => {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
-                  Welcome, John!
+                  Welcome, {user?.name || "John"}!
                 </h2>
                 <div className="flex items-center gap-1 text-buddy-gray-500 text-sm bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-white">
                   <Bell className="h-4 w-4 text-buddy-purple" />

@@ -29,6 +29,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Icons } from "@/components/common/icons";
 import { signUpFormSchema, type SignUpFormData } from "@/lib/validation/auth";
 import { useAuth } from "@/store/auth.store";
+import { config } from "@/config";
 
 const SignUp = () => {
   const [showPassword, setShowPassword] = React.useState(false);
@@ -58,6 +59,10 @@ const SignUp = () => {
       toast.error("Failed to create account. Please try again.");
       console.error(error);
     }
+  };
+
+  const handleGoogleSignin = () => {
+    window.open(`${config.api.baseURL}/auth/google`, "_self");
   };
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
@@ -222,6 +227,7 @@ const SignUp = () => {
                 variant="outline"
                 className="w-full rounded-xl border-buddy-gray-200/70 hover:border-buddy-gray-300/70 hover:bg-secondary hover:text-secondary-foreground"
                 size="lg"
+                onClick={handleGoogleSignin}
               >
                 <Icons.google className="h-5 w-5 mr-2" />
                 Sign up with Google

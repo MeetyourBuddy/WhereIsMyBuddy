@@ -28,9 +28,9 @@ import { Separator } from "@/components/ui/separator";
 import { Icons } from "@/components/common/icons";
 import { signInFormSchema, type SignInFormData } from "@/lib/validation/auth";
 import { useAuth } from "@/store/auth.store";
+import { config } from "@/config";
 
 const SignIn = () => {
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = React.useState(false);
   const { login } = useAuth();
 
@@ -54,6 +54,10 @@ const SignIn = () => {
       toast.error("Failed to sign in. Please check your credentials.");
       console.error(error);
     }
+  };
+
+  const handleGoogleSignin = () => {
+    window.open(`${config.api.baseURL}/auth/google`, "_self");
   };
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
@@ -171,6 +175,7 @@ const SignIn = () => {
                 variant="outline"
                 className="w-full rounded-xl border-buddy-gray-200/70 hover:border-buddy-gray-300/70 hover:bg-secondary hover:text-secondary-foreground"
                 size="lg"
+                onClick={handleGoogleSignin}
               >
                 <Icons.google className="h-5 w-5 mr-2" />
                 Continue with Google

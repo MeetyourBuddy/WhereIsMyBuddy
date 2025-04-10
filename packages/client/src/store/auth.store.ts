@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { authService } from "@/services/api/auth/auth-service";
 import { SignInCredentials, SignUpData, User } from "@/types/auth-types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,13 +15,24 @@ interface AuthState {
   setIsAuthenticated: (value: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  isAuthenticated: false,
-  user: null,
-
-  setUser: (user) => set({ user }),
-  setIsAuthenticated: (value) => set({ isAuthenticated: value }),
-}));
+// Create persisted store
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      isAuthenticated: false,
+      user: null,
+      setUser: (user) => set({ user }),
+      setIsAuthenticated: (value) => set({ isAuthenticated: value }),
+    }),
+    {
+      name: "auth-storage", // unique name for localStorage key
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
+);
 
 // React Query hooks for auth operations
 export const useAuth = () => {
@@ -32,7 +44,7 @@ export const useAuth = () => {
     mutationFn: (credentials: SignInCredentials) =>
       authService.login(credentials),
     onSuccess: (response) => {
-      setUser(response.data);
+      setUser(response.data.user);
       setIsAuthenticated(true);
       queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success("Successfully logged in!");
@@ -46,7 +58,7 @@ export const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: (userData: SignUpData) => authService.register(userData),
     onSuccess: (response) => {
-      setUser(response.data);
+      setUser(response.data.user);
       setIsAuthenticated(true);
       queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success("Registration successful!");
@@ -54,20 +66,6 @@ export const useAuth = () => {
     },
     onError: (error) => {
       toast.error(error.message || "Registration failed. Please try again.");
-    },
-  });
-
-  const googleLoginMutation = useMutation({
-    mutationFn: (credential: string) => authService.googleLogin(credential),
-    onSuccess: (response) => {
-      setUser(response.data);
-      setIsAuthenticated(true);
-      queryClient.invalidateQueries({ queryKey: ["user"] });
-      toast.success("Successfully logged in with Google!");
-      navigate("/dashboard");
-    },
-    onError: (error) => {
-      toast.error(error.message || "Google login failed. Please try again.");
     },
   });
 
@@ -89,23 +87,20 @@ export const useAuth = () => {
     // Mutations
     login: loginMutation.mutate,
     register: registerMutation.mutate,
-    googleLogin: googleLoginMutation.mutate,
     logout: logoutMutation.mutate,
 
     // Mutation states
     isLoading:
       loginMutation.isPending ||
       registerMutation.isPending ||
-      googleLoginMutation.isPending ||
       logoutMutation.isPending,
     error:
-      loginMutation.error ||
-      registerMutation.error ||
-      googleLoginMutation.error ||
-      logoutMutation.error,
+      loginMutation.error || registerMutation.error || logoutMutation.error,
 
     // Store state
     user: useAuthStore((state) => state.user),
     isAuthenticated: useAuthStore((state) => state.isAuthenticated),
+    setUser: useAuthStore((state) => state.setUser),
+    setIsAuthenticated: useAuthStore((state) => state.setIsAuthenticated),
   };
 };

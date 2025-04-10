@@ -26,6 +26,7 @@ import AppLayout from "./components/layout/AppLayout";
 import ProfilePage from "./pages/profile/[id]";
 import SharedActivityPage from "./pages/activity/[id]";
 import AdminPanel from "./pages/admin/index";
+import Oauth from "./pages/Oauth";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/oauth" element={<Oauth />} />
 
           {/* Welcome & Getting Started */}
           {/* <Route path="/welcome" element={<Welcome />} />

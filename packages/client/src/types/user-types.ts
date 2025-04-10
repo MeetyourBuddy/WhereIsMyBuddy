@@ -1,6 +1,7 @@
-import { Country, InterestCategory, Language } from '@/lib/constants';
+import { Country, InterestCategory, Language } from "@/lib/constants";
+import { User } from "./auth-types";
 
-export interface IUserData {
+export interface UserData {
   _id: string;
   email: string;
   name: string;
@@ -11,7 +12,7 @@ export interface IUserData {
   profileImage?: string;
   bannerImage?: string;
   profileQR?: string;
-  collaborationStatus?: 'open' | 'occupied' | 'undecided';
+  collaborationStatus?: "open" | "occupied" | "undecided";
   createdAt?: string;
   updatedAt?: string;
   phoneNumber?: string;
@@ -24,7 +25,7 @@ export interface IUserData {
   goals?: string;
   city?: string;
   country?: string;
-  gender?: 'male' | 'female' | 'other';
+  gender?: "male" | "female" | "other";
 }
 
 export interface IUserResponse {
@@ -44,12 +45,12 @@ export interface IUserResponse {
   isActive: boolean;
   isEmailVerified: boolean;
   hasCompletedOnboarding: boolean;
-  provider: 'local' | 'google';
+  provider: "local" | "google";
   profileLink: string;
   profileQR: string;
   goals?: string;
-  gender?: 'male' | 'female' | 'other';
-  collaborationStatus: 'open' | 'occupied' | 'undecided';
+  gender?: "male" | "female" | "other";
+  collaborationStatus: "open" | "occupied" | "undecided";
   linkedInUrl?: string;
   githubUrl?: string;
   portfolioUrl?: string;
@@ -58,4 +59,11 @@ export interface IUserResponse {
   updatedAt: Date;
   profilePicture?: string;
   timezone?: string;
+}
+
+export interface UserResponse {
+  data: User;
+  message: string;
+  success: boolean;
+  timestamp: string;
 }

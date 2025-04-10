@@ -1,34 +1,30 @@
-import axiosInstance from '../../axios-instance';
-import { IUserData } from '@/types/user-types';
-import { IServiceResponse } from '@/types';
-import { IUser } from '@/types/auth-types';
+import axiosInstance from "../../axios-instance";
+import { ApiResponse } from "@/types";
+import { User } from "@/types/auth-types";
+import { UserResponse } from "@/types/user-types";
 
 class UserService {
-  async getUser(): Promise<IServiceResponse<IUserData>> {
-    const { data } = await axiosInstance.get<IUserData>('/auth/user');
-    return {
-      success: true,
-      data,
-      message: 'User fetched successfully'
-    };
+  async getUser(): Promise<UserResponse> {
+    const response = await axiosInstance.get<UserResponse>("/auth/user");
+
+    return response.data;
   }
 
-  async updateUser(id: string, data: Partial<IUserData>): Promise<IServiceResponse<IUserData>> {
-    const { data: responseData } = await axiosInstance.put<IUserData>(`/users/${id}`, data);
-    return {
-      success: true,
-      data: responseData,
-      message: 'User updated successfully'
-    };
+  async updateUser(id: string, data: Partial<User>): Promise<UserResponse> {
+    const response = await axiosInstance.put<UserResponse>(
+      `/users/${id}`,
+      data
+    );
+
+    return response.data;
   }
 
-  async getMe(): Promise<IServiceResponse<IUser>> {
-    const { data } = await axiosInstance.get<IUser>('/users/my-profile');
-    return {
-      success: true,
-      data,
-      message: 'User fetched successfully'
-    };
+  async getMe(): Promise<UserResponse> {
+    const response = await axiosInstance.get<UserResponse>("/users/my-profile");
+
+    console.log("response data in get me", response.data);
+
+    return response.data;
   }
 }
 

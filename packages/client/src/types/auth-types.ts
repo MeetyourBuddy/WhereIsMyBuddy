@@ -45,6 +45,11 @@ export interface User {
   bannerImage?: string;
 }
 
+export interface AuthResponse {
+  tokens: TokenPair;
+  user: User;
+}
+
 export enum Language {}
 // Add language enum values
 
