@@ -98,7 +98,7 @@ export class User extends Document {
   @Prop({ trim: true })
   goals?: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   age?: number;
 
   @Prop({
