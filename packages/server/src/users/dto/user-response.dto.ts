@@ -237,4 +237,12 @@ export class UserResponseDto {
   @Expose()
   @ApiProperty()
   updatedAt: Date;
+
+  /**
+   * User's avatar
+   * @example "https://picsum.photos/id/237/200/300"
+   */
+  @Expose()
+  @ApiPropertyOptional()
+  avatar?: string;
 }

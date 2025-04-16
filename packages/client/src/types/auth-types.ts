@@ -43,6 +43,7 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
   bannerImage?: string;
+  avatar: string;
 }
 
 export interface AuthResponse {
