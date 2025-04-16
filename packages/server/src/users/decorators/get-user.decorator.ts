@@ -22,6 +22,8 @@ export const GetUser = createParamDecorator(
         throw new UnauthorizedException(`User property ${data} not found`);
       }
       logger.debug(`Accessing user property: ${data}`);
+
+      console.log('user details', user);
       return user[data];
     }
 

@@ -38,6 +38,7 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { useAuthStore } from "@/store/auth.store";
 
 type SidebarNavItem = {
   title: string;
@@ -118,6 +119,8 @@ const AppSidebar = () => {
   const { state } = useSidebar();
   const location = useLocation();
 
+  const { user } = useAuthStore();
+
   return (
     <Sidebar
       className="bg-buddy-purple border-none"
@@ -184,15 +187,15 @@ const AppSidebar = () => {
           {state === "expanded" ? (
             <div className="flex items-center">
               <Avatar className="h-9 w-9 border-2 border-buddy-purple-light">
-                <AvatarImage src="https://github.com/shadcn.png" />
+                <AvatarImage src={user?.avatar} />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
               <div className="ml-3">
-                <p className="text-sm font-medium text-white">John Doe</p>
+                <p className="text-sm font-medium text-white">{user?.name}</p>
                 <p className="text-xs text-buddy-gray-400">Basic Member</p>
               </div>
               <Link
-                to="/profile"
+                to={`/profile/${user?._id}`}
                 className="ml-auto text-buddy-gray-400 hover:text-white"
               >
                 <User className="h-4 w-4" />
@@ -203,7 +206,7 @@ const AppSidebar = () => {
               <TooltipTrigger asChild>
                 <div className="flex justify-center">
                   <Avatar className="h-9 w-9 border-2 border-buddy-purple-light cursor-pointer">
-                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarImage src={user?.avatar} />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
                 </div>

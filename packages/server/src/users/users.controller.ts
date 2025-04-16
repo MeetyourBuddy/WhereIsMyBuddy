@@ -25,7 +25,6 @@ import {
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
   @Get()
   @ApiOperation({ summary: 'Get all users' })
   getAllUsers(@Query() query: PaginationQueryDto) {
@@ -43,6 +42,30 @@ export class UsersController {
     return this.usersService.getUser(userId);
   }
 
+  @Put('onboarding')
+  @ApiOperation({ summary: 'Complete user onboarding' })
+  @ApiResponse({
+    status: 200,
+    description: 'Onboarding completed successfully',
+    type: UserResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request or user has already completed onboarding',
+  })
+  async completeOnboarding(
+    @GetUser('userId') userId: string,
+    @Body() onboardingDto: CompleteOnboardingDto[],
+  ) {
+    console.log('userId', userId);
+    console.log('onboardingDto', onboardingDto);
+
+    if (!userId) {
+      throw new UnauthorizedException('User ID is required');
+    }
+    return this.usersService.completeOnboarding(userId, onboardingDto);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({
@@ -50,8 +73,8 @@ export class UsersController {
     description: 'Returns the user profile',
     type: UserResponseDto,
   })
-  getUserById(@Param('id') id: string) {
-    return this.usersService.getUser(id);
+  async getUser(@Param('id') userId: string) {
+    return this.usersService.getUser(userId);
   }
 
   @Put(':id')
@@ -71,15 +94,6 @@ export class UsersController {
       throw new UnauthorizedException('You can only update your own profile');
     }
     return this.usersService.updateProfile(id, updateUserDto);
-  }
-
-  @Put(':id/onboarding')
-  @ApiOperation({ summary: 'Complete user onboarding' })
-  completeOnboarding(
-    @Param('id') id: string,
-    @Body() onboardingDto: CompleteOnboardingDto,
-  ) {
-    return this.usersService.completeOnboarding(id, onboardingDto);
   }
 
   @Delete(':id')

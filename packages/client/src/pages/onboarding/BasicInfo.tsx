@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowRight, MapPin, Calendar } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -18,7 +17,6 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -34,135 +32,15 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-
-// Sample data for countries and cities
-const countries = [
-  { id: "us", name: "United States" },
-  { id: "ca", name: "Canada" },
-  { id: "uk", name: "United Kingdom" },
-  { id: "au", name: "Australia" },
-  { id: "de", name: "Germany" },
-  { id: "fr", name: "France" },
-  { id: "jp", name: "Japan" },
-  { id: "in", name: "India" },
-  { id: "br", name: "Brazil" },
-];
-
-const citiesByCountry = {
-  us: [
-    "New York",
-    "Los Angeles",
-    "Chicago",
-    "Houston",
-    "Phoenix",
-    "Philadelphia",
-    "San Antonio",
-    "San Diego",
-    "Dallas",
-    "San Jose",
-  ],
-  ca: [
-    "Toronto",
-    "Montreal",
-    "Vancouver",
-    "Calgary",
-    "Edmonton",
-    "Ottawa",
-    "Winnipeg",
-    "Quebec City",
-    "Hamilton",
-    "Kitchener",
-  ],
-  uk: [
-    "London",
-    "Birmingham",
-    "Manchester",
-    "Glasgow",
-    "Liverpool",
-    "Bristol",
-    "Edinburgh",
-    "Sheffield",
-    "Leeds",
-    "Newcastle",
-  ],
-  au: [
-    "Sydney",
-    "Melbourne",
-    "Brisbane",
-    "Perth",
-    "Adelaide",
-    "Gold Coast",
-    "Canberra",
-    "Newcastle",
-    "Wollongong",
-    "Hobart",
-  ],
-  de: [
-    "Berlin",
-    "Hamburg",
-    "Munich",
-    "Cologne",
-    "Frankfurt",
-    "Stuttgart",
-    "Düsseldorf",
-    "Leipzig",
-    "Dortmund",
-    "Essen",
-  ],
-  fr: [
-    "Paris",
-    "Marseille",
-    "Lyon",
-    "Toulouse",
-    "Nice",
-    "Nantes",
-    "Strasbourg",
-    "Montpellier",
-    "Bordeaux",
-    "Lille",
-  ],
-  jp: [
-    "Tokyo",
-    "Yokohama",
-    "Osaka",
-    "Nagoya",
-    "Sapporo",
-    "Fukuoka",
-    "Kobe",
-    "Kyoto",
-    "Kawasaki",
-    "Saitama",
-  ],
-  in: [
-    "Mumbai",
-    "Delhi",
-    "Bangalore",
-    "Hyderabad",
-    "Chennai",
-    "Kolkata",
-    "Pune",
-    "Ahmedabad",
-    "Jaipur",
-    "Lucknow",
-  ],
-  br: [
-    "São Paulo",
-    "Rio de Janeiro",
-    "Brasília",
-    "Salvador",
-    "Fortaleza",
-    "Belo Horizonte",
-    "Manaus",
-    "Curitiba",
-    "Recife",
-    "Porto Alegre",
-  ],
-};
+import {
+  countries,
+  citiesByCountry,
+} from "@/lib/constants/country-city.constants";
 
 const formSchema = z.object({
   country: z.string().min(1, { message: "Please select your country" }),
   city: z.string().min(1, { message: "Please select your city" }),
-  birthdate: z.date({
+  dateOfBirth: z.date({
     required_error: "Please select your birth date",
   }),
 });
@@ -185,7 +63,9 @@ const BasicInfo = () => {
   // Update available cities when country changes
   useEffect(() => {
     if (selectedCountry) {
-      setAvailableCities(citiesByCountry[selectedCountry as keyof typeof citiesByCountry] || []);
+      setAvailableCities(
+        citiesByCountry[selectedCountry as keyof typeof citiesByCountry] || []
+      );
     } else {
       setAvailableCities([]);
     }
@@ -193,18 +73,20 @@ const BasicInfo = () => {
 
   const onSubmit = (data: FormData) => {
     console.log("Basic info submitted:", data);
-    
+
     // Extract timezone information (this is just a placeholder - in a real app you'd use a proper
     // timezone calculation based on location)
     const timezoneInfo = {
       country: data.country,
       city: data.city,
-      estimatedTimezone: "UTC" // This would be calculated based on location
+      estimatedTimezone: "UTC", // This would be calculated based on location
     };
-    
+
     // Save timezone info but don't display it to user
     localStorage.setItem("userTimezone", JSON.stringify(timezoneInfo));
-    
+
+    localStorage.setItem("userBasicInfo", JSON.stringify(data));
+
     toast.success("Basic information saved!");
     navigate("/onboarding/interests");
   };
@@ -285,7 +167,7 @@ const BasicInfo = () => {
 
           <FormField
             control={form.control}
-            name="birthdate"
+            name="dateOfBirth"
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Birth Date</FormLabel>

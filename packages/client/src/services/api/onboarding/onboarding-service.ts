@@ -1,16 +1,13 @@
 import axiosInstance from "../../axios-instance";
 import { onboarding } from "@/types/onboarding-types";
-import { UserData } from "@/types/user-types";
+import { User } from "@/types/auth-types";
 import { ApiResponse } from "@/types";
 
 class OnboardingService {
   // complete onboarding
-  async completeOnboarding(
-    userId: string,
-    data: onboarding
-  ): Promise<ApiResponse<UserData>> {
-    const response = await axiosInstance.put<ApiResponse<UserData>>(
-      `/users/${userId}/onboarding`,
+  async completeOnboarding(data: onboarding): Promise<ApiResponse<User>> {
+    const response = await axiosInstance.put<ApiResponse<User>>(
+      `/users/onboarding`,
       data
     );
 

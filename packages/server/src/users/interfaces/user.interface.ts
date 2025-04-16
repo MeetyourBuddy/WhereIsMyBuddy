@@ -1,5 +1,5 @@
-import { InterestCategory } from '../enums/interests.enum';
-import { Country } from '../enums/location.enum';
+import { Categories } from '../enums/interest-categories.enum';
+import { CountryCode } from '../enums/country.enum';
 import { Language } from '../enums/language.enum';
 
 export interface IUserResponse {
@@ -11,9 +11,9 @@ export interface IUserResponse {
   profileImage?: string;
   bio?: string;
   phoneNumber?: string;
-  country?: Country;
+  country?: CountryCode;
   city?: string;
-  interestsCategories?: InterestCategory[];
+  interestsCategories?: Categories[];
   interestsCommodities?: string[];
   preferredLanguage?: Language;
   isActive: boolean;
@@ -33,4 +33,5 @@ export interface IUserResponse {
   updatedAt: Date;
   profilePicture?: string;
   timezone?: string;
+  avatar: string;
 }

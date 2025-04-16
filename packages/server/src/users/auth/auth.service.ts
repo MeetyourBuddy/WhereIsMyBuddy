@@ -22,10 +22,9 @@ import {
   JwtPayload,
   IUserResponse,
 } from './interfaces/auth.interface';
-import { Country } from '../enums/location.enum';
-import { InterestCategory } from '../enums/interests.enum';
 import { Language } from '../enums/language.enum';
-
+import { CountryCode } from '../enums/country.enum';
+import { Categories, Interests } from '../enums/interest-categories.enum';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -251,10 +250,10 @@ export class AuthService {
       profilePicture: user.profilePicture,
       bio: user.bio,
       phoneNumber: user.phoneNumber,
-      country: user.country as Country,
+      country: user.country as CountryCode,
       city: user.city,
-      interestsCategories: user.interestsCategories as InterestCategory[],
-      interestsCommodities: user.interestsCommodities,
+      interestsCategories: user.interestsCategories as Categories[],
+      interestsCommodities: user.interestsCommodities as Interests[],
       preferredLanguage: user.preferredLanguage as Language,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
@@ -272,6 +271,7 @@ export class AuthService {
       timezone: user.timezone,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      avatar: user.avatar,
     };
   }
 }

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { UpdateUserDto, PaginationQueryDto } from './dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
@@ -40,8 +40,22 @@ export class UsersService {
   }
 
   async getUser(userId: string): Promise<ServiceResponse<User>> {
+    // Clean the userId by removing any quotes and trimming whitespace
+    const cleanUserId = userId.replace(/['"]+/g, '').trim();
+
+    console.log('Original userId:', userId);
+    console.log('Cleaned userId:', cleanUserId);
+    console.log('Is valid ObjectId:', Types.ObjectId.isValid(cleanUserId));
+
+    if (!Types.ObjectId.isValid(cleanUserId)) {
+      throw new BadRequestException('Invalid user ID format');
+    }
+
+    const objectId = new Types.ObjectId(cleanUserId);
+    console.log('Converted ObjectId:', objectId.toString());
+
     const user = await this.userModel
-      .findById(userId)
+      .findById(objectId)
       .select('-password -refreshToken');
 
     if (!user) {
@@ -91,9 +105,17 @@ export class UsersService {
 
   async completeOnboarding(
     userId: string,
-    onboardingDto: CompleteOnboardingDto,
+    onboardingDto: CompleteOnboardingDto[],
   ): Promise<ServiceResponse<User>> {
-    const user = await this.userModel.findById(userId);
+    // Clean the userId and validate
+    const cleanUserId = userId.replace(/['"]+/g, '').trim();
+
+    if (!Types.ObjectId.isValid(cleanUserId)) {
+      throw new BadRequestException('Invalid user ID format');
+    }
+
+    const objectId = new Types.ObjectId(cleanUserId);
+    const user = await this.userModel.findById(objectId);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -105,14 +127,12 @@ export class UsersService {
 
     const updatedUser = await this.userModel
       .findByIdAndUpdate(
-        userId,
+        objectId,
         {
-          dateOfBirth: onboardingDto.dateOfBirth,
-          age: onboardingDto.age,
-          interestsCategories: onboardingDto.interestsCategories,
-          country: onboardingDto.country,
-          city: onboardingDto.city,
-          hasCompletedOnboarding: true,
+          $set: {
+            ...onboardingDto,
+            hasCompletedOnboarding: true,
+          },
         },
         { new: true },
       )
