@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { Country } from '../enums/location.enum';
-import { InterestCategory } from '../enums/interests.enum';
+import { Categories } from '../enums/interest-categories.enum';
 import { Language } from '../enums/language.enum';
 
 export type UserDocument = User & Document;
@@ -49,10 +49,10 @@ export class User extends Document {
   // Interests
   @Prop({
     type: [String],
-    enum: Object.values(InterestCategory),
+    enum: Object.values(Categories),
     default: [],
   })
-  interestsCategories: InterestCategory[];
+  interestsCategories: Categories[];
 
   @Prop({ type: [String], default: [] })
   interestsCommodities: string[];
@@ -128,6 +128,9 @@ export class User extends Document {
 
   @Prop({ trim: true })
   timezone?: string;
+
+  @Prop({ trim: true })
+  avatar: string;
 
   // Timestamps (added by schema options)
   createdAt: Date;

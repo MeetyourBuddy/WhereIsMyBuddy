@@ -25,7 +25,7 @@ export const useAuthStore = create<AuthState>()(
       setIsAuthenticated: (value) => set({ isAuthenticated: value }),
     }),
     {
-      name: "auth-storage", // unique name for localStorage key
+      name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

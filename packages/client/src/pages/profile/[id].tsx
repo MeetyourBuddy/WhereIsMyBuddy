@@ -4,48 +4,33 @@ import ProfileCard from "@/components/profile/ProfileCard";
 import Header from "@/components/common/Header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-
-// Mock data - in a real app, this would come from an API
-const mockProfiles = {
-  "1": {
-    id: "1",
-    name: "Jordan Lee",
-    username: "jordanlee",
-    bio: "Fitness enthusiast and coding mentor. Love hiking on weekends and teaching programming during weekdays.",
-    image:
-      "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    location: "San Francisco, CA",
-    interests: ["Fitness", "Coding", "Hiking", "Teaching", "Photography"],
-    joinedDate: "January 2023",
-    activityCount: 24,
-    buddyCount: 56,
-    achievements: [
-      { title: "30-Day Streak" },
-      { title: "Activity Creator" },
-      { title: "Super Connector" },
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "Taylor Swift",
-    username: "taylorswift",
-    bio: "Music lover, songwriter, and book club enthusiast. Looking to connect with creative minds!",
-    location: "Nashville, TN",
-    interests: ["Music", "Reading", "Writing", "Poetry", "Baking"],
-    joinedDate: "March 2023",
-    activityCount: 16,
-    buddyCount: 89,
-    achievements: [
-      { title: "Top Contributor" },
-      { title: "Community Favorite" },
-    ],
-  },
-};
+import { useAuthStore } from "@/store/auth.store";
 
 const ProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
+
+  const userProfile = {
+    "1": {
+      id: "1",
+      name: user?.name,
+      username: user?.email,
+      bio: user?.bio,
+      image: user?.avatar,
+      location: user?.city,
+      interests: user?.interestsCategories,
+      joinedDate: user?.createdAt,
+      activityCount: 24,
+      buddyCount: 56,
+      achievements: [
+        { title: "30-Day Streak" },
+        { title: "Activity Creator" },
+        { title: "Super Connector" },
+      ],
+    },
+  };
 
   // Check if user is coming from within the app or external link
   const isInternalNavigation =
@@ -53,7 +38,7 @@ const ProfilePage = () => {
 
   // In a real app, you would fetch profile data based on the ID
   const profile =
-    mockProfiles[id as keyof typeof mockProfiles] || mockProfiles["1"];
+    userProfile[id as keyof typeof userProfile] || userProfile["1"];
 
   const handleBack = () => {
     navigate(-1);

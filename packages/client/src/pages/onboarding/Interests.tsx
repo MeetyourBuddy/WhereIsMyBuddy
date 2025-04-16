@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -6,33 +5,42 @@ import { ArrowRight } from "lucide-react";
 
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import { Button } from "@/components/ui/button";
-
-// Predefined interests
-const interestCategories = [
-  {
-    name: "Fitness",
-    options: ["Running", "Yoga", "Weight Training", "Cycling", "Swimming", "HIIT", "Pilates", "Tennis"],
-  },
-  {
-    name: "Personal Growth",
-    options: ["Reading", "Meditation", "Journaling", "Learning Languages", "Coding", "Art", "Music", "Public Speaking"],
-  },
-  {
-    name: "Lifestyle",
-    options: ["Cooking", "Gardening", "Photography", "Travel", "Fashion", "DIY Projects", "Volunteering", "Board Games"],
-  },
-];
+import { interestCategories } from "@/lib/constants/interest-categories.constants";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const InterestSelection = () => {
   const navigate = useNavigate();
-  const [selectedInterests, setSelectedInterests] = React.useState<string[]>([]);
+  const [selectedInterests, setSelectedInterests] = React.useState<string[]>(
+    []
+  );
 
-  const toggleInterest = (interest: string) => {
-    setSelectedInterests((prev) =>
-      prev.includes(interest)
+  const [categories, setCategories] = React.useState<string[]>([]);
+
+  const toggleInterest = (interest: string, categoryName: string) => {
+    setSelectedInterests((prev) => {
+      const newInterests = prev.includes(interest)
         ? prev.filter((i) => i !== interest)
-        : [...prev, interest]
-    );
+        : [...prev, interest];
+
+      // Update categories based on whether any interests in the category are selected
+      setCategories((prevCategories) => {
+        const hasInterestsInCategory = interestCategories
+          .find((cat) => cat.name === categoryName)
+          ?.options.some((opt) => newInterests.includes(opt));
+
+        if (hasInterestsInCategory && !prevCategories.includes(categoryName)) {
+          return [...prevCategories, categoryName];
+        } else if (
+          !hasInterestsInCategory &&
+          prevCategories.includes(categoryName)
+        ) {
+          return prevCategories.filter((cat) => cat !== categoryName);
+        }
+        return prevCategories;
+      });
+
+      return newInterests;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -43,7 +51,11 @@ const InterestSelection = () => {
       return;
     }
 
-    console.log("Selected interests:", selectedInterests);
+    console.log("Selected interests:", selectedInterests, categories);
+
+    localStorage.setItem("userInterests", JSON.stringify(selectedInterests));
+    localStorage.setItem("userCategories", JSON.stringify(categories));
+
     toast.success("Interests saved!");
     navigate("/onboarding/profile-completion");
   };
@@ -61,30 +73,34 @@ const InterestSelection = () => {
       onBack={handleBack}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        {interestCategories.map((category) => (
-          <div key={category.name} className="space-y-3">
-            <h3 className="font-medium text-buddy-gray-800">{category.name}</h3>
-            <div className="flex flex-wrap gap-2">
-              {category.options.map((interest) => {
-                const isSelected = selectedInterests.includes(interest);
-                return (
-                  <button
-                    key={interest}
-                    type="button"
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      isSelected
-                        ? "bg-buddy-purple text-white"
-                        : "bg-buddy-gray-100 text-buddy-gray-700 hover:bg-buddy-gray-200"
-                    }`}
-                    onClick={() => toggleInterest(interest)}
-                  >
-                    {interest}
-                  </button>
-                );
-              })}
+        <ScrollArea className="h-[500px] items-center w-full">
+          {interestCategories.map((category) => (
+            <div key={category.name} className="space-y-3 items-center">
+              <h6 className="font-medium text-buddy-gray-800">
+                {category.name}
+              </h6>
+              <div className="flex flex-wrap gap-2">
+                {category.options.map((interest) => {
+                  const isSelected = selectedInterests.includes(interest);
+                  return (
+                    <button
+                      key={interest}
+                      type="button"
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        isSelected
+                          ? "bg-buddy-purple text-white"
+                          : "bg-buddy-gray-100 text-buddy-gray-700 hover:bg-buddy-gray-200"
+                      }`}
+                      onClick={() => toggleInterest(interest, category.name)}
+                    >
+                      {interest}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </ScrollArea>
 
         <div className="pt-4">
           <div className="text-sm text-buddy-gray-500 mb-4">

@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { Language } from '../enums/language.enum';
 import { Country } from '../enums/location.enum';
-import { InterestCategory } from '../enums/interests.enum';
+import { Categories } from '../enums/interest-categories.enum';
 
 export class UpdateUserDto {
   @ApiPropertyOptional()
@@ -52,8 +52,8 @@ export class UpdateUserDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsArray()
-  @IsEnum(InterestCategory, { each: true })
-  interestsCategories?: InterestCategory[];
+  @IsEnum(Categories, { each: true })
+  interestsCategories?: Categories[];
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -109,4 +109,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 }
