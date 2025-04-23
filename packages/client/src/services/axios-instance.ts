@@ -12,25 +12,13 @@ const axiosInstance: AxiosInstance = axios.create({
   ...API_CONFIG,
 });
 
-// Request interceptor
-axiosInstance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    const token = tokenService.getAccessToken();
-    if (token) {
-      config.headers.set("Authorization", `Bearer ${token}`);
-    }
-    return config;
-  },
-  (error: AxiosError) => Promise.reject(error)
-);
-
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
     const tokens = response.data?.data?.tokens;
-    console.log("tokens", tokens);
+    console.log("Response interceptor tokens:", tokens);
     if (tokens?.accessToken) {
-      console.log("setting tokens");
+      console.log("Setting tokens in response interceptor");
       tokenService.setTokens(tokens.accessToken, tokens.refreshToken);
     }
     return response;
@@ -50,6 +38,7 @@ axiosInstance.interceptors.response.use(
           throw new Error("No refresh token available");
         }
 
+        console.log("Attempting to refresh token");
         // Create a new instance for refresh token request to avoid interceptors
         const refreshResponse = await axios.post<AuthResponse>(
           `${API_CONFIG.baseURL}/auth/refresh`,
@@ -59,12 +48,15 @@ axiosInstance.interceptors.response.use(
 
         const { accessToken, refreshToken: newRefreshToken } =
           refreshResponse.data.data.tokens;
+        
+        console.log("Token refresh successful, setting new tokens");
         tokenService.setTokens(accessToken, newRefreshToken);
 
         // Update the original request with new token
         originalRequest.headers.set("Authorization", `Bearer ${accessToken}`);
         return axiosInstance(originalRequest);
       } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
         tokenService.clearTokens();
         window.location.href = "/signin";
         return Promise.reject(refreshError);
@@ -73,6 +65,24 @@ axiosInstance.interceptors.response.use(
 
     return Promise.reject(error);
   }
+);
+
+// Add a request interceptor to ensure token is set on each request
+axiosInstance.interceptors.request.use(
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    const token = tokenService.getAccessToken();
+    console.log("Request interceptor - token:", token ? "Found" : "Not found");
+    
+    if (token) {
+      console.log("Setting Authorization header from tokenService");
+      config.headers.set("Authorization", `Bearer ${token}`);
+    } else {
+      console.log("No token available for request");
+    }
+    
+    return config;
+  },
+  (error: AxiosError) => Promise.reject(error)
 );
 
 export default axiosInstance;

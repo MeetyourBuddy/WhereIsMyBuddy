@@ -4,9 +4,14 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { abortOnError: false });
+
+  // Add global prefix
+  app.setGlobalPrefix('api');
 
   // Swagger setup
   const config = new DocumentBuilder()
@@ -20,7 +25,7 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: ['http://localhost:8080', 'http://localhost:8081'],
+    origin: ['http://localhost:8080'],
     credentials: true,
   });
 
@@ -37,6 +42,9 @@ async function bootstrap() {
 
   // Add the TransformInterceptor globally
   app.useGlobalInterceptors(new TransformInterceptor());
+
+  // Serve static files from uploads directory
+  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
   await app.listen(process.env.PORT ?? 3000);
 }

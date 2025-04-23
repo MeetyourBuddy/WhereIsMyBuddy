@@ -73,10 +73,10 @@ const ShareableActivityCard = ({
   // Calculate category styles
   const getCategoryColor = (category: string) => {
     const categories: Record<string, string> = {
-      "fitness": "bg-buddy-green-light/60 text-buddy-green-dark border-buddy-green/20",
-      "coding": "bg-buddy-blue-light/60 text-buddy-blue-dark border-buddy-blue/20",
-      "music": "bg-buddy-purple-light/60 text-buddy-purple-dark border-buddy-purple/20",
-      "reading": "bg-buddy-orange-light/60 text-buddy-orange-dark border-buddy-orange/20",
+      "Fitness": "bg-buddy-green-light/60 text-buddy-green-dark border-buddy-green/20",
+      "Technology": "bg-buddy-blue-light/60 text-buddy-blue-dark border-buddy-blue/20",
+      "Music": "bg-buddy-purple-light/60 text-buddy-purple-dark border-buddy-purple/20",
+      "Reading": "bg-buddy-orange-light/60 text-buddy-orange-dark border-buddy-orange/20",
       "default": "bg-pastel-purple/40 text-buddy-purple border-buddy-purple/20"
     };
     
@@ -88,18 +88,18 @@ const ShareableActivityCard = ({
     const defaultIcon = "🏷️";
     
     const icons: Record<string, string> = {
-      "fitness": "🧘",
-      "coding": "💻",
-      "music": "🎵",
-      "reading": "📚",
-      "art": "🎨",
-      "cooking": "🍳",
-      "gaming": "🎮",
-      "languages": "🗣️",
-      "photography": "📷",
-      "writing": "✍️",
-      "hiking": "🥾",
-      "dancing": "💃",
+      "Fitness": "🧘",
+      "Technology": "💻",
+      "Music": "🎵",
+      "Reading": "📚",
+      "Art": "🎨",
+      "Cooking": "🍳",
+      "Gaming": "🎮",
+      "Language": "🗣️",
+      "Photography": "📷",
+      "Writing": "✍️",
+      "Hiking": "🥾",
+      "Dancing": "💃",
     };
     
     return icons[category.toLowerCase()] || defaultIcon;

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -19,7 +18,6 @@ import {
 import { Button } from "@/components/ui/button";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -36,6 +34,18 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { useActivity } from '@/hooks/use-activity';
+import { 
+  ActivityType, 
+  DurationUnit,
+  DayOfWeek,
+  CheckInType,
+  CheckInTypeConfig,
+  CheckinFrequencyUnit,
+  InterestCategory,
+  IActivity
+} from '@/types/activity-types';
+import { activityCategories, mapToBackendCategory } from '@/lib/constants/category-interests.constants';
 
 const STEPS = [
   {
@@ -65,95 +75,100 @@ const STEPS = [
   },
 ];
 
-const activityCategories = [
-  { value: "fitness", label: "Fitness & Exercise" },
-  { value: "coding", label: "Coding & Technology" },
-  { value: "reading", label: "Reading & Learning" },
-  { value: "art", label: "Art & Creativity" },
-  { value: "language", label: "Language Learning" },
-  { value: "meditation", label: "Meditation & Mindfulness" },
-  { value: "cooking", label: "Cooking & Nutrition" },
-  { value: "finance", label: "Finance & Investing" },
-  { value: "other", label: "Other" },
-];
+// const activityCategories = [
+//   { value: "fitness", label: "Fitness & Exercise" },
+//   { value: "coding", label: "Coding & Technology" },
+//   { value: "reading", label: "Reading & Learning" },
+//   { value: "art", label: "Art & Creativity" },
+//   { value: "language", label: "Language Learning" },
+//   { value: "meditation", label: "Meditation & Mindfulness" },
+//   { value: "cooking", label: "Cooking & Nutrition" },
+//   { value: "finance", label: "Finance & Investing" },
+//   { value: "other", label: "Other" },
+// ];
+
+interface CategoryOption {
+  label: string;
+  value: string;
+}
 
 const activityTags = [
   // Fitness & Exercise related tags
-  { value: "cardio", label: "Cardio", category: "fitness" },
-  { value: "strength", label: "Strength Training", category: "fitness" },
-  { value: "yoga", label: "Yoga", category: "fitness" },
-  { value: "running", label: "Running", category: "fitness" },
-  { value: "cycling", label: "Cycling", category: "fitness" },
-  { value: "hiit", label: "HIIT", category: "fitness" },
+  { value: "cardio", label: "Cardio", category: "Fitness" },
+  { value: "strength", label: "Strength Training", category: "Fitness" },
+  { value: "yoga", label: "Yoga", category: "Fitness" },
+  { value: "running", label: "Running", category: "Fitness" },
+  { value: "cycling", label: "Cycling", category: "Fitness" },
+  { value: "hiit", label: "HIIT", category: "Fitness" },
   
   // Coding & Technology related tags
-  { value: "webdev", label: "Web Development", category: "coding" },
-  { value: "mobile", label: "Mobile Development", category: "coding" },
-  { value: "data", label: "Data Science", category: "coding" },
-  { value: "ai", label: "AI & Machine Learning", category: "coding" },
-  { value: "devops", label: "DevOps", category: "coding" },
+  { value: "webdev", label: "Web Development", category: "Technology" },
+  { value: "mobile", label: "Mobile Development", category: "Technology" },
+  { value: "data", label: "Data Science", category: "Technology" },
+  { value: "ai", label: "AI & Machine Learning", category: "Technology" },
+  { value: "devops", label: "DevOps", category: "Technology" },
   
   // Reading & Learning related tags
-  { value: "fiction", label: "Fiction", category: "reading" },
-  { value: "nonfiction", label: "Non-Fiction", category: "reading" },
-  { value: "biography", label: "Biography", category: "reading" },
-  { value: "selfhelp", label: "Self-Help", category: "reading" },
-  { value: "research", label: "Research", category: "reading" },
+  { value: "fiction", label: "Fiction", category: "Reading" },
+  { value: "nonfiction", label: "Non-Fiction", category: "Reading" },
+  { value: "biography", label: "Biography", category: "Reading" },
+  { value: "selfhelp", label: "Self-Help", category: "Reading" },
+  { value: "research", label: "Research", category: "Reading" },
   
   // Art & Creativity related tags
-  { value: "drawing", label: "Drawing", category: "art" },
-  { value: "painting", label: "Painting", category: "art" },
-  { value: "crafts", label: "Crafts", category: "art" },
-  { value: "music", label: "Music", category: "art" },
-  { value: "writing", label: "Writing", category: "art" },
+  { value: "drawing", label: "Drawing", category: "Art" },
+  { value: "painting", label: "Painting", category: "Art" },
+  { value: "crafts", label: "Crafts", category: "Art" },
+  { value: "music", label: "Music", category: "Art" },
+  { value: "writing", label: "Writing", category: "Art" },
   
   // Language Learning related tags
-  { value: "beginner", label: "Beginner", category: "language" },
-  { value: "intermediate", label: "Intermediate", category: "language" },
-  { value: "advanced", label: "Advanced", category: "language" },
-  { value: "conversation", label: "Conversation Practice", category: "language" },
-  { value: "grammar", label: "Grammar Focus", category: "language" },
+  { value: "beginner", label: "Beginner", category: "Language" },
+  { value: "intermediate", label: "Intermediate", category: "Language" },
+  { value: "advanced", label: "Advanced", category: "Language" },
+  { value: "conversation", label: "Conversation Practice", category: "Language" },
+  { value: "grammar", label: "Grammar Focus", category: "Language" },
   
   // Meditation & Mindfulness related tags
-  { value: "breathing", label: "Breathing Techniques", category: "meditation" },
-  { value: "guided", label: "Guided Meditation", category: "meditation" },
-  { value: "mindfulness", label: "Mindfulness", category: "meditation" },
-  { value: "relaxation", label: "Relaxation", category: "meditation" },
+  { value: "breathing", label: "Breathing Techniques", category: "Meditation" },
+  { value: "guided", label: "Guided Meditation", category: "Meditation" },
+  { value: "mindfulness", label: "Mindfulness", category: "Meditation" },
+  { value: "relaxation", label: "Relaxation", category: "Meditation" },
   
   // Cooking & Nutrition related tags
-  { value: "vegan", label: "Vegan", category: "cooking" },
-  { value: "vegetarian", label: "Vegetarian", category: "cooking" },
-  { value: "baking", label: "Baking", category: "cooking" },
-  { value: "mealprep", label: "Meal Prep", category: "cooking" },
+  { value: "vegan", label: "Vegan", category: "Cooking" },
+  { value: "vegetarian", label: "Vegetarian", category: "Cooking" },
+  { value: "baking", label: "Baking", category: "Cooking" },
+  { value: "mealprep", label: "Meal Prep", category: "Cooking" },
   { value: "healthy", label: "Healthy Eating", category: "cooking" },
   
   // Finance & Investing related tags
-  { value: "budgeting", label: "Budgeting", category: "finance" },
-  { value: "investing", label: "Investing", category: "finance" },
-  { value: "stocks", label: "Stocks", category: "finance" },
-  { value: "crypto", label: "Cryptocurrency", category: "finance" },
-  { value: "saving", label: "Saving", category: "finance" },
+  { value: "budgeting", label: "Budgeting", category: "Finance" },
+  { value: "investing", label: "Investing", category: "Finance" },
+  { value: "stocks", label: "Stocks", category: "Finance" },
+  { value: "crypto", label: "Cryptocurrency", category: "Finance" },
+  { value: "saving", label: "Saving", category: "Finance" },
   
   // General tags
-  { value: "beginner", label: "Beginner-Friendly", category: "general" },
-  { value: "challenge", label: "Challenge", category: "general" },
-  { value: "social", label: "Social", category: "general" },
-  { value: "solo", label: "Solo", category: "general" },
-  { value: "community", label: "Community", category: "general" },
+  { value: "beginner", label: "Beginner-Friendly", category: "General" },
+  { value: "challenge", label: "Challenge", category: "General" },
+  { value: "social", label: "Social", category: "General" },
+  { value: "solo", label: "Solo", category: "General" },
+  { value: "community", label: "Community", category: "General" },
   { value: "accountability", label: "Accountability", category: "general" },
 ];
 
 // Default activity banner images
 const defaultBannerImages = [
-  { value: "fitness-banner", label: "Fitness Banner", category: "fitness", src: "/placeholder.svg" },
-  { value: "coding-banner", label: "Coding Banner", category: "coding", src: "/placeholder.svg" },
-  { value: "reading-banner", label: "Reading Banner", category: "reading", src: "/placeholder.svg" },
-  { value: "art-banner", label: "Art Banner", category: "art", src: "/placeholder.svg" },
-  { value: "language-banner", label: "Language Banner", category: "language", src: "/placeholder.svg" },
-  { value: "meditation-banner", label: "Meditation Banner", category: "meditation", src: "/placeholder.svg" },
-  { value: "cooking-banner", label: "Cooking Banner", category: "cooking", src: "/placeholder.svg" },
-  { value: "finance-banner", label: "Finance Banner", category: "finance", src: "/placeholder.svg" },
-  { value: "general-banner", label: "General Banner", category: "other", src: "/placeholder.svg" },
+  { value: "fitness-banner", label: "Fitness Banner", category: "Fitness", src: "/placeholder.svg" },
+  { value: "coding-banner", label: "Coding Banner", category: "Technology", src: "/placeholder.svg" },
+  { value: "reading-banner", label: "Reading Banner", category: "Reading", src: "/placeholder.svg" },
+  { value: "art-banner", label: "Art Banner", category: "Art", src: "/placeholder.svg" },
+  { value: "language-banner", label: "Language Banner", category: "Language", src: "/placeholder.svg" },
+  { value: "meditation-banner", label: "Meditation Banner", category: "Meditation", src: "/placeholder.svg" },
+  { value: "cooking-banner", label: "Cooking Banner", category: "Cooking", src: "/placeholder.svg" },
+  { value: "finance-banner", label: "Finance Banner", category: "Finance", src: "/placeholder.svg" },
+  { value: "general-banner", label: "General Banner", category: "Other", src: "/placeholder.svg" },
 ];
 
 // Default system rules
@@ -176,6 +191,17 @@ const defaultSystemRules = [
     description: "Commit to regular and active participation. If you cannot attend, notify the group in advance.", 
     isDefault: true
   },
+];
+
+const defaultGoals = [
+  "Complete daily/weekly check-ins",
+  "Achieve personal milestones",
+  "Support and motivate others",
+  "Learn and improve consistently",
+  "Build healthy habits",
+  "Track progress regularly",
+  "Share experiences with the group",
+  "Meet activity completion targets"
 ];
 
 interface ActivityFormData {
@@ -205,6 +231,8 @@ interface ActivityFormData {
   bannerImage: string;
   useBannerUpload: boolean;
   bannerImageFile: File | null;
+  checkinDatesOfMonth: number[];
+  allowedCheckInTypes: CheckInTypeConfig[];
 }
 
 const CreateActivity = () => {
@@ -232,7 +260,19 @@ const CreateActivity = () => {
     bannerImage: "",
     useBannerUpload: false,
     bannerImageFile: null,
+    checkinDatesOfMonth: [],
+    allowedCheckInTypes: [{
+      type: CheckInType.PHOTO,
+      validation: {
+        guidelines: "Upload a clear photo of your progress",
+        requiredElements: ["timestamp"]
+      },
+      isEnabled: true,
+      description: "Photo check-in"
+    }]
   });
+
+  const { createActivity, isLoading } = useActivity();
 
   // Get available tags based on selected category
   const getAvailableTags = () => {
@@ -248,32 +288,169 @@ const CreateActivity = () => {
   
   // Get available banner images based on selected category
   const getAvailableBanners = () => {
-    if (!formData.category) {
-      return defaultBannerImages.filter(banner => banner.category === "other");
-    }
-    
+    // Make sure this function always returns an array, even if empty
     return [
-      ...defaultBannerImages.filter(banner => banner.category === formData.category),
-      defaultBannerImages.find(banner => banner.category === "other")!
+      { value: "Yoga", label: "Yoga", src: "/images/banners/yoga.jpg" },
+      { value: "Technology", label: "Technology", src: "/images/banners/coding.jpg" },
+      { value: "Reading", label: "Reading", src: "/images/banners/reading.jpg" },
+      { value: "Fitness", label: "Fitness", src: "/images/banners/fitness.jpg" },
+      { value: "Meditation", label: "Meditation", src: "/images/banners/meditation.jpg" },
+      { value: "Cooking", label: "Cooking", src: "/images/banners/cooking.jpg" },
     ];
   };
 
   const handleChange = (field: keyof ActivityFormData, value: any) => {
+    console.log(`Setting ${field} to:`, value); // Debug log
+    if (field === 'category') {
+      console.log('Selected category:', value);
+    }
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
-    if (currentStep === 0 && (!formData.name || !formData.category)) {
-      toast.error("Please fill in all required fields");
+  const handleContinue = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!validateCurrentStep()) {
       return;
     }
 
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      // Submit the form
-      toast.success("Activity created successfully!");
-      navigate("/activities");
+      handleSubmit(e as any);
+    }
+  };
+
+  // Add validation function
+  const validateCurrentStep = (): boolean => {
+    switch (currentStep) {
+      case 0: // Basic Information
+        if (!formData.name.trim()) {
+          toast.error("Activity name is required");
+          return false;
+        }
+        if (!formData.category) {
+          toast.error("Please select a category");
+          return false;
+        }
+        return true;
+
+      case 1: // Schedule
+        if (!formData.startDate) {
+          toast.error("Start date is required");
+          return false;
+        }
+        if (formData.frequency === 'weekly' && formData.daysOfWeek.length === 0) {
+          toast.error("Please select at least one day for weekly check-ins");
+          return false;
+        }
+        if (formData.frequency === 'monthly' && formData.checkinDatesOfMonth.length === 0) {
+          toast.error("Please select at least one date for monthly check-ins");
+          return false;
+        }
+        return true;
+
+      case 2: // Visibility
+        if (!formData.visibility) {
+          toast.error("Please select activity visibility");
+          return false;
+        }
+        return true;
+
+      case 3: // Goals
+        if (formData.goals.length === 0) {
+          toast.error("Please add at least one goal");
+          return false;
+        }
+        return true;
+
+      default:
+        return true;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateCurrentStep()) {
+      return;
+    }
+
+    try {
+      console.log('Form data category:', formData.category);
+
+      if (!formData.category) {
+        toast.error("Please select a category");
+        return;
+      }
+
+      const activityData = {
+        title: formData.name,
+        description: formData.description,
+        category: mapToBackendCategory(formData.category),
+        type: formData.visibility as ActivityType,
+        proposedDuration: parseInt(formData.duration),
+        durationUnit: DurationUnit.MONTHS,
+        maxSize: 10,
+        tags: formData.tags,
+        rules: formData.rules.map(rule => ({
+          title: rule.title,
+          description: rule.description,
+          isDefault: rule.isDefault
+        })),
+        startDate: formData.startDate,
+        checkinFrequencyUnit: formData.frequency as CheckinFrequencyUnit,
+        checkinFrequency: formData.daysOfWeek.length,
+        checkinDays: formData.daysOfWeek.map(day => day.toLowerCase() as DayOfWeek),
+        allowedCheckInTypes: formData.allowedCheckInTypes,
+      };
+
+      console.log('Creating activity with data:', activityData); // Debug log
+
+      createActivity(activityData as unknown as IActivity, {
+        onSuccess: (response) => {
+          if (response.success && response.data?.activity) {
+            console.log('Activity created successfully:', response.data.activity);
+            
+            // Get the ID using a type assertion to avoid TypeScript errors
+            const activity = response.data.activity;
+            const activityId = (activity as any)._id;
+            
+            console.log('Activity ID:', activityId);
+            
+            if (!activityId) {
+              console.error('No activity ID found in response:', response.data.activity);
+              toast.error('Activity created but ID is missing');
+              return;
+            }
+            
+            toast.success('Activity created successfully!');
+            
+            // Use a timeout to ensure the toast is visible before navigation
+            setTimeout(() => {
+              console.log('Navigating to activity:', activityId);
+              
+              // Make sure the ID is a string
+              const idString = String(activityId);
+              
+              // Navigate to the activity page
+              navigate(`/activities/${idString}`, {
+                replace: true
+              });
+            }, 1000);
+          } else {
+            console.warn('Activity creation response missing data:', response);
+            toast.error('Activity created but response data is incomplete');
+          }
+        },
+        onError: (error: any) => {
+          console.error('Activity creation error:', error);
+          toast.error(error.message || 'Failed to create activity');
+        }
+      });
+    } catch (error: any) {
+      console.error('Activity creation error:', error);
+      toast.error(error.message || "Failed to create activity");
     }
   };
 
@@ -310,31 +487,40 @@ const CreateActivity = () => {
   const toggleTag = (tag: string) => {
     setFormData((prev) => {
       const tags = [...prev.tags];
-      if (tags.includes(tag)) {
-        return { ...prev, tags: tags.filter(t => t !== tag) };
+      // Check if tag exists (case insensitive)
+      const tagIndex = tags.findIndex(t => t.toLowerCase() === tag.toLowerCase());
+      
+      if (tagIndex >= 0) {
+        // Remove tag if it exists
+        return { ...prev, tags: tags.filter((_, i) => i !== tagIndex) };
       } else {
+        // Add tag if it doesn't exist
         return { ...prev, tags: [...tags, tag] };
       }
     });
   };
 
-  const addCustomGoal = () => {
-    if (formData.customGoal.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        goals: [...prev.goals, prev.customGoal],
-        customGoal: "",
-      }));
+  const handleAddCustomTag = () => {
+    const newTag = formData.customTag.trim();
+    if (!newTag) return;
+    
+    // Check if tag already exists (case insensitive)
+    if (formData.tags.some(tag => tag.toLowerCase() === newTag.toLowerCase())) {
+      toast.error("This tag already exists");
+      return;
     }
+    
+    setFormData(prev => ({
+      ...prev,
+      tags: [...prev.tags, newTag],
+      customTag: '' // Reset custom tag input
+    }));
   };
 
-  const addCustomTag = () => {
-    if (formData.customTag.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, prev.customTag],
-        customTag: "",
-      }));
+  const handleTagKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddCustomTag();
     }
   };
 
@@ -406,14 +592,21 @@ const CreateActivity = () => {
               </Label>
               <Select 
                 value={formData.category} 
-                onValueChange={(value) => handleChange("category", value)}
+                onValueChange={(value: string) => {
+                  if (!value) return; // Prevent empty selection
+                  console.log('Category selected:', value);
+                  handleChange("category", value);
+                }}
               >
                 <SelectTrigger className="mt-1 bg-white/70 border-pastel-purple/30 focus:ring-buddy-purple-light transition-all duration-200">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent className="bg-white/90 backdrop-blur-sm border-pastel-purple/30">
                   {activityCategories.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
+                    <SelectItem 
+                      key={category.value} 
+                      value={category.value}
+                    >
                       {category.label}
                     </SelectItem>
                   ))}
@@ -429,40 +622,57 @@ const CreateActivity = () => {
                 Select tags to help others discover your activity
               </p>
 
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {getAvailableTags().map((tag) => (
-                  <div 
-                    key={tag.value} 
-                    className={cn(
-                      "flex items-center space-x-2 p-2 rounded-lg transition-all duration-200 cursor-pointer",
-                      formData.tags.includes(tag.value) 
-                        ? "bg-pastel-purple text-buddy-gray-800" 
-                        : "bg-white/50 hover:bg-white/80 border border-pastel-purple/20"
-                    )}
-                    onClick={() => toggleTag(tag.value)}
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {getAvailableTags().map((tag) => (
+                    <Button
+                      key={tag.value}
+                      type="button"
+                      variant={formData.tags.includes(tag.value) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleTag(tag.value)}
+                      className="rounded-full"
+                    >
+                      {tag.label}
+                    </Button>
+                  ))}
+                </div>
+                
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add custom tag"
+                    value={formData.customTag}
+                    onChange={(e) => handleChange('customTag', e.target.value)}
+                    onKeyPress={handleTagKeyPress}
+                  />
+                  <Button 
+                    type="button"
+                    onClick={handleAddCustomTag}
+                    disabled={!formData.customTag.trim()}
                   >
-                    <Tag className="h-4 w-4 text-buddy-gray-600" />
-                    <span className="text-sm">{tag.label}</span>
-                  </div>
-                ))}
-              </div>
+                    Add
+                  </Button>
+                </div>
 
-              <div className="flex gap-2 mt-1">
-                <Input
-                  placeholder="Add a custom tag"
-                  value={formData.customTag}
-                  onChange={(e) => handleChange("customTag", e.target.value)}
-                  className="flex-1 bg-white/70 border-pastel-purple/30 focus-visible:ring-buddy-purple-light transition-all duration-200"
-                />
-                <Button 
-                  type="button" 
-                  onClick={addCustomTag}
-                  disabled={!formData.customTag.trim()}
-                  className="bg-buddy-purple hover:bg-buddy-purple-dark"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add
-                </Button>
+                {formData.tags.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium mb-2">Selected Tags:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.tags.map((tag) => (
+                        <div
+                          key={tag}
+                          className="flex items-center gap-1 bg-buddy-purple/10 text-buddy-purple px-3 py-1 rounded-full"
+                        >
+                          <span>{tag}</span>
+                          <X
+                            className="h-4 w-4 cursor-pointer hover:text-buddy-purple-dark"
+                            onClick={() => toggleTag(tag)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -487,34 +697,38 @@ const CreateActivity = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {getAvailableBanners().map((banner) => (
                     <div
-                      key={banner.value}
+                      key={banner?.value || `banner-${Math.random()}`}
                       className={cn(
                         "relative border rounded-xl overflow-hidden cursor-pointer transition-all duration-200 aspect-video",
-                        formData.bannerImage === banner.value && !formData.useBannerUpload
+                        formData.bannerImage === banner?.value && !formData.useBannerUpload
                           ? "ring-2 ring-buddy-purple border-transparent"
                           : "border-pastel-purple/30 hover:border-pastel-purple/60"
                       )}
                       onClick={() => 
                         setFormData(prev => ({
                           ...prev, 
-                          bannerImage: banner.value,
+                          bannerImage: banner?.value || "",
                           useBannerUpload: false,
                           bannerImageFile: null
                         }))
                       }
                     >
-                      <img 
-                        src={banner.src} 
-                        alt={banner.label}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2">
-                        {banner.label}
-                      </div>
-                      {formData.bannerImage === banner.value && !formData.useBannerUpload && (
-                        <div className="absolute top-2 right-2 bg-buddy-purple rounded-full p-1">
-                          <Check className="h-4 w-4 text-white" />
-                        </div>
+                      {banner && (
+                        <>
+                          <img 
+                            src={banner.src} 
+                            alt={banner.label || "Banner image"}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2">
+                            {banner.label || "Banner"}
+                          </div>
+                          {formData.bannerImage === banner.value && !formData.useBannerUpload && (
+                            <div className="absolute top-2 right-2 bg-buddy-purple rounded-full p-1">
+                              <Check className="h-4 w-4 text-white" />
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
@@ -591,7 +805,10 @@ const CreateActivity = () => {
                   <CalendarComponent
                     mode="single"
                     selected={formData.startDate}
-                    onSelect={(date) => handleChange("startDate", date)}
+                    onSelect={(date) => {
+                      handleChange("startDate", date);
+                    }}
+                    disabled={(date) => date < new Date()}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
@@ -603,26 +820,20 @@ const CreateActivity = () => {
               <Label className="text-buddy-gray-700 font-medium">
                 Duration
               </Label>
-              <RadioGroup
+              <Select
                 value={formData.duration}
                 onValueChange={(value) => handleChange("duration", value)}
-                className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2"
               >
-                {[
-                  { value: "1month", label: "1 Month" },
-                  { value: "3months", label: "3 Months" },
-                  { value: "6months", label: "6 Months" },
-                  { value: "ongoing", label: "Ongoing" },
-                  { value: "custom", label: "Custom" }
-                ].map((option) => (
-                  <div key={option.value} className="flex items-center space-x-2 bg-white/50 p-3 rounded-xl border border-pastel-purple/20 hover:border-pastel-purple/40 hover:bg-white/80 transition-all duration-200">
-                    <RadioGroupItem value={option.value} id={`duration-${option.value}`} className="text-buddy-purple" />
-                    <Label htmlFor={`duration-${option.value}`} className="cursor-pointer w-full">
-                      {option.label}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+                <SelectTrigger className="mt-1 bg-white/70 border-pastel-purple/30">
+                  <SelectValue placeholder="Select duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1month">1 Month</SelectItem>
+                  <SelectItem value="3months">3 Months</SelectItem>
+                  <SelectItem value="6months">6 Months</SelectItem>
+                  <SelectItem value="12months">12 Months</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -637,8 +848,7 @@ const CreateActivity = () => {
                 {[
                   { value: "daily", label: "Daily" },
                   { value: "weekly", label: "Weekly" },
-                  { value: "monthly", label: "Monthly" },
-                  { value: "custom", label: "Custom" }
+                  { value: "monthly", label: "Monthly" }
                 ].map((option) => (
                   <div key={option.value} className="flex items-center space-x-2 bg-white/50 p-3 rounded-xl border border-pastel-purple/20 hover:border-pastel-purple/40 hover:bg-white/80 transition-all duration-200">
                     <RadioGroupItem value={option.value} id={`frequency-${option.value}`} className="text-buddy-purple" />
@@ -675,6 +885,46 @@ const CreateActivity = () => {
                       />
                       <Label htmlFor={`day-${day}`} className="capitalize cursor-pointer w-full">
                         {day}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {formData.frequency === "monthly" && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                transition={{ duration: 0.3 }}
+              >
+                <Label className="text-buddy-gray-700 font-medium mb-2 block">
+                  Check-in Dates
+                </Label>
+                <div className="grid grid-cols-7 gap-2 p-4 bg-white/50 rounded-xl border border-pastel-purple/20">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((date) => (
+                    <div key={date} className={cn(
+                      "flex items-center justify-center p-2 rounded-lg transition-all duration-200",
+                      formData.checkinDatesOfMonth.includes(date)
+                        ? "bg-pastel-purple text-buddy-gray-800"
+                        : "hover:bg-white/80"
+                    )}>
+                      <Checkbox
+                        id={`date-${date}`}
+                        checked={formData.checkinDatesOfMonth.includes(date)}
+                        onCheckedChange={(checked) => {
+                          const newDates = checked
+                            ? [...formData.checkinDatesOfMonth, date]
+                            : formData.checkinDatesOfMonth.filter(d => d !== date);
+                          handleChange("checkinDatesOfMonth", newDates);
+                        }}
+                        className="hidden"
+                      />
+                      <Label 
+                        htmlFor={`date-${date}`} 
+                        className="cursor-pointer w-full text-center"
+                      >
+                        {date}
                       </Label>
                     </div>
                   ))}
@@ -860,25 +1110,19 @@ const CreateActivity = () => {
               </p>
 
               <div className="space-y-3">
-                {[
-                  "Read 10 pages daily",
-                  "Exercise for 30 minutes",
-                  "Complete one coding challenge",
-                  "Practice for 20 minutes",
-                  "Track calories consumed"
-                ].map((goal) => (
-                  <div 
-                    key={goal} 
+                {defaultGoals.map((goal) => (
+                  <div
+                    key={goal}
                     className={cn(
                       "flex items-start space-x-3 p-3 rounded-xl transition-all duration-200",
-                      formData.goals.includes(goal) 
+                      formData.goals.includes(goal)
                         ? "bg-pastel-purple/70" 
                         : "bg-white/50 hover:bg-white/80 border border-pastel-purple/20"
                     )}
                   >
-                    <Checkbox 
+                    <Checkbox
                       id={`goal-${goal}`} 
-                      checked={formData.goals.includes(goal)} 
+                      checked={formData.goals.includes(goal)}
                       onCheckedChange={() => toggleGoal(goal)}
                       className="mt-0.5 text-buddy-purple"
                     />
@@ -902,9 +1146,9 @@ const CreateActivity = () => {
                   onChange={(e) => handleChange("customGoal", e.target.value)}
                   className="flex-1 bg-white/70 border-pastel-purple/30 focus-visible:ring-buddy-purple-light transition-all duration-200"
                 />
-                <Button 
-                  type="button" 
-                  onClick={addCustomGoal}
+                <Button
+                  type="button"
+                  onClick={() => toggleGoal(formData.customGoal)}
                   disabled={!formData.customGoal.trim()}
                   className="bg-buddy-purple hover:bg-buddy-purple-dark"
                 >
@@ -960,7 +1204,7 @@ const CreateActivity = () => {
             
             <h3 className="text-xl font-semibold text-center text-buddy-gray-800">
               Activity Summary
-            </h3>
+              </h3>
             
             <div className="bg-white/70 backdrop-blur-sm rounded-xl p-5 space-y-4 border border-pastel-purple/20">
               {/* Banner preview if selected */}
@@ -998,7 +1242,7 @@ const CreateActivity = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-pastel-yellow/50 p-3 rounded-lg">
                   <p className="text-sm text-buddy-gray-500">Start Date</p>
@@ -1016,10 +1260,10 @@ const CreateActivity = () => {
                   <p className="text-sm text-buddy-gray-500">Frequency</p>
                   <p className="font-medium text-buddy-gray-800 capitalize">
                     {formData.frequency}
-                  </p>
+                    </p>
                 </div>
               </div>
-              
+
               {formData.tags.length > 0 && (
                 <div className="bg-white/70 p-3 rounded-lg">
                   <p className="text-sm text-buddy-gray-500 mb-2">Tags</p>
@@ -1045,7 +1289,7 @@ const CreateActivity = () => {
                       <li key={index}>{goal}</li>
                     ))}
                   </ul>
-                </div>
+                  </div>
               )}
               
               {formData.rules.length > defaultSystemRules.length && (
@@ -1054,9 +1298,9 @@ const CreateActivity = () => {
                   <ul className="list-disc pl-5 text-buddy-gray-700 space-y-1">
                     {formData.rules.filter(rule => !rule.isDefault).map((rule) => (
                       <li key={rule.id}>{rule.title}</li>
-                    ))}
-                  </ul>
-                </div>
+                      ))}
+                    </ul>
+                  </div>
               )}
               
               {formData.description && (
@@ -1065,7 +1309,7 @@ const CreateActivity = () => {
                   <p className="text-buddy-gray-800">{formData.description}</p>
                 </div>
               )}
-            </div>
+              </div>
             
             <div className="text-center">
               <p className="text-buddy-gray-600">
@@ -1114,7 +1358,7 @@ const CreateActivity = () => {
                         onClick={() => {
                           // Allow navigation to previous steps but not ahead
                           if (index <= currentStep) {
-                            setCurrentStep(index);
+                              setCurrentStep(index);
                           }
                         }}
                       >
@@ -1156,7 +1400,7 @@ const CreateActivity = () => {
               className="bg-gradient-to-br from-white/90 to-pastel-blue/30 backdrop-blur-sm border border-white/50 shadow-md"
             >
               <Card.Content className="p-6">
-                <form>
+                <form onSubmit={(e) => e.preventDefault()}>
                   {renderStepContent()}
                   
                   <div className="h-px bg-gradient-to-r from-transparent via-buddy-gray-200 to-transparent my-6"></div>
@@ -1172,11 +1416,16 @@ const CreateActivity = () => {
                       {currentStep === 0 ? "Cancel" : "Back"}
                     </Button>
                     <Button 
-                      type="button" 
-                      onClick={handleNext}
+                      type="button"
+                      onClick={handleContinue}
+                      disabled={isLoading}
                       className="bg-gradient-to-r from-buddy-purple to-buddy-purple-light hover:from-buddy-purple-dark hover:to-buddy-purple text-white transition-all duration-300"
                     >
-                      {currentStep === STEPS.length - 1 ? "Create Activity" : "Continue"}
+                      {isLoading && currentStep === STEPS.length - 1 ? (
+                        "Creating..."
+                      ) : (
+                        currentStep === STEPS.length - 1 ? "Create Activity" : "Continue"
+                      )}
                       {currentStep !== STEPS.length - 1 && <ArrowRight className="w-4 h-4 ml-2" />}
                     </Button>
                   </div>

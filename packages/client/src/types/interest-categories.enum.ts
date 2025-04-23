@@ -1,0 +1,22 @@
+export enum InterestCategory {
+  Technology = 'Technology',
+  Science = 'Science',
+  Arts = 'Arts',
+  Sports = 'Sports',
+  Music = 'Music',
+  Travel = 'Travel',
+  FoodAndCooking = 'Food & Cooking',
+  Fashion = 'Fashion',
+  Gaming = 'Gaming',
+  Books = 'Books',
+  Movies = 'Movies',
+  Fitness = 'Fitness',
+  Photography = 'Photography',
+  Education = 'Education',
+  Business = 'Business',
+  Nature = 'Nature',
+  Pets = 'Pets',
+  DIY = 'DIY',
+  Writing = 'Writing',
+  Other = 'Other'
+} 
