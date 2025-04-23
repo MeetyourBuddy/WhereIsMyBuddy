@@ -144,4 +144,12 @@ export class UsersService {
       data: updatedUser,
     };
   }
+
+  async findById(id: string): Promise<UserDocument> {
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
 }

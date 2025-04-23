@@ -73,12 +73,7 @@ export const createActivitySchema = z.object({
   checkinFrequency: z.number().min(1, 'Check-in frequency must be at least 1'),
 
   checkinFrequencyUnit: z.enum(
-    [
-      CheckinFrequency.DAILY,
-      CheckinFrequency.WEEKLY,
-      CheckinFrequency.MONTHLY,
-      CheckinFrequency.OTHER
-    ],
+    [CheckinFrequency.DAILY, CheckinFrequency.WEEKLY, CheckinFrequency.MONTHLY],
     {
       errorMap: () => ({ message: 'Please select a valid frequency unit' })
     }

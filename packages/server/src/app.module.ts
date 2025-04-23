@@ -13,7 +13,8 @@ import { JwtStrategy } from './users/auth/strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './users/auth/strategies/refresh-token.strategy';
 import { GoogleStrategy } from './users/auth/strategies/google.strategy';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { ActivitiesModule } from './activities/activities.module';
+import { ActivityModule } from './activities/activity.module';
+import { AuthModule } from './users/auth/auth.module';
 
 @Module({
   imports: [
@@ -37,20 +38,17 @@ import { ActivitiesModule } from './activities/activities.module';
         },
       }),
     }),
-    ActivitiesModule,
+    ActivityModule,
+    AuthModule,
   ],
-  controllers: [UsersController, AuthController],
+  controllers: [UsersController],
   providers: [
     UsersService,
-    AuthService,
-    JwtStrategy,
-    RefreshTokenStrategy,
-    GoogleStrategy,
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
     },
   ],
-  exports: [UsersService, AuthService],
+  exports: [UsersService],
 })
 export class AppModule {}

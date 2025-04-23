@@ -1,28 +1,37 @@
-export const interestCategories = [
-  { label: 'Technology', value: 'Technology' },
-  { label: 'Science', value: 'Science' },
-  { label: 'Arts', value: 'Arts' },
-  { label: 'Sports', value: 'Sports' },
-  { label: 'Music', value: 'Music' },
-  { label: 'Travel', value: 'Travel' },
-  { label: 'Food & Cooking', value: 'Food & Cooking' },
-  { label: 'Fashion', value: 'Fashion' },
-  { label: 'Gaming', value: 'Gaming' },
-  { label: 'Books', value: 'Books' },
-  { label: 'Movies', value: 'Movies' },
-  { label: 'Fitness', value: 'Fitness' },
-  { label: 'Photography', value: 'Photography' },
-  { label: 'Education', value: 'Education' },
-  { label: 'Business', value: 'Business' },
-  { label: 'Nature', value: 'Nature' },
-  { label: 'Pets', value: 'Pets' },
-  { label: 'DIY', value: 'DIY' },
-  { label: 'Writing', value: 'Writing' }
+import { InterestCategory } from '@/types/interest-categories.enum';
+
+export const activityCategories = [
+  { value: "Fitness", label: "Fitness & Exercise" },
+  { value: "Technology", label: "Coding & Technology" },
+  { value: "Reading", label: "Reading & Learning" },
+  { value: "Art", label: "Art & Creativity" },
+  { value: "Language", label: "Language Learning" },
+  { value: "Meditation", label: "Meditation & Mindfulness" },
+  { value: "Cooking", label: "Cooking & Nutrition" },
+  { value: "Finance", label: "Finance & Investing" },
+  { value: "Other", label: "Other" }
 ] as const;
 
-export type InterestCategory = (typeof interestCategories)[number]['value'];
+// Create a mapping for backend categories
+const categoryMapping: Record<string, InterestCategory> = {
+  Fitness: InterestCategory.Fitness,
+  Technology: InterestCategory.Technology,
+  Reading: InterestCategory.Education,
+  Art: InterestCategory.Arts,
+  Language: InterestCategory.Education,
+  Meditation: InterestCategory.Fitness,
+  Cooking: InterestCategory.FoodAndCooking,
+  Finance: InterestCategory.Business,
+  Other: InterestCategory.Other
+};
 
-export const commoditiesByCategory: Record<
+export const mapToBackendCategory = (frontendCategory: string): InterestCategory => {
+  return categoryMapping[frontendCategory] || InterestCategory.Other;
+};
+
+export type ActivityCategory = typeof activityCategories[number]['value'];
+
+export const CommoditiesByCategory: Record<
   InterestCategory,
   Array<{ label: string; value: string }>
 > = {
@@ -193,6 +202,11 @@ export const commoditiesByCategory: Record<
     { label: 'Copywriting', value: 'Copywriting' },
     { label: 'Blog Writing', value: 'Blog Writing' },
     { label: 'Freelance Writing', value: 'Freelance Writing' }
+  ],
+  [InterestCategory.Other]: [
+    { label: 'Miscellaneous', value: 'Miscellaneous' },
+    { label: 'General Interest', value: 'General Interest' },
+    { label: 'Other Activities', value: 'Other Activities' }
   ]
 };
 
@@ -205,14 +219,14 @@ export const getCommoditiesForCategory = (
   category: InterestCategory | InterestCategory[]
 ): Commodity[] => {
   if (Array.isArray(category)) {
-    return category.flatMap((cat) => commoditiesByCategory[cat]);
+    return category.flatMap((cat) => CommoditiesByCategory[cat]);
   }
-  return commoditiesByCategory[category];
+  return CommoditiesByCategory[category];
 };
 
 export const isCommodityInCategory = (
   category: InterestCategory,
   commodityValue: string
 ): boolean => {
-  return commoditiesByCategory[category].some((commodity) => commodity.value === commodityValue);
+  return CommoditiesByCategory[category].some((commodity) => commodity.value === commodityValue);
 };

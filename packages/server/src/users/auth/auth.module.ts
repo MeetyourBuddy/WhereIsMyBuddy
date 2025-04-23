@@ -19,7 +19,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
         secret: configService.get<string>('JWT_ACCESS_SECRET'),
         signOptions: {
           expiresIn:
-            configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+            configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '3600s',
         },
       }),
       inject: [ConfigService],

@@ -45,7 +45,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/common/ui/
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { useActivityStore } from '@/providers/store/use-activity-store';
+import { useActivity } from '@/hooks/use-activity';
 import { IActivity } from '@/types/activity-types';
 import { toast } from '@/lib/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -89,8 +89,9 @@ interface Rule {
 }
 
 export const EditActivityForm = ({ id }: { id: string }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const { getActivity, updateActivity } = useActivityStore();
+  const { getActivity, updateActivity } = useActivity();
+  const { data: activityData, isLoading } = getActivity(id);
+  const [isLoadingForm, setIsLoadingForm] = useState(true);
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
@@ -122,98 +123,54 @@ export const EditActivityForm = ({ id }: { id: string }) => {
       categories: [],
       tags: [],
       rules: [{ rule: '', isDefault: false }],
-      allowedCheckInTypes: ['photo']
+      allowedCheckInTypes: {
+        photo: {
+          description: 'Photo',
+          type: 'photo',
+          isEnabled: true
+        }
+      }
     }
   });
 
-  // Add useEffect to fetch activity data
   useEffect(() => {
-    const fetchActivity = async () => {
-      if (!id) return;
+    if (activityData?.success && activityData.data?.activity) {
+      const activity = activityData.data.activity;
+      form.reset({
+        title: activity.title,
+        description: activity.description,
+        proposedDuration: activity.proposedDuration,
+        durationUnit: activity.durationUnit,
+        maxSize: activity.maxSize,
+        type: activity.type,
+        checkinFrequency: activity.checkinFrequency,
+        checkinFrequencyUnit: activity.checkinFrequencyUnit,
+        checkinDays: activity.checkinDays,
+        checkinDateOfMonth: activity.checkinDateOfMonth,
+        checkinDayOfWeek: activity.checkinDayOfWeek,
+        checkinWeekOfMonth: activity.checkinWeekOfMonth,
+        bannerImage: activity.bannerImage,
+        startDate: new Date(activity.startDate),
+        joinType: activity.joinType,
+        categories: activity.categories,
+        tags: activity.tags,
+        rules: activity.rules,
+        allowedCheckInTypes: activity.allowedCheckInTypes
+      });
 
-      try {
-        const activity = await getActivity(id);
-        if (activity.data) {
-          // Populate form with existing activity data
-          form.reset({
-            title: activity.data.activity.title,
-            description: activity.data.activity.description,
-            proposedDuration: activity.data.activity.proposedDuration,
-            durationUnit: activity.data.activity.durationUnit,
-            maxSize: activity.data.activity.maxSize,
-            type: activity.data.activity.type,
-            checkinFrequency: activity.data.activity.checkinFrequency,
-            checkinFrequencyUnit: activity.data.activity.checkinFrequencyUnit,
-            checkinDays: activity.data.activity.checkinDays,
-            checkinDateOfMonth: activity.data.activity.checkinDateOfMonth,
-            checkinDayOfWeek: activity.data.activity.checkinDayOfWeek,
-            checkinWeekOfMonth: activity.data.activity.checkinWeekOfMonth,
-            bannerImage: activity.data.activity.bannerImage,
-            startDate: new Date(activity.data.activity.startDate),
-            joinType: activity.data.activity.joinType,
-            categories: activity.data.activity.categories,
-            tags: activity.data.activity.tags,
-            rules: activity.data.activity.rules,
-            allowedCheckInTypes: activity.data.activity.allowedCheckInTypes
-          });
-
-          // Set banner image if exists
-          if (activity.data.activity.bannerImage) {
-            setBannerImage(activity.data.activity.bannerImage);
-          }
-
-          // Update available tags based on categories
-          if (activity.data.activity.categories?.length) {
-            const newTagOptions = activity.data.activity.categories.flatMap(
-              (category: InterestCategory) =>
-                getCommoditiesForCategory(category).map((item) => ({
-                  label: item.label,
-                  value: item.value
-                }))
-            );
-            setAvailableTagOptions(newTagOptions);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching activity:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load activity details',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
+      if (activity.bannerImage) {
+        setBannerImage(activity.bannerImage);
       }
-    };
 
-    fetchActivity();
-  }, [id, getActivity, form]);
-
-  // Modify onSubmit to handle updates
-  //   const onSubmit = async (data: CreateActivityFormData) => {
-  //     if (!id) return;
-
-  //     try {
-  //       const response = await updateActivity(id, data as Omit<IActivity, 'id'>);
-
-  //       if (response) {
-  //         toast({
-  //           title: 'Activity updated successfully',
-  //           description: 'Your activity has been updated.',
-  //           variant: 'default'
-
-  //         });
-  //         navigate(`/activity/${id}`);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error updating activity:', error);
-  //       toast({
-  //         title: 'Error',
-  //         description: 'Failed to update activity',
-  //         variant: 'destructive'
-  //       });
-  //     }
-  //   };
+      if (activity.categories?.length) {
+        const newTagOptions = activity.categories.map((category) => ({
+          label: category,
+          value: category
+        }));
+        setAvailableTagOptions(newTagOptions);
+      }
+    }
+  }, [activityData]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -271,10 +228,7 @@ export const EditActivityForm = ({ id }: { id: string }) => {
       </div>
 
       <Form {...form}>
-        <form
-          // onSubmit={form.handleSubmit(onSubmit)}
-          className="mt-8 space-y-6"
-        >
+        <form className="mt-8 space-y-6">
           <FormField
             control={form.control}
             name="title"

@@ -36,10 +36,10 @@ const ActivityCard = ({
   // Determine category background color
   const getCategoryColor = (category: string) => {
     const categories: Record<string, string> = {
-      "fitness": "bg-buddy-green-light/70 text-buddy-green-dark",
-      "coding": "bg-buddy-blue-light/70 text-buddy-blue-dark",
-      "music": "bg-buddy-purple-light/70 text-buddy-purple-dark",
-      "reading": "bg-buddy-orange-light/70 text-buddy-orange-dark",
+      "Fitness": "bg-buddy-green-light/70 text-buddy-green-dark",
+      "Technology": "bg-buddy-blue-light/70 text-buddy-blue-dark",
+      "Music": "bg-buddy-purple-light/70 text-buddy-purple-dark",
+      "Reading": "bg-buddy-orange-light/70 text-buddy-orange-dark",
       "default": "bg-buddy-gray-200 text-buddy-gray-700"
     };
     
@@ -51,18 +51,18 @@ const ActivityCard = ({
     const defaultIcon = "🏷️";
     
     const icons: Record<string, string> = {
-      "fitness": "🧘",
-      "coding": "💻",
-      "music": "🎵",
-      "reading": "📚",
-      "art": "🎨",
-      "cooking": "🍳",
-      "gaming": "🎮",
-      "languages": "🗣️",
-      "photography": "📷",
-      "writing": "✍️",
-      "hiking": "🥾",
-      "dancing": "💃",
+      "Fitness": "🧘",
+      "Technology": "💻",
+      "Music": "🎵",
+      "Reading": "📚",
+      "Art": "🎨",
+      "Cooking": "🍳",
+      "Gaming": "🎮",
+      "Language": "🗣️",
+      "Photography": "📷",
+      "Writing": "✍️",
+      "Hiking": "🥾",
+      "Dancing": "💃",
     };
     
     return icons[category.toLowerCase()] || defaultIcon;

@@ -1,27 +1,28 @@
 export enum InterestCategory {
-  TECHNOLOGY = 'Technology',
-  SCIENCE = 'Science',
-  ARTS = 'Arts',
-  SPORTS = 'Sports',
-  MUSIC = 'Music',
-  TRAVEL = 'Travel',
-  FOOD_AND_COOKING = 'Food & Cooking',
-  FASHION = 'Fashion',
-  GAMING = 'Gaming',
-  BOOKS = 'Books',
-  MOVIES = 'Movies',
-  FITNESS = 'Fitness',
-  PHOTOGRAPHY = 'Photography',
-  EDUCATION = 'Education',
-  BUSINESS = 'Business',
-  NATURE = 'Nature',
-  PETS = 'Pets',
+  Technology = 'Technology',
+  Science = 'Science',
+  Arts = 'Arts',
+  Sports = 'Sports',
+  Music = 'Music',
+  Travel = 'Travel',
+  FoodAndCooking = 'Food & Cooking',
+  Fashion = 'Fashion',
+  Gaming = 'Gaming',
+  Books = 'Books',
+  Movies = 'Movies',
+  Fitness = 'Fitness',
+  Photography = 'Photography',
+  Education = 'Education',
+  Business = 'Business',
+  Nature = 'Nature',
+  Pets = 'Pets',
   DIY = 'DIY',
-  WRITING = 'Writing',
+  Writing = 'Writing',
+  Other = 'Other'
 }
 
 export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
-  [InterestCategory.TECHNOLOGY]: [
+  [InterestCategory.Technology]: [
     'Web Development',
     'Mobile Apps',
     'AI/ML',
@@ -33,7 +34,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'DevOps',
     'UI/UX Design',
   ],
-  [InterestCategory.SCIENCE]: [
+  [InterestCategory.Science]: [
     'Physics',
     'Chemistry',
     'Biology',
@@ -45,7 +46,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Quantum Computing',
     'Robotics',
   ],
-  [InterestCategory.ARTS]: [
+  [InterestCategory.Arts]: [
     'Painting',
     'Sculpting',
     'Drawing',
@@ -57,7 +58,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Street Art',
     'Animation',
   ],
-  [InterestCategory.SPORTS]: [
+  [InterestCategory.Sports]: [
     'Football',
     'Basketball',
     'Tennis',
@@ -69,15 +70,15 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Cycling',
     'Rock Climbing',
   ],
-  [InterestCategory.MUSIC]: ['Rock', 'Pop', 'Jazz', 'Classical', 'Hip-Hop'],
-  [InterestCategory.TRAVEL]: [
+  [InterestCategory.Music]: ['Rock', 'Pop', 'Jazz', 'Classical', 'Hip-Hop'],
+  [InterestCategory.Travel]: [
     'Europe',
     'Asia',
     'Africa',
     'North America',
     'South America',
   ],
-  [InterestCategory.FOOD_AND_COOKING]: [
+  [InterestCategory.FoodAndCooking]: [
     'Italian Cuisine',
     'Asian Cuisine',
     'Baking',
@@ -89,35 +90,35 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Sustainable Food',
     'Food Science',
   ],
-  [InterestCategory.FASHION]: [
+  [InterestCategory.Fashion]: [
     'Streetwear',
     'High Fashion',
     'Vintage',
     'Sustainable Fashion',
     'Boutique Fashion',
   ],
-  [InterestCategory.GAMING]: [
+  [InterestCategory.Gaming]: [
     'Video Games',
     'Board Games',
     'Card Games',
     'Role-Playing Games',
     'Strategy Games',
   ],
-  [InterestCategory.BOOKS]: [
+  [InterestCategory.Books]: [
     'Fiction',
     'Non-Fiction',
     'Biographies',
     'Fantasy',
     'Science Fiction',
   ],
-  [InterestCategory.MOVIES]: [
+  [InterestCategory.Movies]: [
     'Action',
     'Adventure',
     'Comedy',
     'Drama',
     'Horror',
   ],
-  [InterestCategory.FITNESS]: [
+  [InterestCategory.Fitness]: [
     'Yoga',
     'Pilates',
     'CrossFit',
@@ -129,21 +130,21 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Nutrition',
     'Mental Wellness',
   ],
-  [InterestCategory.PHOTOGRAPHY]: [
+  [InterestCategory.Photography]: [
     'Landscape',
     'Portrait',
     'Street',
     'Wildlife',
     'Macro',
   ],
-  [InterestCategory.EDUCATION]: [
+  [InterestCategory.Education]: [
     'Online Courses',
     'Tutoring',
     'Workshops',
     'Seminars',
     'Webinars',
   ],
-  [InterestCategory.BUSINESS]: [
+  [InterestCategory.Business]: [
     'Entrepreneurship',
     'Marketing',
     'Sales',
@@ -155,14 +156,14 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Startups',
     'Business Analytics',
   ],
-  [InterestCategory.NATURE]: [
+  [InterestCategory.Nature]: [
     'Hiking',
     'Camping',
     'Gardening',
     'Wildlife',
     'Birdwatching',
   ],
-  [InterestCategory.PETS]: ['Dogs', 'Cats', 'Birds', 'Fish', 'Reptiles'],
+  [InterestCategory.Pets]: ['Dogs', 'Cats', 'Birds', 'Fish', 'Reptiles'],
   [InterestCategory.DIY]: [
     'Home Improvement',
     'DIY Crafts',
@@ -170,13 +171,18 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'DIY Furniture',
     'DIY Gardening',
   ],
-  [InterestCategory.WRITING]: [
+  [InterestCategory.Writing]: [
     'Creative Writing',
     'Technical Writing',
     'Copywriting',
     'Blog Writing',
     'Freelance Writing',
   ],
+  [InterestCategory.Other]: [
+    'Miscellaneous',
+    'General Interest',
+    'Other Activities'
+  ]
 };
 
 export type InterestCategoryType = keyof typeof InterestCategory;
