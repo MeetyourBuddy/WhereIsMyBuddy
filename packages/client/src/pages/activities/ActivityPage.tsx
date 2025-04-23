@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ChartPieIcon,
@@ -32,6 +32,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInDays } from "date-fns";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { VariantProps } from "class-variance-authority";
+import { useActivity } from '@/hooks/use-activity';
+import { IActivityResult, IActivityResponse } from "@/types/activity-types";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -49,34 +51,37 @@ const getActivityStatus = (startDate: Date, endDate: Date) => {
 
 const ActivityPage = () => {
   const { activityId } = useParams<{ activityId: string }>();
+  const navigate = useNavigate();
+  const { getActivity } = useActivity();
+  
+  useEffect(() => {
+    if (!activityId) {
+      console.error('Activity ID is missing in URL params');
+      navigate('/activities');
+      return;
+    }
+  }, [activityId, navigate]);
+  
+  const { data: activityData, isLoading } = activityId 
+    ? getActivity(activityId) as { data: IActivityResponse | undefined; isLoading: boolean }
+    : { data: undefined, isLoading: false };
+    
   const [activeTab, setActiveTab] = useState("dashboard");
   const isMobile = useIsMobile();
 
-  // Mock activity data (would come from an API in a real app)
-  const activity = {
-    id: activityId || "1",
-    name: "Morning Yoga Challenge",
-    description:
-      "30 minutes of yoga every morning for 30 days to improve flexibility, strength, and mental clarity. Join us to establish a consistent morning routine that will energize your day!",
-    category: "Fitness",
-    duration: "30 days",
-    frequency: "Daily",
-    startDate: new Date("2023-10-01"),
-    endDate: new Date("2023-10-30"),
-    createdBy: "Jane Doe",
-    participants: 12,
-    checkins: 243,
-    progress: 64,
-    bannerImage:
-      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2940",
-    streakCount: 5,
-    totalDays: 30,
-    daysCompleted: 14,
-  };
+  const activity = activityData?.data?.activity as IActivityResult | undefined;
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!activity) {
+    return <div>Activity not found</div>;
+  }
 
   const { status, label, variant } = getActivityStatus(
     activity.startDate,
-    activity.endDate
+    activity.endedAt
   );
 
   return (
@@ -159,8 +164,8 @@ const ActivityPage = () => {
                 <p className="text-xs md:text-sm text-buddy-gray-600">
                   Participants
                 </p>
-                <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
-                  {activity.participants}
+                <p className="text-lg md:text-xl font-semibold">
+                  {activity.participants.length} participants
                 </p>
               </div>
             </Card>
