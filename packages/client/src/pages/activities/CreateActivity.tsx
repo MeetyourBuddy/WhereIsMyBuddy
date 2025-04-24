@@ -391,8 +391,6 @@ const CreateActivity = () => {
     const config = {
       checkinFrequency: 1,
       checkinFrequencyUnit: formData.frequency,
-      checkinDays: undefined,
-      checkinDatesOfMonth: undefined
     };
 
     switch (formData.frequency) {
@@ -409,7 +407,7 @@ const CreateActivity = () => {
       case 'monthly':
         return {
           ...config,
-          checkinFrequency: formData.checkinDatesOfMonth.length,
+          checkinFrequency: formData.checkinDatesOfMonth.length || 1,
           checkinDatesOfMonth: formData.checkinDatesOfMonth
         };
       

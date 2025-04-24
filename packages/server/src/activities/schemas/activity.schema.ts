@@ -130,8 +130,8 @@ export class Activity {
   @Prop({ type: [{ type: String, enum: DayOfWeek }] })
   checkinDays?: DayOfWeek[];
 
-  @Prop([Number])
-  checkinDatesOfMonth?: number[];
+  @Prop({ type: [Number], default: [] })
+  checkinDatesOfMonth: number[];
 
   @Prop([Number])
   checkinWeeksOfMonth?: number[];

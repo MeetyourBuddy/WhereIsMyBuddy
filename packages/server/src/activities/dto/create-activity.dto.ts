@@ -103,6 +103,11 @@ export class CreateActivityDto {
   @Type(() => Date)
   startDate: Date;
 
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  checkinDatesOfMonth?: number[];
+
   @IsEnum(CheckinFrequencyUnit)
   checkinFrequencyUnit: CheckinFrequencyUnit;
 
