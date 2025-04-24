@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -201,6 +200,11 @@ const UserManagement = () => {
     });
     setIsAddUserOpen(false);
     form.reset();
+  };
+  
+  const handleError = (error: Error | unknown) => {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    // Use errorMessage instead of error.message
   };
   
   return (

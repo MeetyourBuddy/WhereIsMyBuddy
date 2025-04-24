@@ -95,8 +95,10 @@ export interface IActivity {
 
 export interface IActivityResult extends IActivity {
   id: string;
-  currentSize: number;
+  _id: string;
+  admin: IUserResponse;
   participants: IUserResponse[];
+  currentSize: number;
   isActive: boolean;
   endedAt: Date;
   createdAt: Date;
@@ -112,7 +114,6 @@ export interface IActivityResult extends IActivity {
   name: string;
   frequency: string;
   duration: string;
-  admin: IUserResponse;
 }
 
 export interface IActivityResponse {

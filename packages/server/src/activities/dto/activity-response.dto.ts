@@ -1,5 +1,11 @@
 import { Exclude, Expose, Type } from 'class-transformer';
-import { ActivityType, JoinType, DurationUnit, CheckinFrequencyUnit, DayOfWeek } from '../schemas/activity.schema';
+import {
+  ActivityType,
+  JoinType,
+  DurationUnit,
+  CheckinFrequencyUnit,
+  DayOfWeek,
+} from '../schemas/activity.schema';
 
 @Exclude()
 export class ActivityResponseDto {
@@ -93,4 +99,4 @@ export class ActivityResponseDto {
   constructor(partial: Partial<ActivityResponseDto>) {
     Object.assign(this, partial);
   }
-} 
+}

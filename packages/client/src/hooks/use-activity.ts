@@ -3,6 +3,7 @@ import { activityService } from '@/services/api/activity/activity-service';
 import { IActivity, IActivityResponse, IActivityListResponse, ApiResponse, IActivityResult } from '@/types/activity-types';
 import { toast } from 'sonner';
 import { useActivityStore } from '@/store/activity.store';
+import { useNavigate } from 'react-router-dom';
 
 export const activityKeys = {
   all: ['activities'] as const,
@@ -15,6 +16,7 @@ export const activityKeys = {
 export const useActivity = () => {
   const queryClient = useQueryClient();
   const { setActivities, setCurrentActivity, setError } = useActivityStore();
+  const navigate = useNavigate();
 
   const createActivity = useMutation({
     mutationFn: async (activityData: IActivity) => {
@@ -35,8 +37,12 @@ export const useActivity = () => {
       if (response.success && response.data?.activity) {
         const activity = response.data.activity;
         
-        // Use type assertion to avoid TypeScript errors
-        const activityId = (activity as any)._id || activity.id;
+        interface MongoDocument {
+          _id?: string;
+          id?: string;
+        }
+        
+        const activityId = (activity as MongoDocument)._id || activity.id;
         
         if (!activityId) {
           console.error('Activity created but no ID found in response:', activity);
@@ -55,6 +61,10 @@ export const useActivity = () => {
         
         // Invalidate queries to refresh the activities list
         queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
+        
+        // Add navigation to view the created activity
+        navigate(`/activities/${activityId}`);
+        
         toast.success('Activity created successfully');
       }
     },
@@ -74,23 +84,53 @@ export const useActivity = () => {
     }
   });
 
-  const getActivityQuery = (id: string) => 
+  const useActivityQuery = (id: string) => 
     useQuery<IActivityResponse>({
       queryKey: activityKeys.detail(id),
       queryFn: async () => {
-        // Add validation to prevent undefined ID
         if (!id) {
           console.error('Attempted to fetch activity with undefined ID');
           throw new Error('Activity ID is required');
         }
         
-        const response = await activityService.getActivityById(id);
-        if (response.success && response.data?.activity) {
-          setCurrentActivity(response.data.activity);
+        try {
+          const response = await activityService.getActivityById(id);
+          console.log('Full activity response:', JSON.stringify(response, null, 2)); // Detailed logging
+          
+          if (!response.success || !response.data?.activity) {
+            throw new Error('Invalid activity response format');
+          }
+          
+          // Log the activity object
+          console.log('Activity data:', JSON.stringify(response.data.activity, null, 2));
+          
+          // Ensure all required fields are present
+          const activity = response.data.activity;
+          
+          // Transform MongoDB _id to id first
+          const activityWithId = {
+            ...activity,
+            id: activity._id // Use MongoDB's _id as our id
+          };
+          
+          if (!activityWithId.title) {
+            console.error('Missing title in activity:', activity);
+            throw new Error('Activity data is missing title');
+          }
+          
+          setCurrentActivity(activityWithId);
+          return {
+            ...response,
+            data: {
+              activity: activityWithId
+            }
+          };
+        } catch (error) {
+          console.error('Error fetching activity:', error);
+          throw error;
         }
-        return response;
       },
-      enabled: !!id, // This should prevent the query from running with undefined ID
+      enabled: !!id,
     });
 
   const updateActivityMutation = useMutation<
@@ -135,7 +175,7 @@ export const useActivity = () => {
     deleteActivity: deleteActivityMutation.mutate,
 
     // Queries
-    getActivity: getActivityQuery,
+    getActivity: useActivityQuery,
     activities: activitiesQuery.data?.data?.activities || [],
 
     // Loading states

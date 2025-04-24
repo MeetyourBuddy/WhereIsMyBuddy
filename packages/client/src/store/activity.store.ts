@@ -6,6 +6,15 @@ import { useAuthStore } from './auth.store';
 import axiosInstance from '@/services/axios-instance';
 import axios from 'axios';
 
+type ApiError = Error & {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+};
+
 interface ActivityState {
   activities: IActivityResult[];
   currentActivity: IActivityResult | null;
@@ -54,10 +63,11 @@ export const useActivityStore = create<ActivityState>()(
             return response;
           }
           throw new Error('Invalid response format');
-        } catch (error: any) {
-          console.error('Activity creation error:', error);
-          set({ error: error.message });
-          throw error;
+        } catch (error: unknown) {
+          const apiError = error as ApiError;
+          console.error('Activity creation error:', apiError);
+          set({ error: apiError.message });
+          throw apiError;
         } finally {
           set({ isLoading: false });
         }
@@ -68,8 +78,9 @@ export const useActivityStore = create<ActivityState>()(
           set({ isLoading: true, error: null });
           const response = await activityService.getActivities();
           set({ activities: response.data.activities });
-        } catch (error: any) {
-          set({ error: error.message || 'Failed to fetch activities' });
+        } catch (error: unknown) {
+          const apiError = error as ApiError;
+          set({ error: apiError.message || 'Failed to fetch activities' });
         } finally {
           set({ isLoading: false });
         }
@@ -80,8 +91,9 @@ export const useActivityStore = create<ActivityState>()(
           set({ isLoading: true, error: null });
           const response = await activityService.getActivityById(id);
           set({ currentActivity: response.data.activity });
-        } catch (error: any) {
-          set({ error: error.message || 'Failed to fetch activity' });
+        } catch (error: unknown) {
+          const apiError = error as ApiError;
+          set({ error: apiError.message || 'Failed to fetch activity' });
         } finally {
           set({ isLoading: false });
         }
@@ -97,8 +109,9 @@ export const useActivityStore = create<ActivityState>()(
             ),
             currentActivity: response.data.data.activity,
           }));
-        } catch (error: any) {
-          set({ error: error.message || 'Failed to update activity' });
+        } catch (error: unknown) {
+          const apiError = error as ApiError;
+          set({ error: apiError.message || 'Failed to update activity' });
         } finally {
           set({ isLoading: false });
         }
@@ -112,8 +125,9 @@ export const useActivityStore = create<ActivityState>()(
             activities: state.activities.filter((activity) => activity.id !== id),
             currentActivity: null,
           }));
-        } catch (error: any) {
-          set({ error: error.message || 'Failed to delete activity' });
+        } catch (error: unknown) {
+          const apiError = error as ApiError;
+          set({ error: apiError.message || 'Failed to delete activity' });
         } finally {
           set({ isLoading: false });
         }

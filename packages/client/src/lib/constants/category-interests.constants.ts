@@ -227,5 +227,6 @@ export const getCommoditiesForCategory = (
 export const isCommodityInCategory = (
   category: InterestCategory,
   commodityValue: string
+): boolean => {
   return CommoditiesByCategory[category].some((commodity) => commodity.value === commodityValue);
 };

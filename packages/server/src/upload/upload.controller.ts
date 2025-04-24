@@ -9,9 +9,9 @@ export class UploadController {
   @Get(':id')
   async serveFile(@Param('id') id: string, @Res() res: Response) {
     const file = await this.uploadService.getFile(id);
-    
+
     res.setHeader('Content-Type', file.contentType);
     res.setHeader('Content-Disposition', `inline; filename="${file.filename}"`);
     res.send(file.data);
   }
-} 
+}

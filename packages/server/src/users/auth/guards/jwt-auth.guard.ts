@@ -26,8 +26,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // Make sure we attach the complete user object
     if (user && user.userId) {
       request.user = {
-        userId: user.userId, 
-        email: user.email
+        userId: user.userId,
+        email: user.email,
       };
     }
 
@@ -43,7 +43,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     // Handle the Observable return type
     const canActivate = await super.canActivate(context);
-    return canActivate instanceof Observable ? await firstValueFrom(canActivate) : canActivate;
+    return canActivate instanceof Observable
+      ? await firstValueFrom(canActivate)
+      : canActivate;
   }
 
   handleRequest(err: any, user: any, info: any): any {
