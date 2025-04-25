@@ -61,7 +61,9 @@ export interface CheckInTypeConfig {
 }
 
 export interface IActivityRule {
+  _id: string;
   rule: string;
+  description?: string;
   isDefault: boolean;
 }
 
@@ -114,6 +116,10 @@ export interface IActivityResult extends IActivity {
   name: string;
   frequency: string;
   duration: string;
+  title: string;
+  description: string;
+  location?: string;
+  startDate: Date;
 }
 
 export interface IActivityResponse {

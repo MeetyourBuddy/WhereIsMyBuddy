@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Calendar, CheckCircle, XCircle, Users, Clock, ExternalLink } from "lucide-react";
@@ -7,13 +6,19 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Avatar from "@/components/common/Avatar";
 import ActivityInfo from "./ActivityInfo";
+import { useActivity } from "@/hooks/use-activity";
 
 interface ActivityDashboardProps {
   activityId: string;
   onViewAllMembers?: () => void;
 }
 
-const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activityId, onViewAllMembers }) => {
+const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activityId }) => {
+  // Get activity data from your store/context
+  const { getActivity } = useActivity();
+  const activityQuery = getActivity(activityId);
+  const activity = activityQuery.data?.data?.activity;
+
   // Mock data for charts and metrics (would come from API in a real app)
   const checkInData = [
     { name: "Mon", checkins: 18 },
@@ -24,25 +29,6 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activityId, onVie
     { name: "Sat", checkins: 12 },
     { name: "Sun", checkins: 15 },
   ];
-
-  // Mock activity data (in a real app, this would be passed as props)
-  const activityData = {
-    title: "Morning Yoga Challenge",
-    description: "30 minutes of yoga every morning for 30 days to improve flexibility, strength, and mental clarity. Join us to establish a consistent morning routine!",
-    category: "Fitness",
-    location: "Central Park, NY",
-    startDate: new Date("2023-10-01"),
-    endDate: new Date("2023-10-30"),
-    duration: "30 days",
-    frequency: "Daily",
-    tags: ["Fitness", "Morning Routine", "Wellness"],
-    rules: [
-      { id: "1", rule: "Check in daily with a photo of your yoga session", description: "Take a photo of your yoga setup or a selfie during your practice to verify your participation.", isDefault: true },
-      { id: "2", rule: "Be respectful in all communications", description: "Treat all participants with kindness and respect. No harsh language or criticism.", isDefault: true },
-      { id: "3", rule: "No spam or promotional content", description: "Keep all communications relevant to the activity. No advertising or promotional material.", isDefault: true },
-      { id: "4", rule: "Share your progress at least once a week", description: "Post a detailed update about your progress, challenges, and achievements at least once weekly.", isDefault: false }
-    ]
-  };
 
   const participants = [
     { id: 1, name: "Sophia Kim", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80", checkIns: 28, streak: 14 },
@@ -97,11 +83,6 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activityId, onVie
           <Card className="p-6 border border-white/80 rounded-2xl shadow-sm bg-white/90 backdrop-blur-sm hover:shadow-md transition-all duration-300">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold bg-gradient-to-r from-buddy-blue to-buddy-purple bg-clip-text text-transparent">Participant Check-in History</h3>
-              <Button variant="outline" onClick={onViewAllMembers} className="flex items-center text-buddy-purple border-buddy-purple/30 hover:bg-buddy-purple/10">
-                <Users className="h-4 w-4 mr-2" />
-                View All Members
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </Button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -185,7 +166,39 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activityId, onVie
         
         {/* Right column - Activity Info (1/3 width) */}
         <div>
-          <ActivityInfo {...activityData} />
+          {activity && (
+            <ActivityInfo
+              title={activity.title}
+              description={activity.description || ''}
+              category={activity.category}
+              location={activity.location}
+              startDate={activity.startDate ? new Date(activity.startDate) : new Date()}
+              endDate={activity.endedAt ? new Date(activity.endedAt) : new Date()}
+              duration={`${activity.proposedDuration} ${activity.durationUnit}`}
+              frequency={activity.checkinFrequencyUnit}
+              tags={activity.tags || []}
+              rules={[
+                {
+                  _id: "1",
+                  rule: "Check in daily with a photo of your yoga session",
+                  description: "Take a photo of your yoga setup or a selfie during your practice to verify your participation.",
+                  isDefault: true
+                },
+                {
+                  _id: "2", 
+                  rule: "Be respectful in all communications",
+                  description: "Treat all participants with kindness and respect. No harsh language or criticism.",
+                  isDefault: true
+                },
+                {
+                  _id: "3",
+                  rule: "No spam or promotional content",
+                  description: "Keep all communications relevant to the activity.",
+                  isDefault: true
+                }
+              ]}
+            />
+          )}
         </div>
       </div>
     </div>

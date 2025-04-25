@@ -84,54 +84,17 @@ export const useActivity = () => {
     }
   });
 
-  const useActivityQuery = (id: string) => 
-    useQuery<IActivityResponse>({
-      queryKey: activityKeys.detail(id),
+  const getActivity = (id: string) => {
+    return useQuery({
+      queryKey: ['activity', id],
       queryFn: async () => {
-        if (!id) {
-          console.error('Attempted to fetch activity with undefined ID');
-          throw new Error('Activity ID is required');
-        }
-        
-        try {
-          const response = await activityService.getActivityById(id);
-          console.log('Full activity response:', JSON.stringify(response, null, 2)); // Detailed logging
-          
-          if (!response.success || !response.data?.activity) {
-            throw new Error('Invalid activity response format');
-          }
-          
-          // Log the activity object
-          console.log('Activity data:', JSON.stringify(response.data.activity, null, 2));
-          
-          // Ensure all required fields are present
-          const activity = response.data.activity;
-          
-          // Transform MongoDB _id to id first
-          const activityWithId = {
-            ...activity,
-            id: activity._id // Use MongoDB's _id as our id
-          };
-          
-          if (!activityWithId.title) {
-            console.error('Missing title in activity:', activity);
-            throw new Error('Activity data is missing title');
-          }
-          
-          setCurrentActivity(activityWithId);
-          return {
-            ...response,
-            data: {
-              activity: activityWithId
-            }
-          };
-        } catch (error) {
-          console.error('Error fetching activity:', error);
-          throw error;
-        }
+        const response = await activityService.getActivityById(id);
+        console.log('Full activity response:', response);
+        return response;
       },
-      enabled: !!id,
+      enabled: !!id
     });
+  };
 
   const updateActivityMutation = useMutation<
     ApiResponse<IActivityResponse>,
@@ -175,7 +138,7 @@ export const useActivity = () => {
     deleteActivity: deleteActivityMutation.mutate,
 
     // Queries
-    getActivity: useActivityQuery,
+    getActivity,
     activities: activitiesQuery.data?.data?.activities || [],
 
     // Loading states

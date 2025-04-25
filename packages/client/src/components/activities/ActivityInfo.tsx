@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { Calendar, Clock, MapPin, Tag, AlertTriangle, Shield, Info } from "lucide-react";
@@ -11,24 +10,22 @@ import {
   AccordionTrigger 
 } from "@/components/ui/accordion";
 
-interface Rule {
-  id: string;
-  rule: string;
-  description?: string;
-  isDefault: boolean;
-}
-
 interface ActivityInfoProps {
   title: string;
   description: string;
   category: string;
-  location: string;
+  location?: string;
   startDate: Date;
   endDate: Date;
   duration: string;
   frequency: string;
-  tags: string[];
-  rules: Rule[];
+  tags?: string[];
+  rules?: {
+    _id: string;
+    rule: string;
+    description?: string;
+    isDefault: boolean;
+  }[];
 }
 
 const ActivityInfo: React.FC<ActivityInfoProps> = ({
@@ -43,6 +40,14 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
   tags,
   rules
 }) => {
+  // Add validation
+  const formattedStartDate = startDate instanceof Date && !isNaN(startDate.getTime()) 
+    ? format(startDate, "MMM d, yyyy") 
+    : 'Invalid date';
+  const formattedEndDate = endDate instanceof Date && !isNaN(endDate.getTime())
+    ? format(endDate, "MMM d, yyyy")
+    : 'Invalid date';
+
   return (
     <Card className="p-5 bg-white rounded-xl">
       <h3 className="text-lg font-semibold text-buddy-gray-800 mb-4 flex items-center">
@@ -63,7 +68,7 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
             <div>
               <h4 className="text-xs font-medium text-buddy-gray-500 mb-1">Date Range</h4>
               <p className="text-sm text-buddy-gray-800 font-medium">
-                {format(startDate, "MMM d, yyyy")} - {format(endDate, "MMM d, yyyy")}
+                {formattedStartDate} - {formattedEndDate}
               </p>
               <p className="text-xs text-buddy-gray-500">{duration} ({frequency})</p>
             </div>
@@ -85,7 +90,7 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
             Tags
           </h4>
           <div className="flex flex-wrap gap-2">
-            {tags.map((tag, index) => (
+            {tags?.map((tag, index) => (
               <Badge 
                 key={index}
                 variant="outline" 
@@ -104,8 +109,8 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
             Rules & Guidelines
           </h4>
           <Accordion type="multiple" className="w-full">
-            {rules.map((rule) => (
-              <AccordionItem key={rule.id} value={rule.id} className="border-b border-buddy-gray-100">
+            {rules?.map((rule) => (
+              <AccordionItem key={rule._id} value={rule._id} className="border-b border-buddy-gray-100">
                 <AccordionTrigger className="py-2 text-sm hover:no-underline">
                   <div className="flex items-start text-left">
                     <AlertTriangle className={`h-3 w-3 mt-1 mr-2 ${rule.isDefault ? "text-buddy-orange" : "text-buddy-purple"}`} />
