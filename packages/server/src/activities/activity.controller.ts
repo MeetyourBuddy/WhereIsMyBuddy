@@ -1,13 +1,13 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Body, 
-  Param, 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
   UseGuards,
-  Request
+  Request,
 } from '@nestjs/common';
 import { ActivityService } from './activity.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
@@ -24,37 +24,42 @@ export class ActivityController {
   @Post()
   async create(
     @Body() createActivityDto: CreateActivityDto,
-    @Request() req
+    @Request() req,
   ): Promise<ApiResponse<{ activity: Activity }>> {
-    const activity = await this.activityService.create(createActivityDto, req.user);
-      
+    const activity = await this.activityService.create(
+      createActivityDto,
+      req.user,
+    );
+
     return {
       success: true,
       message: 'Activity created successfully',
-      data: { activity }
+      data: { activity },
     };
   }
 
   @Get()
-  async findAll(@Request() req): Promise<ApiResponse<{ activities: Activity[] }>> {
+  async findAll(
+    @Request() req,
+  ): Promise<ApiResponse<{ activities: Activity[] }>> {
     const activities = await this.activityService.findAll(req.user);
     return {
       success: true,
       message: 'Activities fetched successfully',
-      data: { activities }
+      data: { activities },
     };
   }
 
   @Get(':id')
   async findOne(
     @Param('id') id: string,
-    @Request() req
+    @Request() req,
   ): Promise<ApiResponse<{ activity: Activity }>> {
     const activity = await this.activityService.findOne(id, req.user);
     return {
       success: true,
       message: 'Activity fetched successfully',
-      data: { activity }
+      data: { activity },
     };
   }
 
@@ -62,25 +67,29 @@ export class ActivityController {
   async update(
     @Param('id') id: string,
     @Body() updateActivityDto: UpdateActivityDto,
-    @Request() req
+    @Request() req,
   ): Promise<ApiResponse<{ activity: Activity }>> {
-    const activity = await this.activityService.update(id, updateActivityDto, req.user);
+    const activity = await this.activityService.update(
+      id,
+      updateActivityDto,
+      req.user,
+    );
     return {
       success: true,
       message: 'Activity updated successfully',
-      data: { activity }
+      data: { activity },
     };
   }
 
   @Delete(':id')
   async remove(
     @Param('id') id: string,
-    @Request() req
+    @Request() req,
   ): Promise<ApiResponse<void>> {
     await this.activityService.delete(id, req.user);
     return {
       success: true,
-      message: 'Activity deleted successfully'
+      message: 'Activity deleted successfully',
     };
   }
-} 
+}

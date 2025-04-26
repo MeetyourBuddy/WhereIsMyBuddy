@@ -5,23 +5,23 @@ import { InterestCategory } from '../../users/enums/interests.enum';
 
 export enum ActivityType {
   PRIVATE = 'private',
-  PUBLIC = 'public'
+  PUBLIC = 'public',
 }
 
 export enum JoinType {
   FLEXIBLE = 'flexible',
-  FIXED = 'fixed'
+  FIXED = 'fixed',
 }
 
 export enum DurationUnit {
   DAYS = 'days',
-  MONTHS = 'months'
+  MONTHS = 'months',
 }
 
 export enum CheckinFrequencyUnit {
   DAILY = 'daily',
   WEEKLY = 'weekly',
-  MONTHLY = 'monthly'
+  MONTHLY = 'monthly',
 }
 
 export enum DayOfWeek {
@@ -31,12 +31,12 @@ export enum DayOfWeek {
   WEDNESDAY = 'wednesday',
   THURSDAY = 'thursday',
   FRIDAY = 'friday',
-  SATURDAY = 'saturday'
+  SATURDAY = 'saturday',
 }
 
 export enum CheckInType {
   PHOTO = 'photo',
-  TEXT = 'text'
+  TEXT = 'text',
 }
 
 @Schema({ timestamps: true })
@@ -81,7 +81,7 @@ class CheckInTypeConfig {
   description: string;
 }
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } })
 export class Activity {
   @Prop({ required: true })
   title: string;
@@ -106,13 +106,10 @@ export class Activity {
   @Prop({ enum: JoinType, default: JoinType.FLEXIBLE })
   joinType: JoinType;
 
-  @Prop([String])
+  @Prop({ type: [String], default: [] })
   categories: string[];
 
-  @Prop({ required: true })
-  maxSize: number;
-
-  @Prop([String])
+  @Prop({ type: [String], required: true, validate: [(v: string[]) => v.length > 0, 'Goals cannot be empty'] })
   goals: string[];
 
   @Prop([String])
@@ -133,27 +130,57 @@ export class Activity {
   @Prop({ type: [{ type: String, enum: DayOfWeek }] })
   checkinDays?: DayOfWeek[];
 
-  @Prop([Number])
-  checkinDatesOfMonth?: number[];
+  @Prop({ type: [Number], default: [] })
+  checkinDatesOfMonth: number[];
 
-  @Prop([Number]) 
+  @Prop([Number])
   checkinWeeksOfMonth?: number[];
 
   @Prop({ type: [{ type: CheckInTypeConfig }] })
   allowedCheckInTypes: CheckInTypeConfig[];
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-  admin: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  admin: Types.ObjectId | User;
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
-  participants: Types.ObjectId[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
+  participants: (Types.ObjectId | User)[];
 
   @Prop({ default: true })
   isActive: boolean;
 
   @Prop()
   endedAt?: Date;
+
+  @Prop({ default: 0 })
+  checkins: number;
+
+  // Virtual fields (computed)
+  @Prop({ type: Number })
+  get progress(): number {
+    if (!this.proposedDuration) return 0;
+    const totalDays = this.proposedDuration;
+    const completedDays = this.checkins || 0;
+    return Math.round((completedDays / totalDays) * 100);
+  }
+
+  @Prop({ type: Number })
+  get streakCount(): number {
+    // TODO: Implement streak calculation when we add check-ins
+    return this.checkins || 0;
+  }
+
+  @Prop({ type: Number })
+  get totalDays(): number {
+    return this.proposedDuration || 0;
+  }
+
+  @Prop({ type: Number })
+  get daysCompleted(): number {
+    return this.checkins || 0;
+  }
 }
 
 export type ActivityDocument = Activity & Document;
-export const ActivitySchema = SchemaFactory.createForClass(Activity); 
+export const ActivitySchema = SchemaFactory.createForClass(Activity);
+ActivitySchema.set('toJSON', { virtuals: true });
+ActivitySchema.set('toObject', { virtuals: true });

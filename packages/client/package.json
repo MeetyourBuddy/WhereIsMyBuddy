@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "lint": "eslint .",
+    "lint": "eslint \"src/**/*.{ts,js}\" && prettier --check \"src/**/*.{ts,js}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,js}\" --fix && prettier --write \"src/**/*.{ts,js}\"",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -11,9 +11,7 @@ import { Multer } from 'multer';
 
 @Injectable()
 export class UploadService {
-  constructor(
-    @InjectModel(File.name) private fileModel: Model<FileDocument>
-  ) {}
+  constructor(@InjectModel(File.name) private fileModel: Model<FileDocument>) {}
 
   async uploadFile(file: any): Promise<string> {
     try {
@@ -24,7 +22,9 @@ export class UploadService {
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
       if (!allowedTypes.includes(file.mimetype)) {
-        throw new BadRequestException('Invalid file type. Only images are allowed.');
+        throw new BadRequestException(
+          'Invalid file type. Only images are allowed.',
+        );
       }
 
       // Create new file document
@@ -32,7 +32,7 @@ export class UploadService {
         filename: file.originalname,
         contentType: file.mimetype,
         size: file.size,
-        data: file.buffer
+        data: file.buffer,
       });
 
       // Save to database
@@ -52,4 +52,4 @@ export class UploadService {
     }
     return file;
   }
-} 
+}

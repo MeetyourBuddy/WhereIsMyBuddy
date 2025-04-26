@@ -61,7 +61,9 @@ export interface CheckInTypeConfig {
 }
 
 export interface IActivityRule {
+  _id: string;
   rule: string;
+  description?: string;
   isDefault: boolean;
 }
 
@@ -95,8 +97,10 @@ export interface IActivity {
 
 export interface IActivityResult extends IActivity {
   id: string;
-  currentSize: number;
+  _id: string;
+  admin: IUserResponse;
   participants: IUserResponse[];
+  currentSize: number;
   isActive: boolean;
   endedAt: Date;
   createdAt: Date;
@@ -112,7 +116,10 @@ export interface IActivityResult extends IActivity {
   name: string;
   frequency: string;
   duration: string;
-  admin: IUserResponse;
+  title: string;
+  description: string;
+  location?: string;
+  startDate: Date;
 }
 
 export interface IActivityResponse {

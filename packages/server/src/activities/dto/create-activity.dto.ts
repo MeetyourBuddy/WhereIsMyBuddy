@@ -8,10 +8,14 @@ import {
   ValidateNested,
   IsDate,
   Min,
+  Max,
+  ArrayMinSize,
+  IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
   ActivityType,
+  JoinType,
   DurationUnit,
   CheckinFrequencyUnit,
   DayOfWeek,
@@ -74,6 +78,7 @@ export class CreateActivityDto {
   description?: string;
 
   @IsEnum(InterestCategory)
+  @IsNotEmpty()
   category: InterestCategory;
 
   @IsEnum(ActivityType)
@@ -84,9 +89,6 @@ export class CreateActivityDto {
 
   @IsEnum(DurationUnit)
   durationUnit: DurationUnit;
-
-  @IsNumber()
-  maxSize: number;
 
   @IsArray()
   @IsString({ each: true })
@@ -100,6 +102,11 @@ export class CreateActivityDto {
   @IsDate()
   @Type(() => Date)
   startDate: Date;
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  checkinDatesOfMonth?: number[];
 
   @IsEnum(CheckinFrequencyUnit)
   checkinFrequencyUnit: CheckinFrequencyUnit;
@@ -119,4 +126,14 @@ export class CreateActivityDto {
   @ValidateNested({ each: true })
   @Type(() => CheckInTypeConfigDto)
   allowedCheckInTypes: CheckInTypeConfigDto[];
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  goals: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  categories?: string[];
 }

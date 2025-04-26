@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Types, Document } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
@@ -20,7 +20,7 @@ export class ActivityService {
     createActivityDto: CreateActivityDto,
     user: User,
   ): Promise<Activity> {
-    console.log('User object:', user);
+    console.log('Creating activity for user:', user);
 
     const activity = new this.activityModel({
       ...createActivityDto,
@@ -30,7 +30,38 @@ export class ActivityService {
       isActive: true,
     });
 
-    return activity.save();
+    const savedActivity = await activity.save();
+
+    // Modify the population to match findOne
+    const populatedActivity = await this.activityModel
+      .findById(savedActivity._id)
+      .populate({
+        path: 'admin',
+        select: 'name email avatar',
+        model: 'User',
+        options: { lean: true },
+      })
+      .populate({
+        path: 'participants',
+        select: 'name email avatar',
+        model: 'User',
+        options: { lean: true },
+      })
+      .lean()
+      .exec();
+
+    if (!populatedActivity) {
+      throw new NotFoundException('Activity not found after creation');
+    }
+
+    return {
+      ...populatedActivity,
+      checkins: 0,
+      progress: 0,
+      streakCount: 0,
+      totalDays: 0,
+      daysCompleted: 0,
+    };
   }
 
   async findAll(user: User): Promise<Activity[]> {
@@ -56,30 +87,28 @@ export class ActivityService {
   async findOne(id: string, user: User): Promise<Activity> {
     try {
       const activity = await this.activityModel
-        .findOne({
-          _id: id,
-          $or: [
-            { type: 'public' },
-            { participants: user._id },
-            { admin: user._id },
-          ],
-        })
-        .populate('admin', 'name email avatar')
-        .populate('participants', 'name email avatar')
+        .findById(id)
+        .populate('admin')
+        .populate('participants')
         .exec();
 
       if (!activity) {
         throw new NotFoundException('Activity not found');
       }
 
+      const canAccess =
+        activity.type === 'public' ||
+        activity.admin?.id === user.id ||
+        activity.participants?.some((p) => p.id === user.id);
+
+      if (!canAccess) {
+        throw new NotFoundException('Activity not found or unauthorized');
+      }
+
       return activity;
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new BadRequestException(
-        'Failed to fetch activity: ' + error.message,
-      );
+      console.error('Error in findOne:', error);
+      throw error;
     }
   }
 

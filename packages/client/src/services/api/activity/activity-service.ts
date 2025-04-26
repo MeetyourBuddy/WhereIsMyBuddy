@@ -2,6 +2,7 @@ import axiosInstance from '@/services/axios-instance';
 import { IActivity, IActivityResponse, IActivityListResponse } from '@/types/activity-types';
 import { ApiResponse } from '@/types';
 import { authService } from '../auth/auth-service';
+import axios from 'axios';
 
 class ActivityService {
   async createActivity(activityData: IActivity): Promise<IActivityResponse> {
@@ -37,8 +38,22 @@ class ActivityService {
       throw new Error('Activity ID is required');
     }
     
-    const response = await axiosInstance.get<IActivityResponse>(`/activities/${id}`);
-    return response.data;
+    try {
+      const response = await axiosInstance.get<IActivityResponse>(`/activities/${id}`);
+      console.log('Raw activity response:', response.data);
+      
+      if (!response.data.success || !response.data.data?.activity) {
+        throw new Error('Invalid activity response format');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching activity:', error);
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new Error('Activity not found');
+      }
+      throw new Error('Failed to fetch activity');
+    }
   }
 
   async updateActivity(id: string, activityData: Partial<IActivity>): Promise<ApiResponse<IActivityResponse>> {

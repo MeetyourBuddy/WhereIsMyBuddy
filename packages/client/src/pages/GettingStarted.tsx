@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, UserPlus, Users, Calendar, Target, Search } from "lucide-react";
@@ -72,6 +71,11 @@ const GettingStarted = () => {
     } else {
       navigate("/welcome");
     }
+  };
+
+  const handleError = (error: Error | unknown) => {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    // Use errorMessage instead of error.message
   };
 
   return (

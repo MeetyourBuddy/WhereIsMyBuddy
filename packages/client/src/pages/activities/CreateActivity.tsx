@@ -204,16 +204,16 @@ const defaultGoals = [
   "Meet activity completion targets"
 ];
 
-interface ActivityFormData {
+interface FormData {
   name: string;
   description: string;
   category: string;
-  startDate: Date | undefined;
-  duration: string;
-  frequency: string;
-  daysOfWeek: string[];
   visibility: "public" | "private";
-  inviteEmails: string;
+  duration: string;
+  frequency: "daily" | "weekly" | "monthly";
+  daysOfWeek: string[];
+  checkinDatesOfMonth: number[];
+  startDate: Date;
   goals: string[];
   customGoal: string;
   tags: string[];
@@ -231,23 +231,30 @@ interface ActivityFormData {
   bannerImage: string;
   useBannerUpload: boolean;
   bannerImageFile: File | null;
-  checkinDatesOfMonth: number[];
   allowedCheckInTypes: CheckInTypeConfig[];
+  inviteEmails: string;
+}
+
+interface FormChangeEvent {
+  target: {
+    name: string;
+    value: string | Date | number[] | string[] | boolean;
+  };
 }
 
 const CreateActivity = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<ActivityFormData>({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
     category: "",
-    startDate: undefined,
-    duration: "1month",
-    frequency: "weekly",
-    daysOfWeek: ["monday", "wednesday", "friday"],
     visibility: "public",
-    inviteEmails: "",
+    duration: "1",
+    frequency: "weekly",
+    daysOfWeek: [],
+    checkinDatesOfMonth: [],
+    startDate: new Date(),
     goals: [],
     customGoal: "",
     tags: [],
@@ -260,7 +267,6 @@ const CreateActivity = () => {
     bannerImage: "",
     useBannerUpload: false,
     bannerImageFile: null,
-    checkinDatesOfMonth: [],
     allowedCheckInTypes: [{
       type: CheckInType.PHOTO,
       validation: {
@@ -269,7 +275,8 @@ const CreateActivity = () => {
       },
       isEnabled: true,
       description: "Photo check-in"
-    }]
+    }],
+    inviteEmails: ""
   });
 
   const { createActivity, isLoading } = useActivity();
@@ -299,12 +306,23 @@ const CreateActivity = () => {
     ];
   };
 
-  const handleChange = (field: keyof ActivityFormData, value: any) => {
-    console.log(`Setting ${field} to:`, value); // Debug log
-    if (field === 'category') {
-      console.log('Selected category:', value);
-    }
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (e: FormChangeEvent) => {
+    const { name, value } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFrequencyChange = (value: "daily" | "weekly" | "monthly") => {
+    setFormData(prev => ({
+      ...prev,
+      frequency: value,
+      // Reset check-in related fields based on frequency
+      daysOfWeek: value === "weekly" ? prev.daysOfWeek : [],
+      checkinDatesOfMonth: value === "monthly" ? prev.checkinDatesOfMonth : []
+    }));
   };
 
   const handleContinue = (e: React.MouseEvent) => {
@@ -369,6 +387,35 @@ const CreateActivity = () => {
     }
   };
 
+  const getCheckinConfig = () => {
+    const config = {
+      checkinFrequency: 1,
+      checkinFrequencyUnit: formData.frequency,
+    };
+
+    switch (formData.frequency) {
+      case 'daily':
+        return config;
+      
+      case 'weekly':
+        return {
+          ...config,
+          checkinFrequency: formData.daysOfWeek.length,
+          checkinDays: formData.daysOfWeek
+        };
+      
+      case 'monthly':
+        return {
+          ...config,
+          checkinFrequency: formData.checkinDatesOfMonth.length || 1,
+          checkinDatesOfMonth: formData.checkinDatesOfMonth
+        };
+      
+      default:
+        throw new Error('Invalid check-in frequency');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -384,6 +431,8 @@ const CreateActivity = () => {
         return;
       }
 
+      const checkinConfig = getCheckinConfig();
+
       const activityData = {
         title: formData.name,
         description: formData.description,
@@ -391,21 +440,19 @@ const CreateActivity = () => {
         type: formData.visibility as ActivityType,
         proposedDuration: parseInt(formData.duration),
         durationUnit: DurationUnit.MONTHS,
-        maxSize: 10,
         tags: formData.tags,
+        goals: formData.goals,
         rules: formData.rules.map(rule => ({
           title: rule.title,
           description: rule.description,
           isDefault: rule.isDefault
         })),
         startDate: formData.startDate,
-        checkinFrequencyUnit: formData.frequency as CheckinFrequencyUnit,
-        checkinFrequency: formData.daysOfWeek.length,
-        checkinDays: formData.daysOfWeek.map(day => day.toLowerCase() as DayOfWeek),
+        ...checkinConfig,
         allowedCheckInTypes: formData.allowedCheckInTypes,
       };
 
-      console.log('Creating activity with data:', activityData); // Debug log
+      console.log('Creating activity with data:', activityData);
 
       createActivity(activityData as unknown as IActivity, {
         onSuccess: (response) => {
@@ -443,9 +490,10 @@ const CreateActivity = () => {
             toast.error('Activity created but response data is incomplete');
           }
         },
-        onError: (error: any) => {
-          console.error('Activity creation error:', error);
-          toast.error(error.message || 'Failed to create activity');
+        onError: (error: Error | unknown) => {
+          const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+          console.error('Activity creation error:', errorMessage);
+          toast.error(errorMessage);
         }
       });
     } catch (error: any) {
@@ -563,6 +611,53 @@ const CreateActivity = () => {
     }
   };
 
+  // Add custom goal handler
+  const handleAddCustomGoal = () => {
+    if (!formData.customGoal.trim()) {
+      toast.error("Please enter a goal");
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      goals: [...prev.goals, prev.customGoal.trim()],
+      customGoal: "" // Reset custom goal input
+    }));
+  };
+
+  // Add custom rule handler
+  const handleAddCustomRule = () => {
+    if (!formData.customRule.title.trim() || !formData.customRule.description.trim()) {
+      toast.error("Both title and description are required for custom rules");
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      rules: [...prev.rules, {
+        id: `custom-rule-${Date.now()}`, // Generate unique ID
+        title: formData.customRule.title.trim(),
+        description: formData.customRule.description.trim(),
+        isDefault: false
+      }],
+      customRule: { // Reset custom rule inputs
+        title: "",
+        description: ""
+      }
+    }));
+  };
+
+  // Update the custom rule form fields
+  const handleCustomRuleChange = (field: 'title' | 'description', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      customRule: {
+        ...prev.customRule,
+        [field]: value
+      }
+    }));
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
@@ -581,7 +676,7 @@ const CreateActivity = () => {
                 id="activity-name"
                 placeholder="E.g., Morning Yoga, Coding Club, Book Reading Group"
                 value={formData.name}
-                onChange={(e) => handleChange("name", e.target.value)}
+                onChange={(e) => handleChange({ target: { name: "name", value: e.target.value } })}
                 className="mt-1 bg-white/70 border-pastel-purple/30 focus-visible:ring-buddy-purple-light transition-all duration-200"
               />
             </div>
@@ -595,7 +690,7 @@ const CreateActivity = () => {
                 onValueChange={(value: string) => {
                   if (!value) return; // Prevent empty selection
                   console.log('Category selected:', value);
-                  handleChange("category", value);
+                  handleChange({ target: { name: "category", value } });
                 }}
               >
                 <SelectTrigger className="mt-1 bg-white/70 border-pastel-purple/30 focus:ring-buddy-purple-light transition-all duration-200">
@@ -642,7 +737,7 @@ const CreateActivity = () => {
                   <Input
                     placeholder="Add custom tag"
                     value={formData.customTag}
-                    onChange={(e) => handleChange('customTag', e.target.value)}
+                    onChange={(e) => handleChange({ target: { name: "customTag", value: e.target.value } })}
                     onKeyPress={handleTagKeyPress}
                   />
                   <Button 
@@ -684,7 +779,7 @@ const CreateActivity = () => {
                 id="description"
                 placeholder="Describe what this activity is about..."
                 value={formData.description}
-                onChange={(e) => handleChange("description", e.target.value)}
+                onChange={(e) => handleChange({ target: { name: "description", value: e.target.value } })}
                 className="mt-1 min-h-24 bg-white/70 border-pastel-purple/30 focus-visible:ring-buddy-purple-light transition-all duration-200"
               />
             </div>
@@ -806,7 +901,7 @@ const CreateActivity = () => {
                     mode="single"
                     selected={formData.startDate}
                     onSelect={(date) => {
-                      handleChange("startDate", date);
+                      handleChange({ target: { name: "startDate", value: date } });
                     }}
                     disabled={(date) => date < new Date()}
                     initialFocus
@@ -822,7 +917,7 @@ const CreateActivity = () => {
               </Label>
               <Select
                 value={formData.duration}
-                onValueChange={(value) => handleChange("duration", value)}
+                onValueChange={(value) => handleChange({ target: { name: "duration", value } })}
               >
                 <SelectTrigger className="mt-1 bg-white/70 border-pastel-purple/30">
                   <SelectValue placeholder="Select duration" />
@@ -842,7 +937,7 @@ const CreateActivity = () => {
               </Label>
               <RadioGroup
                 value={formData.frequency}
-                onValueChange={(value) => handleChange("frequency", value)}
+                onValueChange={handleFrequencyChange}
                 className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2"
               >
                 {[
@@ -916,7 +1011,7 @@ const CreateActivity = () => {
                           const newDates = checked
                             ? [...formData.checkinDatesOfMonth, date]
                             : formData.checkinDatesOfMonth.filter(d => d !== date);
-                          handleChange("checkinDatesOfMonth", newDates);
+                          handleChange({ target: { name: "checkinDatesOfMonth", value: newDates } });
                         }}
                         className="hidden"
                       />
@@ -948,7 +1043,7 @@ const CreateActivity = () => {
               </Label>
               <RadioGroup
                 value={formData.visibility}
-                onValueChange={(value: "public" | "private") => handleChange("visibility", value)}
+                onValueChange={(value: "public" | "private") => handleChange({ target: { name: "visibility", value } })}
                 className="space-y-4 mt-3"
               >
                 <div className="flex items-start space-x-3 p-4 rounded-xl bg-white/50 border border-pastel-purple/20 hover:border-pastel-purple/40 hover:bg-white/80 transition-all duration-200">
@@ -989,7 +1084,7 @@ const CreateActivity = () => {
                   id="invite-emails"
                   placeholder="Enter email addresses separated by commas"
                   value={formData.inviteEmails}
-                  onChange={(e) => handleChange("inviteEmails", e.target.value)}
+                  onChange={(e) => handleChange({ target: { name: "inviteEmails", value: e.target.value } })}
                   className="mt-1 min-h-24 bg-white/70 border-pastel-purple/30 focus-visible:ring-buddy-purple-light transition-all duration-200"
                 />
                 <p className="text-sm text-buddy-gray-500 mt-1">
@@ -1050,13 +1145,7 @@ const CreateActivity = () => {
                       id="rule-title"
                       placeholder="E.g., Be on time"
                       value={formData.customRule.title}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        customRule: {
-                          ...prev.customRule,
-                          title: e.target.value
-                        }
-                      }))}
+                      onChange={(e) => handleCustomRuleChange('title', e.target.value)}
                       className="mt-1 bg-white border-pastel-purple/30"
                     />
                   </div>
@@ -1068,13 +1157,7 @@ const CreateActivity = () => {
                       id="rule-description"
                       placeholder="E.g., Please arrive 5 minutes before the scheduled time"
                       value={formData.customRule.description}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        customRule: {
-                          ...prev.customRule,
-                          description: e.target.value
-                        }
-                      }))}
+                      onChange={(e) => handleCustomRuleChange('description', e.target.value)}
                       className="mt-1 min-h-20 bg-white border-pastel-purple/30"
                     />
                   </div>
@@ -1143,12 +1226,12 @@ const CreateActivity = () => {
                   id="custom-goal"
                   placeholder="E.g., Meditate for 10 minutes daily"
                   value={formData.customGoal}
-                  onChange={(e) => handleChange("customGoal", e.target.value)}
+                  onChange={(e) => handleChange({ target: { name: "customGoal", value: e.target.value } })}
                   className="flex-1 bg-white/70 border-pastel-purple/30 focus-visible:ring-buddy-purple-light transition-all duration-200"
                 />
                 <Button
                   type="button"
-                  onClick={() => toggleGoal(formData.customGoal)}
+                  onClick={handleAddCustomGoal}
                   disabled={!formData.customGoal.trim()}
                   className="bg-buddy-purple hover:bg-buddy-purple-dark"
                 >

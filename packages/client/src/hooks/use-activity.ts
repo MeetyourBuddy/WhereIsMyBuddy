@@ -9,6 +9,7 @@ import {
 } from "@/types/activity-types";
 import { toast } from "sonner";
 import { useActivityStore } from "@/store/activity.store";
+import { useNavigate } from "react-router-dom";
 
 export const activityKeys = {
   all: ["activities"] as const,
@@ -21,6 +22,7 @@ export const activityKeys = {
 export const useActivity = () => {
   const queryClient = useQueryClient();
   const { setActivities, setCurrentActivity, setError } = useActivityStore();
+  const navigate = useNavigate();
 
   const createActivity = useMutation({
     mutationFn: async (activityData: IActivity) => {
@@ -41,8 +43,12 @@ export const useActivity = () => {
       if (response.success && response.data?.activity) {
         const activity = response.data.activity;
 
-        // Use type assertion to avoid TypeScript errors
-        const activityId = (activity as IActivity)._id || activity.id;
+        interface MongoDocument {
+          _id?: string;
+          id?: string;
+        }
+
+        const activityId = (activity as MongoDocument)._id || activity.id;
 
         if (!activityId) {
           console.error(
@@ -64,6 +70,10 @@ export const useActivity = () => {
 
         // Invalidate queries to refresh the activities list
         queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
+
+        // Add navigation to view the created activity
+        navigate(`/activities/${activityId}`);
+
         toast.success("Activity created successfully");
       }
     },
@@ -83,24 +93,17 @@ export const useActivity = () => {
     },
   });
 
-  const getActivityQuery = (id: string) =>
-    useQuery<IActivityResponse>({
-      queryKey: activityKeys.detail(id),
+  const getActivity = (id: string) => {
+    return useQuery({
+      queryKey: ["activity", id],
       queryFn: async () => {
-        // Add validation to prevent undefined ID
-        if (!id) {
-          console.error("Attempted to fetch activity with undefined ID");
-          throw new Error("Activity ID is required");
-        }
-
         const response = await activityService.getActivityById(id);
-        if (response.success && response.data?.activity) {
-          setCurrentActivity(response.data.activity);
-        }
+        console.log("Full activity response:", response);
         return response;
       },
-      enabled: !!id, // This should prevent the query from running with undefined ID
+      enabled: !!id,
     });
+  };
 
   const updateActivityMutation = useMutation<
     ApiResponse<IActivityResponse>,
@@ -146,7 +149,7 @@ export const useActivity = () => {
     deleteActivity: deleteActivityMutation.mutate,
 
     // Queries
-    getActivity: getActivityQuery,
+    getActivity,
     activities: activitiesQuery.data?.data?.activities || [],
 
     // Loading states

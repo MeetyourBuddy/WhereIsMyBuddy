@@ -49,29 +49,33 @@ const getActivityStatus = (startDate: Date, endDate: Date) => {
   return { status: "ongoing", label: "Ongoing", variant: "success" };
 };
 
+const formatDuration = (duration: number, unit: string) => {
+  return `${duration} ${unit}${duration > 1 ? 's' : ''}`;
+};
+
+const formatFrequency = (frequency: number, unit: string) => {
+  return `${frequency}x ${unit}`;
+};
+
 const ActivityPage = () => {
   const { activityId } = useParams<{ activityId: string }>();
   const navigate = useNavigate();
   const { getActivity } = useActivity();
-  
-  useEffect(() => {
-    if (!activityId) {
-      console.error('Activity ID is missing in URL params');
-      navigate('/activities');
-      return;
-    }
-  }, [activityId, navigate]);
-  
-  const { data: activityData, isLoading } = activityId 
-    ? getActivity(activityId) as { data: IActivityResponse | undefined; isLoading: boolean }
-    : { data: undefined, isLoading: false };
-    
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const isMobile = useIsMobile();
+  
+  // Move query outside of conditional
+  const activityQuery = getActivity(activityId || '');
+  const activity = activityQuery.data?.data?.activity;
 
-  const activity = activityData?.data?.activity as IActivityResult | undefined;
+  useEffect(() => {
+    if (!activityId) {
+      navigate('/activities');
+    }
+  }, [activityId, navigate]);
 
-  if (isLoading) {
+  if (activityQuery.isLoading || isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -79,9 +83,35 @@ const ActivityPage = () => {
     return <div>Activity not found</div>;
   }
 
+  // Add debug log
+  console.log('Activity data from query:', activity);
+
+  // Format the data for display
+  const displayData = {
+    name: activity.title,
+    description: activity.description || 'No description available',
+    duration: formatDuration(activity.proposedDuration, activity.durationUnit),
+    frequency: formatFrequency(activity.checkinFrequency, activity.checkinFrequencyUnit),
+    category: activity.category,
+    bannerImage: activity.bannerImage || '/default-banner.jpg', // You might want to add a default banner
+    participants: activity.participants || [],
+    participantCount: Array.isArray(activity.participants) ? activity.participants.length : 0,
+    // Use server-computed values
+    checkins: activity.checkins || 0,
+    progress: activity.progress || 0,
+    streakCount: activity.streakCount || 0,
+    totalDays: activity.totalDays || 0,
+    daysCompleted: activity.daysCompleted || 0,
+    admin: activity.admin,
+    id: activity.id
+  };
+
+  // Add debug log
+  console.log('Display data:', displayData);
+
   const { status, label, variant } = getActivityStatus(
-    activity.startDate,
-    activity.endedAt
+    new Date(activity.startDate),
+    activity.endedAt ? new Date(activity.endedAt) : new Date()
   );
 
   return (
@@ -92,7 +122,7 @@ const ActivityPage = () => {
         <div className="absolute inset-0 z-[-10] bg-gradient-to-r from-buddy-purple/70 to-buddy-blue/70 mix-blend-multiply" />
         <div
           className="relative h-64 md:h-80 w-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${activity.bannerImage})` }}
+          style={{ backgroundImage: `url(${displayData.bannerImage})` }}
         >
           <Badge
             className="absolute top-4 right-4 py-1 px-3 z-10"
@@ -107,20 +137,20 @@ const ActivityPage = () => {
                 <div>
                   <div className="flex flex-wrap gap-3 mb-2">
                     <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {activity.category}
+                      {displayData.category}
                     </span>
                     <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {activity.duration}
+                      {displayData.duration}
                     </span>
                     <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {activity.frequency}
+                      {displayData.frequency}
                     </span>
                   </div>
                   <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shadow-lg">
-                    {activity.name}
+                    {displayData.name}
                   </h1>
                   <p className="max-w-3xl text-white text-shadow-lg text-sm md:text-base">
-                    {activity.description}
+                    {displayData.description}
                   </p>
                 </div>
                 <div className="flex gap-2 mt-4 md:mt-0 z-[10]">
@@ -140,7 +170,7 @@ const ActivityPage = () => {
                     className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
                     onClick={() => {
                       // Navigate to edit page
-                      window.location.href = `/activities/edit/${activity.id}`;
+                      window.location.href = `/activities/edit/${displayData.id}`;
                     }}
                   >
                     <Settings className="w-4 h-4 mr-2" />
@@ -165,7 +195,7 @@ const ActivityPage = () => {
                   Participants
                 </p>
                 <p className="text-lg md:text-xl font-semibold">
-                  {activity.participants.length} participants
+                  {displayData.participantCount} participants
                 </p>
               </div>
             </Card>
@@ -179,7 +209,7 @@ const ActivityPage = () => {
                   Check-ins
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-blue to-buddy-blue-light bg-clip-text text-transparent">
-                  {activity.checkins}
+                  {displayData.checkins}
                 </p>
               </div>
             </Card>
@@ -193,7 +223,7 @@ const ActivityPage = () => {
                   Progress
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-green to-buddy-green-light bg-clip-text text-transparent">
-                  {activity.progress}%
+                  {displayData.progress}%
                 </p>
               </div>
             </Card>
@@ -207,7 +237,7 @@ const ActivityPage = () => {
                   Current Streak
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">
-                  {activity.streakCount} days
+                  {displayData.streakCount} days
                 </p>
               </div>
             </Card>
@@ -287,43 +317,43 @@ const ActivityPage = () => {
             </TabsList>
 
             <TabsContent value="dashboard" className="p-0 mt-0 animate-fade-in">
-              <ActivityDashboard activityId={activity.id} />
+              <ActivityDashboard activityId={displayData.id} />
             </TabsContent>
 
             <TabsContent
               value="leaderboard"
               className="p-0 mt-0 animate-fade-in"
             >
-              <ActivityLeaderboard activityId={activity.id} />
+              <ActivityLeaderboard activityId={displayData.id} />
             </TabsContent>
 
             {/* TODO: Add gallery tab in v2 */}
             {/* <TabsContent value="gallery" className="p-0 mt-0 animate-fade-in">
-                <ActivityGallery activityId={activity.id} />
+                <ActivityGallery activityId={displayData.id} />
               </TabsContent> */}
 
             {/* TODO: Add schedule tab in v2 */}
             {/* <TabsContent value="schedule" className="p-0 mt-0 animate-fade-in">
-                <ActivitySchedule activityId={activity.id} />
+                <ActivitySchedule activityId={displayData.id} />
               </TabsContent> */}
 
             <TabsContent value="checkin" className="p-0 mt-0 animate-fade-in">
               <ActivityCheckin
-                activityId={activity.id}
-                streakCount={activity.streakCount}
-                totalDays={activity.totalDays}
-                daysCompleted={activity.daysCompleted}
+                activityId={displayData.id}
+                streakCount={displayData.streakCount}
+                totalDays={displayData.totalDays}
+                daysCompleted={displayData.daysCompleted}
               />
             </TabsContent>
 
             {/* TODO: Add partners tab in v2 */}
             {/* <TabsContent value="partners" className="p-0 mt-0 animate-fade-in">
-                  <ActivityPartners activityId={activity.id} />
+                  <ActivityPartners activityId={displayData.id} />
                 </TabsContent> */}
 
             <TabsContent value="messages" className="p-0 mt-0 animate-fade-in">
               <div className="p-6">
-                <MessageBoard activityId={activity.id} />
+                <MessageBoard activityId={displayData.id} />
               </div>
             </TabsContent>
           </Tabs>
