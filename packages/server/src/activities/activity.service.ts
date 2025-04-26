@@ -3,6 +3,11 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, Document } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
@@ -14,7 +19,14 @@ import { User } from '../users/schemas/user.schema';
 export class ActivityService {
   constructor(
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
+    @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
   ) {}
+
+  async create(
+    createActivityDto: CreateActivityDto,
+    user: User,
+  ): Promise<Activity> {
+    console.log('User object:', user);
 
   async create(
     createActivityDto: CreateActivityDto,
@@ -30,38 +42,7 @@ export class ActivityService {
       isActive: true,
     });
 
-    const savedActivity = await activity.save();
-    
-    // Modify the population to match findOne
-    const populatedActivity = await this.activityModel
-      .findById(savedActivity._id)
-      .populate({
-        path: 'admin',
-        select: 'name email avatar',
-        model: 'User',
-        options: { lean: true }
-      })
-      .populate({
-        path: 'participants',
-        select: 'name email avatar',
-        model: 'User',
-        options: { lean: true }
-      })
-      .lean()
-      .exec();
-
-    if (!populatedActivity) {
-      throw new NotFoundException('Activity not found after creation');
-    }
-
-    return {
-      ...populatedActivity,
-      checkins: 0,
-      progress: 0,
-      streakCount: 0,
-      totalDays: 0,
-      daysCompleted: 0
-    };
+    return activity.save();
   }
 
   async findAll(user: User): Promise<Activity[]> {
@@ -77,7 +58,21 @@ export class ActivityService {
         .populate('admin', 'name email avatar')
         .populate('participants', 'name email avatar')
         .exec();
+      return await this.activityModel
+        .find({
+          $or: [
+            { type: 'public' },
+            { participants: user._id },
+            { admin: user._id },
+          ],
+        })
+        .populate('admin', 'name email avatar')
+        .populate('participants', 'name email avatar')
+        .exec();
     } catch (error) {
+      throw new BadRequestException(
+        'Failed to fetch activities: ' + error.message,
+      );
       throw new BadRequestException(
         'Failed to fetch activities: ' + error.message,
       );
@@ -86,6 +81,18 @@ export class ActivityService {
 
   async findOne(id: string, user: User): Promise<Activity> {
     try {
+      const activity = await this.activityModel
+        .findOne({
+          _id: id,
+          $or: [
+            { type: 'public' },
+            { participants: user._id },
+            { admin: user._id },
+          ],
+        })
+        .populate('admin', 'name email avatar')
+        .populate('participants', 'name email avatar')
+        .exec();
       const activity = await this.activityModel
         .findById(id)
         .populate('admin')
@@ -107,6 +114,12 @@ export class ActivityService {
 
       return activity;
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        'Failed to fetch activity: ' + error.message,
+      );
       console.error('Error in findOne:', error);
       throw error;
     }
@@ -117,9 +130,15 @@ export class ActivityService {
     updateActivityDto: UpdateActivityDto,
     user: User,
   ): Promise<Activity> {
+  async update(
+    id: string,
+    updateActivityDto: UpdateActivityDto,
+    user: User,
+  ): Promise<Activity> {
     try {
       const activity = await this.activityModel.findOne({
         _id: id,
+        admin: user._id, // Only admin can update
         admin: user._id, // Only admin can update
       });
 
@@ -136,6 +155,9 @@ export class ActivityService {
       throw new BadRequestException(
         'Failed to update activity: ' + error.message,
       );
+      throw new BadRequestException(
+        'Failed to update activity: ' + error.message,
+      );
     }
   }
 
@@ -143,6 +165,7 @@ export class ActivityService {
     try {
       const result = await this.activityModel.deleteOne({
         _id: id,
+        admin: user._id, // Only admin can delete
         admin: user._id, // Only admin can delete
       });
 
@@ -156,6 +179,11 @@ export class ActivityService {
       throw new BadRequestException(
         'Failed to delete activity: ' + error.message,
       );
+      throw new BadRequestException(
+        'Failed to delete activity: ' + error.message,
+      );
     }
   }
+}
+
 }

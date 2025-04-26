@@ -7,7 +7,6 @@ import {
   AuthResponse,
 } from "@/types/auth-types";
 import { ApiResponse } from "@/types";
-import { User } from "@/types/auth-types";
 
 class AuthService {
   async login(

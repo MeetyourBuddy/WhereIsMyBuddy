@@ -1,4 +1,4 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import {
   ActivityType,
   JoinType,
@@ -99,4 +99,6 @@ export class ActivityResponseDto {
   constructor(partial: Partial<ActivityResponseDto>) {
     Object.assign(this, partial);
   }
+}
+
 }

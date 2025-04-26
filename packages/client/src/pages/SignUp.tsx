@@ -62,7 +62,7 @@ const SignUp = () => {
   };
 
   const handleGoogleSignin = () => {
-    window.open(`${config.api.baseURL}/auth/google`, "_self");
+    window.open(`${config.api.baseURL}/api/auth/google`, "_self");
   };
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
