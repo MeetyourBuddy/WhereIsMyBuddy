@@ -1,14 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { activityService } from '@/services/api/activity/activity-service';
-import { IActivity, IActivityResponse, IActivityListResponse, ApiResponse, IActivityResult } from '@/types/activity-types';
-import { toast } from 'sonner';
-import { useActivityStore } from '@/store/activity.store';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { activityService } from "@/services/api/activity/activity-service";
+import {
+  IActivity,
+  IActivityResponse,
+  IActivityListResponse,
+  ApiResponse,
+  IActivityResult,
+} from "@/types/activity-types";
+import { toast } from "sonner";
+import { useActivityStore } from "@/store/activity.store";
 
 export const activityKeys = {
-  all: ['activities'] as const,
-  lists: () => [...activityKeys.all, 'list'] as const,
+  all: ["activities"] as const,
+  lists: () => [...activityKeys.all, "list"] as const,
   list: (filters: string) => [...activityKeys.lists(), { filters }] as const,
-  details: () => [...activityKeys.all, 'detail'] as const,
+  details: () => [...activityKeys.all, "detail"] as const,
   detail: (id: string) => [...activityKeys.details(), id] as const,
 };
 
@@ -24,8 +30,8 @@ export const useActivity = () => {
       } catch (error: any) {
         if (error.response?.status === 401) {
           // Redirect to login
-          window.location.href = '/signin';
-          throw new Error('Session expired. Please sign in again.');
+          window.location.href = "/signin";
+          throw new Error("Session expired. Please sign in again.");
         }
         throw error;
       }
@@ -34,33 +40,36 @@ export const useActivity = () => {
       // Check if the response contains the activity data
       if (response.success && response.data?.activity) {
         const activity = response.data.activity;
-        
+
         // Use type assertion to avoid TypeScript errors
-        const activityId = (activity as any)._id || activity.id;
-        
+        const activityId = (activity as IActivity)._id || activity.id;
+
         if (!activityId) {
-          console.error('Activity created but no ID found in response:', activity);
-          toast.error('Activity created but ID is missing');
+          console.error(
+            "Activity created but no ID found in response:",
+            activity
+          );
+          toast.error("Activity created but ID is missing");
           return;
         }
-        
+
         // Set the ID properly - MongoDB uses _id
         const activityWithId = {
           ...activity,
-          id: activityId
+          id: activityId,
         };
-        
+
         // Set the current activity in the store
         setCurrentActivity(activityWithId);
-        
+
         // Invalidate queries to refresh the activities list
         queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
-        toast.success('Activity created successfully');
+        toast.success("Activity created successfully");
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create activity');
-    }
+      toast.error(error.message || "Failed to create activity");
+    },
   });
 
   const activitiesQuery = useQuery<IActivityListResponse>({
@@ -71,19 +80,19 @@ export const useActivity = () => {
         setActivities(response.data.activities);
       }
       return response;
-    }
+    },
   });
 
-  const getActivityQuery = (id: string) => 
+  const getActivityQuery = (id: string) =>
     useQuery<IActivityResponse>({
       queryKey: activityKeys.detail(id),
       queryFn: async () => {
         // Add validation to prevent undefined ID
         if (!id) {
-          console.error('Attempted to fetch activity with undefined ID');
-          throw new Error('Activity ID is required');
+          console.error("Attempted to fetch activity with undefined ID");
+          throw new Error("Activity ID is required");
         }
-        
+
         const response = await activityService.getActivityById(id);
         if (response.success && response.data?.activity) {
           setCurrentActivity(response.data.activity);
@@ -102,14 +111,16 @@ export const useActivity = () => {
     onSuccess: (response, variables) => {
       if (response.success && response.data?.data?.activity) {
         setCurrentActivity(response.data.data.activity);
-        queryClient.invalidateQueries({ queryKey: activityKeys.detail(variables.id) });
+        queryClient.invalidateQueries({
+          queryKey: activityKeys.detail(variables.id),
+        });
         queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
-        toast.success('Activity updated successfully');
+        toast.success("Activity updated successfully");
       }
     },
     onError: (error) => {
       setError(error.message);
-      toast.error(error.message || 'Failed to update activity');
+      toast.error(error.message || "Failed to update activity");
     },
   });
 
@@ -119,12 +130,12 @@ export const useActivity = () => {
       if (response.success) {
         setCurrentActivity(null);
         queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
-        toast.success('Activity deleted successfully');
+        toast.success("Activity deleted successfully");
       }
     },
     onError: (error: Error) => {
       setError(error.message);
-      toast.error(error.message || 'Failed to delete activity');
+      toast.error(error.message || "Failed to delete activity");
     },
   });
 
@@ -139,10 +150,10 @@ export const useActivity = () => {
     activities: activitiesQuery.data?.data?.activities || [],
 
     // Loading states
-    isLoading: 
-      createActivity.isPending || 
-      activitiesQuery.isLoading || 
-      updateActivityMutation.isPending || 
+    isLoading:
+      createActivity.isPending ||
+      activitiesQuery.isLoading ||
+      updateActivityMutation.isPending ||
       deleteActivityMutation.isPending,
 
     // Store state
@@ -150,4 +161,4 @@ export const useActivity = () => {
     error: useActivityStore((state) => state.error),
     clearError: useActivityStore((state) => state.clearError),
   };
-}; 
+};

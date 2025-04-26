@@ -1,6 +1,22 @@
-import { IsString, IsNumber, IsEnum, IsOptional, IsArray, IsBoolean, ValidateNested, IsDate, Min, Max, ArrayMinSize, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsOptional,
+  IsArray,
+  IsBoolean,
+  ValidateNested,
+  IsDate,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ActivityType, JoinType, DurationUnit, CheckinFrequencyUnit, DayOfWeek, CheckInType } from '../schemas/activity.schema';
+import {
+  ActivityType,
+  DurationUnit,
+  CheckinFrequencyUnit,
+  DayOfWeek,
+  CheckInType,
+} from '../schemas/activity.schema';
 import { InterestCategory } from '../../users/enums/interests.enum';
 
 class ActivityRuleDto {
@@ -103,4 +119,4 @@ export class CreateActivityDto {
   @ValidateNested({ each: true })
   @Type(() => CheckInTypeConfigDto)
   allowedCheckInTypes: CheckInTypeConfigDto[];
-} 
+}

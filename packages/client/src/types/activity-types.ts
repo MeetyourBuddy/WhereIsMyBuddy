@@ -1,45 +1,45 @@
-import { IUserResponse } from './user-types';
-import { InterestCategory } from './interest-categories.enum';
+import { IUserResponse } from "./user-types";
+import { InterestCategory } from "./interest-categories.enum";
 
 export enum ActivityType {
-  PRIVATE = 'private',
-  PUBLIC = 'public'
+  PRIVATE = "private",
+  PUBLIC = "public",
 }
 
 export enum JoinType {
-  FLEXIBLE = 'flexible',
-  FIXED = 'fixed'
+  FLEXIBLE = "flexible",
+  FIXED = "fixed",
 }
 
 export enum DurationUnit {
-  DAYS = 'days',
-  MONTHS = 'months'
+  DAYS = "days",
+  MONTHS = "months",
 }
 
 export enum ActivityRole {
-  ADMIN = 'admin',
-  MEMBER = 'member'
+  ADMIN = "admin",
+  MEMBER = "member",
 }
 
 export enum DayOfWeek {
-  SUNDAY = 'sunday',
-  MONDAY = 'monday',
-  TUESDAY = 'tuesday',
-  WEDNESDAY = 'wednesday',
-  THURSDAY = 'thursday',
-  FRIDAY = 'friday',
-  SATURDAY = 'saturday'
+  SUNDAY = "sunday",
+  MONDAY = "monday",
+  TUESDAY = "tuesday",
+  WEDNESDAY = "wednesday",
+  THURSDAY = "thursday",
+  FRIDAY = "friday",
+  SATURDAY = "saturday",
 }
 
 export enum CheckInType {
-  PHOTO = 'photo',
-  TEXT = 'text'
+  PHOTO = "photo",
+  TEXT = "text",
 }
 
 export enum CheckinFrequencyUnit {
-  DAILY = 'daily',
-  WEEKLY = 'weekly',
-  MONTHLY = 'monthly'
+  DAILY = "daily",
+  WEEKLY = "weekly",
+  MONTHLY = "monthly",
 }
 
 export interface PhotoValidation {
