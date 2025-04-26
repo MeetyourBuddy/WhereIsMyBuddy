@@ -32,7 +32,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInDays } from "date-fns";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { VariantProps } from "class-variance-authority";
-import { useActivity } from '@/hooks/use-activity';
+import { useActivity } from "@/hooks/use-activity";
 import { IActivityResult, IActivityResponse } from "@/types/activity-types";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
@@ -50,7 +50,7 @@ const getActivityStatus = (startDate: Date, endDate: Date) => {
 };
 
 const formatDuration = (duration: number, unit: string) => {
-  return `${duration} ${unit}${duration > 1 ? 's' : ''}`;
+  return `${duration} ${unit}${duration > 1 ? "s" : ""}`;
 };
 
 const formatFrequency = (frequency: number, unit: string) => {
@@ -64,14 +64,14 @@ const ActivityPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const isMobile = useIsMobile();
-  
+
   // Move query outside of conditional
-  const activityQuery = getActivity(activityId || '');
+  const activityQuery = getActivity(activityId || "");
   const activity = activityQuery.data?.data?.activity;
 
   useEffect(() => {
     if (!activityId) {
-      navigate('/activities');
+      navigate("/activities");
     }
   }, [activityId, navigate]);
 
@@ -84,18 +84,23 @@ const ActivityPage = () => {
   }
 
   // Add debug log
-  console.log('Activity data from query:', activity);
+  console.log("Activity data from query:", activity);
 
   // Format the data for display
   const displayData = {
     name: activity.title,
-    description: activity.description || 'No description available',
+    description: activity.description || "No description available",
     duration: formatDuration(activity.proposedDuration, activity.durationUnit),
-    frequency: formatFrequency(activity.checkinFrequency, activity.checkinFrequencyUnit),
+    frequency: formatFrequency(
+      activity.checkinFrequency,
+      activity.checkinFrequencyUnit
+    ),
     category: activity.category,
-    bannerImage: activity.bannerImage || '/default-banner.jpg', // You might want to add a default banner
+    bannerImage: activity.bannerImage || "/default-banner.jpg", // You might want to add a default banner
     participants: activity.participants || [],
-    participantCount: Array.isArray(activity.participants) ? activity.participants.length : 0,
+    participantCount: Array.isArray(activity.participants)
+      ? activity.participants.length
+      : 0,
     // Use server-computed values
     checkins: activity.checkins || 0,
     progress: activity.progress || 0,
@@ -103,11 +108,11 @@ const ActivityPage = () => {
     totalDays: activity.totalDays || 0,
     daysCompleted: activity.daysCompleted || 0,
     admin: activity.admin,
-    id: activity.id
+    id: activity.id,
   };
 
   // Add debug log
-  console.log('Display data:', displayData);
+  console.log("Display data:", displayData);
 
   const { status, label, variant } = getActivityStatus(
     new Date(activity.startDate),
@@ -317,7 +322,7 @@ const ActivityPage = () => {
             </TabsList>
 
             <TabsContent value="dashboard" className="p-0 mt-0 animate-fade-in">
-              <ActivityDashboard activityId={displayData.id} />
+              <ActivityDashboard activity={activity} />
             </TabsContent>
 
             <TabsContent
