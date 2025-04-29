@@ -432,9 +432,16 @@ const CreateActivity = () => {
           toast.error("Please select a category");
           return false;
         }
+        if (formData.tags.length === 0) {
+          toast.error("Please add at least one tag");
+          return false;
+        }
         return true;
-
       case 1: // Schedule
+        if (!formData.duration) {
+          toast.error("Activity duration is required");
+          return false;
+        }
         if (!formData.startDate) {
           toast.error("Start date is required");
           return false;
@@ -468,7 +475,6 @@ const CreateActivity = () => {
           return false;
         }
         return true;
-
       default:
         return true;
     }
@@ -535,6 +541,7 @@ const CreateActivity = () => {
         startDate: formData.startDate,
         ...checkinConfig,
         allowedCheckInTypes: formData.allowedCheckInTypes,
+        tags: formData.tags,
       };
 
       console.log("Creating activity with data:", activityData);
@@ -788,10 +795,10 @@ const CreateActivity = () => {
 
             <div>
               <Label className="text-buddy-gray-700 font-medium mb-2 block">
-                Activity Tags
+                Activity Tags <span className="text-red-500">*</span>
               </Label>
               <p className="text-sm text-buddy-gray-500 mb-4">
-                Select tags to help others discover your activity
+                Select tags to help others discover your activity (required)
               </p>
 
               <div className="space-y-4">
@@ -980,7 +987,7 @@ const CreateActivity = () => {
           >
             <div className="space-y-2">
               <Label className="text-buddy-gray-700 font-medium">
-                Start Date
+                Start Date  <span className="text-red-500">*</span>
               </Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -1017,9 +1024,12 @@ const CreateActivity = () => {
             </div>
 
             <div>
-              <Label className="text-buddy-gray-700 font-medium">
-                Duration
+              <Label className="text-buddy-gray-700 font-medium mb-2 block">
+                Activity Duration <span className="text-red-500">*</span>
               </Label>
+              <p className="text-sm text-buddy-gray-500 mb-4">
+                How long will this activity run?
+              </p>
               <Select
                 value={formData.duration}
                 onValueChange={(value) =>
@@ -1040,7 +1050,7 @@ const CreateActivity = () => {
 
             <div>
               <Label className="text-buddy-gray-700 font-medium">
-                Frequency
+                Frequency  <span className="text-red-500">*</span>
               </Label>
               <RadioGroup
                 value={formData.frequency}
@@ -1079,7 +1089,7 @@ const CreateActivity = () => {
                 transition={{ duration: 0.3 }}
               >
                 <Label className="text-buddy-gray-700 font-medium mb-2 block">
-                  Days of the Week
+                  Days of the Week  <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
@@ -1125,7 +1135,7 @@ const CreateActivity = () => {
                 transition={{ duration: 0.3 }}
               >
                 <Label className="text-buddy-gray-700 font-medium mb-2 block">
-                  Check-in Dates
+                  Check-in Dates  <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid grid-cols-7 gap-2 p-4 bg-white/50 rounded-xl border border-pastel-purple/20">
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((date) => (

@@ -83,12 +83,13 @@ export class CreateActivityDto {
   type: ActivityType;
 
   @IsNumber()
+  @Min(1, { message: 'Duration must be at least 1' })
   proposedDuration: number;
 
   @IsArray()
   @IsString({ each: true })
-  @IsOptional()
-  tags?: string[];
+  @ArrayMinSize(1)
+  tags: string[];
 
   @ValidateNested({ each: true })
   @Type(() => ActivityRuleDto)
