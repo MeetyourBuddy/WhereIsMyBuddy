@@ -13,11 +13,6 @@ export enum JoinType {
   FIXED = 'fixed',
 }
 
-export enum DurationUnit {
-  DAYS = 'days',
-  MONTHS = 'months',
-}
-
 export enum CheckinFrequencyUnit {
   DAILY = 'daily',
   WEEKLY = 'weekly',
@@ -81,7 +76,11 @@ class CheckInTypeConfig {
   description: string;
 }
 
-@Schema({ timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } })
+@Schema({
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+})
 export class Activity {
   @Prop({ required: true })
   title: string;
@@ -90,9 +89,6 @@ export class Activity {
   description: string;
   @Prop({ required: true })
   proposedDuration: number;
-
-  @Prop({ required: true, enum: DurationUnit })
-  durationUnit: DurationUnit;
 
   @Prop()
   bannerImage?: string;
@@ -109,7 +105,11 @@ export class Activity {
   @Prop({ type: [String], default: [] })
   categories: string[];
 
-  @Prop({ type: [String], required: true, validate: [(v: string[]) => v.length > 0, 'Goals cannot be empty'] })
+  @Prop({
+    type: [String],
+    required: true,
+    validate: [(v: string[]) => v.length > 0, 'Goals cannot be empty'],
+  })
   goals: string[];
 
   @Prop([String])
@@ -139,14 +139,20 @@ export class Activity {
   @Prop({ type: [{ type: CheckInTypeConfig }] })
   allowedCheckInTypes: CheckInTypeConfig[];
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  admin: Types.ObjectId | User;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
+  admin: User | Types.ObjectId;
 
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
-  participants: (Types.ObjectId | User)[];
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }],
+    default: [],
+  })
+  participants: (User | Types.ObjectId)[];
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop()
+  endDate?: Date;
 
   @Prop()
   endedAt?: Date;
@@ -184,3 +190,14 @@ export type ActivityDocument = Activity & Document;
 export const ActivitySchema = SchemaFactory.createForClass(Activity);
 ActivitySchema.set('toJSON', { virtuals: true });
 ActivitySchema.set('toObject', { virtuals: true });
+
+// Calculate end date
+ActivitySchema.pre('save', function (next) {
+  // Calculate end date for all activities regardless of type
+  this.endDate = new Date(this.startDate);
+
+  // Always add months since duration is always in months
+  this.endDate.setMonth(this.endDate.getMonth() + this.proposedDuration);
+
+  next();
+});

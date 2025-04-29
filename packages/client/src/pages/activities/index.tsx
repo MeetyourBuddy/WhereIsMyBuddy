@@ -15,12 +15,16 @@ import {
   X,
   Users,
 } from "lucide-react";
+import { useActivity } from "@/hooks/use-activity";
 
 const Activities = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const { activities: activitiesFromQuery, isLoading, error } = useActivity();
+
+  console.log("activitiesFromQuery", activitiesFromQuery);
 
   const activities = [
     {
@@ -192,20 +196,24 @@ const Activities = () => {
     "Hiking",
   ];
 
-  const filteredActivities = activities.filter((activity) => {
-    const matchesSearch =
-      activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.category.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredActivities =
+    activitiesFromQuery &&
+    activitiesFromQuery.filter((activity) => {
+      const matchesSearch =
+        activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        activity.description
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        activity.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        activity.category.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCategory =
-      activeFilters.length === 0 ||
-      activeFilters.includes("All") ||
-      activeFilters.includes(activity.category);
+      const matchesCategory =
+        activeFilters.length === 0 ||
+        activeFilters.includes("All") ||
+        activeFilters.includes(activity.category);
 
-    return matchesSearch && matchesCategory;
-  });
+      return matchesSearch && matchesCategory;
+    });
 
   const toggleFilter = (filter: string) => {
     if (filter === "All") {
@@ -264,8 +272,8 @@ const Activities = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-buddy-gray-400" />
                 <Input
                   type="search"
-                  placeholder="Search activities, locations, or categories..."
-                  className="pl-10 bg-white"
+                  placeholder="Search activities or categories..."
+                  className="pl-10 bg-white h-11"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -285,13 +293,6 @@ const Activities = () => {
                   icon={<SortAsc className="w-4 h-4" />}
                 >
                   Sort
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white"
-                  icon={<MapPin className="w-4 h-4" />}
-                >
-                  Near Me
                 </Button>
               </div>
             </div>
