@@ -62,7 +62,7 @@ export interface CheckInTypeConfig {
 
 export interface IActivityRule {
   _id: string;
-  rule: string;
+  title: string;
   description?: string;
   isDefault: boolean;
 }
@@ -120,6 +120,7 @@ export interface IActivityResult extends IActivity {
   description: string;
   location?: string;
   startDate: Date;
+  endDate?: Date;
 }
 
 export interface IActivityResponse {

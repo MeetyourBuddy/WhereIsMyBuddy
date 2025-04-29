@@ -2,7 +2,6 @@ import { Exclude, Expose } from 'class-transformer';
 import {
   ActivityType,
   JoinType,
-  DurationUnit,
   CheckinFrequencyUnit,
   DayOfWeek,
 } from '../schemas/activity.schema';
@@ -20,9 +19,6 @@ export class ActivityResponseDto {
 
   @Expose()
   proposedDuration: number;
-
-  @Expose()
-  durationUnit: DurationUnit;
 
   @Expose()
   bannerImage?: string;

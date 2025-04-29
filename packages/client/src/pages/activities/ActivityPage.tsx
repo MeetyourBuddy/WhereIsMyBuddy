@@ -34,6 +34,7 @@ import { Badge, badgeVariants } from "@/components/ui/badge";
 import { VariantProps } from "class-variance-authority";
 import { useActivity } from "@/hooks/use-activity";
 import { IActivityResult, IActivityResponse } from "@/types/activity-types";
+import EditActivityDialog from "@/components/activities/EditActivityDialog";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -90,13 +91,15 @@ const ActivityPage = () => {
   const displayData = {
     name: activity.title,
     description: activity.description || "No description available",
-    duration: formatDuration(activity.proposedDuration, activity.durationUnit),
+    duration: formatDuration(activity.proposedDuration, "month"),
     frequency: formatFrequency(
       activity.checkinFrequency,
       activity.checkinFrequencyUnit
     ),
     category: activity.category,
-    bannerImage: activity.bannerImage || "/default-banner.jpg", // You might want to add a default banner
+    bannerImage:
+      activity.bannerImage ||
+      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2940", // You might want to add a default banner
     participants: activity.participants || [],
     participantCount: Array.isArray(activity.participants)
       ? activity.participants.length
@@ -170,17 +173,15 @@ const ActivityPage = () => {
                       Check-in Now
                     </Button>
                   </CheckInDialog>
-                  <Button
-                    variant="outline"
-                    className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
-                    onClick={() => {
-                      // Navigate to edit page
-                      window.location.href = `/activities/edit/${displayData.id}`;
-                    }}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Manage Activity
-                  </Button>
+                  <EditActivityDialog activity={activity}>
+                    <Button
+                      variant="outline"
+                      className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Manage Activity
+                    </Button>
+                  </EditActivityDialog>
                 </div>
               </div>
             </div>

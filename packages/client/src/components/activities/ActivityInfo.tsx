@@ -30,7 +30,7 @@ interface ActivityInfoProps {
   tags?: string[];
   rules?: {
     _id: string;
-    rule: string;
+    title: string;
     description?: string;
     isDefault: boolean;
   }[];
@@ -137,7 +137,7 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
                       className={`h-3 w-3 mt-1 mr-2 ${rule.isDefault ? "text-buddy-orange" : "text-buddy-purple"}`}
                     />
                     <span className="text-sm text-buddy-gray-700 font-medium">
-                      {rule.rule}
+                      {rule.title}
                       {rule.isDefault && (
                         <Badge
                           variant="outline"

@@ -9,6 +9,13 @@ import {
 } from "@/types/activity-types";
 import { toast } from "sonner";
 import { useActivityStore } from "@/store/activity.store";
+import { useNavigate } from "react-router-dom";
+
+// Add this interface with your other type definitions at the top
+interface MongoDocument {
+  _id?: string;
+  id?: string;
+}
 
 export const activityKeys = {
   all: ["activities"] as const,
@@ -26,49 +33,49 @@ export const useActivity = () => {
   const createActivity = useMutation({
     mutationFn: async (activityData: IActivity) => {
       try {
-        const response = await activityService.createActivity(activityData);
-        return response;
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          // Redirect to login
-          window.location.href = "/signin";
+        return await activityService.createActivity(activityData);
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes("jwt expired")) {
+          navigate("/signin");
           throw new Error("Session expired. Please sign in again.");
         }
         throw error;
       }
     },
     onSuccess: (response) => {
-      // Check if the response contains the activity data
-      if (response.success && response.data?.activity) {
-        const activity = response.data.activity;
-
-        // Use type assertion to avoid TypeScript errors
-        const activityId = (activity as IActivity)._id || activity.id;
-
-        if (!activityId) {
-          console.error(
-            "Activity created but no ID found in response:",
-            activity
-          );
-          toast.error("Activity created but ID is missing");
-          return;
-        }
-
-        // Set the ID properly - MongoDB uses _id
-        const activityWithId = {
-          ...activity,
-          id: activityId,
-        };
-
-        // Set the current activity in the store
-        setCurrentActivity(activityWithId);
-
-        // Invalidate queries to refresh the activities list
-        queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
-        toast.success("Activity created successfully");
+      if (!response.success || !response.data?.activity) {
+        toast.error("Failed to create activity: Invalid response");
+        return;
       }
+
+      const activity = response.data.activity;
+      const activityId = (activity as MongoDocument)._id || activity.id;
+
+      if (!activityId) {
+        console.error(
+          "Activity created but no ID found in response:",
+          activity
+        );
+        toast.error("Activity created but ID is missing");
+        return;
+      }
+
+      // Normalize the activity object with consistent ID
+      const normalizedActivity = {
+        ...activity,
+        id: activityId,
+      };
+
+      // Update application state
+      setCurrentActivity(normalizedActivity);
+      queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
+
+      // Redirect to the activity detail page
+      navigate(`/activities/${activityId}`);
+      toast.success("Activity created successfully");
     },
     onError: (error: Error) => {
+      setError(error.message);
       toast.error(error.message || "Failed to create activity");
     },
   });

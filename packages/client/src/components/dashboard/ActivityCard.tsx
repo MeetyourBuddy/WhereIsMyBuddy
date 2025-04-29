@@ -30,66 +30,70 @@ const ActivityCard = ({
   onClick,
 }: ActivityCardProps) => {
   // Calculate the images to display for group avatar
-  const participantImages = participants.map(p => p.image || "");
-  
+  const participantImages = participants.map((p) => p.image || "");
+
   // Determine category background color
-  const getCategoryColor = (category: string) => {
-    const categories: Record<string, string> = {
-      "Fitness": "bg-buddy-green-light/70 text-buddy-green-dark",
-      "Technology": "bg-buddy-blue-light/70 text-buddy-blue-dark",
-      "Music": "bg-buddy-purple-light/70 text-buddy-purple-dark",
-      "Reading": "bg-buddy-orange-light/70 text-buddy-orange-dark",
-      "default": "bg-buddy-gray-200 text-buddy-gray-700"
-    };
-    
-    return categories[category.toLowerCase()] || categories.default;
-  };
+  // const getCategoryColor = (category: string) => {
+  //   const categories: Record<string, string> = {
+  //     "Fitness": "bg-buddy-green-light/70 text-buddy-green-dark",
+  //     "Technology": "bg-buddy-blue-light/70 text-buddy-blue-dark",
+  //     "Music": "bg-buddy-purple-light/70 text-buddy-purple-dark",
+  //     "Reading": "bg-buddy-orange-light/70 text-buddy-orange-dark",
+  //     "default": "bg-buddy-gray-200 text-buddy-gray-700"
+  //   };
+
+  //   return categories[category.toLowerCase()] || categories.default;
+  // };
 
   // Get category icon
-  const getCategoryIcon = (category: string) => {
-    const defaultIcon = "🏷️";
-    
-    const icons: Record<string, string> = {
-      "Fitness": "🧘",
-      "Technology": "💻",
-      "Music": "🎵",
-      "Reading": "📚",
-      "Art": "🎨",
-      "Cooking": "🍳",
-      "Gaming": "🎮",
-      "Language": "🗣️",
-      "Photography": "📷",
-      "Writing": "✍️",
-      "Hiking": "🥾",
-      "Dancing": "💃",
-    };
-    
-    return icons[category.toLowerCase()] || defaultIcon;
-  };
+  // const getCategoryIcon = (category: string) => {
+  //   const defaultIcon = "🏷️";
+
+  //   const icons: Record<string, string> = {
+  //     "Fitness": "🧘",
+  //     "Technology": "💻",
+  //     "Music": "🎵",
+  //     "Reading": "📚",
+  //     "Art": "🎨",
+  //     "Cooking": "🍳",
+  //     "Gaming": "🎮",
+  //     "Language": "🗣️",
+  //     "Photography": "📷",
+  //     "Writing": "✍️",
+  //     "Hiking": "🥾",
+  //     "Dancing": "💃",
+  //   };
+
+  //   return icons[category.toLowerCase()] || defaultIcon;
+  // };
 
   return (
-    <Card hover className="transition-all duration-300 cursor-pointer overflow-hidden" onClick={onClick}>
+    <Card
+      hover
+      className="transition-all duration-300 cursor-pointer overflow-hidden"
+      onClick={onClick}
+    >
       <Card.Content className="p-0">
         {/* Activity Image */}
         <div className="relative h-40 overflow-hidden">
           {image ? (
-            <div 
+            <div
               className="w-full h-full bg-cover bg-center"
               style={{ backgroundImage: `url(${image})` }}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-buddy-gray-100 to-buddy-gray-200 flex items-center justify-center">
-              <span className="text-4xl">{getCategoryIcon(category)}</span>
+              {/* <span className="text-4xl">{getCategoryIcon(category)}</span> */}
             </div>
           )}
           <div className="absolute top-0 left-0 right-0 h-full bg-gradient-to-b from-black/0 via-black/0 to-black/30"></div>
           <div className="absolute top-3 left-3">
-            <span 
+            {/* <span 
               className={`px-3 py-1 backdrop-blur-sm rounded-full text-xs font-medium flex items-center ${getCategoryColor(category)}`}
             >
               <span className="mr-1">{getCategoryIcon(category)}</span>
               {category}
-            </span>
+            </span> */}
           </div>
           <div className="absolute top-3 right-3">
             <span className="bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
@@ -97,11 +101,15 @@ const ActivityCard = ({
             </span>
           </div>
         </div>
-        
+
         <div className="p-6 pb-4">
-          <h3 className="text-xl font-semibold mb-2 text-buddy-gray-900">{title}</h3>
-          <p className="text-buddy-gray-600 text-sm mb-4 line-clamp-2">{description}</p>
-          
+          <h3 className="text-xl font-semibold mb-2 text-buddy-gray-900">
+            {title}
+          </h3>
+          <p className="text-buddy-gray-600 text-sm mb-4 line-clamp-2">
+            {description}
+          </p>
+
           <div className="space-y-2 mb-4">
             <div className="flex items-center text-buddy-gray-700 text-sm">
               <MapPin className="w-4 h-4 mr-2 text-buddy-gray-500" />
@@ -117,31 +125,26 @@ const ActivityCard = ({
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between p-4 border-t border-buddy-gray-100">
           <div className="flex items-center">
-            <Avatar 
-              isGroup 
-              groupImages={participantImages}
-              size="sm"
-            />
+            <Avatar isGroup groupImages={participantImages} size="sm" />
             <span className="ml-3 text-sm font-medium text-buddy-gray-600">
-              {participants.length > 0 
-                ? participants.length === 1 
+              {participants.length > 0
+                ? participants.length === 1
                   ? `${participants[0].name} is going`
                   : `${participants[0].name} and ${participants.length - 1} others`
-                : "Be the first to join!"
-              }
+                : "Be the first to join!"}
             </span>
           </div>
-          
-          <Button 
-            variant="ghost" 
-            size="icon" 
+
+          <Button
+            variant="ghost"
+            size="icon"
             className="text-buddy-gray-500 hover:text-buddy-gray-900"
             onClick={(e) => {
               e.stopPropagation();
-              onClick && onClick();
+              // onClick && onClick();
             }}
           >
             <ChevronRight className="w-5 h-5" />

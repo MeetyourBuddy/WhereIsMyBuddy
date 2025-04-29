@@ -9,7 +9,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types, Document } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
@@ -42,7 +42,38 @@ export class ActivityService {
       isActive: true,
     });
 
-    return activity.save();
+    const savedActivity = await activity.save();
+
+    // Enhanced population with more user details
+    const populatedActivity = await this.activityModel
+      .findById(savedActivity._id)
+      .populate({
+        path: 'admin',
+        model: 'User',
+        options: { lean: true },
+      })
+      .populate({
+        path: 'participants',
+        model: 'User',
+        options: { lean: true },
+      })
+      .lean()
+      .exec();
+
+    if (!populatedActivity) {
+      throw new NotFoundException('Activity not found after creation');
+    }
+
+    return {
+      ...populatedActivity,
+      checkins: 0,
+      progress: 0,
+      streakCount: 0,
+      totalDays: 0,
+      daysCompleted: 0,
+      admin: populatedActivity.admin as User,
+      participants: populatedActivity.participants as User[],
+    };
   }
 
   async findAll(user: User): Promise<Activity[]> {
@@ -55,8 +86,14 @@ export class ActivityService {
             { admin: user._id },
           ],
         })
-        .populate('admin', 'name email avatar')
-        .populate('participants', 'name email avatar')
+        .populate({
+          path: 'admin',
+          model: 'User',
+        })
+        .populate({
+          path: 'participants',
+          model: 'User',
+        })
         .exec();
       return await this.activityModel
         .find({
@@ -66,8 +103,14 @@ export class ActivityService {
             { admin: user._id },
           ],
         })
-        .populate('admin', 'name email avatar')
-        .populate('participants', 'name email avatar')
+        .populate({
+          path: 'admin',
+          model: 'User',
+        })
+        .populate({
+          path: 'participants',
+          model: 'User',
+        })
         .exec();
     } catch (error) {
       throw new BadRequestException(
@@ -95,8 +138,14 @@ export class ActivityService {
         .exec();
       const activity = await this.activityModel
         .findById(id)
-        .populate('admin')
-        .populate('participants')
+        .populate({
+          path: 'admin',
+          model: 'User',
+        })
+        .populate({
+          path: 'participants',
+          model: 'User',
+        })
         .exec();
 
       if (!activity) {

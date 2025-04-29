@@ -25,9 +25,9 @@ import { Button } from "@/components/ui/button";
 import Avatar from "@/components/common/Avatar";
 import ActivityInfo from "./ActivityInfo";
 import { useActivity } from "@/hooks/use-activity";
-import { IActivity } from "@/types/activity-types";
+import { IActivityResult } from "@/types/activity-types";
 interface ActivityDashboardProps {
-  activity: IActivity;
+  activity: IActivityResult;
   onViewAllMembers?: () => void;
 }
 
@@ -262,34 +262,12 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
                 activity.startDate ? new Date(activity.startDate) : new Date()
               }
               endDate={
-                activity.endedAt ? new Date(activity.endedAt) : new Date()
+                activity.endDate ? new Date(activity.endDate) : new Date()
               }
-              duration={`${activity.proposedDuration} ${activity.durationUnit}`}
+              duration={`${activity.checkinFrequency}`}
               frequency={activity.checkinFrequencyUnit}
               tags={activity.tags || []}
-              rules={[
-                {
-                  _id: "1",
-                  rule: "Check in daily with a photo of your yoga session",
-                  description:
-                    "Take a photo of your yoga setup or a selfie during your practice to verify your participation.",
-                  isDefault: true,
-                },
-                {
-                  _id: "2",
-                  rule: "Be respectful in all communications",
-                  description:
-                    "Treat all participants with kindness and respect. No harsh language or criticism.",
-                  isDefault: true,
-                },
-                {
-                  _id: "3",
-                  rule: "No spam or promotional content",
-                  description:
-                    "Keep all communications relevant to the activity.",
-                  isDefault: true,
-                },
-              ]}
+              rules={activity.rules || []}
             />
           )}
         </div>
