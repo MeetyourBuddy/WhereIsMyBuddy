@@ -5,6 +5,7 @@ import {
   CheckinFrequencyUnit,
   DayOfWeek,
 } from '../schemas/activity.schema';
+import { User } from '@/users/schemas/user.schema';
 
 @Exclude()
 export class ActivityResponseDto {
@@ -19,6 +20,9 @@ export class ActivityResponseDto {
 
   @Expose()
   proposedDuration: number;
+
+  @Expose()
+  admin: User;
 
   @Expose()
   bannerImage?: string;
@@ -78,7 +82,7 @@ export class ActivityResponseDto {
   }[];
 
   @Expose()
-  participants: string[];
+  participants: User[];
 
   @Expose()
   isActive: boolean;

@@ -114,10 +114,6 @@ export class CreateActivityDto {
   @IsOptional()
   checkinDays?: DayOfWeek[];
 
-  @IsString()
-  @IsOptional()
-  admin?: User;
-
   @ValidateNested({ each: true })
   @Type(() => CheckInTypeConfigDto)
   allowedCheckInTypes: CheckInTypeConfigDto[];

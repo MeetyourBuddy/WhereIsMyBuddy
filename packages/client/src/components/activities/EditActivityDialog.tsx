@@ -95,11 +95,11 @@ const EditActivityDialog = ({
       title: activity.title,
       description: activity.description,
       category: activity.category,
-      duration: `${activity.proposedDuration} ${activity.durationUnit}`,
+      duration: `${activity.proposedDuration} months`,
       frequency: `${activity.checkinFrequency} ${activity.checkinFrequencyUnit}`,
       participants: activity.participants.length,
       startDate: activity.startDate,
-      endDate: activity.endedAt,
+      endDate: activity.endDate,
     },
   });
 
