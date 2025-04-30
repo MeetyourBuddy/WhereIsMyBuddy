@@ -140,13 +140,13 @@ export class Activity {
   allowedCheckInTypes: CheckInTypeConfig[];
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-  admin: User | Types.ObjectId;
+  admin: Types.ObjectId | User;
 
   @Prop({
     type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }],
     default: [],
   })
-  participants: (User | Types.ObjectId)[];
+  participants: (Types.ObjectId | User)[];
 
   @Prop({ default: true })
   isActive: boolean;

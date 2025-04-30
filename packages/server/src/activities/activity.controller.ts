@@ -14,7 +14,9 @@ import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
 import { ApiResponse } from '../common/types/api-response.type';
+import { PopulatedActivity } from './entities/activity.entities';
 import { Activity } from './schemas/activity.schema';
+import { GetUser } from '@/users/decorators/get-user.decorator';
 
 @Controller('activities')
 @UseGuards(JwtAuthGuard)
@@ -24,11 +26,11 @@ export class ActivityController {
   @Post()
   async create(
     @Body() createActivityDto: CreateActivityDto,
-    @Request() req,
-  ): Promise<ApiResponse<{ activity: Activity }>> {
+    @GetUser('userId') userId: string,
+  ): Promise<ApiResponse<{ activity: PopulatedActivity }>> {
     const activity = await this.activityService.create(
       createActivityDto,
-      req.user,
+      userId,
     );
 
     return {
@@ -54,7 +56,7 @@ export class ActivityController {
   async findOne(
     @Param('id') id: string,
     @Request() req,
-  ): Promise<ApiResponse<{ activity: Activity }>> {
+  ): Promise<ApiResponse<{ activity: PopulatedActivity }>> {
     const activity = await this.activityService.findOne(id, req.user);
     return {
       success: true,

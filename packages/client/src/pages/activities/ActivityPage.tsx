@@ -119,7 +119,7 @@ const ActivityPage = () => {
 
   const { status, label, variant } = getActivityStatus(
     new Date(activity.startDate),
-    activity.endedAt ? new Date(activity.endedAt) : new Date()
+    activity.endDate ? new Date(activity.endDate) : new Date()
   );
 
   return (

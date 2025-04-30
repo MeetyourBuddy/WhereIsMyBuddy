@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  HttpException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -9,6 +11,7 @@ import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { User } from '../users/schemas/user.schema';
+import { PopulatedActivity } from './entities/activity.entities';
 
 @Injectable()
 export class ActivityService {
@@ -18,50 +21,27 @@ export class ActivityService {
 
   async create(
     createActivityDto: CreateActivityDto,
-    user: User,
-  ): Promise<Activity> {
-    console.log('Creating activity for user:', user);
+    userId: string,
+  ): Promise<PopulatedActivity> {
+    try {
+      const activity = new this.activityModel({
+        ...createActivityDto,
+        admin: userId,
+        participants: [userId],
+      });
 
-    const activity = new this.activityModel({
-      ...createActivityDto,
-      admin: new Types.ObjectId(user.id),
-      participants: [new Types.ObjectId(user.id)],
-      currentSize: 1,
-      isActive: true,
-    });
+      const savedActivity = await activity.save();
 
-    const savedActivity = await activity.save();
+      if (!savedActivity?._id) {
+        throw new BadRequestException('Failed to create activity');
+      }
 
-    // Enhanced population with more user details
-    const populatedActivity = await this.activityModel
-      .findById(savedActivity._id)
-      .populate({
-        path: 'admin',
-        model: 'User',
-        options: { lean: true },
-      })
-      .populate({
-        path: 'participants',
-        model: 'User',
-        options: { lean: true },
-      })
-      .lean()
-      .exec();
-
-    if (!populatedActivity) {
-      throw new NotFoundException('Activity not found after creation');
+      return await this.findOne(savedActivity._id.toString(), userId);
+    } catch (error) {
+      console.error('Error in create:', error);
+      if (error instanceof HttpException) throw error;
+      throw new BadRequestException('Failed to create activity');
     }
-
-    return {
-      ...populatedActivity,
-      checkins: 0,
-      progress: 0,
-      streakCount: 0,
-      totalDays: 0,
-      daysCompleted: 0,
-      admin: populatedActivity.admin as User,
-      participants: populatedActivity.participants as User[],
-    };
   }
 
   async findAll(user: User): Promise<Activity[]> {
@@ -90,28 +70,37 @@ export class ActivityService {
     }
   }
 
-  async findOne(id: string, user: User): Promise<Activity> {
+  async findOne(id: string, userId: string): Promise<PopulatedActivity> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid activity ID');
+    }
+
     try {
       const activity = await this.activityModel
         .findById(id)
         .populate({
           path: 'admin',
-          model: 'User',
+          select:
+            '_id name email avatar country preferredLanguage profileLink profileQR',
         })
         .populate({
           path: 'participants',
-          model: 'User',
+          select:
+            '_id name email avatar country preferredLanguage profileLink profileQR',
         })
+        .lean<PopulatedActivity>()
         .exec();
 
       if (!activity) {
         throw new NotFoundException('Activity not found');
       }
 
-      const canAccess =
-        activity.type === 'public' ||
-        activity.admin?.id === user.id ||
-        activity.participants?.some((p) => p.id === user.id);
+      const isOwner = activity.admin?._id?.toString() === userId.toString();
+      const isParticipant = activity.participants?.some(
+        (p) => p._id?.toString() === userId.toString(),
+      );
+
+      const canAccess = activity.type === 'public' || isOwner || isParticipant;
 
       if (!canAccess) {
         throw new NotFoundException('Activity not found or unauthorized');
@@ -120,7 +109,8 @@ export class ActivityService {
       return activity;
     } catch (error) {
       console.error('Error in findOne:', error);
-      throw error;
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Failed to fetch activity');
     }
   }
 
