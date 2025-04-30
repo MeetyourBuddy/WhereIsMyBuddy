@@ -40,7 +40,6 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { useActivity } from "@/hooks/use-activity";
 import {
   ActivityType,
   DayOfWeek,
@@ -53,6 +52,7 @@ import {
   activityCategories,
   mapToBackendCategory,
 } from "@/lib/constants/category-interests.constants";
+import { useActivityStore } from "@/store/activity.store";
 
 const STEPS = [
   {
@@ -340,7 +340,7 @@ const CreateActivity = () => {
     inviteEmails: "",
   });
 
-  const { createActivity, isLoading } = useActivity();
+  const { createActivity, isLoading } = useActivityStore();
 
   // Get available tags based on selected category
   const getAvailableTags = () => {
@@ -416,7 +416,7 @@ const CreateActivity = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      handleSubmit(e as any);
+      handleSubmit(e as React.FormEvent);
     }
   };
 
@@ -539,60 +539,19 @@ const CreateActivity = () => {
 
       console.log("Creating activity with data:", activityData);
 
-      createActivity(activityData as unknown as IActivity, {
-        onSuccess: (response) => {
-          if (response.success && response.data?.activity) {
-            console.log(
-              "Activity created successfully:",
-              response.data.activity
-            );
+      const activity = await createActivity(
+        activityData as unknown as IActivity
+      );
 
-            // Get the ID using a type assertion to avoid TypeScript errors
-            const activity = response.data.activity;
-            const activityId = (activity as any)._id;
-
-            console.log("Activity ID:", activityId);
-
-            if (!activityId) {
-              console.error(
-                "No activity ID found in response:",
-                response.data.activity
-              );
-              toast.error("Activity created but ID is missing");
-              return;
-            }
-
-            toast.success("Activity created successfully!");
-
-            // Use a timeout to ensure the toast is visible before navigation
-            setTimeout(() => {
-              console.log("Navigating to activity:", activityId);
-
-              // Make sure the ID is a string
-              const idString = String(activityId);
-
-              // Navigate to the activity page
-              navigate(`/activities/${idString}`, {
-                replace: true,
-              });
-            }, 1000);
-          } else {
-            console.warn("Activity creation response missing data:", response);
-            toast.error("Activity created but response data is incomplete");
-          }
-        },
-        onError: (error: Error | unknown) => {
-          const errorMessage =
-            error instanceof Error
-              ? error.message
-              : "An unknown error occurred";
-          console.error("Activity creation error:", errorMessage);
-          toast.error(errorMessage);
-        },
-      });
-    } catch (error: any) {
+      if (activity) {
+        toast.success("Activity created successfully");
+        navigate("/activities");
+      }
+    } catch (error: Error | unknown) {
       console.error("Activity creation error:", error);
-      toast.error(error.message || "Failed to create activity");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create activity"
+      );
     }
   };
 

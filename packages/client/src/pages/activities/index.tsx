@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
@@ -15,16 +15,25 @@ import {
   X,
   Users,
 } from "lucide-react";
-import { useActivity } from "@/hooks/use-activity";
+import { useActivityStore } from "@/store/activity.store";
 
 const Activities = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const { activities: activitiesFromQuery, isLoading, error } = useActivity();
+  const {
+    activities: activitiesFromStore,
+    isLoading: isLoadingActivities,
+    fetchActivities,
+  } = useActivityStore();
 
-  console.log("activitiesFromQuery", activitiesFromQuery);
+  // Fetch activities from store
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  console.log("activitiesFromStore", activitiesFromStore);
 
   const activities = [
     {
@@ -197,8 +206,8 @@ const Activities = () => {
   ];
 
   const filteredActivities =
-    activitiesFromQuery &&
-    activitiesFromQuery.filter((activity) => {
+    activitiesFromStore &&
+    activitiesFromStore.filter((activity) => {
       const matchesSearch =
         activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         activity.description
@@ -214,6 +223,8 @@ const Activities = () => {
 
       return matchesSearch && matchesCategory;
     });
+
+  console.log("filteredActivities hereeeee", filteredActivities);
 
   const toggleFilter = (filter: string) => {
     if (filter === "All") {
@@ -376,7 +387,7 @@ const Activities = () => {
 
           <TabsContent value="my">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activities.slice(1, 4).map((activity) => (
+              {activitiesFromStore.slice(1, 4).map((activity) => (
                 <ActivityCard
                   key={activity.id}
                   {...activity}
@@ -388,7 +399,7 @@ const Activities = () => {
 
           <TabsContent value="popular">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activities.slice(0, 3).map((activity) => (
+              {activitiesFromStore.slice(0, 3).map((activity) => (
                 <ActivityCard
                   key={activity.id}
                   {...activity}
@@ -400,7 +411,7 @@ const Activities = () => {
 
           <TabsContent value="new">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activities.slice(3, 6).map((activity) => (
+              {activitiesFromStore.slice(3, 6).map((activity) => (
                 <ActivityCard
                   key={activity.id}
                   {...activity}
@@ -412,7 +423,7 @@ const Activities = () => {
 
           <TabsContent value="soon">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activities.slice(0, 2).map((activity) => (
+              {activitiesFromStore.slice(0, 2).map((activity) => (
                 <ActivityCard
                   key={activity.id}
                   {...activity}

@@ -1,4 +1,5 @@
-import { Country, InterestCategory, Language } from "@/lib/constants";
+import { Country, Language } from "@/lib/constants";
+import { InterestCategory } from "./interest-categories.enum";
 import { User } from "./auth-types";
 
 export interface UserData {
@@ -32,6 +33,7 @@ export interface IUserResponse {
   _id: string;
   email: string;
   name: string;
+  avatar?: string;
   dateOfBirth?: Date;
   age?: number;
   profileImage?: string;

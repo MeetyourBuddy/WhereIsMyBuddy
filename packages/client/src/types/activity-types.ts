@@ -80,7 +80,7 @@ export interface IActivity {
   durationUnit: DurationUnit;
   bannerImage?: string;
   type: ActivityType;
-  startDate: Date;
+  startDate: string;
   joinType?: JoinType;
   categories?: string[];
   maxSize: number;
@@ -119,30 +119,8 @@ export interface IActivityResult extends IActivity {
   title: string;
   description: string;
   location?: string;
-  startDate: Date;
-  endDate?: Date;
+  startDate: string;
+  endDate?: string;
 }
 
-export interface IActivityResponse {
-  success: boolean;
-  message: string;
-  data: {
-    activity: IActivityResult;
-  };
-}
-
-export interface IActivityListResponse {
-  success: boolean;
-  message: string;
-  data: {
-    activities: IActivityResult[];
-  };
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data?: T;
-}
-
-export { InterestCategory };
+export type { InterestCategory };

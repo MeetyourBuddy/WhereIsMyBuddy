@@ -32,9 +32,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInDays } from "date-fns";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { VariantProps } from "class-variance-authority";
-import { useActivity } from "@/hooks/use-activity";
-import { IActivityResult, IActivityResponse } from "@/types/activity-types";
 import EditActivityDialog from "@/components/activities/EditActivityDialog";
+import { useActivityStore } from "@/store/activity.store";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -61,65 +60,70 @@ const formatFrequency = (frequency: number, unit: string) => {
 const ActivityPage = () => {
   const { activityId } = useParams<{ activityId: string }>();
   const navigate = useNavigate();
-  const { getActivity } = useActivity();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const isMobile = useIsMobile();
 
-  // Move query outside of conditional
-  const activityQuery = getActivity(activityId || "");
-  const activity = activityQuery.data?.data?.activity;
+  const {
+    isLoading: isLoadingActivities,
+    fetchActivityById,
+    currentActivity,
+  } = useActivityStore();
 
   useEffect(() => {
     if (!activityId) {
       navigate("/activities");
     }
-  }, [activityId, navigate]);
 
-  if (activityQuery.isLoading || isLoading) {
+    fetchActivityById(activityId);
+  }, [activityId, navigate, fetchActivityById]);
+
+  console.log("current activity", currentActivity);
+
+  if (isLoadingActivities || isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!activity) {
+  if (!currentActivity) {
     return <div>Activity not found</div>;
   }
 
   // Add debug log
-  console.log("Activity data from query:", activity);
+  console.log("Activity data from query:", currentActivity);
 
   // Format the data for display
   const displayData = {
-    name: activity.title,
-    description: activity.description || "No description available",
-    duration: formatDuration(activity.proposedDuration, "month"),
+    name: currentActivity.title || "No title available",
+    description: currentActivity.description || "No description available",
+    duration: formatDuration(currentActivity.proposedDuration || 0, "month"),
     frequency: formatFrequency(
-      activity.checkinFrequency,
-      activity.checkinFrequencyUnit
+      currentActivity.checkinFrequency || 0,
+      currentActivity.checkinFrequencyUnit || ""
     ),
-    category: activity.category,
+    category: currentActivity.category || "No category available",
     bannerImage:
-      activity.bannerImage ||
+      currentActivity.bannerImage ||
       "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2940", // You might want to add a default banner
-    participants: activity.participants || [],
-    participantCount: Array.isArray(activity.participants)
-      ? activity.participants.length
+    participants: currentActivity.participants || [],
+    participantCount: Array.isArray(currentActivity.participants)
+      ? currentActivity.participants.length
       : 0,
     // Use server-computed values
-    checkins: activity.checkins || 0,
-    progress: activity.progress || 0,
-    streakCount: activity.streakCount || 0,
-    totalDays: activity.totalDays || 0,
-    daysCompleted: activity.daysCompleted || 0,
-    admin: activity.admin,
-    id: activity.id,
+    checkins: currentActivity.checkins || 0,
+    progress: currentActivity.progress || 0,
+    streakCount: currentActivity.streakCount || 0,
+    totalDays: currentActivity.totalDays || 0,
+    daysCompleted: currentActivity.daysCompleted || 0,
+    admin: currentActivity.admin,
+    id: currentActivity.id,
   };
 
   // Add debug log
   console.log("Display data:", displayData);
 
   const { status, label, variant } = getActivityStatus(
-    new Date(activity.startDate),
-    activity.endDate ? new Date(activity.endDate) : new Date()
+    new Date(currentActivity.startDate || ""),
+    currentActivity.endDate ? new Date(currentActivity.endDate) : new Date()
   );
 
   return (
@@ -173,7 +177,7 @@ const ActivityPage = () => {
                       Check-in Now
                     </Button>
                   </CheckInDialog>
-                  <EditActivityDialog activity={activity}>
+                  <EditActivityDialog activity={currentActivity}>
                     <Button
                       variant="outline"
                       className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
@@ -323,7 +327,7 @@ const ActivityPage = () => {
             </TabsList>
 
             <TabsContent value="dashboard" className="p-0 mt-0 animate-fade-in">
-              <ActivityDashboard activity={activity} />
+              <ActivityDashboard activity={currentActivity} />
             </TabsContent>
 
             <TabsContent
