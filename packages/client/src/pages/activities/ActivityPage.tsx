@@ -122,8 +122,8 @@ const ActivityPage = () => {
   console.log("Display data:", displayData);
 
   const { status, label, variant } = getActivityStatus(
-    new Date(activity.startDate),
-    activity.endDate ? new Date(activity.endDate) : new Date()
+    new Date(currentActivity.startDate || ""),
+    currentActivity.endDate ? new Date(currentActivity.endDate) : new Date()
   );
 
   return (

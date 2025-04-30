@@ -19,8 +19,8 @@ import { Model, Types } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
-import { User } from '../users/schemas/user.schema';
 import { PopulatedActivity } from './entities/activity.entities';
+import { ActivityResponseDto } from './dto/activity-response.dto';
 
 @Injectable()
 export class ActivityService {
@@ -32,7 +32,7 @@ export class ActivityService {
   async create(
     createActivityDto: CreateActivityDto,
     userId: string,
-  ): Promise<PopulatedActivity> {
+  ): Promise<ActivityResponseDto> {
     try {
       const activity = new this.activityModel({
         ...createActivityDto,
@@ -96,7 +96,7 @@ export class ActivityService {
     }
   }
 
-  async findOne(id: string, userId: string): Promise<PopulatedActivity> {
+  async findOne(id: string, userId: string): Promise<ActivityResponseDto> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid activity ID');
     }
