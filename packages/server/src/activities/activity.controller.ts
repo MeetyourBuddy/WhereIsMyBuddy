@@ -12,9 +12,10 @@ import { ActivityService } from './activity.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
+import { ApiResponse } from '../common/types/api-response.type';
+import { PopulatedActivity } from './entities/activity.entities';
 import { Activity } from './schemas/activity.schema';
 import { GetUser } from '@/users/decorators/get-user.decorator';
-import { ActivityResponseDto } from './dto/activity-response.dto';
 
 @Controller('activities')
 @UseGuards(JwtAuthGuard)
@@ -25,8 +26,17 @@ export class ActivityController {
   async create(
     @Body() createActivityDto: CreateActivityDto,
     @GetUser('userId') userId: string,
-  ): Promise<ActivityResponseDto> {
-    return await this.activityService.create(createActivityDto, userId);
+  ): Promise<ApiResponse<{ activity: PopulatedActivity }>> {
+    const activity = await this.activityService.create(
+      createActivityDto,
+      userId,
+    );
+
+    return {
+      success: true,
+      message: 'Activity created successfully',
+      data: { activity },
+    };
   }
 
   @Get()
@@ -37,9 +47,14 @@ export class ActivityController {
   @Get(':id')
   async findOne(
     @Param('id') id: string,
-    @GetUser('userId') userId: string,
-  ): Promise<ActivityResponseDto> {
-    return await this.activityService.findOne(id, userId);
+    @Request() req,
+  ): Promise<ApiResponse<{ activity: PopulatedActivity }>> {
+    const activity = await this.activityService.findOne(id, req.user);
+    return {
+      success: true,
+      message: 'Activity fetched successfully',
+      data: { activity },
+    };
   }
 
   @Put(':id')

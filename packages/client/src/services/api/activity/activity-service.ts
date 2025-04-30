@@ -1,17 +1,76 @@
-import { IActivity, IActivityResult } from "@/types/activity-types";
-import { apiMethods } from "@/services/api-methods";
+import axiosInstance from "@/services/axios-instance";
+import {
+  IActivity,
+  IActivityResponse,
+  IActivityListResponse,
+} from "@/types/activity-types";
+import { ApiResponse } from "@/types";
+import { authService } from "../auth/auth-service";
+import axios from "axios";
 
-export const ActivityService = {
-  createActivity: (activityData: IActivity) =>
-    apiMethods.post<IActivityResult>("/activities", activityData),
+class ActivityService {
+  async createActivity(activityData: IActivity): Promise<IActivityResponse> {
+    console.log("Creating activity with data:", activityData);
+    const response = await axiosInstance.post<IActivityResponse>(
+      "/activities",
+      activityData
+    );
 
-  getActivities: () => apiMethods.get<IActivityResult[]>(`/activities`),
+    // Log the response to see what we're getting back
+    console.log("Activity creation response:", response.data);
 
-  getActivityById: (id: string) =>
-    apiMethods.get<IActivityResult>(`/activities/${id}`),
+    return response.data;
+  }
 
-  updateActivity: (id: string, activityData: Partial<IActivity>) =>
-    apiMethods.put<IActivityResult>(`/activities/${id}`, activityData),
+  async getActivities(): Promise<IActivityListResponse> {
+    const response =
+      await axiosInstance.get<IActivityListResponse>("/activities");
+    return response.data;
+  }
 
-  deleteActivity: (id: string) => apiMethods.delete<void>(`/activities/${id}`),
-};
+  async getActivityById(id: string): Promise<IActivityResponse> {
+    if (!id) {
+      console.error("Attempted to fetch activity with undefined ID");
+      throw new Error("Activity ID is required");
+    }
+
+    try {
+      const response = await axiosInstance.get<IActivityResponse>(
+        `/activities/${id}`
+      );
+      console.log("Raw activity response:", response.data);
+
+      if (!response.data.success || !response.data.data?.activity) {
+        throw new Error("Invalid activity response format");
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching activity:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new Error("Activity not found");
+      }
+      throw new Error("Failed to fetch activity");
+    }
+  }
+
+  async updateActivity(
+    id: string,
+    activityData: Partial<IActivity>
+  ): Promise<ApiResponse<IActivityResponse>> {
+    const response = await axiosInstance.put<ApiResponse<IActivityResponse>>(
+      `/activities/${id}`,
+      activityData
+    );
+    return response.data;
+  }
+
+  async deleteActivity(id: string): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.delete<ApiResponse<void>>(
+      `/activities/${id}`
+    );
+    return response.data;
+  }
+}
+
+export const activityService = new ActivityService();

@@ -4,6 +4,8 @@ import {
   BadRequestException,
   HttpException,
   InternalServerErrorException,
+  HttpException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   Injectable,
@@ -17,8 +19,8 @@ import { Model, Types } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
+import { User } from '../users/schemas/user.schema';
 import { PopulatedActivity } from './entities/activity.entities';
-import { ActivityResponseDto } from './dto/activity-response.dto';
 
 @Injectable()
 export class ActivityService {
@@ -30,7 +32,7 @@ export class ActivityService {
   async create(
     createActivityDto: CreateActivityDto,
     userId: string,
-  ): Promise<ActivityResponseDto> {
+  ): Promise<PopulatedActivity> {
     try {
       const activity = new this.activityModel({
         ...createActivityDto,
@@ -39,7 +41,18 @@ export class ActivityService {
       });
 
       const savedActivity = await activity.save();
+      const savedActivity = await activity.save();
 
+      if (!savedActivity?._id) {
+        throw new BadRequestException('Failed to create activity');
+      }
+
+      return await this.findOne(savedActivity._id.toString(), userId);
+    } catch (error) {
+      console.error('Error in create:', error);
+      if (error instanceof HttpException) throw error;
+      throw new BadRequestException('Failed to create activity');
+    }
       if (!savedActivity?._id) {
         throw new BadRequestException('Failed to create activity');
       }
@@ -83,7 +96,7 @@ export class ActivityService {
     }
   }
 
-  async findOne(id: string, userId: string): Promise<ActivityResponseDto> {
+  async findOne(id: string, userId: string): Promise<PopulatedActivity> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid activity ID');
     }
@@ -95,12 +108,17 @@ export class ActivityService {
           path: 'admin',
           select:
             '_id name email avatar country preferredLanguage profileLink profileQR',
+          select:
+            '_id name email avatar country preferredLanguage profileLink profileQR',
         })
         .populate({
           path: 'participants',
           select:
             '_id name email avatar country preferredLanguage profileLink profileQR',
+          select:
+            '_id name email avatar country preferredLanguage profileLink profileQR',
         })
+        .lean<PopulatedActivity>()
         .lean<PopulatedActivity>()
         .exec();
 
@@ -108,6 +126,12 @@ export class ActivityService {
         throw new NotFoundException('Activity not found');
       }
 
+      const isOwner = activity.admin?._id?.toString() === userId.toString();
+      const isParticipant = activity.participants?.some(
+        (p) => p._id?.toString() === userId.toString(),
+      );
+
+      const canAccess = activity.type === 'public' || isOwner || isParticipant;
       const isOwner = activity.admin?._id?.toString() === userId.toString();
       const isParticipant = activity.participants?.some(
         (p) => p._id?.toString() === userId.toString(),
@@ -128,6 +152,8 @@ export class ActivityService {
         'Failed to fetch activity: ' + error.message,
       );
       console.error('Error in findOne:', error);
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Failed to fetch activity');
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch activity');
     }
