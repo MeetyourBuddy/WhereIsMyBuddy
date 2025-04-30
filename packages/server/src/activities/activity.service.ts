@@ -17,8 +17,8 @@ import { Model, Types } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
-import { User } from '../users/schemas/user.schema';
 import { PopulatedActivity } from './entities/activity.entities';
+import { ActivityResponseDto } from './dto/activity-response.dto';
 
 @Injectable()
 export class ActivityService {
@@ -30,7 +30,7 @@ export class ActivityService {
   async create(
     createActivityDto: CreateActivityDto,
     userId: string,
-  ): Promise<PopulatedActivity> {
+  ): Promise<ActivityResponseDto> {
     try {
       const activity = new this.activityModel({
         ...createActivityDto,
@@ -52,15 +52,11 @@ export class ActivityService {
     }
   }
 
-  async findAll(user: User): Promise<Activity[]> {
+  async findAll(): Promise<Activity[]> {
     try {
-      return await this.activityModel
+      const activities = await this.activityModel
         .find({
-          $or: [
-            { type: 'public' },
-            { participants: user._id },
-            { admin: user._id },
-          ],
+          $or: [{ type: 'public' }],
         })
         .populate({
           path: 'admin',
@@ -71,23 +67,12 @@ export class ActivityService {
           model: 'User',
         })
         .exec();
-      return await this.activityModel
-        .find({
-          $or: [
-            { type: 'public' },
-            { participants: user._id },
-            { admin: user._id },
-          ],
-        })
-        .populate({
-          path: 'admin',
-          model: 'User',
-        })
-        .populate({
-          path: 'participants',
-          model: 'User',
-        })
-        .exec();
+
+      if (!activities) {
+        throw new NotFoundException('No activities found');
+      }
+
+      return activities;
     } catch (error) {
       throw new BadRequestException(
         'Failed to fetch activities: ' + error.message,
@@ -98,7 +83,7 @@ export class ActivityService {
     }
   }
 
-  async findOne(id: string, userId: string): Promise<PopulatedActivity> {
+  async findOne(id: string, userId: string): Promise<ActivityResponseDto> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid activity ID');
     }
@@ -151,18 +136,17 @@ export class ActivityService {
   async update(
     id: string,
     updateActivityDto: UpdateActivityDto,
-    user: User,
+    userId: string,
   ): Promise<Activity> {
   async update(
     id: string,
     updateActivityDto: UpdateActivityDto,
-    user: User,
+    userId: string,
   ): Promise<Activity> {
     try {
       const activity = await this.activityModel.findOne({
         _id: id,
-        admin: user._id, // Only admin can update
-        admin: user._id, // Only admin can update
+        admin: userId, // Only admin can update
       });
 
       if (!activity) {
@@ -184,12 +168,11 @@ export class ActivityService {
     }
   }
 
-  async delete(id: string, user: User): Promise<void> {
+  async delete(id: string, userId: string): Promise<void> {
     try {
       const result = await this.activityModel.deleteOne({
         _id: id,
-        admin: user._id, // Only admin can delete
-        admin: user._id, // Only admin can delete
+        admin: userId, // Only admin can delete
       });
 
       if (result.deletedCount === 0) {

@@ -1,18 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { activityService } from "@/services/api/activity/activity-service";
-import {
-  IActivity,
-  IActivityResponse,
-  IActivityListResponse,
-  ApiResponse,
-  IActivityResult,
-} from "@/types/activity-types";
+import { ActivityService } from "@/services/api/activity/activity-service";
+import { IActivity, IActivityResult } from "@/types/activity-types";
 import { toast } from "sonner";
 import { useActivityStore } from "@/store/activity.store";
 import { useNavigate } from "react-router-dom";
-
+import { ApiResponse } from "@/types";
 // Add this interface with your other type definitions at the top
-interface MongoDocument {
+export interface MongoDocument {
   _id?: string;
   id?: string;
 }
@@ -27,28 +21,41 @@ export const activityKeys = {
 
 export const useActivity = () => {
   const queryClient = useQueryClient();
-  const { setActivities, setCurrentActivity, setError } = useActivityStore();
   const navigate = useNavigate();
 
+  // Use only UI state from store
+  const {
+    isUILoading,
+    activeTab,
+    currentActivityId,
+    setUILoading,
+    setActiveTab,
+    setCurrentActivityId,
+  } = useActivityStore();
+
+  // Create activity mutation
   const createActivity = useMutation({
     mutationFn: async (activityData: IActivity) => {
       try {
-        return await activityService.createActivity(activityData);
+        setUILoading(true);
+        return await ActivityService.createActivity(activityData);
       } catch (error: unknown) {
         if (error instanceof Error && error.message.includes("jwt expired")) {
           navigate("/signin");
           throw new Error("Session expired. Please sign in again.");
         }
         throw error;
+      } finally {
+        setUILoading(false);
       }
     },
     onSuccess: (response) => {
-      if (!response.success || !response.data?.activity) {
+      if (!response.success || !response.data) {
         toast.error("Failed to create activity: Invalid response");
         return;
       }
 
-      const activity = response.data.activity;
+      const activity = response.data;
       const activityId = (activity as MongoDocument)._id || activity.id;
 
       if (!activityId) {
@@ -60,14 +67,10 @@ export const useActivity = () => {
         return;
       }
 
-      // Normalize the activity object with consistent ID
-      const normalizedActivity = {
-        ...activity,
-        id: activityId,
-      };
+      // Store just the ID in Zustand (minimal state)
+      setCurrentActivityId(activityId);
 
-      // Update application state
-      setCurrentActivity(normalizedActivity);
+      // Update React Query cache
       queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
 
       // Redirect to the activity detail page
@@ -75,49 +78,47 @@ export const useActivity = () => {
       toast.success("Activity created successfully");
     },
     onError: (error: Error) => {
-      setError(error.message);
       toast.error(error.message || "Failed to create activity");
     },
   });
 
-  const activitiesQuery = useQuery<IActivityListResponse>({
+  // Fetch all activities
+  const activitiesQuery = useQuery<ApiResponse<IActivityResult[]>>({
     queryKey: activityKeys.lists(),
-    queryFn: async () => {
-      const response = await activityService.getActivities();
-      if (response.success && response.data?.activities) {
-        setActivities(response.data.activities);
-      }
-      return response;
-    },
+    queryFn: ActivityService.getActivities,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const getActivityQuery = (id: string) =>
-    useQuery<IActivityResponse>({
+  // Fetch single activity by ID
+  const useActivityQuery = (id: string) =>
+    useQuery<ApiResponse<IActivityResult>>({
       queryKey: activityKeys.detail(id),
-      queryFn: async () => {
-        // Add validation to prevent undefined ID
-        if (!id) {
-          console.error("Attempted to fetch activity with undefined ID");
-          throw new Error("Activity ID is required");
+      queryFn: () => ActivityService.getActivityById(id),
+      enabled: !!id,
+      staleTime: 5 * 60 * 1000,
+      select: (response) => {
+        if (response.success && response.data) {
+          setCurrentActivityId(response.data.id);
         }
-
-        const response = await activityService.getActivityById(id);
-        console.log('Full activity response:', response);
         return response;
       },
-      enabled: !!id
     });
-  };
 
-  const updateActivityMutation = useMutation<
-    ApiResponse<IActivityResponse>,
+  // Update activity mutation
+  const updateActivity = useMutation<
+    ApiResponse<IActivityResult>,
     Error,
     { id: string; data: Partial<IActivity> }
   >({
-    mutationFn: ({ id, data }) => activityService.updateActivity(id, data),
+    mutationFn: ({ id, data }) => {
+      setUILoading(true);
+      return ActivityService.updateActivity(id, data);
+    },
     onSuccess: (response, variables) => {
-      if (response.success && response.data?.data?.activity) {
-        setCurrentActivity(response.data.data.activity);
+      setUILoading(false);
+      if (response.success && response.data) {
+        // Update React Query cache
         queryClient.invalidateQueries({
           queryKey: activityKeys.detail(variables.id),
         });
@@ -126,22 +127,35 @@ export const useActivity = () => {
       }
     },
     onError: (error) => {
-      setError(error.message);
+      setUILoading(false);
       toast.error(error.message || "Failed to update activity");
     },
   });
 
-  const deleteActivityMutation = useMutation({
-    mutationFn: (id: string) => activityService.deleteActivity(id),
-    onSuccess: (response) => {
+  // Delete activity mutation
+  const deleteActivity = useMutation({
+    mutationFn: (id: string) => {
+      setUILoading(true);
+      return ActivityService.deleteActivity(id);
+    },
+    onSuccess: (response, id) => {
+      setUILoading(false);
       if (response.success) {
-        setCurrentActivity(null);
+        // Clear current activity ID if it matches the deleted one
+        if (currentActivityId === id) {
+          setCurrentActivityId(null);
+        }
+
+        // Update React Query cache
         queryClient.invalidateQueries({ queryKey: activityKeys.lists() });
         toast.success("Activity deleted successfully");
+
+        // Navigate away from deleted activity if needed
+        navigate("/activities");
       }
     },
     onError: (error: Error) => {
-      setError(error.message);
+      setUILoading(false);
       toast.error(error.message || "Failed to delete activity");
     },
   });
@@ -149,23 +163,36 @@ export const useActivity = () => {
   return {
     // Mutations
     createActivity: createActivity.mutate,
-    updateActivity: updateActivityMutation.mutate,
-    deleteActivity: deleteActivityMutation.mutate,
+    updateActivity: updateActivity.mutate,
+    deleteActivity: deleteActivity.mutate,
 
     // Queries
-    getActivity,
-    activities: activitiesQuery.data?.data?.activities || [],
+    getActivity: useActivityQuery,
+    activities: activitiesQuery.data?.data || [],
 
-    // Loading states
+    // Loading states from React Query
     isLoading:
+      isUILoading ||
       createActivity.isPending ||
       activitiesQuery.isLoading ||
-      updateActivityMutation.isPending ||
-      deleteActivityMutation.isPending,
+      updateActivity.isPending ||
+      deleteActivity.isPending,
 
-    // Store state
-    currentActivity: useActivityStore((state) => state.currentActivity),
-    error: useActivityStore((state) => state.error),
-    clearError: useActivityStore((state) => state.clearError),
+    // UI state from Zustand
+    isUILoading,
+    activeTab,
+    currentActivityId,
+
+    // UI actions
+    setUILoading,
+    setActiveTab,
+
+    // Additional helpers
+    refetchActivities: () =>
+      queryClient.invalidateQueries({ queryKey: activityKeys.lists() }),
+    clearCurrentActivity: () => setCurrentActivityId(null),
+
+    // Exposed hook
+    useActivityQuery,
   };
 };
