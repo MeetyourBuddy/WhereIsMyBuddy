@@ -1,5 +1,11 @@
 import { Exclude, Expose, Type } from 'class-transformer';
-import { ActivityType, JoinType, DurationUnit, CheckinFrequencyUnit, DayOfWeek } from '../schemas/activity.schema';
+import {
+  ActivityType,
+  JoinType,
+  CheckinFrequencyUnit,
+  DayOfWeek,
+} from '../schemas/activity.schema';
+import { User } from '@/users/schemas/user.schema';
 
 @Exclude()
 export class ActivityResponseDto {
@@ -16,7 +22,7 @@ export class ActivityResponseDto {
   proposedDuration: number;
 
   @Expose()
-  durationUnit: DurationUnit;
+  admin: User;
 
   @Expose()
   bannerImage?: string;
@@ -76,7 +82,7 @@ export class ActivityResponseDto {
   }[];
 
   @Expose()
-  participants: string[];
+  participants: User[];
 
   @Expose()
   isActive: boolean;
@@ -93,4 +99,4 @@ export class ActivityResponseDto {
   constructor(partial: Partial<ActivityResponseDto>) {
     Object.assign(this, partial);
   }
-} 
+}

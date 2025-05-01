@@ -18,7 +18,7 @@ export enum InterestCategory {
   Pets = 'Pets',
   DIY = 'DIY',
   Writing = 'Writing',
-  Other = 'Other'
+  Other = 'Other',
 }
 
 export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
@@ -181,8 +181,8 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
   [InterestCategory.Other]: [
     'Miscellaneous',
     'General Interest',
-    'Other Activities'
-  ]
+    'Other Activities',
+  ],
 };
 
 export type InterestCategoryType = keyof typeof InterestCategory;

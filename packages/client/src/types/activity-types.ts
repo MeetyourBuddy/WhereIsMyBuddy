@@ -1,45 +1,45 @@
-import { IUserResponse } from './user-types';
-import { InterestCategory } from './interest-categories.enum';
+import { IUserResponse } from "./user-types";
+import { InterestCategory } from "./interest-categories.enum";
 
 export enum ActivityType {
-  PRIVATE = 'private',
-  PUBLIC = 'public'
+  PRIVATE = "private",
+  PUBLIC = "public",
 }
 
 export enum JoinType {
-  FLEXIBLE = 'flexible',
-  FIXED = 'fixed'
+  FLEXIBLE = "flexible",
+  FIXED = "fixed",
 }
 
 export enum DurationUnit {
-  DAYS = 'days',
-  MONTHS = 'months'
+  DAYS = "days",
+  MONTHS = "months",
 }
 
 export enum ActivityRole {
-  ADMIN = 'admin',
-  MEMBER = 'member'
+  ADMIN = "admin",
+  MEMBER = "member",
 }
 
 export enum DayOfWeek {
-  SUNDAY = 'sunday',
-  MONDAY = 'monday',
-  TUESDAY = 'tuesday',
-  WEDNESDAY = 'wednesday',
-  THURSDAY = 'thursday',
-  FRIDAY = 'friday',
-  SATURDAY = 'saturday'
+  SUNDAY = "sunday",
+  MONDAY = "monday",
+  TUESDAY = "tuesday",
+  WEDNESDAY = "wednesday",
+  THURSDAY = "thursday",
+  FRIDAY = "friday",
+  SATURDAY = "saturday",
 }
 
 export enum CheckInType {
-  PHOTO = 'photo',
-  TEXT = 'text'
+  PHOTO = "photo",
+  TEXT = "text",
 }
 
 export enum CheckinFrequencyUnit {
-  DAILY = 'daily',
-  WEEKLY = 'weekly',
-  MONTHLY = 'monthly'
+  DAILY = "daily",
+  WEEKLY = "weekly",
+  MONTHLY = "monthly",
 }
 
 export interface PhotoValidation {
@@ -61,7 +61,9 @@ export interface CheckInTypeConfig {
 }
 
 export interface IActivityRule {
-  rule: string;
+  _id: string;
+  title: string;
+  description?: string;
   isDefault: boolean;
 }
 
@@ -78,7 +80,7 @@ export interface IActivity {
   durationUnit: DurationUnit;
   bannerImage?: string;
   type: ActivityType;
-  startDate: Date;
+  startDate: string;
   joinType?: JoinType;
   categories?: string[];
   maxSize: number;
@@ -95,8 +97,10 @@ export interface IActivity {
 
 export interface IActivityResult extends IActivity {
   id: string;
-  currentSize: number;
+  _id: string;
+  admin: IUserResponse;
   participants: IUserResponse[];
+  currentSize: number;
   isActive: boolean;
   endedAt: Date;
   createdAt: Date;
@@ -112,29 +116,11 @@ export interface IActivityResult extends IActivity {
   name: string;
   frequency: string;
   duration: string;
-  admin: IUserResponse;
+  title: string;
+  description: string;
+  location?: string;
+  startDate: string;
+  endDate?: string;
 }
 
-export interface IActivityResponse {
-  success: boolean;
-  message: string;
-  data: {
-    activity: IActivityResult;
-  };
-}
-
-export interface IActivityListResponse {
-  success: boolean;
-  message: string;
-  data: {
-    activities: IActivityResult[];
-  };
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data?: T;
-}
-
-export { InterestCategory };
+export type { InterestCategory };

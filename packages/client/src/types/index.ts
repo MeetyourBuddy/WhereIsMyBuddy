@@ -4,4 +4,13 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   timestamp?: string;
+  path?: string;
+}
+
+export interface ApiError {
+  success: false;
+  message: string;
+  error: string;
+  timestamp: string;
+  path: string;
 }

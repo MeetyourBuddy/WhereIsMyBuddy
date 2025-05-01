@@ -5,8 +5,9 @@ import { ArrowRight } from "lucide-react";
 
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import { Button } from "@/components/ui/button";
-import { interestCategories } from "@/lib/constants/interest-categories.constants";
+// import { interestCategories } from "@/lib/constants/interest-categories.constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { activityCategories } from "@/lib/constants/category-interests.constants";
 
 const InterestSelection = () => {
   const navigate = useNavigate();
@@ -24,9 +25,9 @@ const InterestSelection = () => {
 
       // Update categories based on whether any interests in the category are selected
       setCategories((prevCategories) => {
-        const hasInterestsInCategory = interestCategories
-          .find((cat) => cat.name === categoryName)
-          ?.options.some((opt) => newInterests.includes(opt));
+        const hasInterestsInCategory = activityCategories
+          .find((cat) => cat.value === categoryName)
+          ?.interests.some((opt) => newInterests.includes(opt));
 
         if (hasInterestsInCategory && !prevCategories.includes(categoryName)) {
           return [...prevCategories, categoryName];
@@ -74,13 +75,13 @@ const InterestSelection = () => {
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <ScrollArea className="h-[500px] items-center w-full">
-          {interestCategories.map((category) => (
-            <div key={category.name} className="space-y-3 items-center">
+          {activityCategories.map((category) => (
+            <div key={category.value} className="space-y-3 items-center">
               <h6 className="font-medium text-buddy-gray-800">
-                {category.name}
+                {category.label}
               </h6>
               <div className="flex flex-wrap gap-2">
-                {category.options.map((interest) => {
+                {category.interests.map((interest) => {
                   const isSelected = selectedInterests.includes(interest);
                   return (
                     <button
@@ -91,7 +92,7 @@ const InterestSelection = () => {
                           ? "bg-buddy-purple text-white"
                           : "bg-buddy-gray-100 text-buddy-gray-700 hover:bg-buddy-gray-200"
                       }`}
-                      onClick={() => toggleInterest(interest, category.name)}
+                      onClick={() => toggleInterest(interest, category.value)}
                     >
                       {interest}
                     </button>

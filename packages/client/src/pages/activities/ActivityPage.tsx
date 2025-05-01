@@ -32,8 +32,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInDays } from "date-fns";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { VariantProps } from "class-variance-authority";
-import { useActivity } from '@/hooks/use-activity';
-import { IActivityResult, IActivityResponse } from "@/types/activity-types";
+import EditActivityDialog from "@/components/activities/EditActivityDialog";
+import { useActivityStore } from "@/store/activity.store";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -49,39 +49,81 @@ const getActivityStatus = (startDate: Date, endDate: Date) => {
   return { status: "ongoing", label: "Ongoing", variant: "success" };
 };
 
+const formatDuration = (duration: number, unit: string) => {
+  return `${duration} ${unit}${duration > 1 ? "s" : ""}`;
+};
+
+const formatFrequency = (frequency: number, unit: string) => {
+  return `${frequency}x ${unit}`;
+};
+
 const ActivityPage = () => {
   const { activityId } = useParams<{ activityId: string }>();
   const navigate = useNavigate();
-  const { getActivity } = useActivity();
-  
-  useEffect(() => {
-    if (!activityId) {
-      console.error('Activity ID is missing in URL params');
-      navigate('/activities');
-      return;
-    }
-  }, [activityId, navigate]);
-  
-  const { data: activityData, isLoading } = activityId 
-    ? getActivity(activityId) as { data: IActivityResponse | undefined; isLoading: boolean }
-    : { data: undefined, isLoading: false };
-    
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const isMobile = useIsMobile();
 
-  const activity = activityData?.data?.activity as IActivityResult | undefined;
+  const {
+    isLoading: isLoadingActivities,
+    fetchActivityById,
+    currentActivity,
+  } = useActivityStore();
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!activityId) {
+      navigate("/activities");
+    }
+
+    fetchActivityById(activityId);
+  }, [activityId, navigate, fetchActivityById]);
+
+  console.log("current activity", currentActivity);
+
+  if (isLoadingActivities || isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!activity) {
+  if (!currentActivity) {
     return <div>Activity not found</div>;
   }
 
+  // Add debug log
+  console.log("Activity data from query:", currentActivity);
+
+  // Format the data for display
+  const displayData = {
+    name: currentActivity.title || "No title available",
+    description: currentActivity.description || "No description available",
+    duration: formatDuration(currentActivity.proposedDuration || 0, "month"),
+    frequency: formatFrequency(
+      currentActivity.checkinFrequency || 0,
+      currentActivity.checkinFrequencyUnit || ""
+    ),
+    category: currentActivity.category || "No category available",
+    bannerImage:
+      currentActivity.bannerImage ||
+      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2940", // You might want to add a default banner
+    participants: currentActivity.participants || [],
+    participantCount: Array.isArray(currentActivity.participants)
+      ? currentActivity.participants.length
+      : 0,
+    // Use server-computed values
+    checkins: currentActivity.checkins || 0,
+    progress: currentActivity.progress || 0,
+    streakCount: currentActivity.streakCount || 0,
+    totalDays: currentActivity.totalDays || 0,
+    daysCompleted: currentActivity.daysCompleted || 0,
+    admin: currentActivity.admin,
+    id: currentActivity.id,
+  };
+
+  // Add debug log
+  console.log("Display data:", displayData);
+
   const { status, label, variant } = getActivityStatus(
-    activity.startDate,
-    activity.endedAt
+    new Date(currentActivity.startDate || ""),
+    currentActivity.endDate ? new Date(currentActivity.endDate) : new Date()
   );
 
   return (
@@ -92,7 +134,7 @@ const ActivityPage = () => {
         <div className="absolute inset-0 z-[-10] bg-gradient-to-r from-buddy-purple/70 to-buddy-blue/70 mix-blend-multiply" />
         <div
           className="relative h-64 md:h-80 w-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${activity.bannerImage})` }}
+          style={{ backgroundImage: `url(${displayData.bannerImage})` }}
         >
           <Badge
             className="absolute top-4 right-4 py-1 px-3 z-10"
@@ -107,20 +149,20 @@ const ActivityPage = () => {
                 <div>
                   <div className="flex flex-wrap gap-3 mb-2">
                     <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {activity.category}
+                      {displayData.category}
                     </span>
                     <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {activity.duration}
+                      {displayData.duration}
                     </span>
                     <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {activity.frequency}
+                      {displayData.frequency}
                     </span>
                   </div>
                   <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shadow-lg">
-                    {activity.name}
+                    {displayData.name}
                   </h1>
                   <p className="max-w-3xl text-white text-shadow-lg text-sm md:text-base">
-                    {activity.description}
+                    {displayData.description}
                   </p>
                 </div>
                 <div className="flex gap-2 mt-4 md:mt-0 z-[10]">
@@ -135,17 +177,15 @@ const ActivityPage = () => {
                       Check-in Now
                     </Button>
                   </CheckInDialog>
-                  <Button
-                    variant="outline"
-                    className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
-                    onClick={() => {
-                      // Navigate to edit page
-                      window.location.href = `/activities/edit/${activity.id}`;
-                    }}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Manage Activity
-                  </Button>
+                  <EditActivityDialog activity={currentActivity}>
+                    <Button
+                      variant="outline"
+                      className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Manage Activity
+                    </Button>
+                  </EditActivityDialog>
                 </div>
               </div>
             </div>
@@ -165,7 +205,7 @@ const ActivityPage = () => {
                   Participants
                 </p>
                 <p className="text-lg md:text-xl font-semibold">
-                  {activity.participants.length} participants
+                  {displayData.participantCount} participants
                 </p>
               </div>
             </Card>
@@ -179,7 +219,7 @@ const ActivityPage = () => {
                   Check-ins
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-blue to-buddy-blue-light bg-clip-text text-transparent">
-                  {activity.checkins}
+                  {displayData.checkins}
                 </p>
               </div>
             </Card>
@@ -193,7 +233,7 @@ const ActivityPage = () => {
                   Progress
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-green to-buddy-green-light bg-clip-text text-transparent">
-                  {activity.progress}%
+                  {displayData.progress}%
                 </p>
               </div>
             </Card>
@@ -207,7 +247,7 @@ const ActivityPage = () => {
                   Current Streak
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">
-                  {activity.streakCount} days
+                  {displayData.streakCount} days
                 </p>
               </div>
             </Card>
@@ -287,43 +327,43 @@ const ActivityPage = () => {
             </TabsList>
 
             <TabsContent value="dashboard" className="p-0 mt-0 animate-fade-in">
-              <ActivityDashboard activityId={activity.id} />
+              <ActivityDashboard activity={currentActivity} />
             </TabsContent>
 
             <TabsContent
               value="leaderboard"
               className="p-0 mt-0 animate-fade-in"
             >
-              <ActivityLeaderboard activityId={activity.id} />
+              <ActivityLeaderboard activityId={displayData.id} />
             </TabsContent>
 
             {/* TODO: Add gallery tab in v2 */}
             {/* <TabsContent value="gallery" className="p-0 mt-0 animate-fade-in">
-                <ActivityGallery activityId={activity.id} />
+                <ActivityGallery activityId={displayData.id} />
               </TabsContent> */}
 
             {/* TODO: Add schedule tab in v2 */}
             {/* <TabsContent value="schedule" className="p-0 mt-0 animate-fade-in">
-                <ActivitySchedule activityId={activity.id} />
+                <ActivitySchedule activityId={displayData.id} />
               </TabsContent> */}
 
             <TabsContent value="checkin" className="p-0 mt-0 animate-fade-in">
               <ActivityCheckin
-                activityId={activity.id}
-                streakCount={activity.streakCount}
-                totalDays={activity.totalDays}
-                daysCompleted={activity.daysCompleted}
+                activityId={displayData.id}
+                streakCount={displayData.streakCount}
+                totalDays={displayData.totalDays}
+                daysCompleted={displayData.daysCompleted}
               />
             </TabsContent>
 
             {/* TODO: Add partners tab in v2 */}
             {/* <TabsContent value="partners" className="p-0 mt-0 animate-fade-in">
-                  <ActivityPartners activityId={activity.id} />
+                  <ActivityPartners activityId={displayData.id} />
                 </TabsContent> */}
 
             <TabsContent value="messages" className="p-0 mt-0 animate-fade-in">
               <div className="p-6">
-                <MessageBoard activityId={activity.id} />
+                <MessageBoard activityId={displayData.id} />
               </div>
             </TabsContent>
           </Tabs>

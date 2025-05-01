@@ -21,4 +21,4 @@ export class File {
   description?: string;
 }
 
-export const FileSchema = SchemaFactory.createForClass(File); 
+export const FileSchema = SchemaFactory.createForClass(File);

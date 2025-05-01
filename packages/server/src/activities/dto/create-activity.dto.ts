@@ -1,7 +1,25 @@
-import { IsString, IsNumber, IsEnum, IsOptional, IsArray, IsBoolean, ValidateNested, IsDate, Min, Max, ArrayMinSize, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsOptional,
+  IsArray,
+  IsBoolean,
+  ValidateNested,
+  IsDate,
+  Min,
+  ArrayMinSize,
+  IsNotEmpty,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ActivityType, JoinType, DurationUnit, CheckinFrequencyUnit, DayOfWeek, CheckInType } from '../schemas/activity.schema';
+import {
+  ActivityType,
+  CheckinFrequencyUnit,
+  DayOfWeek,
+  CheckInType,
+} from '../schemas/activity.schema';
 import { InterestCategory } from '../../users/enums/interests.enum';
+import { User } from '@/users/schemas/user.schema';
 
 class ActivityRuleDto {
   @IsString()
@@ -58,6 +76,7 @@ export class CreateActivityDto {
   description?: string;
 
   @IsEnum(InterestCategory)
+  @IsNotEmpty()
   category: InterestCategory;
 
   @IsEnum(ActivityType)
@@ -65,12 +84,6 @@ export class CreateActivityDto {
 
   @IsNumber()
   proposedDuration: number;
-
-  @IsEnum(DurationUnit)
-  durationUnit: DurationUnit;
-
-  @IsNumber()
-  maxSize: number;
 
   @IsArray()
   @IsString({ each: true })
@@ -85,6 +98,11 @@ export class CreateActivityDto {
   @Type(() => Date)
   startDate: Date;
 
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  checkinDatesOfMonth?: number[];
+
   @IsEnum(CheckinFrequencyUnit)
   checkinFrequencyUnit: CheckinFrequencyUnit;
 
@@ -96,11 +114,17 @@ export class CreateActivityDto {
   @IsOptional()
   checkinDays?: DayOfWeek[];
 
-  @IsString()
-  @IsOptional()
-  admin?: string;
-
   @ValidateNested({ each: true })
   @Type(() => CheckInTypeConfigDto)
   allowedCheckInTypes: CheckInTypeConfigDto[];
-} 
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  goals: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  categories?: string[];
+}

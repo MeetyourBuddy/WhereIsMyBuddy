@@ -1,58 +1,17 @@
-import axiosInstance from '@/services/axios-instance';
-import { IActivity, IActivityResponse, IActivityListResponse } from '@/types/activity-types';
-import { ApiResponse } from '@/types';
-import { authService } from '../auth/auth-service';
+import { IActivity, IActivityResult } from "@/types/activity-types";
+import { apiMethods } from "@/services/api-methods";
 
-class ActivityService {
-  async createActivity(activityData: IActivity): Promise<IActivityResponse> {
-    // try {
-      // // First ensure we have valid tokens
-      // await authService.refreshTokenIfNeeded();
-      console.log('Creating activity with data:', activityData);
-      const response = await axiosInstance.post<IActivityResponse>(
-        '/activities',
-        activityData
-      );
-      
-      // Log the response to see what we're getting back
-      console.log('Activity creation response:', response.data);
-      
-      return response.data;
-    // } catch (error) {
-    //   if (error.message.includes('jwt expired')) {
-    //     window.location.href = '/signin';
-    //   }
-    //   throw error;
-    // }
-  }
+export const ActivityService = {
+  createActivity: (activityData: IActivity) =>
+    apiMethods.post<IActivityResult>("/activities", activityData),
 
-  async getActivities(): Promise<IActivityListResponse> {
-    const response = await axiosInstance.get<IActivityListResponse>('/activities');
-    return response.data;
-  }
+  getActivities: () => apiMethods.get<IActivityResult[]>(`/activities`),
 
-  async getActivityById(id: string): Promise<IActivityResponse> {
-    if (!id) {
-      console.error('Attempted to fetch activity with undefined ID');
-      throw new Error('Activity ID is required');
-    }
-    
-    const response = await axiosInstance.get<IActivityResponse>(`/activities/${id}`);
-    return response.data;
-  }
+  getActivityById: (id: string) =>
+    apiMethods.get<IActivityResult>(`/activities/${id}`),
 
-  async updateActivity(id: string, activityData: Partial<IActivity>): Promise<ApiResponse<IActivityResponse>> {
-    const response = await axiosInstance.put<ApiResponse<IActivityResponse>>(
-      `/activities/${id}`,
-      activityData
-    );
-    return response.data;
-  }
+  updateActivity: (id: string, activityData: Partial<IActivity>) =>
+    apiMethods.put<IActivityResult>(`/activities/${id}`, activityData),
 
-  async deleteActivity(id: string): Promise<ApiResponse<void>> {
-    const response = await axiosInstance.delete<ApiResponse<void>>(`/activities/${id}`);
-    return response.data;
-  }
-}
-
-export const activityService = new ActivityService();
+  deleteActivity: (id: string) => apiMethods.delete<void>(`/activities/${id}`),
+};
