@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Heart, Share, UserCheck, Calendar } from "lucide-react";
 import Avatar from "@/components/common/Avatar";
 import { Button } from "@/components/ui/button";
-import CheckInDialog from "./CheckInDialog";
+import { CheckInDialog } from "./CheckInDialog";
 import {
   Sheet,
   SheetContent,
@@ -26,6 +26,7 @@ interface CheckInCardProps {
   comments: number;
   likes: number;
   isCheckedIn?: boolean;
+  activityId: string;
 }
 
 const CheckInCard: React.FC<CheckInCardProps> = ({
@@ -38,6 +39,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
   comments,
   likes,
   isCheckedIn = false,
+  activityId,
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -168,7 +170,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
           </div>
 
           {!isCheckedIn && (
-            <CheckInDialog>
+            <CheckInDialog activityId={activityId}>
               <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-xl px-4 py-2 shadow-sm hover:shadow-md transition-all duration-300">
                 Check In
               </Button>
@@ -192,7 +194,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
 
           {!isCheckedIn && (
             <div className="mt-4 flex justify-center">
-              <CheckInDialog>
+              <CheckInDialog activityId={activityId}>
                 <Button className="bg-gradient-to-r from-buddy-purple/80 to-buddy-blue/80 text-white rounded-xl px-6 py-2 shadow-sm hover:shadow-md transition-all duration-300">
                   Add Your Check-in
                 </Button>

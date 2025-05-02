@@ -15,6 +15,7 @@ import { GoogleStrategy } from './users/auth/strategies/google.strategy';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ActivityModule } from './activities/activity.module';
 import { AuthModule } from './users/auth/auth.module';
+import { CheckInsModule } from './checkins/checkins.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AuthModule } from './users/auth/auth.module';
     }),
     ActivityModule,
     AuthModule,
+    CheckInsModule,
   ],
   controllers: [UsersController],
   providers: [

@@ -26,6 +26,8 @@ import Avatar from "@/components/common/Avatar";
 import ActivityInfo from "./ActivityInfo";
 import { useActivity } from "@/hooks/use-activity";
 import { IActivityResult } from "@/types/activity-types";
+import CheckInCard from "./CheckInCard";
+
 interface ActivityDashboardProps {
   activity: IActivityResult;
   onViewAllMembers?: () => void;

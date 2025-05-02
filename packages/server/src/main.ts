@@ -7,9 +7,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import { join } from 'path';
 import { ErrorInterceptor } from './common/interceptors/error.interceptor';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { abortOnError: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { abortOnError: false });
 
   // Add global prefix
   app.setGlobalPrefix('api');
@@ -46,6 +47,10 @@ async function bootstrap() {
 
   // Serve static files from uploads directory
   app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
+
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }

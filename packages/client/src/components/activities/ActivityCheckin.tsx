@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
-import CheckInDialog from "./CheckInDialog";
+import { CheckInDialog } from "./CheckInDialog";
 import CheckInCard from "./CheckInCard";
 
 interface ActivityCheckinProps {
@@ -106,6 +106,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
               {checkInPeriods.map((period, index) => (
                 <CheckInCard
                   key={index}
+                  activityId={activityId}
                   date={period.date}
                   title={period.title}
                   description={period.description}
@@ -183,7 +184,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
             <Separator className="my-5" />
             
             <div className="pt-2 mb-6">
-              <CheckInDialog>
+              <CheckInDialog activityId={activityId}>
                 <Button 
                   className="w-full py-2 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
                 >
