@@ -36,24 +36,28 @@ export const useActivityStore = create<ActivityState>()(
         const formattedActivity = {
           ...activity,
           allowedCheckInTypes: Object.entries(activity.allowedCheckInTypes || {})
-            .filter(([_, value]) => value.isEnabled)
+            .filter(([_, value]) => (value as unknown as { isEnabled: boolean }).isEnabled)
             .map(([key]) => key)
         };
 
         const response = await activityService.createActivity(formattedActivity);
         if (response.success && response.data) {
-          const activityData: IActivity = {
+          const activityData: IActivityResponse = {
             id: response.data?.id,
             title: response.data?.title,
             description: response.data?.description,
             proposedDuration: response.data?.proposedDuration,
-            durationUnit: response.data?.durationUnit,
             type: response.data?.type,
-            maxSize: response.data?.maxSize,
-            rules: response.data?.rules?.map((r) => ({
+            maxParticipants: response.data?.maxParticipants,
+            rules: response.data?.rules?.map((r: { rule: string }) => ({
               rule: r.rule,
               isDefault: false
-            })) as IActivityRule[]
+            })) as IActivityRule[],
+            startDate: response.data?.startDate,
+            checkinFrequency: response.data?.checkinFrequency,
+            checkinFrequencyUnit: response.data?.checkinFrequencyUnit,
+            allowedCheckInTypes: response.data?.allowedCheckInTypes,
+            category: response.data?.category
           };
           set((state) => ({ activities: [...state.activities, activityData] }));
         }

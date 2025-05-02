@@ -40,9 +40,6 @@ export class ActivityResponseDto {
   categories: string[];
 
   @Expose()
-  maxSize: number;
-
-  @Expose()
   goals: string[];
 
   @Expose()
@@ -89,6 +86,9 @@ export class ActivityResponseDto {
 
   @Expose()
   endedAt?: Date;
+
+  @Expose()
+  maxParticipants: number;
 
   @Expose()
   createdAt: Date;

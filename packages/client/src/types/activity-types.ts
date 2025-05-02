@@ -61,7 +61,7 @@ export interface CheckInTypeConfig {
 }
 
 export interface IActivityRule {
-  _id: string;
+  id: string;
   title: string;
   description?: string;
   isDefault: boolean;
@@ -77,13 +77,11 @@ export interface IActivity {
   title: string;
   description?: string;
   proposedDuration: number;
-  durationUnit: DurationUnit;
   bannerImage?: string;
   type: ActivityType;
   startDate: string;
   joinType?: JoinType;
   categories?: string[];
-  maxSize: number;
   goals?: string[];
   tags?: string[];
   rules?: IActivityRule[];
@@ -93,6 +91,7 @@ export interface IActivity {
   checkinDatesOfMonth?: number[];
   checkinWeeksOfMonth?: number[];
   allowedCheckInTypes: CheckInTypeConfig[];
+  maxParticipants: number;
 }
 
 export interface IActivityResult extends IActivity {
@@ -121,6 +120,7 @@ export interface IActivityResult extends IActivity {
   location?: string;
   startDate: string;
   endDate?: string;
+  maxParticipants: number;
 }
 
 export type { InterestCategory };

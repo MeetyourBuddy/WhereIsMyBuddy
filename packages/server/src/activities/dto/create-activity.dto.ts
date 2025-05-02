@@ -19,7 +19,6 @@ import {
   CheckInType,
 } from '../schemas/activity.schema';
 import { InterestCategory } from '../../users/enums/interests.enum';
-import { User } from '@/users/schemas/user.schema';
 
 class ActivityRuleDto {
   @IsString()
@@ -127,4 +126,11 @@ export class CreateActivityDto {
   @IsString({ each: true })
   @IsOptional()
   categories?: string[];
+
+  @IsString()
+  @IsOptional()
+  bannerImage?: string;
+
+  @IsNumber()
+  maxParticipants: number;
 }

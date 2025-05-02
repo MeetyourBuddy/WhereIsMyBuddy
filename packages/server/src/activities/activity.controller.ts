@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Post,
-  Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -42,12 +42,13 @@ export class ActivityController {
     return await this.activityService.findOne(id, userId);
   }
 
-  @Put(':id')
+  @Patch(':id')
   async update(
     @Param('id') id: string,
     @Body() updateActivityDto: UpdateActivityDto,
     @GetUser('userId') userId: string,
   ): Promise<Activity> {
+    console.log('updateActivityDto in controller', updateActivityDto);
     return await this.activityService.update(id, updateActivityDto, userId);
   }
 

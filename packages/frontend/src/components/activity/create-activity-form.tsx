@@ -101,7 +101,6 @@ export const CreateActivityForm = () => {
       description: '',
       proposedDuration: 1,
       durationUnit: 'days',
-      maxSize: 1,
       type: 'public',
       checkinFrequency: 1,
       checkinFrequencyUnit: 'daily',
@@ -140,13 +139,25 @@ export const CreateActivityForm = () => {
   const onSubmit = async (data: CreateActivityFormData) => {
     try {
       console.log('Form data:', data);
+
+      // Convert duration to days based on the selected unit
+      let durationInDays = data.proposedDuration;
+      if (data.durationUnit === 'months') {
+        durationInDays = data.proposedDuration * 30; // Approximate
+      }
+
       const formData = {
         ...data,
+        proposedDuration: durationInDays,
         allowedCheckInTypes: Object.entries(data.allowedCheckInTypes)
           .filter(([_, value]) => value.isEnabled)
           .map(([key]) => key)
       };
-      const response = await createActivity(formData as unknown as Omit<IActivity, 'id'>);
+      // Remove durationUnit from the form data
+      const { durationUnit, ...formDataWithoutUnit } = formData;
+      const response = await createActivity(
+        formDataWithoutUnit as unknown as Omit<IActivity, 'id'>
+      );
 
       if (response.success) {
         toast({
@@ -563,7 +574,7 @@ export const CreateActivityForm = () => {
 
           <FormField
             control={form.control}
-            name="maxSize"
+            name="maxParticipants"
             render={({ field }) => (
               <FormItem className="flex gap-4">
                 <FormLabel className="flex w-1/3">

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { IActivity, IActivityResult } from "@/types/activity-types";
 import { ActivityService } from "@/services/api/activity/activity-service";
-import { ApiError } from "@/types";
+import { ApiError, ApiResponse } from "@/types";
 
 interface ActivityState {
   activities: IActivityResult[];
@@ -13,13 +13,13 @@ interface ActivityState {
   // Actions
   createActivity: (
     activityData: Partial<IActivity>
-  ) => Promise<IActivityResult>;
+  ) => Promise<ApiResponse<IActivityResult>>;
   fetchActivities: () => Promise<void>;
   fetchActivityById: (id: string) => Promise<void>;
   updateActivity: (
     id: string,
     activityData: Partial<IActivity>
-  ) => Promise<void>;
+  ) => Promise<ApiResponse<IActivityResult>>;
   deleteActivity: (id: string) => Promise<void>;
   clearError: () => void;
 

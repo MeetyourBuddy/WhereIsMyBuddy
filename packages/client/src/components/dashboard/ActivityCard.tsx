@@ -16,7 +16,7 @@ interface ActivityCardProps {
   category?: string;
   image?: string;
   participants: IUserResponse[];
-  // maxParticipants: number;
+  maxParticipants: number;
   onClick?: () => void;
 }
 
@@ -29,7 +29,7 @@ const ActivityCard = ({
   category,
   image,
   participants,
-  // maxParticipants,
+  maxParticipants,
   onClick,
 }: ActivityCardProps) => {
   // Calculate the images to display for group avatar
@@ -120,8 +120,7 @@ const ActivityCard = ({
           </div>
           <div className="absolute top-3 right-3">
             <span className="bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
-              {participants.length} buddies
-              {/* {participants.length}/{maxParticipants} buddies */}
+              {participants.length}/{maxParticipants} buddies
             </span>
           </div>
         </div>
