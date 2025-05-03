@@ -181,7 +181,7 @@ const EditActivityDialog = ({
         ],
         tags,
         rules: rules.map((rule) => ({
-          id: rule.id,
+          _id: rule._id,
           title: rule.title,
           description: rule.description || "",
           isDefault: rule.isDefault,
@@ -228,7 +228,7 @@ const EditActivityDialog = ({
   const addRule = () => {
     if (newRule.trim()) {
       const rule = {
-        id: Date.now().toString(),
+        _id: Date.now().toString(),
         title: newRule.trim(),
         isDefault: false,
       };
@@ -238,7 +238,7 @@ const EditActivityDialog = ({
   };
 
   const removeRule = (ruleId: string) => {
-    setRules(rules.filter((rule) => rule.id !== ruleId));
+    setRules(rules.filter((rule) => rule._id !== ruleId));
   };
 
   const toggleGoal = (goal: string) => {
@@ -606,10 +606,10 @@ const EditActivityDialog = ({
                 </div>
 
                 {rules.length > 0 && (
-                  <div className="space-y-2" key={rules.id}>
+                  <div className="space-y-2">
                     {rules.map((rule, index) => (
                       <div
-                        key={rule.id}
+                        key={rule._id}
                         className={cn(
                           "flex items-start gap-3 border rounded-md p-3 group",
                           rule.isDefault ? "bg-gray-50" : "bg-white"
@@ -622,7 +622,7 @@ const EditActivityDialog = ({
                         {!rule.isDefault && (
                           <button
                             type="button"
-                            onClick={() => removeRule(rule.id)}
+                            onClick={() => removeRule(rule._id)}
                             className="text-gray-400 hover:text-red-500 h-5 w-5 flex-shrink-0 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Trash2 className="h-4 w-4" />

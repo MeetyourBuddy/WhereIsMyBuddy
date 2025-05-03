@@ -14,7 +14,7 @@ interface ActivityCardProps {
   startDate: string;
   endDate?: string;
   category?: string;
-  image?: string;
+  bannerImage?: string;
   participants: IUserResponse[];
   maxParticipants: number;
   onClick?: () => void;
@@ -27,7 +27,7 @@ const ActivityCard = ({
   startDate,
   endDate,
   category,
-  image,
+  bannerImage,
   participants,
   maxParticipants,
   onClick,
@@ -97,10 +97,10 @@ const ActivityCard = ({
       <Card.Content className="p-0">
         {/* Activity Image */}
         <div className="relative h-40 overflow-hidden">
-          {image ? (
+          {bannerImage ? (
             <div
               className="w-full h-full bg-cover bg-center"
-              style={{ backgroundImage: `url(${image})` }}
+              style={{ backgroundImage: `url(${bannerImage})` }}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-buddy-gray-100 to-buddy-gray-200 flex items-center justify-center">
