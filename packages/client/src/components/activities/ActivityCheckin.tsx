@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { CheckCircle, Info, Flame, Award, PlusCircle } from "lucide-react";
 import { Card } from "@/components/common/Card";
@@ -15,13 +14,15 @@ interface ActivityCheckinProps {
   streakCount: number;
   totalDays: number;
   daysCompleted: number;
+  currentActivity: any;
 }
 
 const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ 
   activityId, 
   streakCount, 
   totalDays, 
-  daysCompleted 
+  daysCompleted,
+  currentActivity
 }) => {
   const [lastCheckIn, setLastCheckIn] = useState<Date | null>(null);
 
@@ -184,7 +185,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
             <Separator className="my-5" />
             
             <div className="pt-2 mb-6">
-              <CheckInDialog activityId={activityId}>
+              <CheckInDialog activityId={currentActivity._id}>
                 <Button 
                   className="w-full py-2 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
                 >

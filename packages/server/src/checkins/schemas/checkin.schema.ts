@@ -1,29 +1,34 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export type CheckInDocument = CheckIn & Document;
 
 @Schema({ timestamps: true })
 export class CheckIn {
-  @Prop({ type: Types.ObjectId, ref: 'Activity', required: true })
-  activityId: Types.ObjectId;
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
+  userId: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  userId: Types.ObjectId;
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
+  activityId: string;
 
-  @Prop({ 
-    type: String, 
-    enum: ['text', 'image'],
-    required: true 
-  })
-  type: 'text' | 'image' ;
+  @Prop({ required: true, enum: ['text', 'image'] })
+  type: 'text' | 'image';
 
-  @Prop({ type: String, required: true })
+  @Prop({ required: true })
   content: string;
 
-  // For media uploads (optional)
-  @Prop({ type: String })
+  @Prop()
   mediaUrl?: string;
+
+  @Prop({ default: [] })
+  likes: string[]; // Array of userIds who liked this check-in
+
+  @Prop({ default: 0 })
+  commentCount: number;
 }
 
-export const CheckInSchema = SchemaFactory.createForClass(CheckIn); 
+export const CheckInSchema = SchemaFactory.createForClass(CheckIn);
+
+// Add indexes
+CheckInSchema.index({ activityId: 1, createdAt: -1 });
+CheckInSchema.index({ userId: 1, createdAt: -1 }); 

@@ -27,7 +27,7 @@ import ActivitySchedule from "@/components/activities/ActivitySchedule";
 import ActivityCheckin from "@/components/activities/ActivityCheckin";
 import ActivityPartners from "@/components/activities/ActivityPartners";
 import MessageBoard from "@/components/activities/MessageBoard";
-import CheckInDialog from "@/components/activities/CheckInDialog";
+import { CheckInDialog } from "@/components/activities/CheckInDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInDays } from "date-fns";
 import { Badge, badgeVariants } from "@/components/ui/badge";
@@ -80,16 +80,8 @@ const ActivityPage = () => {
 
   console.log("current activity", currentActivity);
 
-  if (isLoadingActivities || isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!currentActivity) {
-    return <div>Activity not found</div>;
-  }
-
-  // Add debug log
-  console.log("Activity data from query:", currentActivity);
+  // Add this before creating displayData
+  console.log('Activity ID from currentActivity:', currentActivity._id);
 
   // Format the data for display
   const displayData = {
@@ -115,7 +107,7 @@ const ActivityPage = () => {
     totalDays: currentActivity.totalDays || 0,
     daysCompleted: currentActivity.daysCompleted || 0,
     admin: currentActivity.admin,
-    id: currentActivity.id,
+    id: currentActivity._id,
   };
 
   // Add debug log
@@ -167,6 +159,7 @@ const ActivityPage = () => {
                 </div>
                 <div className="flex gap-2 mt-4 md:mt-0 z-[10]">
                   <CheckInDialog
+                    activityId={currentActivity._id}
                     onCheckInComplete={() => console.log("Check-in completed")}
                   >
                     <Button
@@ -348,11 +341,12 @@ const ActivityPage = () => {
               </TabsContent> */}
 
             <TabsContent value="checkin" className="p-0 mt-0 animate-fade-in">
-              <ActivityCheckin
+              <ActivityCheckin  
                 activityId={displayData.id}
                 streakCount={displayData.streakCount}
                 totalDays={displayData.totalDays}
                 daysCompleted={displayData.daysCompleted}
+                currentActivity={currentActivity}
               />
             </TabsContent>
 

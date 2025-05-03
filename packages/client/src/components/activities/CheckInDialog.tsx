@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -19,11 +20,46 @@ interface CheckInDialogProps {
   onCheckInComplete?: () => void;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
+const MAX_IMAGE_DIMENSION = 2048;
+
+const validateImage = (file: File): Promise<string | null> => {
+  return new Promise((resolve) => {
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      resolve('Please upload a JPG, PNG or GIF file');
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      resolve('File size must be less than 5MB');
+      return;
+    }
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
+        resolve(`Image dimensions must be ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION} or smaller`);
+        return;
+      }
+      resolve(null);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      resolve('Invalid image file');
+    };
+  });
+};
+
 export const CheckInDialog: React.FC<CheckInDialogProps> = ({
   children,
   activityId,
   onCheckInComplete,
 }) => {
+  console.log('CheckInDialog received activityId:', activityId);
+
   const [open, setOpen] = useState(false);
   const [checkinType, setCheckinType] = useState<"text" | "image">("text");
   const [message, setMessage] = useState("");
@@ -31,13 +67,23 @@ export const CheckInDialog: React.FC<CheckInDialogProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setCheckinType("image");
+    if (!file) return;
+
+    const error = await validateImage(file);
+    if (error) {
+      toast({
+        title: "Invalid Image",
+        description: error,
+        variant: "destructive",
+      });
+      return;
     }
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setCheckinType("image");
   };
 
   const clearImage = () => {
@@ -49,20 +95,32 @@ export const CheckInDialog: React.FC<CheckInDialogProps> = ({
   };
 
   const handleCheckin = async () => {
+    if (!activityId) {
+      toast({
+        title: "Error",
+        description: "Activity ID is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!message.trim() && !selectedFile) {
+      toast({
+        title: "Check-in Failed",
+        description: "Please enter a message or upload an image",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      console.log('ActivityId in CheckInDialog:', activityId);
-      console.log('CheckInData:', {
-        activityId,
-        type: checkinType,
-        content: message,
-      });
       
       await CheckInService.createCheckIn(
         {
           activityId,
           type: checkinType,
-          content: message,
+          content: message.trim(),
         },
         selectedFile
       );
@@ -78,9 +136,10 @@ export const CheckInDialog: React.FC<CheckInDialogProps> = ({
       clearImage();
       onCheckInComplete?.();
     } catch (error) {
+      console.error('Check-in error:', error);
       toast({
         title: "Check-in Failed",
-        description: "Something went wrong. Please try again.",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -94,6 +153,9 @@ export const CheckInDialog: React.FC<CheckInDialogProps> = ({
       <DialogContent className="sm:max-w-md md:max-w-lg">
         <DialogHeader>
           <DialogTitle>Check In Now</DialogTitle>
+          <DialogDescription>
+            Share your progress or add a photo to your check-in.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

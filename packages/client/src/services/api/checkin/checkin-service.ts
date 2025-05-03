@@ -17,12 +17,19 @@ export interface ICheckInResult extends ICheckIn {
 export const CheckInService = {
   createCheckIn: (checkInData: ICheckIn, file?: File) => {
     const formData = new FormData();
-    formData.append('activityId', checkInData.activityId.toString());
+    
+    if (!checkInData.activityId) {
+      throw new Error('Activity ID is required');
+    }
+    
+    formData.append('activityId', checkInData.activityId);
     formData.append('type', checkInData.type);
     formData.append('content', checkInData.content);
+    
     if (file) {
       formData.append('file', file);
     }
+    
     return apiMethods.post<ICheckInResult>("/checkins", formData, {
       'Content-Type': 'multipart/form-data',
     });
@@ -50,4 +57,10 @@ export const CheckInService = {
     apiMethods.get<Array<{ filename: string; url: string }>>(
       `/checkins/files/${activityId}`
     ),
+
+  toggleLike: (checkInId: string) => 
+    apiMethods.post<ICheckInResult>(`/checkins/${checkInId}/like`),
+
+  deleteCheckIn: (checkInId: string) =>
+    apiMethods.delete(`/checkins/${checkInId}`),
 }; 

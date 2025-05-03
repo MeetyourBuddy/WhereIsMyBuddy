@@ -6,7 +6,8 @@ import {
   Param, 
   UseInterceptors, 
   UploadedFile,
-  BadRequestException 
+  BadRequestException,
+  Delete
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -98,5 +99,21 @@ export class CheckInsController {
     @GetUser('userId') userId: string,
   ) {
     return this.checkInsService.listFiles(activityId, userId);
+  }
+
+  @Delete(':id')
+  async deleteCheckIn(
+    @Param('id') id: string,
+    @GetUser('userId') userId: string,
+  ) {
+    return this.checkInsService.delete(id, userId);
+  }
+
+  @Post(':id/like')
+  async toggleLike(
+    @Param('id') id: string,
+    @GetUser('userId') userId: string,
+  ) {
+    return this.checkInsService.toggleLike(id, userId);
   }
 } 
