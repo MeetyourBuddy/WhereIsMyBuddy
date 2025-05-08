@@ -184,6 +184,9 @@ export class Activity {
   get daysCompleted(): number {
     return this.checkins || 0;
   }
+
+  @Prop({ type: Number, required: true })
+  maxParticipants: number;
 }
 
 export type ActivityDocument = Activity & Document;

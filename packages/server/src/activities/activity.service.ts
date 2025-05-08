@@ -108,6 +108,8 @@ export class ActivityService {
         throw new NotFoundException('Activity not found or unauthorized');
       }
 
+      console.log('created activity', activity);
+
       return activity;
     } catch (error) {
       console.error('Error in findOne:', error);

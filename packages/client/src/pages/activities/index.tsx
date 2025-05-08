@@ -360,9 +360,9 @@ const Activities = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredActivities.map((activity) => (
                   <ActivityCard
-                    key={activity.id}
+                    key={activity._id}
                     {...activity}
-                    onClick={() => navigate(`/activities/${activity.id}`)}
+                    onClick={() => navigate(`/activities/${activity._id}`)}
                   />
                 ))}
               </div>

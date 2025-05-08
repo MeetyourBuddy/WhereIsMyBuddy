@@ -11,7 +11,7 @@ export const ActivityService = {
     apiMethods.get<IActivityResult>(`/activities/${id}`),
 
   updateActivity: (id: string, activityData: Partial<IActivity>) =>
-    apiMethods.put<IActivityResult>(`/activities/${id}`, activityData),
+    apiMethods.patch<IActivityResult>(`/activities/${id}`, activityData),
 
   deleteActivity: (id: string) => apiMethods.delete<void>(`/activities/${id}`),
 };

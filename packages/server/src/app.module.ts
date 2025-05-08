@@ -5,13 +5,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER } from '@nestjs/core';
 
 import { UsersController } from './users/users.controller';
-import { AuthController } from './users/auth/auth.controller';
 import { UsersService } from './users/users.service';
-import { AuthService } from './users/auth/auth.service';
 import { User, UserSchema } from './users/schemas/user.schema';
-import { JwtStrategy } from './users/auth/strategies/jwt.strategy';
-import { RefreshTokenStrategy } from './users/auth/strategies/refresh-token.strategy';
-import { GoogleStrategy } from './users/auth/strategies/google.strategy';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ActivityModule } from './activities/activity.module';
 import { AuthModule } from './users/auth/auth.module';

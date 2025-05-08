@@ -14,9 +14,9 @@ interface ActivityCardProps {
   startDate: string;
   endDate?: string;
   category?: string;
-  image?: string;
+  bannerImage?: string;
   participants: IUserResponse[];
-  // maxParticipants: number;
+  maxParticipants: number;
   onClick?: () => void;
 }
 
@@ -27,9 +27,9 @@ const ActivityCard = ({
   startDate,
   endDate,
   category,
-  image,
+  bannerImage,
   participants,
-  // maxParticipants,
+  maxParticipants,
   onClick,
 }: ActivityCardProps) => {
   // Calculate the images to display for group avatar
@@ -97,10 +97,10 @@ const ActivityCard = ({
       <Card.Content className="p-0">
         {/* Activity Image */}
         <div className="relative h-40 overflow-hidden">
-          {image ? (
+          {bannerImage ? (
             <div
               className="w-full h-full bg-cover bg-center"
-              style={{ backgroundImage: `url(${image})` }}
+              style={{ backgroundImage: `url(${bannerImage})` }}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-buddy-gray-100 to-buddy-gray-200 flex items-center justify-center">
@@ -120,8 +120,7 @@ const ActivityCard = ({
           </div>
           <div className="absolute top-3 right-3">
             <span className="bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
-              {participants.length} buddies
-              {/* {participants.length}/{maxParticipants} buddies */}
+              {participants.length}/{maxParticipants} buddies
             </span>
           </div>
         </div>

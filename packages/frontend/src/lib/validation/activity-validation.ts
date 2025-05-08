@@ -103,7 +103,7 @@ export const createActivitySchema = z.object({
     errorMap: () => ({ message: 'Please select a valid join type' })
   }),
 
-  maxSize: z
+  maxParticipants: z
     .number()
     .min(1, 'Capacity must be at least 1')
     .max(1000, 'Capacity cannot exceed 1000'),

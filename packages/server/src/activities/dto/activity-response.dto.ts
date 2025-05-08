@@ -1,4 +1,4 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import {
   ActivityType,
   JoinType,
@@ -38,9 +38,6 @@ export class ActivityResponseDto {
 
   @Expose()
   categories: string[];
-
-  @Expose()
-  maxSize: number;
 
   @Expose()
   goals: string[];
@@ -89,6 +86,9 @@ export class ActivityResponseDto {
 
   @Expose()
   endedAt?: Date;
+
+  @Expose()
+  maxParticipants: number;
 
   @Expose()
   createdAt: Date;

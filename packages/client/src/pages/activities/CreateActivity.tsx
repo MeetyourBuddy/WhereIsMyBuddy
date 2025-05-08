@@ -47,12 +47,14 @@ import {
   CheckInTypeConfig,
   CheckinFrequencyUnit,
   IActivity,
+  IActivityResult,
 } from "@/types/activity-types";
 import {
   activityCategories,
   mapToBackendCategory,
 } from "@/lib/constants/category-interests.constants";
 import { useActivityStore } from "@/store/activity.store";
+import { ApiResponse } from "@/types";
 
 const STEPS = [
   {
@@ -82,148 +84,70 @@ const STEPS = [
   },
 ];
 
-// const activityCategories = [
-//   { value: "fitness", label: "Fitness & Exercise" },
-//   { value: "coding", label: "Coding & Technology" },
-//   { value: "reading", label: "Reading & Learning" },
-//   { value: "art", label: "Art & Creativity" },
-//   { value: "language", label: "Language Learning" },
-//   { value: "meditation", label: "Meditation & Mindfulness" },
-//   { value: "cooking", label: "Cooking & Nutrition" },
-//   { value: "finance", label: "Finance & Investing" },
-//   { value: "other", label: "Other" },
-// ];
-
-interface CategoryOption {
-  label: string;
-  value: string;
-}
-
-const activityTags = [
-  // Fitness & Exercise related tags
-  { value: "cardio", label: "Cardio", category: "Fitness" },
-  { value: "strength", label: "Strength Training", category: "Fitness" },
-  { value: "yoga", label: "Yoga", category: "Fitness" },
-  { value: "running", label: "Running", category: "Fitness" },
-  { value: "cycling", label: "Cycling", category: "Fitness" },
-  { value: "hiit", label: "HIIT", category: "Fitness" },
-
-  // Coding & Technology related tags
-  { value: "webdev", label: "Web Development", category: "Technology" },
-  { value: "mobile", label: "Mobile Development", category: "Technology" },
-  { value: "data", label: "Data Science", category: "Technology" },
-  { value: "ai", label: "AI & Machine Learning", category: "Technology" },
-  { value: "devops", label: "DevOps", category: "Technology" },
-
-  // Reading & Learning related tags
-  { value: "fiction", label: "Fiction", category: "Reading" },
-  { value: "nonfiction", label: "Non-Fiction", category: "Reading" },
-  { value: "biography", label: "Biography", category: "Reading" },
-  { value: "selfhelp", label: "Self-Help", category: "Reading" },
-  { value: "research", label: "Research", category: "Reading" },
-
-  // Art & Creativity related tags
-  { value: "drawing", label: "Drawing", category: "Art" },
-  { value: "painting", label: "Painting", category: "Art" },
-  { value: "crafts", label: "Crafts", category: "Art" },
-  { value: "music", label: "Music", category: "Art" },
-  { value: "writing", label: "Writing", category: "Art" },
-
-  // Language Learning related tags
-  { value: "beginner", label: "Beginner", category: "Language" },
-  { value: "intermediate", label: "Intermediate", category: "Language" },
-  { value: "advanced", label: "Advanced", category: "Language" },
-  {
-    value: "conversation",
-    label: "Conversation Practice",
-    category: "Language",
-  },
-  { value: "grammar", label: "Grammar Focus", category: "Language" },
-
-  // Meditation & Mindfulness related tags
-  { value: "breathing", label: "Breathing Techniques", category: "Meditation" },
-  { value: "guided", label: "Guided Meditation", category: "Meditation" },
-  { value: "mindfulness", label: "Mindfulness", category: "Meditation" },
-  { value: "relaxation", label: "Relaxation", category: "Meditation" },
-
-  // Cooking & Nutrition related tags
-  { value: "vegan", label: "Vegan", category: "Cooking" },
-  { value: "vegetarian", label: "Vegetarian", category: "Cooking" },
-  { value: "baking", label: "Baking", category: "Cooking" },
-  { value: "mealprep", label: "Meal Prep", category: "Cooking" },
-  { value: "healthy", label: "Healthy Eating", category: "cooking" },
-
-  // Finance & Investing related tags
-  { value: "budgeting", label: "Budgeting", category: "Finance" },
-  { value: "investing", label: "Investing", category: "Finance" },
-  { value: "stocks", label: "Stocks", category: "Finance" },
-  { value: "crypto", label: "Cryptocurrency", category: "Finance" },
-  { value: "saving", label: "Saving", category: "Finance" },
-
-  // General tags
-  { value: "beginner", label: "Beginner-Friendly", category: "General" },
-  { value: "challenge", label: "Challenge", category: "General" },
-  { value: "social", label: "Social", category: "General" },
-  { value: "solo", label: "Solo", category: "General" },
-  { value: "community", label: "Community", category: "General" },
-  { value: "accountability", label: "Accountability", category: "general" },
-];
-
 // Default activity banner images
 const defaultBannerImages = [
   {
-    value: "fitness-banner",
+    value:
+      "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
     label: "Fitness Banner",
     category: "Fitness",
-    src: "/placeholder.svg",
+    src: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    value: "coding-banner",
+    value:
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
     label: "Coding Banner",
     category: "Technology",
-    src: "/placeholder.svg",
+    src: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    value: "reading-banner",
+    value:
+      "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1200&auto=format&fit=crop",
     label: "Reading Banner",
     category: "Reading",
-    src: "/placeholder.svg",
+    src: "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    value: "art-banner",
+    value:
+      "https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?q=80&w=1200&auto=format&fit=crop",
     label: "Art Banner",
-    category: "Art",
-    src: "/placeholder.svg",
+    category: "Arts",
+    src: "https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    value: "language-banner",
+    value:
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1200&auto=format&fit=crop",
     label: "Language Banner",
     category: "Language",
-    src: "/placeholder.svg",
+    src: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    value: "meditation-banner",
+    value:
+      "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200&auto=format&fit=crop",
     label: "Meditation Banner",
     category: "Meditation",
-    src: "/placeholder.svg",
+    src: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    value: "cooking-banner",
+    value:
+      "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1200&auto=format&fit=crop",
     label: "Cooking Banner",
     category: "Cooking",
-    src: "/placeholder.svg",
+    src: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    value: "finance-banner",
+    value:
+      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200&auto=format&fit=crop",
     label: "Finance Banner",
     category: "Finance",
-    src: "/placeholder.svg",
+    src: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    value: "general-banner",
+    value:
+      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
     label: "General Banner",
     category: "Other",
-    src: "/placeholder.svg",
+    src: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop",
   },
 ];
 
@@ -292,6 +216,7 @@ interface FormData {
   bannerImageFile: File | null;
   allowedCheckInTypes: CheckInTypeConfig[];
   inviteEmails: string;
+  maxParticipants: number;
 }
 
 interface FormChangeEvent {
@@ -338,53 +263,32 @@ const CreateActivity = () => {
       },
     ],
     inviteEmails: "",
+    maxParticipants: 1,
   });
 
   const { createActivity, isLoading } = useActivityStore();
 
   // Get available tags based on selected category
   const getAvailableTags = () => {
-    if (!formData.category) {
-      return activityTags.filter((tag) => tag.category === "general");
-    }
+    const selectedCategory = activityCategories.find(
+      (cat) => cat.name === formData.category
+    );
 
-    return [
-      ...activityTags.filter((tag) => tag.category === formData.category),
-      ...activityTags.filter((tag) => tag.category === "general"),
-    ];
+    return [...(selectedCategory?.interests || [])];
   };
 
   // Get available banner images based on selected category
   const getAvailableBanners = () => {
-    // Make sure this function always returns an array, even if empty
-    return [
-      { value: "Yoga", label: "Yoga", src: "/images/banners/yoga.jpg" },
-      {
-        value: "Technology",
-        label: "Technology",
-        src: "/images/banners/coding.jpg",
-      },
-      {
-        value: "Reading",
-        label: "Reading",
-        src: "/images/banners/reading.jpg",
-      },
-      {
-        value: "Fitness",
-        label: "Fitness",
-        src: "/images/banners/fitness.jpg",
-      },
-      {
-        value: "Meditation",
-        label: "Meditation",
-        src: "/images/banners/meditation.jpg",
-      },
-      {
-        value: "Cooking",
-        label: "Cooking",
-        src: "/images/banners/cooking.jpg",
-      },
-    ];
+    // If no category is selected, return all banners
+    if (!formData.category) {
+      return defaultBannerImages;
+    }
+
+    // Filter banners based on selected category
+    return defaultBannerImages.filter(
+      (banner) =>
+        banner.category.toLowerCase() === formData.category.toLowerCase()
+    );
   };
 
   const handleChange = (e: FormChangeEvent) => {
@@ -432,6 +336,22 @@ const CreateActivity = () => {
           toast.error("Please select a category");
           return false;
         }
+
+        if (!formData.tags.length) {
+          toast.error("Please select at least one tag");
+          return false;
+        }
+
+        if (!formData.description.trim()) {
+          toast.error("Please provide a description");
+          return false;
+        }
+
+        if (!formData.bannerImage) {
+          toast.error("Please select a banner image for your activity");
+          return false;
+        }
+
         return true;
 
       case 1: // Schedule
@@ -439,6 +359,17 @@ const CreateActivity = () => {
           toast.error("Start date is required");
           return false;
         }
+
+        if (formData.duration === "0") {
+          toast.error("Please select a duration for your activity");
+          return false;
+        }
+
+        if (formData.maxParticipants === 0) {
+          toast.error("Please select a maximum number of participants");
+          return false;
+        }
+
         if (
           formData.frequency === "weekly" &&
           formData.daysOfWeek.length === 0
@@ -532,9 +463,12 @@ const CreateActivity = () => {
           description: rule.description,
           isDefault: rule.isDefault,
         })),
+        tags: formData.tags,
         startDate: formData.startDate,
         ...checkinConfig,
         allowedCheckInTypes: formData.allowedCheckInTypes,
+        bannerImage: formData.bannerImage,
+        maxParticipants: Number(formData.maxParticipants),
       };
 
       console.log("Creating activity with data:", activityData);
@@ -543,9 +477,11 @@ const CreateActivity = () => {
         activityData as unknown as IActivity
       );
 
-      if (activity) {
+      console.log("Activity created in the client:", activity);
+
+      if (activity.success) {
         toast.success("Activity created successfully");
-        navigate("/activities");
+        navigate(`/activities/${activity.data._id}`);
       }
     } catch (error: Error | unknown) {
       console.error("Activity creation error:", error);
@@ -788,7 +724,7 @@ const CreateActivity = () => {
 
             <div>
               <Label className="text-buddy-gray-700 font-medium mb-2 block">
-                Activity Tags
+                Activity Tags <span className="text-red-500">*</span>
               </Label>
               <p className="text-sm text-buddy-gray-500 mb-4">
                 Select tags to help others discover your activity
@@ -798,18 +734,16 @@ const CreateActivity = () => {
                 <div className="flex flex-wrap gap-2">
                   {getAvailableTags().map((tag) => (
                     <Button
-                      key={tag.value}
+                      key={tag}
                       type="button"
                       variant={
-                        formData.tags.includes(tag.value)
-                          ? "default"
-                          : "outline"
+                        formData.tags.includes(tag) ? "default" : "outline"
                       }
                       size="sm"
-                      onClick={() => toggleTag(tag.value)}
+                      onClick={() => toggleTag(tag)}
                       className="rounded-full"
                     >
-                      {tag.label}
+                      {tag}
                     </Button>
                   ))}
                 </div>
@@ -861,7 +795,7 @@ const CreateActivity = () => {
                 htmlFor="description"
                 className="text-buddy-gray-700 font-medium"
               >
-                Description
+                Description <span className="text-red-500">*</span>
               </Label>
               <Textarea
                 id="description"
@@ -878,7 +812,7 @@ const CreateActivity = () => {
 
             <div>
               <Label className="text-buddy-gray-700 font-medium mb-2 block">
-                Activity Banner
+                Activity Banner <span className="text-red-500">*</span>
               </Label>
               <div className="grid gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -980,7 +914,7 @@ const CreateActivity = () => {
           >
             <div className="space-y-2">
               <Label className="text-buddy-gray-700 font-medium">
-                Start Date
+                Start Date <span className="text-red-500">*</span>
               </Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -1016,31 +950,51 @@ const CreateActivity = () => {
               </Popover>
             </div>
 
-            <div>
-              <Label className="text-buddy-gray-700 font-medium">
-                Duration
-              </Label>
-              <Select
-                value={formData.duration}
-                onValueChange={(value) =>
-                  handleChange({ target: { name: "duration", value } })
-                }
-              >
-                <SelectTrigger className="mt-1 bg-white/70 border-pastel-purple/30">
-                  <SelectValue placeholder="Select duration" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1month">1 Month</SelectItem>
-                  <SelectItem value="3months">3 Months</SelectItem>
-                  <SelectItem value="6months">6 Months</SelectItem>
-                  <SelectItem value="12months">12 Months</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2 w-full">
+                <Label className="text-buddy-gray-700 font-medium w-1/2">
+                  Duration <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.duration}
+                  onValueChange={(value) =>
+                    handleChange({ target: { name: "duration", value } })
+                  }
+                >
+                  <SelectTrigger className="mt-1 bg-white/70 border-pastel-purple/30">
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1month">1 Month</SelectItem>
+                    <SelectItem value="3months">3 Months</SelectItem>
+                    <SelectItem value="6months">6 Months</SelectItem>
+                    <SelectItem value="12months">12 Months</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-buddy-gray-700 font-medium w-full  ">
+                  Max Participants <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  type="number"
+                  value={formData.maxParticipants}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: "maxParticipants",
+                        value: e.target.value,
+                      },
+                    })
+                  }
+                  className="mt-1 bg-white/70 border-pastel-purple/30 focus-visible:ring-buddy-purple-light transition-all duration-200"
+                />
+              </div>
             </div>
 
             <div>
               <Label className="text-buddy-gray-700 font-medium">
-                Frequency
+                Frequency <span className="text-red-500">*</span>
               </Label>
               <RadioGroup
                 value={formData.frequency}
@@ -1079,7 +1033,7 @@ const CreateActivity = () => {
                 transition={{ duration: 0.3 }}
               >
                 <Label className="text-buddy-gray-700 font-medium mb-2 block">
-                  Days of the Week
+                  Days of the Week <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
@@ -1125,7 +1079,7 @@ const CreateActivity = () => {
                 transition={{ duration: 0.3 }}
               >
                 <Label className="text-buddy-gray-700 font-medium mb-2 block">
-                  Check-in Dates
+                  Check-in Dates <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid grid-cols-7 gap-2 p-4 bg-white/50 rounded-xl border border-pastel-purple/20">
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((date) => (
@@ -1386,7 +1340,7 @@ const CreateActivity = () => {
           >
             <div>
               <Label className="text-buddy-gray-700 font-medium mb-2 block">
-                Activity Goals
+                Activity Goals <span className="text-red-500">*</span>
               </Label>
               <p className="text-sm text-buddy-gray-500 mb-4">
                 Select goals for this activity or add custom ones
