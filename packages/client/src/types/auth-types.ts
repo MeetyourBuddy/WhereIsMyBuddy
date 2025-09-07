@@ -16,6 +16,7 @@ export interface TokenPair {
 
 export interface User {
   _id: string;
+  id?: string; // Some APIs use 'id' instead of '_id'
   email: string;
   name: string;
   bio?: string;

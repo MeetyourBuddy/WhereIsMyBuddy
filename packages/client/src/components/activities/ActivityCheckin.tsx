@@ -247,7 +247,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
                     <Button
                       type="button"
                       disabled={userHasCheckedInToday}
-                      className={`rounded-xl px-6 py-2 shadow-md transition-all duration-300 ${
+                      className={`rounded-full px-6 py-2 shadow-md transition-all duration-300 ${
                         userHasCheckedInToday
                           ? "bg-gray-400 text-gray-600 cursor-not-allowed"
                           : "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg"
@@ -381,7 +381,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
                   <Button
                     type="button"
                     disabled={userHasCheckedInToday}
-                    className={`w-full py-2 rounded-xl shadow-md transition-all duration-300 ${
+                    className={`w-full py-2 rounded-full shadow-md transition-all duration-300 ${
                       userHasCheckedInToday
                         ? "bg-gray-400 text-gray-600 cursor-not-allowed"
                         : "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg"

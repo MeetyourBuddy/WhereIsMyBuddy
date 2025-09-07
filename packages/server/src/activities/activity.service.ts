@@ -117,20 +117,6 @@ export class ActivityService {
         throw new NotFoundException('Activity not found or unauthorized');
       }
 
-      console.log('=== Backend Activity Response Debug ===');
-      console.log('Activity ID:', (activity as any)._id);
-      console.log('Activity admin:', activity.admin);
-      console.log('Activity admin._id:', activity.admin?._id);
-      console.log('Activity admin type:', typeof activity.admin);
-      console.log('Activity admin._id type:', typeof activity.admin?._id);
-      console.log('Requested userId:', userId);
-      console.log('UserId type:', typeof userId);
-      console.log(
-        'Is owner check:',
-        activity.admin?._id?.toString() === userId.toString(),
-      );
-      console.log('========================================');
-
       return activity;
     } catch (error) {
       console.error('Error in findOne:', error);

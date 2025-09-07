@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
@@ -6,6 +6,7 @@ import Button from "@/components/common/Button";
 import ActivityCard from "@/components/dashboard/ActivityCard";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Pagination from "@/components/ui/pagination";
 import {
   Search,
   Filter,
@@ -22,6 +23,8 @@ const Activities = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(9); // 3x3 grid
   const {
     activities: activitiesFromStore,
     isLoading: isLoadingActivities,
@@ -209,9 +212,10 @@ const Activities = () => {
     "Hiking",
   ];
 
-  const filteredActivities =
-    activitiesFromStore &&
-    activitiesFromStore.filter((activity) => {
+  const filteredActivities = useMemo(() => {
+    if (!activitiesFromStore) return [];
+
+    return activitiesFromStore.filter((activity) => {
       const matchesSearch =
         activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         activity.description
@@ -227,8 +231,18 @@ const Activities = () => {
 
       return matchesSearch && matchesCategory;
     });
+  }, [activitiesFromStore, searchQuery, activeFilters]);
 
-  console.log("filteredActivities hereeeee", filteredActivities);
+  // Pagination logic
+  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedActivities = filteredActivities.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilters]);
 
   const toggleFilter = (filter: string) => {
     if (filter === "All") {
@@ -269,7 +283,7 @@ const Activities = () => {
               </h1>
               <Button
                 variant="outline"
-                className="border-buddy-purple text-buddy-purple"
+                className="border-buddy-purple text-buddy-purple rounded-full"
                 icon={<Users className="w-5 h-5" />}
                 onClick={() => navigate("/activities/create")}
               >
@@ -288,7 +302,7 @@ const Activities = () => {
                 <Input
                   type="search"
                   placeholder="Search activities or categories..."
-                  className="pl-10 bg-white h-11"
+                  className="pl-10 bg-white h-11 rounded-full"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -297,14 +311,14 @@ const Activities = () => {
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
-                  className="bg-white"
+                  className="bg-white rounded-full"
                   icon={<Filter className="w-4 h-4" />}
                 >
                   Filters
                 </Button>
                 <Button
                   variant="outline"
-                  className="bg-white"
+                  className="bg-white rounded-full"
                   icon={<SortAsc className="w-4 h-4" />}
                 >
                   Sort
@@ -322,8 +336,8 @@ const Activities = () => {
                   size="small"
                   className={
                     activeFilters.includes(category)
-                      ? "bg-buddy-purple text-white"
-                      : "bg-white text-buddy-gray-700"
+                      ? "bg-buddy-purple text-white rounded-full"
+                      : "bg-white text-buddy-gray-700 rounded-full"
                   }
                   onClick={() => toggleFilter(category)}
                 >
@@ -337,7 +351,7 @@ const Activities = () => {
                 <Button
                   variant="ghost"
                   size="small"
-                  className="text-buddy-gray-500"
+                  className="text-buddy-gray-500 rounded-full"
                   onClick={clearFilters}
                   icon={<X className="w-4 h-4" />}
                 >
@@ -352,35 +366,59 @@ const Activities = () => {
       <Container className="py-8">
         <Tabs defaultValue="all" className="w-full mb-8">
           <TabsList className="mb-6 bg-buddy-gray-200/50">
-            <TabsTrigger value="all">All Activities</TabsTrigger>
-            <TabsTrigger value="my">My Activities</TabsTrigger>
-            <TabsTrigger value="popular">Popular</TabsTrigger>
-            <TabsTrigger value="new">Newly Added</TabsTrigger>
-            <TabsTrigger value="soon">Starting Soon</TabsTrigger>
+            <TabsTrigger value="all" className="rounded-full">
+              All Activities
+            </TabsTrigger>
+            <TabsTrigger value="my" className="rounded-full">
+              My Activities
+            </TabsTrigger>
+            <TabsTrigger value="popular" className="rounded-full">
+              Popular
+            </TabsTrigger>
+            <TabsTrigger value="new" className="rounded-full">
+              Newly Added
+            </TabsTrigger>
+            <TabsTrigger value="soon" className="rounded-full">
+              Starting Soon
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="space-y-6">
             {filteredActivities.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredActivities.map((activity) => (
-                  <ActivityCard
-                    key={activity._id || activity.id}
-                    id={activity._id || activity.id}
-                    title={activity.title}
-                    description={activity.description}
-                    startDate={activity.startDate}
-                    endDate={activity.endDate}
-                    category={activity.category}
-                    bannerImage={activity.bannerImage}
-                    participants={activity.participants || []}
-                    maxParticipants={activity.maxParticipants}
-                    admin={activity.admin}
-                    onClick={() =>
-                      navigate(`/activities/${activity._id || activity.id}`)
-                    }
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedActivities.map((activity) => (
+                    <ActivityCard
+                      key={activity._id || activity.id}
+                      id={activity._id || activity.id}
+                      title={activity.title}
+                      description={activity.description}
+                      startDate={activity.startDate}
+                      endDate={activity.endDate}
+                      category={activity.category}
+                      bannerImage={activity.bannerImage}
+                      participants={activity.participants || []}
+                      maxParticipants={activity.maxParticipants}
+                      admin={activity.admin}
+                      onClick={() =>
+                        navigate(`/activities/${activity._id || activity.id}`)
+                      }
+                    />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      totalItems={filteredActivities.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <Card className="p-8 text-center">
                 <div className="flex flex-col items-center">

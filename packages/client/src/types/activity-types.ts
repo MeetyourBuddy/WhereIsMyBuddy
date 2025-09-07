@@ -128,29 +128,9 @@ export const isActivityCreator = (
   activity: IActivityResult,
   userId?: string
 ): boolean => {
-  console.log("🔥 FIRE TEST - isActivityCreator called!");
-  console.log("=== isActivityCreator Debug ===");
-  console.log("Activity:", activity);
-  console.log("Activity admin:", activity.admin);
-  console.log("Activity admin._id:", activity.admin?._id);
-  console.log("Activity admin._id type:", typeof activity.admin?._id);
-  console.log("UserId:", userId);
-  console.log("UserId type:", typeof userId);
-  console.log("Comparison result (strict):", activity.admin?._id === userId);
-  console.log(
-    "Comparison result (string):",
-    activity.admin?._id?.toString() === userId?.toString()
-  );
-  console.log("Comparison result (loose):", activity.admin?._id == userId);
-  console.log("==============================");
-
-  const result = activity.admin?._id === userId;
-  console.log("🔥 FINAL RESULT:", result);
-  console.log("🔥 Admin is null:", activity.admin === null);
-  console.log("🔥 Admin is undefined:", activity.admin === undefined);
-  console.log("🔥 Admin._id is undefined:", activity.admin?._id === undefined);
-
-  return result;
+  // Check both _id and id fields
+  const adminId = activity.admin?._id || activity.admin?.id;
+  return adminId === userId;
 };
 
 // Helper function to check if a user is a participant of an activity

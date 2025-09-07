@@ -48,11 +48,8 @@ export const useActivityStore = create<ActivityState>()(
           const response = await ActivityService.createActivity(
             activityData as IActivity
           );
-          console.log("Activity creation response:", response);
           if (response.success && response.data) {
             const newActivity = response.data;
-
-            console.log("New activity:", newActivity);
 
             set((state) => ({
               activities: [...state.activities, newActivity],
@@ -76,8 +73,6 @@ export const useActivityStore = create<ActivityState>()(
           set({ isLoading: true, error: null });
           const response = await ActivityService.getActivities();
 
-          console.log("Activities:", response.data);
-
           set({ activities: response.data });
         } catch (error: unknown) {
           const apiError = error as ApiError;
@@ -91,13 +86,6 @@ export const useActivityStore = create<ActivityState>()(
         try {
           set({ isLoading: true, error: null });
           const response = await ActivityService.getActivityById(id);
-
-          console.log("=== Frontend Activity Store Debug ===");
-          console.log("Activity by ID response:", response);
-          console.log("Activity data:", response.data);
-          console.log("Activity admin:", response.data?.admin);
-          console.log("Activity admin._id:", response.data?.admin?._id);
-          console.log("=====================================");
 
           set({ currentActivity: response.data });
         } catch (error: unknown) {

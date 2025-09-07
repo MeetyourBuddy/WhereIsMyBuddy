@@ -15,24 +15,10 @@ const ActivityPage = () => {
   const { currentActivity, fetchActivityById, isLoading } = useActivityStore();
   const [isLoadingPage, setIsLoadingPage] = useState(true);
 
-  // Debug logging for ActivityPage
-  console.log("🏠 ActivityPage - User from auth:", user);
-  console.log("🏠 ActivityPage - User._id:", user?._id);
-  console.log("🏠 ActivityPage - Current activity:", currentActivity);
-  console.log("🏠 ActivityPage - Activity admin:", currentActivity?.admin);
-  console.log(
-    "🏠 ActivityPage - Activity admin._id:",
-    currentActivity?.admin?._id
-  );
-
-  // Direct admin comparison check
-  const isUserAdmin =
-    user && currentActivity?.admin && user._id === currentActivity.admin._id;
-  console.log("🏠 ActivityPage - Is user admin:", isUserAdmin);
-  console.log(
-    "🏠 ActivityPage - Admin comparison:",
-    user?._id === currentActivity?.admin?._id
-  );
+  // Direct admin comparison check - use both _id and id fields
+  const userId = user?._id || user?.id;
+  const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
+  const isUserAdmin = user && currentActivity?.admin && userId === adminId;
 
   // Check if user is coming from within the app or external link
   const isInternalNavigation =

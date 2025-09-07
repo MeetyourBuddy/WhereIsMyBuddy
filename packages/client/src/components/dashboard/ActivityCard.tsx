@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card } from "@/components/common/Card";
 import Avatar from "@/components/common/Avatar";
-import Button from "@/components/common/Button";
+import { Button } from "@/components/ui/button";
 import {
   MapPin,
   Calendar,
@@ -58,22 +58,13 @@ const ActivityCard = ({
   const [isJoining, setIsJoining] = useState(false);
 
   // Check if user is a participant and creator using helper functions
+  // Use both _id and id fields to handle different API responses
+  const userId = user?._id || user?.id;
   const isParticipant = isActivityParticipant(
     { participants, admin } as any,
-    user?._id
+    userId
   );
-  const isCreator = isActivityCreator({ admin } as any, user?._id);
-
-  // Debug logging for admin data
-  console.log("=== ActivityCard Debug ===");
-  console.log("Admin prop:", admin);
-  console.log("Admin._id:", admin?._id);
-  console.log("Current user:", user);
-  console.log("Current user._id:", user?._id);
-  console.log("isCreator result:", isCreator);
-  console.log("isParticipant result:", isParticipant);
-  console.log("Admin comparison:", admin?._id === user?._id);
-  console.log("========================");
+  const isCreator = isActivityCreator({ admin } as any, userId);
 
   const handleJoinQuit = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -262,29 +253,29 @@ const ActivityCard = ({
             {id && (
               <>
                 {isCreator ? (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full text-xs font-medium">
-                    <Shield className="w-3 h-3" />
-                    Creator
+                  <div className="h-9 flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full text-sm font-medium">
+                    <Shield className="w-4 h-4" />
+                    CREATOR
                   </div>
                 ) : (
                   <Button
-                    size="small"
+                    variant="default"
                     onClick={handleJoinQuit}
                     disabled={isJoining || isLoading}
-                    className={`${
+                    className={`h-9 rounded-full ${
                       isParticipant
                         ? "bg-red-500 hover:bg-red-600 text-white"
-                        : "bg-buddy-purple hover:bg-buddy-purple/90 text-white"
+                        : ""
                     }`}
                   >
                     {isParticipant ? (
                       <>
-                        <UserMinus className="w-4 h-4 mr-1" />
+                        <UserMinus className="w-4 h-4" />
                         {isJoining ? "Leaving..." : "Quit"}
                       </>
                     ) : (
                       <>
-                        <UserPlus className="w-4 h-4 mr-1" />
+                        <UserPlus className="w-4 h-4" />
                         {isJoining ? "Joining..." : "Join"}
                       </>
                     )}
@@ -296,7 +287,7 @@ const ActivityCard = ({
             <Button
               variant="ghost"
               size="icon"
-              className="text-buddy-gray-500 hover:text-buddy-gray-900"
+              className="text-buddy-gray-500 rounded-full border hover:border-buddy-gray-400 hover:text-buddy-gray-900 hover:bg-buddy-gray-100"
               onClick={(e) => {
                 e.stopPropagation();
                 onClick && onClick();

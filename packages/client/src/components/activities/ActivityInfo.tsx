@@ -44,6 +44,7 @@ interface ActivityInfoProps {
   participants?: any[];
   admin?: {
     _id: string;
+    id?: string; // Some APIs use 'id' instead of '_id'
     name: string;
     email: string;
     avatar?: string;
@@ -77,22 +78,13 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
   const [isJoining, setIsJoining] = useState(false);
 
   // Check if user is a participant and creator using helper functions
+  // Use both _id and id fields to handle different API responses
+  const userId = user?._id || user?.id;
   const isParticipant = isActivityParticipant(
     { participants, admin } as any,
-    user?._id
+    userId
   );
-  const isCreator = isActivityCreator({ admin } as any, user?._id);
-
-  // Debug logging for admin data
-  console.log("=== ActivityInfo Debug ===");
-  console.log("Admin prop:", admin);
-  console.log("Admin._id:", admin?._id);
-  console.log("Current user:", user);
-  console.log("Current user._id:", user?._id);
-  console.log("isCreator result:", isCreator);
-  console.log("isParticipant result:", isParticipant);
-  console.log("Admin comparison:", admin?._id === user?._id);
-  console.log("========================");
+  const isCreator = isActivityCreator({ admin } as any, userId);
 
   const handleJoinQuit = async () => {
     if (!user) {
@@ -165,19 +157,19 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
 
         {/* Join/Quit Button or Creator Badge */}
         {id && (
-          <div className="pt-2">
+          <div className="w-full flex justify-center">
             {isCreator ? (
-              <div className="flex justify-center">
-                <Badge className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-4 py-2 text-sm font-medium">
+              <div className="w-full flex justify-center">
+                <Badge className="flex w-full items-center justify-center bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-4 py-2 text-sm font-medium">
                   <Shield className="w-4 h-4 mr-2" />
-                  Creator
+                  ACTIVITY CREATOR
                 </Badge>
               </div>
             ) : (
               <Button
                 onClick={handleJoinQuit}
                 disabled={isJoining || isLoading}
-                className={`w-full ${
+                className={`w-full rounded-full ${
                   isParticipant
                     ? "bg-red-500 hover:bg-red-600 text-white"
                     : "bg-buddy-purple hover:bg-buddy-purple/90 text-white"

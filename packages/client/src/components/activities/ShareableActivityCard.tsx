@@ -81,10 +81,6 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
   const { joinActivity, quitActivity, isUserParticipant, isLoading } =
     useActivityStore();
 
-  // Debug user data
-  console.log("🔍 User Auth Debug - User from auth store:", user);
-  console.log("🔍 User._id:", user?._id);
-  console.log("🔍 User._id type:", typeof user?._id);
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
@@ -119,36 +115,10 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
   };
 
   // Check if user is a participant and creator using helper functions
-  const isParticipant = isActivityParticipant(activity, user?._id);
-  const isAdmin = isActivityCreator(activity, user?._id);
-
-  // Temporary explicit check for debugging
-  const explicitAdminCheck =
-    user && activity.admin && user._id === activity.admin._id;
-  console.log("🎯 Explicit Admin Check - User exists:", !!user);
-  console.log("🎯 Activity admin exists:", !!activity.admin);
-  console.log("🎯 User._id:", user?._id);
-  console.log("🎯 Admin._id:", activity.admin?._id);
-  console.log("🎯 Explicit check result:", explicitAdminCheck);
-
-  // Debug logging for admin data
-  console.log("=== ShareableActivityCard Debug ===");
-  console.log("Activity data:", activity);
-  console.log("Activity admin:", activity.admin);
-  console.log("Activity admin._id:", activity.admin?._id);
-  console.log("Activity admin._id type:", typeof activity.admin?._id);
-  console.log("Current user:", user);
-  console.log("Current user._id:", user?._id);
-  console.log("Current user._id type:", typeof user?._id);
-  console.log("isAdmin result:", isAdmin);
-  console.log("isParticipant result:", isParticipant);
-  console.log("Admin comparison (strict):", activity.admin?._id === user?._id);
-  console.log(
-    "Admin comparison (string):",
-    activity.admin?._id?.toString() === user?._id?.toString()
-  );
-  console.log("Admin comparison (loose):", activity.admin?._id == user?._id);
-  console.log("================================");
+  // Use both _id and id fields to handle different API responses
+  const userId = user?._id || user?.id;
+  const isParticipant = isActivityParticipant(activity, userId);
+  const isAdmin = isActivityCreator(activity, userId);
 
   const handleJoinQuit = async () => {
     if (!user) {
@@ -611,26 +581,12 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
             </div>
           </div>
 
-          {/* Debug info - remove this later */}
-          <div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-xs">
-            <div>🔍 DEBUG INFO:</div>
-            <div>User ID: {user?._id}</div>
-            <div>Admin ID: {activity.admin?._id}</div>
-            <div>isAdmin: {isAdmin ? "TRUE" : "FALSE"}</div>
-            <div>isParticipant: {isParticipant ? "TRUE" : "FALSE"}</div>
-            <div>
-              Direct comparison:{" "}
-              {user?._id === activity.admin?._id ? "TRUE" : "FALSE"}
-            </div>
-          </div>
-
           {/* Show CREATOR badge for activity creators, join/quit button for others */}
           {isAdmin ? (
             <div className="mt-8 flex justify-center">
-              <div className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-2xl text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+              <div className="flex items-center rounded-full gap-3 px-8 py-4 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <Shield className="w-6 h-6" />
                 CREATOR
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
               </div>
             </div>
           ) : (
@@ -639,7 +595,7 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
                 size="lg"
                 onClick={handleJoinQuit}
                 disabled={isJoining || isLoading}
-                className={`w-full h-14 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:translate-y-[-3px] hover:scale-105 text-lg font-bold ${
+                className={`w-full h-14 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:translate-y-[-3px] hover:scale-105 text-lg font-bold ${
                   user && isParticipant
                     ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
                     : "bg-gradient-to-r from-buddy-purple to-buddy-blue hover:from-buddy-purple/90 hover:to-buddy-blue/90"
@@ -666,7 +622,7 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full h-12 rounded-2xl border-2 border-buddy-purple/30 hover:bg-buddy-purple/10 transition-all duration-300 transform hover:translate-y-[-2px] hover:scale-105 text-buddy-purple font-semibold"
+                className="w-full h-12 rounded-full border-2 border-buddy-purple/30 hover:bg-buddy-purple/10 transition-all duration-300 transform hover:translate-y-[-2px] hover:scale-105 text-buddy-purple font-semibold"
                 onClick={() => navigate(`/activities/${id}`)}
               >
                 Learn More About This Activity

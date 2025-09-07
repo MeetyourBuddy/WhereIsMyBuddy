@@ -82,21 +82,6 @@ const ActivityPage = () => {
     currentActivity,
   } = useActivityStore();
 
-  // Debug logging for ActivityPage
-  console.log("🏠 ActivityPage - User from auth:", user);
-  console.log("🏠 ActivityPage - User._id:", user?._id);
-  console.log("🏠 ActivityPage - User._id type:", typeof user?._id);
-  console.log("🏠 ActivityPage - Current activity:", currentActivity);
-  console.log("🏠 ActivityPage - Activity admin:", currentActivity?.admin);
-  console.log(
-    "🏠 ActivityPage - Activity admin._id:",
-    currentActivity?.admin?._id
-  );
-  console.log(
-    "🏠 ActivityPage - Activity admin._id type:",
-    typeof currentActivity?.admin?._id
-  );
-
   useEffect(() => {
     if (!activityId) {
       navigate("/activities");
@@ -104,8 +89,6 @@ const ActivityPage = () => {
 
     fetchActivityById(activityId);
   }, [activityId, navigate, fetchActivityById]);
-
-  console.log("current activity", currentActivity);
 
   if (isLoadingActivities || isLoading) {
     return <div>Loading...</div>;
@@ -154,26 +137,14 @@ const ActivityPage = () => {
   );
 
   // Check if current user is a participant using helper function
+  const userId = user?._id || user?.id;
   const isUserParticipant = currentActivity
-    ? isActivityParticipant(currentActivity, user?._id)
+    ? isActivityParticipant(currentActivity, userId)
     : false;
 
-  // Direct admin comparison check
-  const isUserAdmin =
-    user && currentActivity?.admin && user._id === currentActivity.admin._id;
-  console.log("🏠 ActivityPage - Is user admin:", isUserAdmin);
-  console.log(
-    "🏠 ActivityPage - Admin comparison (strict):",
-    user?._id === currentActivity?.admin?._id
-  );
-  console.log(
-    "🏠 ActivityPage - Admin comparison (string):",
-    user?._id?.toString() === currentActivity?.admin?._id?.toString()
-  );
-  console.log(
-    "🏠 ActivityPage - Helper function result:",
-    isActivityCreator(currentActivity, user?._id)
-  );
+  // Direct admin comparison check - use both _id and id fields
+  const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
+  const isUserAdmin = user && currentActivity?.admin && userId === adminId;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-buddy-purple/5 via-white to-buddy-blue/5 relative">
@@ -251,7 +222,7 @@ const ActivityPage = () => {
                   )}
                   {user &&
                     currentActivity &&
-                    isActivityCreator(currentActivity, user._id) && (
+                    isActivityCreator(currentActivity, userId) && (
                       <EditActivityDialog activity={currentActivity}>
                         <Button
                           variant="outline"
