@@ -17,6 +17,7 @@ import {
   CheckCircle,
   ArrowLeft,
   Share2,
+  Edit3,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import { Badge, badgeVariants } from "@/components/ui/badge";
 import { VariantProps } from "class-variance-authority";
 import EditActivityDialog from "@/components/activities/EditActivityDialog";
 import ShareActivityModal from "@/components/activities/ShareActivityModal";
+import BannerEditModal from "@/components/activities/BannerEditModal";
 import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
@@ -74,12 +76,14 @@ const ActivityPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isBannerEditModalOpen, setIsBannerEditModalOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const {
     isLoading: isLoadingActivities,
     fetchActivityById,
     currentActivity,
+    updateActivity,
   } = useActivityStore();
 
   useEffect(() => {
@@ -146,6 +150,27 @@ const ActivityPage = () => {
   const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
   const isUserAdmin = user && currentActivity?.admin && userId === adminId;
 
+  // Handle banner update
+  const handleBannerUpdate = async (newBanner: string, bannerFile?: File) => {
+    if (!currentActivity || !activityId) return;
+
+    try {
+      // If it's a file upload, we'll need to handle file upload to server
+      // For now, we'll just update the banner URL
+      const updateData = {
+        bannerImage: newBanner,
+      };
+
+      await updateActivity(activityId, updateData);
+
+      // Refresh the activity data to show the new banner
+      await fetchActivityById(activityId);
+    } catch (error) {
+      console.error("Error updating banner:", error);
+      throw error;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-buddy-purple/5 via-white to-buddy-blue/5 relative">
       <div className="absolute inset-0 z-[-10] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5MzUxRTkiIGZpbGwtb3BhY2l0eT0iMC4wMSI+PHBhdGggZD0iTTM2IDM0aDN2M2gtM3Ztf00zMCAzaDN2M2gtM3pNMTcgMTdoM3YzaC0zek0zNiAxN2gzdjNoLTN6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
@@ -156,12 +181,25 @@ const ActivityPage = () => {
           className="relative h-64 md:h-80 w-full bg-cover bg-center"
           style={{ backgroundImage: `url(${displayData.bannerImage})` }}
         >
-          <Badge
-            className="absolute top-4 right-4 py-1 px-3 z-10"
-            variant={variant as VariantProps<typeof badgeVariants>["variant"]}
-          >
-            {label}
-          </Badge>
+          <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <Badge
+              className="py-1 px-3"
+              variant={variant as VariantProps<typeof badgeVariants>["variant"]}
+            >
+              {label}
+            </Badge>
+            {isUserAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsBannerEditModalOpen(true)}
+                className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
+                title="Edit banner"
+              >
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30"></div>
           <div className="flex items-end h-full pb-8 px-4 md:px-8 lg:px-12 w-full max-w-7xl mx-auto">
             <div className="w-full text-white">
@@ -423,6 +461,15 @@ const ActivityPage = () => {
         onClose={() => setIsShareModalOpen(false)}
         activityUrl={`${window.location.origin}/activity/${activityId}`}
         activityTitle={currentActivity?.title}
+      />
+
+      {/* Banner Edit Modal */}
+      <BannerEditModal
+        isOpen={isBannerEditModalOpen}
+        onClose={() => setIsBannerEditModalOpen(false)}
+        currentBanner={displayData.bannerImage}
+        onBannerUpdate={handleBannerUpdate}
+        activityId={activityId || ""}
       />
     </div>
   );
