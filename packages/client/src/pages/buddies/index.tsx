@@ -384,7 +384,9 @@ const Buddies = () => {
                   <p className="text-buddy-gray-600 mb-6">
                     We couldn't find any buddies matching your search criteria.
                   </p>
-                  <Button onClick={clearFilters}>Clear Filters</Button>
+                  <Button onClick={clearFilters} className="rounded-full">
+                    Clear Filters
+                  </Button>
                 </div>
               </Card>
             )}

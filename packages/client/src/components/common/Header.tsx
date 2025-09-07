@@ -185,10 +185,12 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
           ) : (
             <div className="hidden md:flex items-center space-x-4">
               <Link to="/signin">
-                <Button variant="outline">Sign In</Button>
+                <Button variant="outline" className="rounded-full">
+                  Sign In
+                </Button>
               </Link>
               <Link to="/signup">
-                <Button>Sign Up</Button>
+                <Button className="rounded-full">Sign Up</Button>
               </Link>
             </div>
           )}
@@ -290,7 +292,7 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                   className="block w-full"
                   onClick={toggleMenu}
                 >
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full rounded-full">
                     Sign In
                   </Button>
                 </Link>
@@ -299,7 +301,7 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                   className="block w-full"
                   onClick={toggleMenu}
                 >
-                  <Button className="w-full">Sign Up</Button>
+                  <Button className="w-full rounded-full">Sign Up</Button>
                 </Link>
               </>
             )}
