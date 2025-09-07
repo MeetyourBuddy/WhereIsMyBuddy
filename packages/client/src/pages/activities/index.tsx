@@ -35,165 +35,169 @@ const Activities = () => {
 
   console.log("activitiesFromStore", activitiesFromStore);
 
-  const activities = [
-    {
-      id: "1",
-      title: "Morning Yoga in the Park",
-      description:
-        "Join us for a refreshing morning yoga session in Central Park. All levels welcome!",
-      location: "Central Park, New York",
-      date: "Tomorrow",
-      time: "7:00 AM - 8:30 AM",
-      category: "Fitness",
-      image:
-        "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2940",
-      participants: [
-        {
-          id: "u1",
-          name: "Emma Wilson",
-          image:
-            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-        {
-          id: "u2",
-          name: "Alex Johnson",
-          image:
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-        { id: "u3", name: "Sarah Parker" },
-      ],
-      maxParticipants: 10,
-    },
-    {
-      id: "2",
-      title: "Weekly Code Review & Pair Programming",
-      description:
-        "Let's improve our coding skills together! We'll review each other's code and do some pair programming.",
-      location: "Virtual Meeting",
-      date: "This Friday",
-      time: "5:00 PM - 7:00 PM",
-      category: "Coding",
-      image:
-        "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=2069",
-      participants: [
-        {
-          id: "u4",
-          name: "Michael Chen",
-          image:
-            "https://images.unsplash.com/photo-1507003211-561732d1e306?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-        {
-          id: "u5",
-          name: "David Kim",
-          image:
-            "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-      ],
-      maxParticipants: 8,
-    },
-    {
-      id: "3",
-      title: "Book Club: 'The Midnight Library'",
-      description:
-        "Discussion about Matt Haig's 'The Midnight Library'. Join even if you haven't finished the book yet!",
-      location: "Coffee House, Downtown",
-      date: "Next Monday",
-      time: "6:30 PM - 8:00 PM",
-      category: "Reading",
-      image:
-        "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?q=80&w=2070",
-      participants: [
-        {
-          id: "u6",
-          name: "Sophia Martinez",
-          image:
-            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-      ],
-      maxParticipants: 12,
-    },
-    {
-      id: "4",
-      title: "Photography Walk: Urban Architecture",
-      description:
-        "Explore and photograph the city's most interesting buildings and urban spaces.",
-      location: "Downtown Arts District",
-      date: "This Saturday",
-      time: "3:00 PM - 6:00 PM",
-      category: "Photography",
-      image:
-        "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=2070",
-      participants: [
-        {
-          id: "u7",
-          name: "Jay Wong",
-          image:
-            "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-        {
-          id: "u8",
-          name: "Priya Sharma",
-          image:
-            "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-      ],
-      maxParticipants: 15,
-    },
-    {
-      id: "5",
-      title: "Beginner's Painting Workshop",
-      description:
-        "Learn basic painting techniques with acrylics. All materials provided!",
-      location: "Community Art Center",
-      date: "Next Sunday",
-      time: "2:00 PM - 5:00 PM",
-      category: "Art",
-      image:
-        "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=2080",
-      participants: [
-        {
-          id: "u9",
-          name: "Chris Brown",
-          image:
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-      ],
-      maxParticipants: 8,
-    },
-    {
-      id: "6",
-      title: "Hiking Group: Mountain Trail",
-      description:
-        "Moderate difficulty 5-mile hike with beautiful views. Bring water and snacks!",
-      location: "Mountain Ridge Park",
-      date: "Next Saturday",
-      time: "9:00 AM - 2:00 PM",
-      category: "Hiking",
-      image:
-        "https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=2070",
-      participants: [
-        {
-          id: "u10",
-          name: "Lisa Miller",
-          image:
-            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-        {
-          id: "u11",
-          name: "Mike Thomas",
-          image:
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-        {
-          id: "u12",
-          name: "Jessica White",
-          image:
-            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-        },
-      ],
-      maxParticipants: 20,
-    },
-  ];
+  // Use real activities from store, fallback to mock data if empty
+  const activities =
+    activitiesFromStore.length > 0
+      ? activitiesFromStore
+      : [
+          {
+            id: "1",
+            title: "Morning Yoga in the Park",
+            description:
+              "Join us for a refreshing morning yoga session in Central Park. All levels welcome!",
+            location: "Central Park, New York",
+            date: "Tomorrow",
+            time: "7:00 AM - 8:30 AM",
+            category: "Fitness",
+            image:
+              "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=2940",
+            participants: [
+              {
+                id: "u1",
+                name: "Emma Wilson",
+                image:
+                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+              {
+                id: "u2",
+                name: "Alex Johnson",
+                image:
+                  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+              { id: "u3", name: "Sarah Parker" },
+            ],
+            maxParticipants: 10,
+          },
+          {
+            id: "2",
+            title: "Weekly Code Review & Pair Programming",
+            description:
+              "Let's improve our coding skills together! We'll review each other's code and do some pair programming.",
+            location: "Virtual Meeting",
+            date: "This Friday",
+            time: "5:00 PM - 7:00 PM",
+            category: "Coding",
+            image:
+              "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=2069",
+            participants: [
+              {
+                id: "u4",
+                name: "Michael Chen",
+                image:
+                  "https://images.unsplash.com/photo-1507003211-561732d1e306?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+              {
+                id: "u5",
+                name: "David Kim",
+                image:
+                  "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+            ],
+            maxParticipants: 8,
+          },
+          {
+            id: "3",
+            title: "Book Club: 'The Midnight Library'",
+            description:
+              "Discussion about Matt Haig's 'The Midnight Library'. Join even if you haven't finished the book yet!",
+            location: "Coffee House, Downtown",
+            date: "Next Monday",
+            time: "6:30 PM - 8:00 PM",
+            category: "Reading",
+            image:
+              "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?q=80&w=2070",
+            participants: [
+              {
+                id: "u6",
+                name: "Sophia Martinez",
+                image:
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+            ],
+            maxParticipants: 12,
+          },
+          {
+            id: "4",
+            title: "Photography Walk: Urban Architecture",
+            description:
+              "Explore and photograph the city's most interesting buildings and urban spaces.",
+            location: "Downtown Arts District",
+            date: "This Saturday",
+            time: "3:00 PM - 6:00 PM",
+            category: "Photography",
+            image:
+              "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=2070",
+            participants: [
+              {
+                id: "u7",
+                name: "Jay Wong",
+                image:
+                  "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+              {
+                id: "u8",
+                name: "Priya Sharma",
+                image:
+                  "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+            ],
+            maxParticipants: 15,
+          },
+          {
+            id: "5",
+            title: "Beginner's Painting Workshop",
+            description:
+              "Learn basic painting techniques with acrylics. All materials provided!",
+            location: "Community Art Center",
+            date: "Next Sunday",
+            time: "2:00 PM - 5:00 PM",
+            category: "Art",
+            image:
+              "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=2080",
+            participants: [
+              {
+                id: "u9",
+                name: "Chris Brown",
+                image:
+                  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+            ],
+            maxParticipants: 8,
+          },
+          {
+            id: "6",
+            title: "Hiking Group: Mountain Trail",
+            description:
+              "Moderate difficulty 5-mile hike with beautiful views. Bring water and snacks!",
+            location: "Mountain Ridge Park",
+            date: "Next Saturday",
+            time: "9:00 AM - 2:00 PM",
+            category: "Hiking",
+            image:
+              "https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=2070",
+            participants: [
+              {
+                id: "u10",
+                name: "Lisa Miller",
+                image:
+                  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+              {
+                id: "u11",
+                name: "Mike Thomas",
+                image:
+                  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+              {
+                id: "u12",
+                name: "Jessica White",
+                image:
+                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+              },
+            ],
+            maxParticipants: 20,
+          },
+        ];
 
   const categories = [
     "All",
@@ -360,9 +364,19 @@ const Activities = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredActivities.map((activity) => (
                   <ActivityCard
-                    key={activity._id}
-                    {...activity}
-                    onClick={() => navigate(`/activities/${activity._id}`)}
+                    key={activity._id || activity.id}
+                    id={activity._id || activity.id}
+                    title={activity.title}
+                    description={activity.description}
+                    startDate={activity.startDate}
+                    endDate={activity.endDate}
+                    category={activity.category}
+                    bannerImage={activity.bannerImage}
+                    participants={activity.participants || []}
+                    maxParticipants={activity.maxParticipants}
+                    onClick={() =>
+                      navigate(`/activities/${activity._id || activity.id}`)
+                    }
                   />
                 ))}
               </div>
@@ -389,9 +403,19 @@ const Activities = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {activitiesFromStore.slice(1, 4).map((activity) => (
                 <ActivityCard
-                  key={activity.id}
-                  {...activity}
-                  onClick={() => navigate(`/activities/${activity.id}`)}
+                  key={activity._id || activity.id}
+                  id={activity._id || activity.id}
+                  title={activity.title}
+                  description={activity.description}
+                  startDate={activity.startDate}
+                  endDate={activity.endDate}
+                  category={activity.category}
+                  bannerImage={activity.bannerImage}
+                  participants={activity.participants || []}
+                  maxParticipants={activity.maxParticipants}
+                  onClick={() =>
+                    navigate(`/activities/${activity._id || activity.id}`)
+                  }
                 />
               ))}
             </div>
@@ -401,9 +425,19 @@ const Activities = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {activitiesFromStore.slice(0, 3).map((activity) => (
                 <ActivityCard
-                  key={activity.id}
-                  {...activity}
-                  onClick={() => navigate(`/activities/${activity.id}`)}
+                  key={activity._id || activity.id}
+                  id={activity._id || activity.id}
+                  title={activity.title}
+                  description={activity.description}
+                  startDate={activity.startDate}
+                  endDate={activity.endDate}
+                  category={activity.category}
+                  bannerImage={activity.bannerImage}
+                  participants={activity.participants || []}
+                  maxParticipants={activity.maxParticipants}
+                  onClick={() =>
+                    navigate(`/activities/${activity._id || activity.id}`)
+                  }
                 />
               ))}
             </div>
@@ -413,9 +447,19 @@ const Activities = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {activitiesFromStore.slice(3, 6).map((activity) => (
                 <ActivityCard
-                  key={activity.id}
-                  {...activity}
-                  onClick={() => navigate(`/activities/${activity.id}`)}
+                  key={activity._id || activity.id}
+                  id={activity._id || activity.id}
+                  title={activity.title}
+                  description={activity.description}
+                  startDate={activity.startDate}
+                  endDate={activity.endDate}
+                  category={activity.category}
+                  bannerImage={activity.bannerImage}
+                  participants={activity.participants || []}
+                  maxParticipants={activity.maxParticipants}
+                  onClick={() =>
+                    navigate(`/activities/${activity._id || activity.id}`)
+                  }
                 />
               ))}
             </div>
@@ -425,9 +469,19 @@ const Activities = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {activitiesFromStore.slice(0, 2).map((activity) => (
                 <ActivityCard
-                  key={activity.id}
-                  {...activity}
-                  onClick={() => navigate(`/activities/${activity.id}`)}
+                  key={activity._id || activity.id}
+                  id={activity._id || activity.id}
+                  title={activity.title}
+                  description={activity.description}
+                  startDate={activity.startDate}
+                  endDate={activity.endDate}
+                  category={activity.category}
+                  bannerImage={activity.bannerImage}
+                  participants={activity.participants || []}
+                  maxParticipants={activity.maxParticipants}
+                  onClick={() =>
+                    navigate(`/activities/${activity._id || activity.id}`)
+                  }
                 />
               ))}
             </div>

@@ -59,4 +59,20 @@ export class ActivityController {
   ): Promise<void> {
     await this.activityService.delete(id, userId);
   }
+
+  @Post(':id/join')
+  async joinActivity(
+    @Param('id') id: string,
+    @GetUser('userId') userId: string,
+  ): Promise<ActivityResponseDto> {
+    return await this.activityService.joinActivity(id, userId);
+  }
+
+  @Post(':id/quit')
+  async quitActivity(
+    @Param('id') id: string,
+    @GetUser('userId') userId: string,
+  ): Promise<ActivityResponseDto> {
+    return await this.activityService.quitActivity(id, userId);
+  }
 }

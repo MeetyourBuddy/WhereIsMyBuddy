@@ -164,4 +164,80 @@ export class ActivityService {
       );
     }
   }
+
+  async joinActivity(id: string, userId: string): Promise<ActivityResponseDto> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid activity ID');
+    }
+
+    try {
+      const activity = await this.activityModel.findById(id);
+      if (!activity) {
+        throw new NotFoundException('Activity not found');
+      }
+
+      // Check if user is already a participant
+      if (activity.participants.includes(new Types.ObjectId(userId))) {
+        throw new BadRequestException(
+          'You are already a participant of this activity',
+        );
+      }
+
+      // Check if activity is full
+      if (activity.participants.length >= activity.maxParticipants) {
+        throw new BadRequestException('Activity is full');
+      }
+
+      // Add user to participants
+      await this.activityModel.findByIdAndUpdate(id, {
+        $push: { participants: userId },
+      });
+
+      // Return updated activity
+      return await this.findOne(id, userId);
+    } catch (error) {
+      console.error('Error in joinActivity:', error);
+      if (error instanceof HttpException) throw error;
+      throw new BadRequestException('Failed to join activity');
+    }
+  }
+
+  async quitActivity(id: string, userId: string): Promise<ActivityResponseDto> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid activity ID');
+    }
+
+    try {
+      const activity = await this.activityModel.findById(id);
+      if (!activity) {
+        throw new NotFoundException('Activity not found');
+      }
+
+      // Check if user is a participant
+      if (!activity.participants.includes(new Types.ObjectId(userId))) {
+        throw new BadRequestException(
+          'You are not a participant of this activity',
+        );
+      }
+
+      // Check if user is the admin (admin cannot quit)
+      if (activity.admin.toString() === userId) {
+        throw new BadRequestException(
+          'Activity admin cannot quit the activity',
+        );
+      }
+
+      // Remove user from participants
+      await this.activityModel.findByIdAndUpdate(id, {
+        $pull: { participants: userId },
+      });
+
+      // Return updated activity
+      return await this.findOne(id, userId);
+    } catch (error) {
+      console.error('Error in quitActivity:', error);
+      if (error instanceof HttpException) throw error;
+      throw new BadRequestException('Failed to quit activity');
+    }
+  }
 }

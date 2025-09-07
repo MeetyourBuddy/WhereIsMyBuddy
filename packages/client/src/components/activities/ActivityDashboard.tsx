@@ -24,7 +24,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Avatar from "@/components/common/Avatar";
 import ActivityInfo from "./ActivityInfo";
-import { useActivity } from "@/hooks/use-activity";
 import { IActivityResult } from "@/types/activity-types";
 interface ActivityDashboardProps {
   activity: IActivityResult;
@@ -254,6 +253,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
         <div>
           {activity && (
             <ActivityInfo
+              id={activity._id || activity.id}
               title={activity.title}
               description={activity.description || ""}
               category={activity.category}
@@ -267,6 +267,8 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
               duration={`${activity.checkinFrequency}`}
               frequency={activity.checkinFrequencyUnit}
               tags={activity.tags || []}
+              participants={activity.participants || []}
+              admin={activity.admin}
               rules={activity.rules || []}
             />
           )}

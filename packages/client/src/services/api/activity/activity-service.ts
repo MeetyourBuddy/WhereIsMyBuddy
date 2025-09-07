@@ -14,4 +14,10 @@ export const ActivityService = {
     apiMethods.patch<IActivityResult>(`/activities/${id}`, activityData),
 
   deleteActivity: (id: string) => apiMethods.delete<void>(`/activities/${id}`),
+
+  joinActivity: (activityId: string) =>
+    apiMethods.post<IActivityResult>(`/activities/${activityId}/join`),
+
+  quitActivity: (activityId: string) =>
+    apiMethods.post<IActivityResult>(`/activities/${activityId}/quit`),
 };
