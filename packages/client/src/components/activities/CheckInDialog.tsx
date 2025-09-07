@@ -1,5 +1,20 @@
 import React, { useState } from "react";
-import { CheckCircle, Camera, Video, Mic, Type } from "lucide-react";
+import {
+  CheckCircle,
+  Camera,
+  Type,
+  Flame,
+  Trophy,
+  Target,
+  Calendar,
+  Clock,
+  Star,
+  Zap,
+  Heart,
+  TrendingUp,
+  Award,
+  Sparkles,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,220 +25,312 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
+import { Progress } from "../ui/progress";
+import { Badge } from "../ui/badge";
+import ImageUpload from "../common/ImageUpload";
+import { IActivityResult } from "@/types/activity-types";
 
 interface CheckInDialogProps {
   children: React.ReactNode;
+  activity: IActivityResult;
   onCheckInComplete?: () => void;
 }
 
 const CheckInDialog: React.FC<CheckInDialogProps> = ({
   children,
+  activity,
   onCheckInComplete,
 }) => {
   const [open, setOpen] = useState(false);
-  const [checkinType, setCheckinType] = useState<
-    "text" | "image" | "video" | "audio"
-  >("text");
+  const [checkinType, setCheckinType] = useState<"text" | "image">("text");
   const [message, setMessage] = useState("");
+  const [uploadedImageId, setUploadedImageId] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Mock data for motivation - in real app, this would come from props or API
+  const userStreak = 7; // days
+  const totalCheckIns = 23;
+  const activityProgress = 65; // percentage
+  const nextMilestone = 30; // next check-in milestone
+  const pointsEarned = 150;
+  const isOnTime = true; // whether this check-in is on time
+
+  const handleImageUploaded = (fileId: string, imageUrl: string) => {
+    setUploadedImageId(fileId);
+    setUploadedImageUrl(imageUrl);
+  };
+
+  const handleImageRemoved = () => {
+    setUploadedImageId(null);
+    setUploadedImageUrl(null);
+  };
+
   const handleCheckin = () => {
+    // Validate input based on check-in type
+    if (checkinType === "text" && !message.trim()) {
+      toast({
+        title: "Message required",
+        description: "Please share your progress or thoughts",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (checkinType === "image" && !uploadedImageId) {
+      toast({
+        title: "Image required",
+        description: "Please upload an image for your check-in",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Simulate API call
+    // Simulate API call - in real app, this would call the check-in API
     setTimeout(() => {
       setIsSubmitting(false);
       setOpen(false);
       setMessage("");
+      setUploadedImageId(null);
+      setUploadedImageUrl(null);
+
+      const motivationalMessages = [
+        "🔥 Amazing! Your streak is on fire!",
+        "⭐ Outstanding progress! You're crushing it!",
+        "💪 Keep going! You're building incredible habits!",
+        "🎯 Perfect timing! You're staying on track!",
+        "🌟 You're an inspiration to your buddy community!",
+      ];
+
+      const randomMessage =
+        motivationalMessages[
+          Math.floor(Math.random() * motivationalMessages.length)
+        ];
 
       toast({
-        title: "Check-in Successful!",
-        description: "You've maintained your streak. Keep it up!",
+        title: "Check-in Complete! 🎉",
+        description: randomMessage,
         variant: "default",
       });
 
       if (onCheckInComplete) {
         onCheckInComplete();
       }
-    }, 1500);
+    }, 2000);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md md:max-w-lg bg-white rounded-2xl border-0 shadow-lg p-0 overflow-hidden">
-        <div className="bg-gradient-to-r from-buddy-purple/10 to-buddy-blue/10 p-6">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-buddy-gray-800">
-              Check In Now
-            </DialogTitle>
-            <DialogDescription className="text-buddy-gray-600 sr-only">
-              Share your progress or thoughts
-            </DialogDescription>
+      <DialogContent className="sm:max-w-2xl bg-white rounded-2xl border-0 shadow-2xl p-0 overflow-hidden">
+        {/* Motivational Header */}
+        <div className="bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+
+          <DialogHeader className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white/20 rounded-full">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-bold">
+                    Time to Check In! 🎯
+                  </DialogTitle>
+                  <DialogDescription className="text-white/90 text-sm">
+                    {activity.title}
+                  </DialogDescription>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center space-x-1 text-yellow-300">
+                  <Flame className="w-5 h-5" />
+                  <span className="font-bold text-lg">{userStreak}</span>
+                </div>
+                <p className="text-xs text-white/80">Day Streak</p>
+              </div>
+            </div>
+
+            {/* Progress Stats */}
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-1 mb-1">
+                  <Target className="w-4 h-4" />
+                  <span className="font-semibold">{totalCheckIns}</span>
+                </div>
+                <p className="text-xs text-white/80">Total Check-ins</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-1 mb-1">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="font-semibold">{activityProgress}%</span>
+                </div>
+                <p className="text-xs text-white/80">Activity Progress</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-1 mb-1">
+                  <Zap className="w-4 h-4" />
+                  <span className="font-semibold">{pointsEarned}</span>
+                </div>
+                <p className="text-xs text-white/80">Points Earned</p>
+              </div>
+            </div>
           </DialogHeader>
         </div>
 
         <div className="p-6">
+          {/* Motivational Message */}
+          <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
+            <div className="flex items-center space-x-2 mb-2">
+              <Heart className="w-5 h-5 text-green-600" />
+              <span className="font-semibold text-green-800">
+                You're doing amazing!
+              </span>
+            </div>
+            <p className="text-sm text-green-700">
+              {userStreak >= 7
+                ? "🔥 You're on fire! Keep this incredible streak going!"
+                : userStreak >= 3
+                  ? "💪 Great momentum! You're building strong habits!"
+                  : "🌟 Every check-in counts! You're making progress!"}
+            </p>
+          </div>
+
+          {/* Check-in Type Selection */}
           <div className="mb-6">
-            <Label className="block mb-2 text-buddy-gray-700">
-              How would you like to check in today?
+            <Label className="block mb-3 text-buddy-gray-700 font-medium">
+              How would you like to share your progress today?
             </Label>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex gap-3">
               <Button
                 variant={checkinType === "text" ? "default" : "outline"}
                 onClick={() => setCheckinType("text")}
-                className={
+                className={`flex-1 ${
                   checkinType === "text"
-                    ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white"
-                    : ""
-                }
+                    ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
+                    : "hover:border-buddy-purple/50"
+                }`}
               >
                 <Type className="mr-2 h-4 w-4" />
-                Text
+                Share Thoughts
               </Button>
               <Button
                 variant={checkinType === "image" ? "default" : "outline"}
                 onClick={() => setCheckinType("image")}
-                className={
+                className={`flex-1 ${
                   checkinType === "image"
-                    ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white"
-                    : ""
-                }
+                    ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
+                    : "hover:border-buddy-purple/50"
+                }`}
               >
                 <Camera className="mr-2 h-4 w-4" />
-                Image
+                Share Photo
               </Button>
-              {/* <Button 
-                variant={checkinType === "video" ? "default" : "outline"} 
-                onClick={() => setCheckinType("video")}
-                className={checkinType === "video" ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white" : ""}
-              >
-                <Video className="mr-2 h-4 w-4" />
-                Video
-              </Button> */}
-              {/* <Button
-                variant={checkinType === "audio" ? "default" : "outline"}
-                onClick={() => setCheckinType("audio")}
-                className={
-                  checkinType === "audio"
-                    ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white"
-                    : ""
-                }
-              >
-                <Mic className="mr-2 h-4 w-4" />
-                Audio
-              </Button> */}
             </div>
           </div>
 
+          {/* Check-in Content */}
           <div className="mb-6">
             {checkinType === "text" && (
               <div>
                 <Label
                   htmlFor="checkin-message"
-                  className="block mb-2 text-buddy-gray-700"
+                  className="block mb-2 text-buddy-gray-700 font-medium"
                 >
-                  Share your progress or thoughts
+                  What did you accomplish today? 💭
                 </Label>
                 <Textarea
                   id="checkin-message"
-                  placeholder="What did you accomplish today? How do you feel about your progress?"
+                  placeholder="Share your progress, thoughts, or how you're feeling about your journey..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full p-3 h-[100px] rounded-xl border-buddy-gray-200 focus:border-buddy-purple focus:ring-buddy-purple/20"
+                  className="w-full p-4 h-32 rounded-xl border-buddy-gray-200 focus:border-buddy-purple focus:ring-buddy-purple/20 resize-none"
                 />
+                <p className="text-xs text-buddy-gray-500 mt-2">
+                  {message.length}/500 characters
+                </p>
               </div>
             )}
 
             {checkinType === "image" && (
-              <div className="border-2 border-dashed border-buddy-gray-300 rounded-lg p-8 text-center hover:border-buddy-purple/50 transition-colors">
-                <Camera className="w-12 h-12 mx-auto mb-4 text-buddy-gray-400" />
-                <p className="mb-2 text-buddy-gray-600">
-                  Drag and drop an image, or click to browse
-                </p>
-                <p className="text-sm text-buddy-gray-500 mb-4">
-                  PNG, JPG, or GIF up to 10MB
-                </p>
-                <Button variant="outline" className="rounded-xl">
-                  Choose Image
-                </Button>
-              </div>
-            )}
-
-            {checkinType === "video" && (
-              <div className="border-2 border-dashed border-buddy-gray-300 rounded-lg p-8 text-center hover:border-buddy-purple/50 transition-colors">
-                <Video className="w-12 h-12 mx-auto mb-4 text-buddy-gray-400" />
-                <p className="mb-2 text-buddy-gray-600">
-                  Record a video or upload from your device
-                </p>
-                <p className="text-sm text-buddy-gray-500 mb-4">
-                  Up to 60 seconds or 50MB
-                </p>
-                <div className="flex justify-center gap-3">
-                  <Button variant="outline" className="rounded-xl">
-                    Record
-                  </Button>
-                  <Button variant="outline" className="rounded-xl">
-                    Upload
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {checkinType === "audio" && (
-              <div className="border-2 border-dashed border-buddy-gray-300 rounded-lg p-8 text-center hover:border-buddy-purple/50 transition-colors">
-                <Mic className="w-12 h-12 mx-auto mb-4 text-buddy-gray-400" />
-                <p className="mb-2 text-buddy-gray-600">
-                  Record an audio message about your progress
-                </p>
-                <p className="text-sm text-buddy-gray-500 mb-4">
-                  Up to 60 seconds or 10MB
-                </p>
-                <Button variant="outline" className="rounded-xl">
-                  Start Recording
-                </Button>
+              <div>
+                <Label className="block mb-2 text-buddy-gray-700 font-medium">
+                  Share a photo of your progress 📸
+                </Label>
+                <ImageUpload
+                  onImageUploaded={handleImageUploaded}
+                  onImageRemoved={handleImageRemoved}
+                  maxSize={5}
+                  className="w-full"
+                />
               </div>
             )}
           </div>
+
+          {/* Milestone Progress */}
+          <div className="mb-6 p-4 bg-buddy-gray-50 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Trophy className="w-5 h-5 text-yellow-600" />
+                <span className="font-medium text-buddy-gray-800">
+                  Next Milestone
+                </span>
+              </div>
+              <Badge
+                variant="outline"
+                className="text-buddy-purple border-buddy-purple"
+              >
+                {nextMilestone - totalCheckIns} more to go!
+              </Badge>
+            </div>
+            <Progress
+              value={(totalCheckIns / nextMilestone) * 100}
+              className="h-2"
+            />
+            <p className="text-xs text-buddy-gray-600 mt-2">
+              {totalCheckIns} of {nextMilestone} check-ins completed
+            </p>
+          </div>
         </div>
 
-        <DialogFooter className="p-6 pt-0">
-          <Button
-            onClick={handleCheckin}
-            disabled={checkinType === "text" && !message.trim()}
-            className="w-full sm:w-auto px-8 py-2 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
-          >
-            <CheckCircle className="mr-2 h-4 w-4" />
-            Complete Check-in
-            {isSubmitting && (
-              <span className="ml-2">
-                <svg
-                  className="animate-spin h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              </span>
-            )}
-          </Button>
+        <DialogFooter className="p-6 pt-0 bg-buddy-gray-50">
+          <div className="flex w-full space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="flex-1"
+              disabled={isSubmitting}
+            >
+              Maybe Later
+            </Button>
+            <Button
+              onClick={handleCheckin}
+              disabled={
+                isSubmitting ||
+                (checkinType === "text" && !message.trim()) ||
+                (checkinType === "image" && !uploadedImageId)
+              }
+              className="flex-1 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Complete Check-in
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

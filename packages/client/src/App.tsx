@@ -27,6 +27,7 @@ import ProfilePage from "./pages/profile/[id]";
 import SharedActivityPage from "./pages/activity/[id]";
 import AdminPanel from "./pages/admin/index";
 import Oauth from "./pages/Oauth";
+import ImageUploadDemo from "./components/common/ImageUploadDemo";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +136,16 @@ const App = () => (
 
           {/* Admin Panel Route */}
           <Route path="/admin" element={<AdminPanel />} />
+
+          {/* Image Upload Demo Route */}
+          <Route
+            path="/upload-demo"
+            element={
+              <AppLayout>
+                <ImageUploadDemo />
+              </AppLayout>
+            }
+          />
 
           {/* Onboarding Flow */}
           <Route path="/onboarding" element={<OnboardingWelcome />} />

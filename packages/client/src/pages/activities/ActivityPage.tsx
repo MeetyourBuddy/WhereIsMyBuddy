@@ -202,6 +202,7 @@ const ActivityPage = () => {
 
                   {isUserParticipant && (
                     <CheckInDialog
+                      activity={currentActivity}
                       onCheckInComplete={() =>
                         console.log("Check-in completed")
                       }
