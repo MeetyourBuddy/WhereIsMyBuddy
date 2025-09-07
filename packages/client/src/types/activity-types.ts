@@ -128,6 +128,7 @@ export const isActivityCreator = (
   activity: IActivityResult,
   userId?: string
 ): boolean => {
+  console.log("🔥 FIRE TEST - isActivityCreator called!");
   console.log("=== isActivityCreator Debug ===");
   console.log("Activity:", activity);
   console.log("Activity admin:", activity.admin);
@@ -143,7 +144,13 @@ export const isActivityCreator = (
   console.log("Comparison result (loose):", activity.admin?._id == userId);
   console.log("==============================");
 
-  return activity.admin?._id === userId;
+  const result = activity.admin?._id === userId;
+  console.log("🔥 FINAL RESULT:", result);
+  console.log("🔥 Admin is null:", activity.admin === null);
+  console.log("🔥 Admin is undefined:", activity.admin === undefined);
+  console.log("🔥 Admin._id is undefined:", activity.admin?._id === undefined);
+
+  return result;
 };
 
 // Helper function to check if a user is a participant of an activity

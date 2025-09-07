@@ -51,6 +51,12 @@ interface ShareableActivityCardProps {
 
 const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
   console.log("🚀 ShareableActivityCard RENDERED with activity:", activity);
+  console.log("🔥 FIRE TEST - This should definitely show up in console!");
+
+  // Alert to make sure component is rendering
+  if (typeof window !== "undefined") {
+    console.log("🚨 COMPONENT IS RENDERING - Check browser console!");
+  }
 
   // Extract data from activity
   const {
@@ -605,8 +611,21 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
             </div>
           </div>
 
+          {/* Debug info - remove this later */}
+          <div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg text-xs">
+            <div>🔍 DEBUG INFO:</div>
+            <div>User ID: {user?._id}</div>
+            <div>Admin ID: {activity.admin?._id}</div>
+            <div>isAdmin: {isAdmin ? "TRUE" : "FALSE"}</div>
+            <div>isParticipant: {isParticipant ? "TRUE" : "FALSE"}</div>
+            <div>
+              Direct comparison:{" "}
+              {user?._id === activity.admin?._id ? "TRUE" : "FALSE"}
+            </div>
+          </div>
+
           {/* Show CREATOR badge for activity creators, join/quit button for others */}
-          {explicitAdminCheck ? (
+          {isAdmin ? (
             <div className="mt-8 flex justify-center">
               <div className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-2xl text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 <Shield className="w-6 h-6" />

@@ -25,6 +25,8 @@ interface CheckInState {
   deleteCheckIn: (checkInId: string) => Promise<void>;
   clearCheckIns: () => void;
   setError: (error: string | null) => void;
+  hasCheckedInToday: (activityId: string, userId?: string) => boolean;
+  refreshActivityData: (activityId: string) => Promise<void>;
 }
 
 export const useCheckInStore = create<CheckInState>((set, get) => ({
@@ -46,6 +48,10 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
         checkIns: [newCheckIn, ...state.checkIns],
         isLoading: false,
       }));
+
+      // Refresh stats to get updated streak and progress data
+      const { fetchCheckInStats } = get();
+      await fetchCheckInStats(data.activityId);
 
       toast({
         title: "Check-in Complete! 🎉",
@@ -74,11 +80,14 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      console.log("🔄 Fetching check-ins for activity:", activityId);
       const checkIns = await CheckInService.getCheckInsByActivity(activityId);
+      console.log("✅ Check-ins fetched:", checkIns.length, "items");
       set({ checkIns, isLoading: false });
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to fetch check-ins";
+      console.error("❌ Failed to fetch check-ins:", errorMessage);
       set({ error: errorMessage, isLoading: false });
     }
   },
@@ -102,11 +111,14 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      console.log("🔄 Fetching check-in stats for activity:", activityId);
       const stats = await CheckInService.getCheckInStats(activityId);
+      console.log("✅ Check-in stats fetched:", stats);
       set({ stats, isLoading: false });
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to fetch check-in stats";
+      console.error("❌ Failed to fetch check-in stats:", errorMessage);
       set({ error: errorMessage, isLoading: false });
     }
   },
@@ -180,5 +192,40 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
   // Set error
   setError: (error: string | null) => {
     set({ error });
+  },
+
+  // Helper function to check if user has checked in today
+  hasCheckedInToday: (activityId: string, userId?: string): boolean => {
+    const state = get();
+    if (!userId) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return state.checkIns.some((checkIn) => {
+      const checkInDate = new Date(checkIn.checkInDate);
+      return (
+        checkIn.activity === activityId &&
+        checkIn.user._id === userId &&
+        checkInDate >= today &&
+        checkInDate < tomorrow
+      );
+    });
+  },
+
+  // Refresh all data for an activity (check-ins and stats)
+  refreshActivityData: async (activityId: string) => {
+    console.log("🔄 Refreshing all data for activity:", activityId);
+    const { fetchCheckInsByActivity, fetchCheckInStats } = get();
+
+    // Fetch both check-ins and stats in parallel
+    await Promise.all([
+      fetchCheckInsByActivity(activityId),
+      fetchCheckInStats(activityId),
+    ]);
+
+    console.log("✅ Activity data refreshed successfully");
   },
 }));

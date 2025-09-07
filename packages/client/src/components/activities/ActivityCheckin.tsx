@@ -22,6 +22,7 @@ import CheckInDialog from "./CheckInDialog";
 import CheckInCard from "./CheckInCard";
 import { useActivityStore } from "@/store/activity.store";
 import { useCheckInStore } from "@/store/checkin.store";
+import { useAuth } from "@/store/auth.store";
 import { IActivityResult } from "@/types/activity-types";
 import { format } from "date-fns";
 
@@ -39,27 +40,25 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
   daysCompleted,
 }) => {
   const { fetchActivityById, currentActivity } = useActivityStore();
+  const { user } = useAuth();
   const {
     checkIns,
     stats,
     isLoading,
     fetchCheckInsByActivity,
     fetchCheckInStats,
+    hasCheckedInToday,
+    refreshActivityData,
   } = useCheckInStore();
 
-  // Fetch activity and check-in data
+  // Fetch activity and check-in data from backend on page load
   useEffect(() => {
     if (activityId) {
+      console.log("🔄 Loading fresh data for activity:", activityId);
       fetchActivityById(activityId);
-      fetchCheckInsByActivity(activityId);
-      fetchCheckInStats(activityId);
+      refreshActivityData(activityId);
     }
-  }, [
-    activityId,
-    fetchActivityById,
-    fetchCheckInsByActivity,
-    fetchCheckInStats,
-  ]);
+  }, [activityId, fetchActivityById, refreshActivityData]);
 
   // Use real data from backend
   const realStreakCount = stats?.currentStreak || 0;
@@ -76,6 +75,9 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
     realTotalCheckIns > 0 &&
     lastCheckInDate &&
     lastCheckInDate.getDate() !== yesterdayDate.getDate();
+
+  // Check if user has already checked in today
+  const userHasCheckedInToday = hasCheckedInToday(activityId, user?._id);
 
   // Generate badges - all disabled until we implement badge logic
   const badges = [
@@ -235,17 +237,26 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
                   <CheckInDialog
                     activity={currentActivity}
                     onCheckInComplete={() => {
-                      // Refresh check-in data after successful check-in
-                      fetchCheckInsByActivity(currentActivity._id);
-                      fetchCheckInStats(currentActivity._id);
+                      // Refresh all data from backend after successful check-in
+                      console.log(
+                        "🔄 Refreshing data after check-in completion"
+                      );
+                      refreshActivityData(currentActivity._id);
                     }}
                   >
                     <Button
                       type="button"
-                      className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-xl px-6 py-2 shadow-md hover:shadow-lg transition-all duration-300"
+                      disabled={userHasCheckedInToday}
+                      className={`rounded-xl px-6 py-2 shadow-md transition-all duration-300 ${
+                        userHasCheckedInToday
+                          ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                          : "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg"
+                      }`}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
-                      Start Your First Check-in
+                      {userHasCheckedInToday
+                        ? "Already Checked In Today"
+                        : "Start Your First Check-in"}
                     </Button>
                   </CheckInDialog>
                 )}
@@ -340,22 +351,46 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
 
             <Separator className="my-5" />
 
+            {/* Show success message if user has checked in today */}
+            {userHasCheckedInToday && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+                <div className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
+                  <div>
+                    <h4 className="text-green-800 font-semibold">
+                      Great job! You've checked in today 🎉
+                    </h4>
+                    <p className="text-green-700 text-sm mt-1">
+                      Keep up the momentum and check in again tomorrow!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="pt-2 mb-6">
               {currentActivity && (
                 <CheckInDialog
                   activity={currentActivity}
                   onCheckInComplete={() => {
-                    // Refresh check-in data after successful check-in
-                    fetchCheckInsByActivity(currentActivity._id);
-                    fetchCheckInStats(currentActivity._id);
+                    // Refresh all data from backend after successful check-in
+                    console.log("🔄 Refreshing data after check-in completion");
+                    refreshActivityData(currentActivity._id);
                   }}
                 >
                   <Button
                     type="button"
-                    className="w-full py-2 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                    disabled={userHasCheckedInToday}
+                    className={`w-full py-2 rounded-xl shadow-md transition-all duration-300 ${
+                      userHasCheckedInToday
+                        ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                        : "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg"
+                    }`}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    Check-in for Today
+                    {userHasCheckedInToday
+                      ? "Already Checked In Today"
+                      : "Check-in for Today"}
                   </Button>
                 </CheckInDialog>
               )}
