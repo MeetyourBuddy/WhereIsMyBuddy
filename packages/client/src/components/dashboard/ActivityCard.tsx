@@ -10,6 +10,7 @@ import {
   ChevronRight,
   UserPlus,
   UserMinus,
+  Shield,
 } from "lucide-react";
 import { User } from "@/types/auth-types";
 import { IUserResponse } from "@/types/user-types";
@@ -17,6 +18,10 @@ import { formatDate } from "date-fns";
 import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
+import {
+  isActivityCreator,
+  isActivityParticipant,
+} from "@/types/activity-types";
 
 interface ActivityCardProps {
   id?: string;
@@ -29,6 +34,7 @@ interface ActivityCardProps {
   bannerImage?: string;
   participants: IUserResponse[];
   maxParticipants: number;
+  admin?: IUserResponse;
   onClick?: () => void;
 }
 
@@ -43,6 +49,7 @@ const ActivityCard = ({
   bannerImage,
   participants,
   maxParticipants,
+  admin,
   onClick,
 }: ActivityCardProps) => {
   const { toast } = useToast();
@@ -50,10 +57,23 @@ const ActivityCard = ({
   const { joinActivity, quitActivity, isLoading } = useActivityStore();
   const [isJoining, setIsJoining] = useState(false);
 
-  // Check if user is a participant
-  const isParticipant = participants.some(
-    (participant) => participant._id === user?._id
+  // Check if user is a participant and creator using helper functions
+  const isParticipant = isActivityParticipant(
+    { participants, admin } as any,
+    user?._id
   );
+  const isCreator = isActivityCreator({ admin } as any, user?._id);
+
+  // Debug logging for admin data
+  console.log("=== ActivityCard Debug ===");
+  console.log("Admin prop:", admin);
+  console.log("Admin._id:", admin?._id);
+  console.log("Current user:", user);
+  console.log("Current user._id:", user?._id);
+  console.log("isCreator result:", isCreator);
+  console.log("isParticipant result:", isParticipant);
+  console.log("Admin comparison:", admin?._id === user?._id);
+  console.log("========================");
 
   const handleJoinQuit = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -240,28 +260,37 @@ const ActivityCard = ({
 
           <div className="flex items-center gap-2">
             {id && (
-              <Button
-                size="small"
-                onClick={handleJoinQuit}
-                disabled={isJoining || isLoading}
-                className={`${
-                  isParticipant
-                    ? "bg-red-500 hover:bg-red-600 text-white"
-                    : "bg-buddy-purple hover:bg-buddy-purple/90 text-white"
-                }`}
-              >
-                {isParticipant ? (
-                  <>
-                    <UserMinus className="w-4 h-4 mr-1" />
-                    {isJoining ? "Leaving..." : "Quit"}
-                  </>
+              <>
+                {isCreator ? (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full text-xs font-medium">
+                    <Shield className="w-3 h-3" />
+                    Creator
+                  </div>
                 ) : (
-                  <>
-                    <UserPlus className="w-4 h-4 mr-1" />
-                    {isJoining ? "Joining..." : "Join"}
-                  </>
+                  <Button
+                    size="small"
+                    onClick={handleJoinQuit}
+                    disabled={isJoining || isLoading}
+                    className={`${
+                      isParticipant
+                        ? "bg-red-500 hover:bg-red-600 text-white"
+                        : "bg-buddy-purple hover:bg-buddy-purple/90 text-white"
+                    }`}
+                  >
+                    {isParticipant ? (
+                      <>
+                        <UserMinus className="w-4 h-4 mr-1" />
+                        {isJoining ? "Leaving..." : "Quit"}
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        {isJoining ? "Joining..." : "Join"}
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </>
             )}
 
             <Button

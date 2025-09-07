@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CheckCircle,
   Camera,
@@ -32,6 +32,8 @@ import { Progress } from "../ui/progress";
 import { Badge } from "../ui/badge";
 import ImageUpload from "../common/ImageUpload";
 import { IActivityResult } from "@/types/activity-types";
+import { useCheckInStore } from "@/store/checkin.store";
+import { UploadService } from "@/services/api/upload/upload-service";
 
 interface CheckInDialogProps {
   children: React.ReactNode;
@@ -51,13 +53,19 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mock data for motivation - in real app, this would come from props or API
-  const userStreak = 7; // days
-  const totalCheckIns = 23;
-  const activityProgress = 65; // percentage
-  const nextMilestone = 30; // next check-in milestone
-  const pointsEarned = 150;
-  const isOnTime = true; // whether this check-in is on time
+  const { stats, createCheckIn, fetchCheckInStats, isLoading } =
+    useCheckInStore();
+
+  // Note: Stats are now fetched by the parent component when needed
+  // No automatic stats fetching when dialog opens
+
+  // Real data from backend
+  const userStreak = stats?.currentStreak || 0;
+  const totalCheckIns = stats?.totalCheckIns || 0;
+  const activityProgress = stats?.onTimePercentage || 0;
+  const nextMilestone = Math.max(10, Math.ceil(totalCheckIns * 1.5)); // Dynamic milestone
+  const pointsEarned = totalCheckIns * 10; // 10 points per check-in
+  const isOnTime = true; // Will be determined by backend
 
   const handleImageUploaded = (fileId: string, imageUrl: string) => {
     setUploadedImageId(fileId);
@@ -69,7 +77,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
     setUploadedImageUrl(null);
   };
 
-  const handleCheckin = () => {
+  const handleCheckin = async () => {
     // Validate input based on check-in type
     if (checkinType === "text" && !message.trim()) {
       toast({
@@ -91,43 +99,45 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
 
     setIsSubmitting(true);
 
-    // Simulate API call - in real app, this would call the check-in API
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setOpen(false);
-      setMessage("");
-      setUploadedImageId(null);
-      setUploadedImageUrl(null);
+    try {
+      // Prepare check-in data
+      const checkInData = {
+        activityId: activity._id,
+        type: checkinType,
+        content: checkinType === "text" ? message : "Image check-in",
+        imageUrl: checkinType === "image" ? uploadedImageUrl : undefined,
+        fileId: checkinType === "image" ? uploadedImageId : undefined,
+        scheduledDate: new Date().toISOString(), // Use current time as scheduled date
+      };
 
-      const motivationalMessages = [
-        "🔥 Amazing! Your streak is on fire!",
-        "⭐ Outstanding progress! You're crushing it!",
-        "💪 Keep going! You're building incredible habits!",
-        "🎯 Perfect timing! You're staying on track!",
-        "🌟 You're an inspiration to your buddy community!",
-      ];
+      // Create check-in via API
+      const newCheckIn = await createCheckIn(checkInData);
 
-      const randomMessage =
-        motivationalMessages[
-          Math.floor(Math.random() * motivationalMessages.length)
-        ];
+      if (newCheckIn) {
+        // Reset form
+        setMessage("");
+        setUploadedImageId(null);
+        setUploadedImageUrl(null);
+        setOpen(false);
 
-      toast({
-        title: "Check-in Complete! 🎉",
-        description: randomMessage,
-        variant: "default",
-      });
+        // Refresh stats
+        await fetchCheckInStats(activity._id);
 
-      if (onCheckInComplete) {
-        onCheckInComplete();
+        if (onCheckInComplete) {
+          onCheckInComplete();
+        }
       }
-    }, 2000);
+    } catch (error) {
+      console.error("Check-in failed:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl bg-white rounded-2xl border-0 shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-2xl bg-white rounded-2xl border shadow-2xl p-6">
         {/* Motivational Header */}
         <div className="bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>

@@ -21,6 +21,7 @@ import {
   Smartphone,
   Globe,
   LogIn,
+  Shield,
 } from "lucide-react";
 import {
   Sheet,
@@ -38,13 +39,19 @@ import QRCode from "react-qr-code";
 import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
 
-import { IActivityResult } from "@/types/activity-types";
+import {
+  IActivityResult,
+  isActivityCreator,
+  isActivityParticipant,
+} from "@/types/activity-types";
 
 interface ShareableActivityCardProps {
   activity: IActivityResult;
 }
 
 const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
+  console.log("🚀 ShareableActivityCard RENDERED with activity:", activity);
+
   // Extract data from activity
   const {
     _id: id,
@@ -67,6 +74,11 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
   const { user } = useAuth();
   const { joinActivity, quitActivity, isUserParticipant, isLoading } =
     useActivityStore();
+
+  // Debug user data
+  console.log("🔍 User Auth Debug - User from auth store:", user);
+  console.log("🔍 User._id:", user?._id);
+  console.log("🔍 User._id type:", typeof user?._id);
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
@@ -100,11 +112,37 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
     return `${checkinFrequency}x ${checkinFrequencyUnit}`;
   };
 
-  // Check if user is a participant
-  const isParticipant = participants.some(
-    (participant) => participant._id === user?._id
+  // Check if user is a participant and creator using helper functions
+  const isParticipant = isActivityParticipant(activity, user?._id);
+  const isAdmin = isActivityCreator(activity, user?._id);
+
+  // Temporary explicit check for debugging
+  const explicitAdminCheck =
+    user && activity.admin && user._id === activity.admin._id;
+  console.log("🎯 Explicit Admin Check - User exists:", !!user);
+  console.log("🎯 Activity admin exists:", !!activity.admin);
+  console.log("🎯 User._id:", user?._id);
+  console.log("🎯 Admin._id:", activity.admin?._id);
+  console.log("🎯 Explicit check result:", explicitAdminCheck);
+
+  // Debug logging for admin data
+  console.log("=== ShareableActivityCard Debug ===");
+  console.log("Activity data:", activity);
+  console.log("Activity admin:", activity.admin);
+  console.log("Activity admin._id:", activity.admin?._id);
+  console.log("Activity admin._id type:", typeof activity.admin?._id);
+  console.log("Current user:", user);
+  console.log("Current user._id:", user?._id);
+  console.log("Current user._id type:", typeof user?._id);
+  console.log("isAdmin result:", isAdmin);
+  console.log("isParticipant result:", isParticipant);
+  console.log("Admin comparison (strict):", activity.admin?._id === user?._id);
+  console.log(
+    "Admin comparison (string):",
+    activity.admin?._id?.toString() === user?._id?.toString()
   );
-  const isAdmin = createdBy._id === user?._id;
+  console.log("Admin comparison (loose):", activity.admin?._id == user?._id);
+  console.log("================================");
 
   const handleJoinQuit = async () => {
     if (!user) {
@@ -237,36 +275,40 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
 
   return (
     <div className="animate-fade-in">
-      <Card className="overflow-hidden border border-white/90 shadow-lg rounded-2xl backdrop-blur-md bg-white/90 transition-all duration-300 hover:shadow-xl">
+      <Card className="overflow-hidden border-0 shadow-2xl rounded-3xl backdrop-blur-md bg-white/95 transition-all duration-500 hover:shadow-3xl hover:scale-[1.02] group">
         {/* Activity Image */}
-        <div className="relative h-64 overflow-hidden">
+        <div className="relative h-72 overflow-hidden">
           {image ? (
             <div
-              className="w-full h-full bg-cover bg-center transform hover:scale-105 transition-transform duration-700"
+              className="w-full h-full bg-cover bg-center transform group-hover:scale-110 transition-transform duration-1000 ease-out"
               style={{ backgroundImage: `url(${image})` }}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-pastel-blue to-pastel-green flex items-center justify-center">
-              <span className="text-6xl animate-pulse">
+            <div className="w-full h-full bg-gradient-to-br from-buddy-purple via-buddy-blue to-buddy-green flex items-center justify-center relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-buddy-purple/20 via-buddy-blue/20 to-buddy-green/20"></div>
+              <span className="text-8xl animate-bounce relative z-10 filter drop-shadow-lg">
                 {getCategoryIcon(category)}
               </span>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/60 backdrop-blur-[1px]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 backdrop-blur-[1px]"></div>
 
           <div className="absolute top-4 left-4 flex flex-wrap gap-2">
             <span
-              className={`px-3 py-1 backdrop-blur-sm rounded-full text-sm font-medium flex items-center border ${getCategoryColor(category)} transition-all duration-300 hover:shadow-md transform hover:translate-y-[-2px]`}
+              className={`px-4 py-2 backdrop-blur-md rounded-full text-sm font-semibold flex items-center border-2 shadow-lg ${getCategoryColor(category)} transition-all duration-300 hover:shadow-xl transform hover:translate-y-[-3px] hover:scale-105`}
             >
-              <span className="mr-1">{getCategoryIcon(category)}</span>
+              <span className="mr-2 text-lg">{getCategoryIcon(category)}</span>
               {category}
             </span>
 
-            <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-white border border-white/30 transition-all duration-300 hover:bg-white/30 hover:shadow-md">
+            <span className="bg-gradient-to-r from-white/30 to-white/20 backdrop-blur-md px-4 py-2 rounded-full text-sm font-semibold text-white border-2 border-white/40 shadow-lg transition-all duration-300 hover:bg-white/40 hover:shadow-xl transform hover:translate-y-[-3px] hover:scale-105">
+              <Clock className="w-4 h-4 mr-2" />
               {formatDuration()}
             </span>
 
-            <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-white border border-white/30 transition-all duration-300 hover:bg-white/30 hover:shadow-md">
+            <span className="bg-gradient-to-r from-white/30 to-white/20 backdrop-blur-md px-4 py-2 rounded-full text-sm font-semibold text-white border-2 border-white/40 shadow-lg transition-all duration-300 hover:bg-white/40 hover:shadow-xl transform hover:translate-y-[-3px] hover:scale-105">
+              <Calendar className="w-4 h-4 mr-2" />
               {formatFrequency()}
             </span>
           </div>
@@ -277,9 +319,9 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border border-white/30 transition-all duration-300 hover:shadow-md"
+                  className="rounded-full bg-gradient-to-r from-white/30 to-white/20 backdrop-blur-md hover:from-white/50 hover:to-white/30 text-white border-2 border-white/40 shadow-lg transition-all duration-300 hover:shadow-xl transform hover:scale-110 hover:rotate-12"
                 >
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
               <SheetContent className="border-l border-white/20 backdrop-blur-md bg-white/95">
@@ -441,130 +483,178 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
           </div>
 
           <div className="absolute bottom-4 left-4 right-4">
-            <h1 className="text-2xl font-bold text-white mb-1 text-shadow">
-              {title}
-            </h1>
+            <div className="bg-gradient-to-r from-black/40 to-transparent backdrop-blur-sm rounded-2xl p-4 -m-4">
+              <h1 className="text-3xl font-bold text-white mb-2 text-shadow-lg leading-tight">
+                {title}
+              </h1>
+              <p className="text-white/90 text-sm font-medium">
+                Join {participants.length}{" "}
+                {participants.length === 1 ? "person" : "people"} in this
+                amazing journey
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="p-6">
-          <p className="text-buddy-gray-600 mb-6">{description}</p>
+        <div className="p-8">
+          <div className="mb-6">
+            <p className="text-buddy-gray-700 text-lg leading-relaxed font-medium">
+              {description}
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="space-y-3 transform hover:translate-x-1 transition-transform duration-300">
-              <div className="flex items-center text-buddy-gray-700 group">
-                <MapPin className="w-4 h-4 mr-3 text-buddy-blue group-hover:text-buddy-blue-dark transition-colors duration-300" />
-                <span className="group-hover:text-buddy-gray-900 transition-colors duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div className="space-y-4">
+              <div className="flex items-center text-buddy-gray-700 group p-3 rounded-xl hover:bg-gradient-to-r hover:from-buddy-purple/5 hover:to-buddy-blue/5 transition-all duration-300">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-buddy-blue/20 to-buddy-purple/20 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                  <MapPin className="w-5 h-5 text-buddy-blue group-hover:text-buddy-purple transition-colors duration-300" />
+                </div>
+                <span className="font-medium group-hover:text-buddy-gray-900 transition-colors duration-300">
                   {location || "Virtual Activity"}
                 </span>
               </div>
 
-              <div className="flex items-center text-buddy-gray-700 group">
-                <Calendar className="w-4 h-4 mr-3 text-buddy-blue group-hover:text-buddy-blue-dark transition-colors duration-300" />
-                <span className="group-hover:text-buddy-gray-900 transition-colors duration-300">
+              <div className="flex items-center text-buddy-gray-700 group p-3 rounded-xl hover:bg-gradient-to-r hover:from-buddy-green/5 hover:to-buddy-blue/5 transition-all duration-300">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-buddy-green/20 to-buddy-blue/20 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                  <Calendar className="w-5 h-5 text-buddy-green group-hover:text-buddy-blue transition-colors duration-300" />
+                </div>
+                <span className="font-medium group-hover:text-buddy-gray-900 transition-colors duration-300">
                   {formatDate(startDate)}{" "}
                   {endDate && `- ${formatDate(endDate)}`}
                 </span>
               </div>
 
-              <div className="flex items-center text-buddy-gray-700 group">
-                <Clock className="w-4 h-4 mr-3 text-buddy-blue group-hover:text-buddy-blue-dark transition-colors duration-300" />
-                <span className="group-hover:text-buddy-gray-900 transition-colors duration-300">
+              <div className="flex items-center text-buddy-gray-700 group p-3 rounded-xl hover:bg-gradient-to-r hover:from-buddy-orange/5 hover:to-buddy-purple/5 transition-all duration-300">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-buddy-orange/20 to-buddy-purple/20 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
+                  <Clock className="w-5 h-5 text-buddy-orange group-hover:text-buddy-purple transition-colors duration-300" />
+                </div>
+                <span className="font-medium group-hover:text-buddy-gray-900 transition-colors duration-300">
                   {formatTime(startDate)}
                 </span>
               </div>
             </div>
 
-            <div>
-              <div className="mb-4 transform hover:translate-y-[-2px] transition-transform duration-300">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium text-buddy-gray-600">
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-purple/10 transform hover:translate-y-[-2px] transition-all duration-300 hover:shadow-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-lg font-semibold text-buddy-gray-800">
                     Activity Progress
                   </span>
-                  <span className="text-sm font-medium text-buddy-blue">
+                  <span className="text-2xl font-bold bg-gradient-to-r from-buddy-blue to-buddy-purple bg-clip-text text-transparent">
                     {progress}%
                   </span>
                 </div>
-                <div className="h-2 bg-buddy-gray-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-buddy-gray-100 rounded-full overflow-hidden shadow-inner">
                   <div
-                    className="h-full bg-gradient-to-r from-buddy-blue to-buddy-green rounded-full transition-all duration-500 ease-out"
+                    className="h-full bg-gradient-to-r from-buddy-blue via-buddy-purple to-buddy-green rounded-full transition-all duration-1000 ease-out shadow-lg"
                     style={{ width: `${progress}%` }}
                   ></div>
                 </div>
+                <p className="text-sm text-buddy-gray-600 mt-2">
+                  Keep going! You're making great progress 🎉
+                </p>
               </div>
 
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <Users className="w-4 h-4 mr-2 text-buddy-green" />
-                  <span className="text-sm text-buddy-gray-700">
-                    {participants.length}/{maxParticipants} participants
-                  </span>
-                </div>
+              <div className="bg-gradient-to-r from-buddy-green/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-green/10">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-buddy-green/20 to-buddy-blue/20 flex items-center justify-center mr-4">
+                      <Users className="w-6 h-6 text-buddy-green" />
+                    </div>
+                    <div>
+                      <span className="text-lg font-semibold text-buddy-gray-800 block">
+                        {participants.length}/{maxParticipants}
+                      </span>
+                      <span className="text-sm text-buddy-gray-600">
+                        Amazing people joined
+                      </span>
+                    </div>
+                  </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-buddy-green border-buddy-green/50 hover:bg-buddy-green/10 rounded-full transition-all duration-300"
-                >
-                  View All
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-buddy-green border-buddy-green/50 hover:bg-buddy-green/10 rounded-full transition-all duration-300 hover:scale-105"
+                  >
+                    View All
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-buddy-gray-100 pt-5 pb-3 group hover:border-buddy-gray-200 transition-colors duration-300">
-            <p className="text-sm text-buddy-gray-600 mb-3">Created by</p>
+          <div className="bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-purple/10 group hover:shadow-lg transition-all duration-300">
+            <p className="text-sm font-semibold text-buddy-gray-600 mb-4 flex items-center">
+              <span className="w-2 h-2 bg-gradient-to-r from-buddy-purple to-buddy-blue rounded-full mr-2"></span>
+              Created by
+            </p>
             <div className="flex items-center">
               <Avatar
-                size="sm"
+                size="md"
                 src={createdBy.avatar || createdBy.profileImage}
-                className="rounded-full border-2 border-white shadow-sm group-hover:shadow-md transition-all duration-300"
+                className="rounded-full border-3 border-white shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110"
               />
-              <span className="ml-3 font-medium group-hover:text-buddy-blue transition-colors duration-300">
-                {createdBy.name}
-              </span>
+              <div className="ml-4">
+                <span className="text-lg font-semibold group-hover:text-buddy-purple transition-colors duration-300 block">
+                  {createdBy.name}
+                </span>
+                <span className="text-sm text-buddy-gray-500">
+                  Activity Creator
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 flex gap-3">
-            <Button
-              size="lg"
-              onClick={handleJoinQuit}
-              disabled={isJoining || isLoading || (user && isAdmin)}
-              className={`flex-1 rounded-full shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px] ${
-                user && isParticipant
-                  ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                  : "bg-gradient-to-r from-buddy-purple to-buddy-blue hover:from-buddy-purple/90 hover:to-buddy-blue/90"
-              }`}
-            >
-              {!user ? (
-                <>
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Sign Up to Join
-                </>
-              ) : user && isParticipant ? (
-                <>
-                  <UserMinus className="w-4 h-4 mr-2" />
-                  {isJoining ? "Leaving..." : "Quit Activity"}
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {isJoining ? "Joining..." : "Join Activity"}
-                </>
-              )}
-            </Button>
+          {/* Show CREATOR badge for activity creators, join/quit button for others */}
+          {explicitAdminCheck ? (
+            <div className="mt-8 flex justify-center">
+              <div className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-2xl text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+                <Shield className="w-6 h-6" />
+                CREATOR
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-8 space-y-4">
+              <Button
+                size="lg"
+                onClick={handleJoinQuit}
+                disabled={isJoining || isLoading}
+                className={`w-full h-14 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:translate-y-[-3px] hover:scale-105 text-lg font-bold ${
+                  user && isParticipant
+                    ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                    : "bg-gradient-to-r from-buddy-purple to-buddy-blue hover:from-buddy-purple/90 hover:to-buddy-blue/90"
+                }`}
+              >
+                {!user ? (
+                  <>
+                    <LogIn className="w-5 h-5 mr-3" />
+                    Sign Up to Join This Amazing Journey
+                  </>
+                ) : user && isParticipant ? (
+                  <>
+                    <UserMinus className="w-5 h-5 mr-3" />
+                    {isJoining ? "Leaving..." : "Quit Activity"}
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-5 h-5 mr-3" />
+                    {isJoining ? "Joining..." : "Join This Amazing Activity"}
+                  </>
+                )}
+              </Button>
 
-            <Button
-              variant="outline"
-              size="lg"
-              className="flex-1 rounded-full border-buddy-gray-300 hover:bg-buddy-gray-50 transition-all duration-300 transform hover:translate-y-[-2px]"
-              onClick={() => navigate(`/activities/${id}`)}
-            >
-              Learn More
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full h-12 rounded-2xl border-2 border-buddy-purple/30 hover:bg-buddy-purple/10 transition-all duration-300 transform hover:translate-y-[-2px] hover:scale-105 text-buddy-purple font-semibold"
+                onClick={() => navigate(`/activities/${id}`)}
+              >
+                Learn More About This Activity
+                <ChevronRight className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
     </div>

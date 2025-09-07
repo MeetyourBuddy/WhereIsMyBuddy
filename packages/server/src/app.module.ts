@@ -10,6 +10,7 @@ import { User, UserSchema } from './users/schemas/user.schema';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ActivityModule } from './activities/activity.module';
 import { AuthModule } from './users/auth/auth.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AuthModule } from './users/auth/auth.module';
     }),
     ActivityModule,
     AuthModule,
+    UploadModule,
   ],
   controllers: [UsersController],
   providers: [

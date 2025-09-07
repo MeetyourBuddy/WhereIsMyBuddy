@@ -25,6 +25,10 @@ import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import Avatar from "@/components/common/Avatar";
+import {
+  isActivityCreator,
+  isActivityParticipant,
+} from "@/types/activity-types";
 
 interface ActivityInfoProps {
   id?: string;
@@ -72,10 +76,23 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
   const { joinActivity, quitActivity, isLoading } = useActivityStore();
   const [isJoining, setIsJoining] = useState(false);
 
-  // Check if user is a participant
-  const isParticipant = participants.some(
-    (participant) => participant._id === user?._id
+  // Check if user is a participant and creator using helper functions
+  const isParticipant = isActivityParticipant(
+    { participants, admin } as any,
+    user?._id
   );
+  const isCreator = isActivityCreator({ admin } as any, user?._id);
+
+  // Debug logging for admin data
+  console.log("=== ActivityInfo Debug ===");
+  console.log("Admin prop:", admin);
+  console.log("Admin._id:", admin?._id);
+  console.log("Current user:", user);
+  console.log("Current user._id:", user?._id);
+  console.log("isCreator result:", isCreator);
+  console.log("isParticipant result:", isParticipant);
+  console.log("Admin comparison:", admin?._id === user?._id);
+  console.log("========================");
 
   const handleJoinQuit = async () => {
     if (!user) {
@@ -146,30 +163,39 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
           </p>
         </div>
 
-        {/* Join/Quit Button */}
+        {/* Join/Quit Button or Creator Badge */}
         {id && (
           <div className="pt-2">
-            <Button
-              onClick={handleJoinQuit}
-              disabled={isJoining || isLoading}
-              className={`w-full ${
-                isParticipant
-                  ? "bg-red-500 hover:bg-red-600 text-white"
-                  : "bg-buddy-purple hover:bg-buddy-purple/90 text-white"
-              }`}
-            >
-              {isParticipant ? (
-                <>
-                  <UserMinus className="w-4 h-4 mr-2" />
-                  {isJoining ? "Leaving..." : "Quit Activity"}
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {isJoining ? "Joining..." : "Join Activity"}
-                </>
-              )}
-            </Button>
+            {isCreator ? (
+              <div className="flex justify-center">
+                <Badge className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-4 py-2 text-sm font-medium">
+                  <Shield className="w-4 h-4 mr-2" />
+                  Creator
+                </Badge>
+              </div>
+            ) : (
+              <Button
+                onClick={handleJoinQuit}
+                disabled={isJoining || isLoading}
+                className={`w-full ${
+                  isParticipant
+                    ? "bg-red-500 hover:bg-red-600 text-white"
+                    : "bg-buddy-purple hover:bg-buddy-purple/90 text-white"
+                }`}
+              >
+                {isParticipant ? (
+                  <>
+                    <UserMinus className="w-4 h-4 mr-2" />
+                    {isJoining ? "Leaving..." : "Quit Activity"}
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    {isJoining ? "Joining..." : "Join Activity"}
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         )}
 

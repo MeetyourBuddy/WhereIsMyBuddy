@@ -374,6 +374,7 @@ const Activities = () => {
                     bannerImage={activity.bannerImage}
                     participants={activity.participants || []}
                     maxParticipants={activity.maxParticipants}
+                    admin={activity.admin}
                     onClick={() =>
                       navigate(`/activities/${activity._id || activity.id}`)
                     }
@@ -413,6 +414,7 @@ const Activities = () => {
                   bannerImage={activity.bannerImage}
                   participants={activity.participants || []}
                   maxParticipants={activity.maxParticipants}
+                  admin={activity.admin}
                   onClick={() =>
                     navigate(`/activities/${activity._id || activity.id}`)
                   }
@@ -435,6 +437,7 @@ const Activities = () => {
                   bannerImage={activity.bannerImage}
                   participants={activity.participants || []}
                   maxParticipants={activity.maxParticipants}
+                  admin={activity.admin}
                   onClick={() =>
                     navigate(`/activities/${activity._id || activity.id}`)
                   }
@@ -457,6 +460,7 @@ const Activities = () => {
                   bannerImage={activity.bannerImage}
                   participants={activity.participants || []}
                   maxParticipants={activity.maxParticipants}
+                  admin={activity.admin}
                   onClick={() =>
                     navigate(`/activities/${activity._id || activity.id}`)
                   }
@@ -479,6 +483,7 @@ const Activities = () => {
                   bannerImage={activity.bannerImage}
                   participants={activity.participants || []}
                   maxParticipants={activity.maxParticipants}
+                  admin={activity.admin}
                   onClick={() =>
                     navigate(`/activities/${activity._id || activity.id}`)
                   }

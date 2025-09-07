@@ -39,6 +39,10 @@ import ShareActivityModal from "@/components/activities/ShareActivityModal";
 import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
+import {
+  isActivityCreator,
+  isActivityParticipant,
+} from "@/types/activity-types";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -77,6 +81,21 @@ const ActivityPage = () => {
     fetchActivityById,
     currentActivity,
   } = useActivityStore();
+
+  // Debug logging for ActivityPage
+  console.log("🏠 ActivityPage - User from auth:", user);
+  console.log("🏠 ActivityPage - User._id:", user?._id);
+  console.log("🏠 ActivityPage - User._id type:", typeof user?._id);
+  console.log("🏠 ActivityPage - Current activity:", currentActivity);
+  console.log("🏠 ActivityPage - Activity admin:", currentActivity?.admin);
+  console.log(
+    "🏠 ActivityPage - Activity admin._id:",
+    currentActivity?.admin?._id
+  );
+  console.log(
+    "🏠 ActivityPage - Activity admin._id type:",
+    typeof currentActivity?.admin?._id
+  );
 
   useEffect(() => {
     if (!activityId) {
@@ -134,13 +153,27 @@ const ActivityPage = () => {
     currentActivity.endDate ? new Date(currentActivity.endDate) : new Date()
   );
 
-  // Check if current user is a participant
-  const isUserParticipant =
-    user &&
-    currentActivity &&
-    currentActivity.participants?.some(
-      (participant) => participant._id === user._id
-    );
+  // Check if current user is a participant using helper function
+  const isUserParticipant = currentActivity
+    ? isActivityParticipant(currentActivity, user?._id)
+    : false;
+
+  // Direct admin comparison check
+  const isUserAdmin =
+    user && currentActivity?.admin && user._id === currentActivity.admin._id;
+  console.log("🏠 ActivityPage - Is user admin:", isUserAdmin);
+  console.log(
+    "🏠 ActivityPage - Admin comparison (strict):",
+    user?._id === currentActivity?.admin?._id
+  );
+  console.log(
+    "🏠 ActivityPage - Admin comparison (string):",
+    user?._id?.toString() === currentActivity?.admin?._id?.toString()
+  );
+  console.log(
+    "🏠 ActivityPage - Helper function result:",
+    isActivityCreator(currentActivity, user?._id)
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-buddy-purple/5 via-white to-buddy-blue/5 relative">
@@ -218,7 +251,7 @@ const ActivityPage = () => {
                   )}
                   {user &&
                     currentActivity &&
-                    user._id === currentActivity.admin?._id && (
+                    isActivityCreator(currentActivity, user._id) && (
                       <EditActivityDialog activity={currentActivity}>
                         <Button
                           variant="outline"

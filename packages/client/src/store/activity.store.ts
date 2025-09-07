@@ -92,7 +92,12 @@ export const useActivityStore = create<ActivityState>()(
           set({ isLoading: true, error: null });
           const response = await ActivityService.getActivityById(id);
 
-          console.log("Activity by id:", response.data);
+          console.log("=== Frontend Activity Store Debug ===");
+          console.log("Activity by ID response:", response);
+          console.log("Activity data:", response.data);
+          console.log("Activity admin:", response.data?.admin);
+          console.log("Activity admin._id:", response.data?.admin?._id);
+          console.log("=====================================");
 
           set({ currentActivity: response.data });
         } catch (error: unknown) {
