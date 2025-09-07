@@ -14,14 +14,15 @@ import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
 import { Activity } from './schemas/activity.schema';
 import { GetUser } from '@/users/decorators/get-user.decorator';
+import { GetOptionalUser } from '@/users/decorators/get-optional-user.decorator';
 import { ActivityResponseDto } from './dto/activity-response.dto';
 
 @Controller('activities')
-@UseGuards(JwtAuthGuard)
 export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(
     @Body() createActivityDto: CreateActivityDto,
     @GetUser('userId') userId: string,
@@ -30,6 +31,7 @@ export class ActivityController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   async findAll(): Promise<Activity[]> {
     return await this.activityService.findAll();
   }
@@ -37,12 +39,13 @@ export class ActivityController {
   @Get(':id')
   async findOne(
     @Param('id') id: string,
-    @GetUser('userId') userId: string,
+    @GetOptionalUser('userId') userId?: string,
   ): Promise<ActivityResponseDto> {
     return await this.activityService.findOne(id, userId);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() updateActivityDto: UpdateActivityDto,
@@ -53,6 +56,7 @@ export class ActivityController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(
     @Param('id') id: string,
     @GetUser('userId') userId: string,
@@ -61,6 +65,7 @@ export class ActivityController {
   }
 
   @Post(':id/join')
+  @UseGuards(JwtAuthGuard)
   async joinActivity(
     @Param('id') id: string,
     @GetUser('userId') userId: string,
@@ -69,6 +74,7 @@ export class ActivityController {
   }
 
   @Post(':id/quit')
+  @UseGuards(JwtAuthGuard)
   async quitActivity(
     @Param('id') id: string,
     @GetUser('userId') userId: string,

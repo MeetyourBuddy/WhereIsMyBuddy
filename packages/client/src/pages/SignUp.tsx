@@ -34,6 +34,7 @@ import { config } from "@/config";
 const SignUp = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const { register } = useAuth();
+  const navigate = useNavigate();
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpFormSchema),
@@ -50,11 +51,24 @@ const SignUp = () => {
       // Sign up logic would go here
       console.log("Signing up with:", data);
 
-      register({
+      await register({
         username: data.username,
         email: data.email,
         password: data.password,
       });
+
+      // Check if there's a redirect URL stored
+      const redirectUrl = localStorage.getItem("redirectAfterSignup");
+      if (redirectUrl) {
+        localStorage.removeItem("redirectAfterSignup");
+        toast.success(
+          "Account created successfully! Redirecting to activity..."
+        );
+        navigate(redirectUrl);
+      } else {
+        toast.success("Account created successfully!");
+        navigate("/dashboard");
+      }
     } catch (error) {
       toast.error("Failed to create account. Please try again.");
       console.error(error);

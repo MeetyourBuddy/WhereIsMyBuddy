@@ -33,6 +33,7 @@ import { config } from "@/config";
 const SignIn = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const form = useForm<SignInFormData>({
     resolver: zodResolver(signInFormSchema),
@@ -46,10 +47,21 @@ const SignIn = () => {
     try {
       console.log("Signing in with:", data);
 
-      login({
+      await login({
         email: data.email,
         password: data.password,
       });
+
+      // Check if there's a redirect URL stored
+      const redirectUrl = localStorage.getItem("redirectAfterSignup");
+      if (redirectUrl) {
+        localStorage.removeItem("redirectAfterSignup");
+        toast.success("Signed in successfully! Redirecting to activity...");
+        navigate(redirectUrl);
+      } else {
+        toast.success("Signed in successfully!");
+        navigate("/dashboard");
+      }
     } catch (error) {
       toast.error("Failed to sign in. Please check your credentials.");
       console.error(error);

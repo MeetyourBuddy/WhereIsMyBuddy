@@ -72,7 +72,7 @@ export class ActivityService {
     }
   }
 
-  async findOne(id: string, userId: string): Promise<ActivityResponseDto> {
+  async findOne(id: string, userId?: string): Promise<ActivityResponseDto> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid activity ID');
     }
@@ -97,6 +97,15 @@ export class ActivityService {
         throw new NotFoundException('Activity not found');
       }
 
+      // For guest users (no userId), only allow access to public activities
+      if (!userId) {
+        if (activity.type !== 'public') {
+          throw new NotFoundException('Activity not found or unauthorized');
+        }
+        return activity;
+      }
+
+      // For authenticated users, check ownership and participation
       const isOwner = activity.admin?._id?.toString() === userId.toString();
       const isParticipant = activity.participants?.some(
         (p) => p._id?.toString() === userId.toString(),

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/common/Card";
 import Avatar from "@/components/common/Avatar";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
   Link as LinkIcon,
   Smartphone,
   Globe,
+  LogIn,
 } from "lucide-react";
 import {
   Sheet,
@@ -65,6 +67,7 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
   const { user } = useAuth();
   const { joinActivity, quitActivity, isUserParticipant, isLoading } =
     useActivityStore();
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [activeTab, setActiveTab] = useState("qr");
@@ -105,11 +108,15 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
 
   const handleJoinQuit = async () => {
     if (!user) {
+      // Store the current activity URL to redirect back after signup
+      localStorage.setItem("redirectAfterSignup", activityUrl);
       toast({
-        title: "Please sign in",
-        description: "You need to be signed in to join activities",
-        variant: "destructive",
+        title: "Sign up to join activities",
+        description:
+          "Create an account to join this activity and start your journey!",
+        variant: "default",
       });
+      navigate("/signup");
       return;
     }
 
@@ -523,14 +530,19 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
             <Button
               size="lg"
               onClick={handleJoinQuit}
-              disabled={isJoining || isLoading || isAdmin}
+              disabled={isJoining || isLoading || (user && isAdmin)}
               className={`flex-1 rounded-full shadow-md hover:shadow-lg transition-all duration-300 transform hover:translate-y-[-2px] ${
-                isParticipant
+                user && isParticipant
                   ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                  : "bg-gradient-to-r from-buddy-blue to-buddy-green hover:from-buddy-blue/90 hover:to-buddy-green/90"
+                  : "bg-gradient-to-r from-buddy-purple to-buddy-blue hover:from-buddy-purple/90 hover:to-buddy-blue/90"
               }`}
             >
-              {isParticipant ? (
+              {!user ? (
+                <>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign Up to Join
+                </>
+              ) : user && isParticipant ? (
                 <>
                   <UserMinus className="w-4 h-4 mr-2" />
                   {isJoining ? "Leaving..." : "Quit Activity"}
@@ -547,6 +559,7 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
               variant="outline"
               size="lg"
               className="flex-1 rounded-full border-buddy-gray-300 hover:bg-buddy-gray-50 transition-all duration-300 transform hover:translate-y-[-2px]"
+              onClick={() => navigate(`/activities/${id}`)}
             >
               Learn More
               <ChevronRight className="w-4 h-4 ml-2" />
