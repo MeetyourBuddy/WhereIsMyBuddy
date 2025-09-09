@@ -5,6 +5,7 @@ import {
   CheckInStats,
   CreateCheckInRequest,
 } from "@/services/api/checkin/checkin-service";
+import { BadgeService } from "@/services/api/badge/badge-service";
 import { toast } from "@/hooks/use-toast";
 
 interface CheckInState {
@@ -52,6 +53,9 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
       // Refresh stats to get updated streak and progress data
       const { fetchCheckInStats } = get();
       await fetchCheckInStats(data.activityId);
+
+      // Note: Badge checking is handled by the backend automatically
+      // The frontend will refresh badges when the component re-renders
 
       toast({
         title: "Check-in Complete! 🎉",

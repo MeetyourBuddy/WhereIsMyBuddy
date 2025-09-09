@@ -39,6 +39,8 @@ import EditActivityDialog from "@/components/activities/EditActivityDialog";
 import ShareActivityModal from "@/components/activities/ShareActivityModal";
 import BannerEditModal from "@/components/activities/BannerEditModal";
 import { useActivityStore } from "@/store/activity.store";
+import { useCheckInStore } from "@/store/checkin.store";
+import { useBadgeStore } from "@/store/badge.store";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -86,13 +88,53 @@ const ActivityPage = () => {
     updateActivity,
   } = useActivityStore();
 
+  const { fetchCheckInsByActivity, fetchCheckInStats, refreshActivityData } =
+    useCheckInStore();
+
+  const { fetchUserBadges } = useBadgeStore();
+
   useEffect(() => {
     if (!activityId) {
       navigate("/activities");
+      return;
     }
 
+    // Load activity data
     fetchActivityById(activityId);
-  }, [activityId, navigate, fetchActivityById]);
+
+    // Load check-in related data
+    const loadCheckInData = async () => {
+      try {
+        console.log("🔄 Loading check-in data for activity:", activityId);
+
+        // Load check-ins for the activity
+        await fetchCheckInsByActivity(activityId);
+
+        // Load check-in stats for the current user
+        await fetchCheckInStats(activityId);
+
+        // Load user badges for this activity
+        await fetchUserBadges(activityId);
+
+        // Refresh activity data to get updated stats
+        await refreshActivityData(activityId);
+
+        console.log("✅ Check-in data loaded successfully");
+      } catch (error) {
+        console.error("❌ Failed to load check-in data:", error);
+      }
+    };
+
+    loadCheckInData();
+  }, [
+    activityId,
+    navigate,
+    fetchActivityById,
+    fetchCheckInsByActivity,
+    fetchCheckInStats,
+    fetchUserBadges,
+    refreshActivityData,
+  ]);
 
   if (isLoadingActivities || isLoading) {
     return <div>Loading...</div>;
@@ -129,7 +171,7 @@ const ActivityPage = () => {
     totalDays: currentActivity.totalDays || 0,
     daysCompleted: currentActivity.daysCompleted || 0,
     admin: currentActivity.admin,
-    id: currentActivity.id,
+    id: currentActivity._id || currentActivity.id,
   };
 
   // Add debug log
@@ -174,33 +216,54 @@ const ActivityPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-buddy-purple/5 via-white to-buddy-blue/5 relative">
       <div className="absolute inset-0 z-[-10] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5MzUxRTkiIGZpbGwtb3BhY2l0eT0iMC4wMSI+PHBhdGggZD0iTTM2IDM0aDN2M2gtM3Ztf00zMCAzaDN2M2gtM3pNMTcgMTdoM3YzaC0zek0zNiAxN2gzdjNoLTN6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
-
       <div className="relative mb-8">
         <div className="absolute inset-0 z-[-10] bg-gradient-to-r from-buddy-purple/70 to-buddy-blue/70 mix-blend-multiply" />
         <div
-          className="relative h-64 md:h-80 w-full bg-cover bg-center"
+          className="relative h-64 md:h-80 w-full bg-cover bg-center z-[1]"
           style={{ backgroundImage: `url(${displayData.bannerImage})` }}
         >
-          <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-            <Badge
-              className="py-1 px-3"
-              variant={variant as VariantProps<typeof badgeVariants>["variant"]}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70 z-[-1]"></div>
+          <div className="mx-auto absolute top-4 right-0 flex items-center justify-between md:px-8 lg:px-12 w-full max-w-7xl z-10">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/activities")}
+              className="shadow-lg rounded-full bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
             >
-              {label}
-            </Badge>
-            {isUserAdmin && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsBannerEditModalOpen(true)}
-                className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
-                title="Edit banner"
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <div className="flex items-center gap-2">
+              <Badge
+                className="py-1 px-3"
+                variant={
+                  variant as VariantProps<typeof badgeVariants>["variant"]
+                }
               >
-                <Edit3 className="h-4 w-4" />
+                {label}
+              </Badge>
+              {isUserAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsBannerEditModalOpen(true)}
+                  className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
+                  title="Edit banner"
+                >
+                  <Edit3 className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsShareModalOpen(true)}
+                className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
+                title="Share"
+              >
+                <Share2 className="h-4 w-4" />
               </Button>
-            )}
+            </div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30"></div>
+
           <div className="flex items-end h-full pb-8 px-4 md:px-8 lg:px-12 w-full max-w-7xl mx-auto">
             <div className="w-full text-white">
               <div className="flex flex-col md:flex-row md:justify-between md:items-end">
@@ -219,29 +282,11 @@ const ActivityPage = () => {
                   <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shadow-lg">
                     {displayData.name}
                   </h1>
-                  <p className="max-w-3xl text-white text-shadow-lg text-sm md:text-base">
+                  <p className="max-w-3xl text-white text-shadow-lg text-sm md:text-base line-clamp-3">
                     {displayData.description}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-4 md:mt-0 z-[10]">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/activities")}
-                    className="shadow-lg rounded-full bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsShareModalOpen(true)}
-                    className="shadow-lg rounded-full bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
-                  >
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
-                  </Button>
-
                   {isUserParticipant && (
                     <CheckInDialog
                       activity={currentActivity}
@@ -433,12 +478,7 @@ const ActivityPage = () => {
               </TabsContent> */}
 
             <TabsContent value="checkin" className="p-0 mt-0 animate-fade-in">
-              <ActivityCheckin
-                activityId={displayData.id}
-                streakCount={displayData.streakCount}
-                totalDays={displayData.totalDays}
-                daysCompleted={displayData.daysCompleted}
-              />
+              <ActivityCheckin activityId={displayData.id} />
             </TabsContent>
 
             {/* TODO: Add partners tab in v2 */}

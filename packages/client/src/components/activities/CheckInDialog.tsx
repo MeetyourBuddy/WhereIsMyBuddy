@@ -33,6 +33,7 @@ import { Badge } from "../ui/badge";
 import ImageUpload from "../common/ImageUpload";
 import { IActivityResult } from "@/types/activity-types";
 import { useCheckInStore } from "@/store/checkin.store";
+import { useBadgeStore } from "@/store/badge.store";
 import { UploadService } from "@/services/api/upload/upload-service";
 
 interface CheckInDialogProps {
@@ -55,6 +56,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
 
   const { stats, createCheckIn, fetchCheckInStats, isLoading } =
     useCheckInStore();
+  const { fetchUserBadges } = useBadgeStore();
 
   // Note: Stats are now fetched by the parent component when needed
   // No automatic stats fetching when dialog opens
@@ -100,6 +102,17 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
     setIsSubmitting(true);
 
     try {
+      // Calculate proper scheduled date based on activity frequency
+      const getScheduledDate = (activity: IActivityResult) => {
+        const now = new Date();
+        const startDate = new Date(activity.startDate);
+
+        // For now, use current time as scheduled date
+        // TODO: Implement proper scheduling based on activity frequency
+        // This would consider checkinFrequency, checkinFrequencyUnit, checkinDays, etc.
+        return now.toISOString();
+      };
+
       // Prepare check-in data
       const checkInData = {
         activityId: activity._id,
@@ -107,7 +120,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         content: checkinType === "text" ? message : "Image check-in",
         imageUrl: checkinType === "image" ? uploadedImageUrl : undefined,
         fileId: checkinType === "image" ? uploadedImageId : undefined,
-        scheduledDate: new Date().toISOString(), // Use current time as scheduled date
+        scheduledDate: getScheduledDate(activity),
       };
 
       // Create check-in via API
@@ -120,8 +133,9 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         setUploadedImageUrl(null);
         setOpen(false);
 
-        // Refresh stats
+        // Refresh stats and badges
         await fetchCheckInStats(activity._id);
+        await fetchUserBadges(activity._id);
 
         if (onCheckInComplete) {
           onCheckInComplete();

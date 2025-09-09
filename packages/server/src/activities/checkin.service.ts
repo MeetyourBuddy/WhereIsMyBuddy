@@ -13,12 +13,14 @@ import {
   CheckInResponseDto,
   CheckInStatsDto,
 } from './dto/checkin-response.dto';
+import { BadgeService } from './badge.service';
 
 @Injectable()
 export class CheckInService {
   constructor(
     @InjectModel(CheckIn.name) private checkInModel: Model<CheckInDocument>,
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
+    private badgeService: BadgeService,
   ) {}
 
   async createCheckIn(
@@ -44,19 +46,28 @@ export class CheckInService {
       );
     }
 
-    // Check if user already checked in for this scheduled date
+    // Calculate the requested check-in period based on activity frequency
+    const requestedPeriod = this.calculateCheckInPeriod(
+      activity,
+      new Date(scheduledDate),
+    );
+
+    // Check if user already checked in for this check-in period
     const existingCheckIn = await this.checkInModel
       .findOne({
         activity: activityId,
         user: userId,
-        scheduledDate: new Date(scheduledDate),
+        scheduledDate: {
+          $gte: requestedPeriod.start,
+          $lt: requestedPeriod.end,
+        },
         isDeleted: false,
       })
       .exec();
 
     if (existingCheckIn) {
       throw new BadRequestException(
-        'You have already checked in for this scheduled date',
+        'You have already checked in for this check-in period',
       );
     }
 
@@ -81,6 +92,20 @@ export class CheckInService {
     });
 
     const savedCheckIn = await checkIn.save();
+
+    // Update activity check-ins count
+    await this.activityModel.findByIdAndUpdate(activityId, {
+      $inc: { checkins: 1 },
+    });
+
+    // Check and award badges
+    try {
+      await this.badgeService.checkAndAwardBadges(userId, activityId);
+    } catch (error) {
+      console.error('Error awarding badges:', error);
+      // Don't fail the check-in if badge awarding fails
+    }
+
     return this.populateCheckIn(savedCheckIn._id.toString(), userId);
   }
 
@@ -104,8 +129,8 @@ export class CheckInService {
 
     return checkIns.map((checkIn) => ({
       ...checkIn,
-      hasUserLiked:
-        checkIn.likedBy?.some((id) => id.toString() === userId) || false,
+      // Note: hasUserLiked is now handled by the ReactionService
+      hasUserLiked: false, // This will be populated by the frontend using reaction data
     })) as unknown as CheckInResponseDto[];
   }
 
@@ -131,8 +156,8 @@ export class CheckInService {
 
     return checkIns.map((checkIn) => ({
       ...checkIn,
-      hasUserLiked:
-        checkIn.likedBy?.some((id) => id.toString() === userId) || false,
+      // Note: hasUserLiked is now handled by the ReactionService
+      hasUserLiked: false, // This will be populated by the frontend using reaction data
     })) as unknown as CheckInResponseDto[];
   }
 
@@ -156,41 +181,21 @@ export class CheckInService {
 
     return {
       ...checkIn,
-      hasUserLiked:
-        checkIn.likedBy?.some((id) => id.toString() === userId) || false,
+      // Note: hasUserLiked is now handled by the ReactionService
+      hasUserLiked: false, // This will be populated by the frontend using reaction data
     } as unknown as CheckInResponseDto;
   }
 
+  // Note: Like functionality has been moved to the ReactionService
+  // This method is kept for backward compatibility but should be deprecated
   async toggleLike(
     checkInId: string,
     userId: string,
   ): Promise<CheckInResponseDto> {
-    if (!Types.ObjectId.isValid(checkInId)) {
-      throw new BadRequestException('Invalid check-in ID');
-    }
-
-    const checkIn = await this.checkInModel.findById(checkInId).exec();
-    if (!checkIn || checkIn.isDeleted) {
-      throw new NotFoundException('Check-in not found');
-    }
-
-    const userObjectId = new Types.ObjectId(userId);
-    const hasLiked = checkIn.likedBy.includes(userObjectId);
-
-    if (hasLiked) {
-      // Remove like
-      checkIn.likedBy = checkIn.likedBy.filter(
-        (id) => id.toString() !== userId,
-      );
-      checkIn.likes = Math.max(0, checkIn.likes - 1);
-    } else {
-      // Add like
-      checkIn.likedBy.push(userObjectId);
-      checkIn.likes += 1;
-    }
-
-    await checkIn.save();
-    return this.populateCheckIn(checkInId, userId);
+    // This method is deprecated - use ReactionService instead
+    throw new BadRequestException(
+      'Use the reaction system instead of toggleLike',
+    );
   }
 
   async deleteCheckIn(checkInId: string, userId: string): Promise<void> {
@@ -211,6 +216,90 @@ export class CheckInService {
     checkIn.isDeleted = true;
     checkIn.deletedAt = new Date();
     await checkIn.save();
+  }
+
+  async getActivityStreak(activityId: string): Promise<number> {
+    // Get activity to understand the check-in frequency
+    const activity = await this.activityModel.findById(activityId).exec();
+    if (!activity) return 0;
+
+    const checkIns = await this.checkInModel
+      .find({
+        activity: activityId,
+        isDeleted: false,
+      })
+      .sort({ checkInDate: 1 })
+      .lean()
+      .exec();
+
+    if (checkIns.length === 0) return 0;
+
+    // Group check-ins by check-in period
+    const checkInsByPeriod = new Map<string, any[]>();
+    checkIns.forEach((checkIn) => {
+      const period = this.calculateCheckInPeriod(
+        activity,
+        new Date(checkIn.checkInDate),
+      );
+      const periodKey = period.start.toISOString();
+      if (!checkInsByPeriod.has(periodKey)) {
+        checkInsByPeriod.set(periodKey, []);
+      }
+      checkInsByPeriod.get(periodKey)!.push(checkIn);
+    });
+
+    // Calculate current streak from the most recent period
+    const sortedPeriods = Array.from(checkInsByPeriod.keys()).sort(
+      (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+    );
+
+    let currentStreak = 0;
+    const now = new Date();
+    const currentPeriod = this.calculateCheckInPeriod(activity, now);
+
+    for (let i = 0; i < sortedPeriods.length; i++) {
+      const periodStart = new Date(sortedPeriods[i]);
+      const expectedPeriod = this.calculateCheckInPeriod(activity, periodStart);
+
+      // Check if this period is consecutive with the previous one
+      if (i === 0) {
+        // For the most recent period, check if it's the current or previous period
+        const timeDiff = Math.abs(
+          currentPeriod.start.getTime() - expectedPeriod.start.getTime(),
+        );
+        const periodDuration =
+          currentPeriod.end.getTime() - currentPeriod.start.getTime();
+
+        if (timeDiff <= periodDuration * 2) {
+          // Allow for current or previous period
+          currentStreak++;
+        } else {
+          break;
+        }
+      } else {
+        // For other periods, check if they are consecutive
+        const prevPeriodStart = new Date(sortedPeriods[i - 1]);
+        const prevExpectedPeriod = this.calculateCheckInPeriod(
+          activity,
+          prevPeriodStart,
+        );
+        const periodDuration =
+          expectedPeriod.end.getTime() - expectedPeriod.start.getTime();
+
+        const timeDiff = Math.abs(
+          prevExpectedPeriod.start.getTime() - expectedPeriod.start.getTime(),
+        );
+
+        if (timeDiff <= periodDuration * 1.5) {
+          // Allow for consecutive periods
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    return currentStreak;
   }
 
   async getCheckInStats(
@@ -317,8 +406,8 @@ export class CheckInService {
 
     return {
       ...checkIn,
-      hasUserLiked:
-        checkIn.likedBy?.some((id) => id.toString() === userId) || false,
+      // Note: hasUserLiked is now handled by the ReactionService
+      hasUserLiked: false, // This will be populated by the frontend using reaction data
     } as unknown as CheckInResponseDto;
   }
 
@@ -340,5 +429,199 @@ export class CheckInService {
     // This would need to be implemented based on activity's check-in frequency
     // For now, return undefined
     return undefined;
+  }
+
+  private calculateCheckInPeriod(
+    activity: any,
+    date: Date,
+  ): { start: Date; end: Date } {
+    const { checkinFrequency, checkinFrequencyUnit, startDate } = activity;
+    const activityStart = new Date(startDate);
+
+    // Calculate the period based on frequency unit
+    let periodDuration: number;
+    switch (checkinFrequencyUnit) {
+      case 'daily':
+        periodDuration = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+        break;
+      case 'weekly':
+        periodDuration = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+        break;
+      case 'monthly':
+        periodDuration = 30 * 24 * 60 * 60 * 1000; // 1 month in milliseconds
+        break;
+      default:
+        periodDuration = 24 * 60 * 60 * 1000; // Default to daily
+    }
+
+    // Calculate how many periods have passed since activity start
+    const timeSinceStart = date.getTime() - activityStart.getTime();
+    const periodsPassed = Math.floor(
+      timeSinceStart / (periodDuration * checkinFrequency),
+    );
+
+    // Calculate the start and end of the current period
+    const periodStart = new Date(
+      activityStart.getTime() +
+        periodsPassed * periodDuration * checkinFrequency,
+    );
+    const periodEnd = new Date(
+      periodStart.getTime() + periodDuration * checkinFrequency,
+    );
+
+    return { start: periodStart, end: periodEnd };
+  }
+
+  async hasUserCheckedInForCurrentPeriod(
+    activityId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const activity = await this.activityModel.findById(activityId).exec();
+    if (!activity) return false;
+
+    const currentPeriod = this.calculateCheckInPeriod(activity, new Date());
+
+    const existingCheckIn = await this.checkInModel
+      .findOne({
+        activity: activityId,
+        user: userId,
+        scheduledDate: {
+          $gte: currentPeriod.start,
+          $lt: currentPeriod.end,
+        },
+        isDeleted: false,
+      })
+      .exec();
+
+    return !!existingCheckIn;
+  }
+
+  async getUserProgress(
+    activityId: string,
+    userId: string,
+  ): Promise<{
+    progress: number;
+    completedCheckIns: number;
+    totalAvailableCheckIns: number;
+  }> {
+    const activity = await this.activityModel.findById(activityId).exec();
+    if (!activity) {
+      console.log('❌ Activity not found:', activityId);
+      return { progress: 0, completedCheckIns: 0, totalAvailableCheckIns: 0 };
+    }
+
+    // Debug activity data
+    console.log('🔍 Activity data:', {
+      id: activity._id,
+      title: activity.title,
+      proposedDuration: activity.proposedDuration,
+      startDate: activity.startDate,
+      endDate: activity.endDate,
+      checkinFrequency: activity.checkinFrequency,
+      checkinFrequencyUnit: activity.checkinFrequencyUnit,
+    });
+
+    // Count user's completed check-ins
+    const completedCheckIns = await this.checkInModel.countDocuments({
+      user: userId,
+      activity: activityId,
+      isDeleted: false,
+    });
+
+    console.log('📊 User check-ins count:', completedCheckIns);
+
+    // Calculate total available check-ins based on activity duration and frequency
+    const totalAvailableCheckIns =
+      this.calculateTotalAvailableCheckIns(activity);
+
+    console.log('📈 Total available check-ins:', totalAvailableCheckIns);
+
+    // Calculate progress percentage
+    const progress =
+      totalAvailableCheckIns > 0
+        ? Math.round((completedCheckIns / totalAvailableCheckIns) * 100)
+        : 0;
+
+    console.log('🎯 Final progress calculation:', {
+      completedCheckIns,
+      totalAvailableCheckIns,
+      progress,
+    });
+
+    return { progress, completedCheckIns, totalAvailableCheckIns };
+  }
+
+  private calculateTotalAvailableCheckIns(activity: any): number {
+    console.log('🔧 calculateTotalAvailableCheckIns called with:', {
+      proposedDuration: activity.proposedDuration,
+      checkinFrequency: activity.checkinFrequency,
+      checkinFrequencyUnit: activity.checkinFrequencyUnit,
+      startDate: activity.startDate,
+      endDate: activity.endDate,
+    });
+
+    if (
+      !activity.proposedDuration ||
+      !activity.checkinFrequency ||
+      !activity.checkinFrequencyUnit
+    ) {
+      console.log('❌ Missing required fields for calculation');
+      return 0;
+    }
+
+    const startDate = new Date(activity.startDate);
+    const endDate = activity.endDate
+      ? new Date(activity.endDate)
+      : new Date(
+          startDate.getTime() +
+            activity.proposedDuration * 30 * 24 * 60 * 60 * 1000,
+        ); // Convert months to milliseconds
+
+    const totalDuration = endDate.getTime() - startDate.getTime();
+
+    console.log('📅 Date calculations:', {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      totalDurationMs: totalDuration,
+      totalDurationDays: totalDuration / (24 * 60 * 60 * 1000),
+    });
+
+    // Calculate period duration based on frequency unit
+    let periodDuration: number;
+    switch (activity.checkinFrequencyUnit) {
+      case 'daily':
+        periodDuration = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+        break;
+      case 'weekly':
+        periodDuration = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+        break;
+      case 'monthly':
+        periodDuration = 30 * 24 * 60 * 60 * 1000; // 1 month in milliseconds
+        break;
+      default:
+        periodDuration = 24 * 60 * 60 * 1000; // Default to daily
+    }
+
+    console.log('⏰ Period calculations:', {
+      periodDurationMs: periodDuration,
+      periodDurationDays: periodDuration / (24 * 60 * 60 * 1000),
+      checkinFrequency: activity.checkinFrequency,
+      frequencyUnit: activity.checkinFrequencyUnit,
+    });
+
+    // Calculate total number of check-in periods
+    const totalPeriods = Math.floor(
+      totalDuration / (periodDuration * activity.checkinFrequency),
+    );
+
+    console.log('🎯 Final calculation:', {
+      totalDuration,
+      periodDuration,
+      checkinFrequency: activity.checkinFrequency,
+      division: totalDuration / (periodDuration * activity.checkinFrequency),
+      totalPeriods,
+    });
+
+    return totalPeriods;
   }
 }
