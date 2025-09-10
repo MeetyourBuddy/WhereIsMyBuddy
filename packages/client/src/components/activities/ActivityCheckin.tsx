@@ -45,7 +45,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
     "🎯 ActivityCheckin component rendered with activityId:",
     activityId
   );
-  alert("ActivityCheckin component called with activityId: " + activityId);
+  // alert("ActivityCheckin component called with activityId: " + activityId);
   try {
     const { fetchActivityById, currentActivity } = useActivityStore();
     const { user } = useAuth();

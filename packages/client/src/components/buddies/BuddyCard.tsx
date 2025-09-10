@@ -1,10 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/common/Card";
 import Avatar from "@/components/common/Avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, UserPlus, MessageCircle } from "lucide-react";
+import {
+  MapPin,
+  UserPlus,
+  MessageCircle,
+  Check,
+  X,
+  Clock,
+  Users,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useBuddyConnectionStore } from "@/store/buddy-connection.store";
+import { useAuth } from "@/store/auth.store";
+import { useToast } from "@/hooks/use-toast";
 
 interface BuddyCardProps {
   id: string;
@@ -16,6 +27,7 @@ interface BuddyCardProps {
   mutualActivities?: number;
   mutualBuddies?: number;
   status?: "online" | "offline" | "away";
+  isRealUser?: boolean; // Flag to indicate if this is a real user or mock data
 }
 
 const BuddyCard = ({
@@ -28,17 +40,223 @@ const BuddyCard = ({
   mutualActivities = 0,
   mutualBuddies = 0,
   status = "offline",
+  isRealUser = false,
 }: BuddyCardProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const {
+    connectionStatuses,
+    checkConnectionStatus,
+    sendBuddyRequest,
+    respondToBuddyRequest,
+    isLoading,
+  } = useBuddyConnectionStore();
+
+  const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
+  const [connectionId, setConnectionId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Check connection status when component mounts or user changes
+  useEffect(() => {
+    if (isRealUser && user?._id && user._id !== id) {
+      checkConnectionStatus(id);
+    }
+  }, [isRealUser, user?._id, id, checkConnectionStatus]);
+
+  // Update local state when connection status changes
+  useEffect(() => {
+    const status = connectionStatuses[id];
+    if (status) {
+      setConnectionStatus(status.status);
+      setConnectionId(status.connectionId || null);
+    }
+  }, [connectionStatuses, id]);
 
   const handleCardClick = () => {
     navigate(`/profile/${id}`, { state: { fromApp: true } });
   };
 
-  const handleButtonClick = (e: React.MouseEvent, action: string) => {
+  const handleSendRequest = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`${action} for buddy: ${name}`);
-    // Implement the action logic here
+    if (!isRealUser || !user?._id || user._id === id) return;
+
+    setIsProcessing(true);
+    try {
+      await sendBuddyRequest({
+        recipientId: id,
+        message: `Hi ${name}! I'd like to connect with you on BuddyFinder.`,
+      });
+      toast({
+        title: "Buddy request sent!",
+        description: `Your request has been sent to ${name}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to send request",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAcceptRequest = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!connectionId) return;
+
+    setIsProcessing(true);
+    try {
+      await respondToBuddyRequest(connectionId, { status: "accepted" });
+      toast({
+        title: "Request accepted!",
+        description: `You're now connected with ${name}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to accept request",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeclineRequest = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!connectionId) return;
+
+    setIsProcessing(true);
+    try {
+      await respondToBuddyRequest(connectionId, { status: "declined" });
+      toast({
+        title: "Request declined",
+        description: `You've declined ${name}'s request.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to decline request",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const getConnectionButton = () => {
+    if (!isRealUser || !user?._id || user._id === id) {
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 rounded-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MessageCircle className="w-4 h-4" />
+          Message
+        </Button>
+      );
+    }
+
+    switch (connectionStatus) {
+      case "accepted":
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 rounded-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Message
+          </Button>
+        );
+      case "pending":
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 rounded-full"
+            disabled
+          >
+            <Clock className="w-4 h-4" />
+            Pending
+          </Button>
+        );
+      case "declined":
+        return (
+          <Button
+            variant="default"
+            size="sm"
+            className="flex-1 rounded-full"
+            onClick={handleSendRequest}
+            disabled={isProcessing || isLoading}
+          >
+            <UserPlus className="w-4 h-4" />
+            {isProcessing ? "Sending..." : "Add Buddy"}
+          </Button>
+        );
+      default:
+        return (
+          <Button
+            variant="default"
+            size="sm"
+            className="flex-1 rounded-full"
+            onClick={handleSendRequest}
+            disabled={isProcessing || isLoading}
+          >
+            <UserPlus className="w-4 h-4" />
+            {isProcessing ? "Sending..." : "Add Buddy"}
+          </Button>
+        );
+    }
+  };
+
+  const getActionButton = () => {
+    if (!isRealUser || !user?._id || user._id === id) {
+      return (
+        <Button
+          variant="default"
+          size="sm"
+          className="flex-1 rounded-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <UserPlus className="w-4 h-4" />
+          Add Buddy
+        </Button>
+      );
+    }
+
+    // Check if this is a received request
+    if (connectionStatus === "pending" && connectionId) {
+      return (
+        <div className="flex space-x-1">
+          <Button
+            variant="default"
+            size="sm"
+            className="flex-1 rounded-full bg-green-500 hover:bg-green-600"
+            onClick={handleAcceptRequest}
+            disabled={isProcessing}
+          >
+            <Check className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 rounded-full"
+            onClick={handleDeclineRequest}
+            disabled={isProcessing}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      );
+    }
+
+    return getConnectionButton();
   };
 
   return (
@@ -98,24 +316,8 @@ const BuddyCard = ({
         </div>
 
         <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 rounded-full"
-            onClick={(e) => handleButtonClick(e, "message")}
-          >
-            <MessageCircle className="w-4 h-4" />
-            Message
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="flex-1 rounded-full"
-            onClick={(e) => handleButtonClick(e, "add buddy")}
-          >
-            <UserPlus className="w-4 h-4" />
-            Add Buddy
-          </Button>
+          {getConnectionButton()}
+          {getActionButton()}
         </div>
       </Card.Content>
     </Card>

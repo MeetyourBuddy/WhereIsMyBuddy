@@ -150,7 +150,7 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
       <div className="space-y-5">
         {/* Description */}
         <div>
-          <p className="text-sm text-buddy-gray-600 leading-relaxed">
+          <p className="text-sm text-buddy-gray-600 leading-relaxed text-justify">
             {description}
           </p>
         </div>

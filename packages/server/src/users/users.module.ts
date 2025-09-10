@@ -6,6 +6,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { User, UserSchema } from './schemas/user.schema';
+import {
+  BuddyConnection,
+  BuddyConnectionSchema,
+} from './schemas/buddy-connection.schema';
+import { BuddyConnectionController } from './controllers/buddy-connection.controller';
+import { BuddyConnectionService } from './services/buddy-connection.service';
 
 // Auth imports
 import { AuthController } from './auth/auth.controller';
@@ -19,7 +25,10 @@ import { GoogleStrategy } from './auth/strategies/google.strategy';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: BuddyConnection.name, schema: BuddyConnectionSchema },
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService) => ({
@@ -31,14 +40,15 @@ import { GoogleStrategy } from './auth/strategies/google.strategy';
       inject: [ConfigService],
     }),
   ],
-  controllers: [UsersController, AuthController],
+  controllers: [UsersController, AuthController, BuddyConnectionController],
   providers: [
     UsersService,
     AuthService,
+    BuddyConnectionService,
     JwtStrategy,
     RefreshTokenStrategy,
     GoogleStrategy,
   ],
-  exports: [UsersService, AuthService],
+  exports: [UsersService, AuthService, BuddyConnectionService],
 })
 export class UsersModule {}

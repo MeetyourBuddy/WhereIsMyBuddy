@@ -26,6 +26,11 @@ class UserService {
 
     return response.data;
   }
+
+  async getUserById(id: string): Promise<UserResponse> {
+    const response = await axiosInstance.get<UserResponse>(`/users/${id}`);
+    return response.data;
+  }
 }
 
 export const userService = new UserService();

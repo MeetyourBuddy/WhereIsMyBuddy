@@ -3,7 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowRight, Upload, Check, X, UserRound } from "lucide-react";
+import {
+  ArrowRight,
+  Upload,
+  Check,
+  X,
+  UserRound,
+  Sparkles,
+  Camera,
+  Palette,
+  Star,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
@@ -96,89 +106,160 @@ const ProfileCompletion = () => {
     <OnboardingLayout
       currentStep={3}
       totalSteps={3}
-      title="Complete your onboarding"
-      description="Let others get to know you better"
+      title="Let's finish your amazing profile! 🎨"
+      description="Add the final touches to make your profile shine and attract awesome buddies"
       onBack={() => navigate("/onboarding/interests")}
     >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="selectedAvatar"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Choose your avatar</FormLabel>
-                  <FormDescription>
-                    Select a 3D avatar that represents you
-                  </FormDescription>
-                  <div className="flex flex-col items-center space-y-4">
-                    <Avatar className="w-24 h-24">
-                      <AvatarImage
-                        src={selectedAvatar || avatarOptions[0].url}
-                        alt="Selected Avatar"
-                      />
-                      <AvatarFallback>
-                        <UserRound className="h-12 w-12" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline">Select Avatar</Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {avatarOptions.map((avatar) => (
-                          <DropdownMenuItem
-                            key={avatar.id}
-                            onClick={() =>
-                              handleSelectAvatar(avatar.id, avatar.url)
-                            }
-                          >
-                            <Avatar className="w-8 h-8 mr-2">
-                              <AvatarImage
-                                src={avatar.url}
-                                alt={avatar.label}
-                              />
-                            </Avatar>
-                            {avatar.label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio (Optional)</FormLabel>
-                  <FormDescription>
-                    Tell others about yourself and what kinds of activities you
-                    enjoy
-                  </FormDescription>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="I'm passionate about finding new activities and meeting people with similar interests..."
-                      className="min-h-[100px]"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <div className="space-y-6">
+        {/* Progress indicator */}
+        <div className="bg-gradient-to-r from-buddy-orange/10 to-buddy-purple/10 p-4 rounded-2xl border border-buddy-orange/20">
+          <div className="flex items-center space-x-3">
+            <div className="bg-gradient-to-br from-buddy-orange to-buddy-orange/80 rounded-full p-2">
+              <Palette className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-buddy-gray-900">
+                Step 3: Profile Completion
+              </p>
+              <p className="text-sm text-buddy-gray-600">
+                Add your personal touch to complete your profile
+              </p>
+            </div>
           </div>
+        </div>
 
-          <Button type="submit" className="w-full" size="lg">
-            Complete Setup <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </form>
-      </Form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="selectedAvatar"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-buddy-gray-900 font-semibold flex items-center space-x-2">
+                      <Camera className="h-4 w-4 text-buddy-purple" />
+                      <span>Choose your perfect avatar</span>
+                    </FormLabel>
+                    <FormDescription className="text-buddy-gray-600">
+                      🎭 Pick an avatar that represents your personality and
+                      style
+                    </FormDescription>
+                    <div className="flex flex-col items-center space-y-6">
+                      <div className="relative">
+                        <Avatar className="w-32 h-32 ring-4 ring-buddy-purple/20 shadow-lg">
+                          <AvatarImage
+                            src={selectedAvatar || avatarOptions[0].url}
+                            alt="Selected Avatar"
+                            className="object-cover"
+                          />
+                          <AvatarFallback className="bg-gradient-to-br from-buddy-purple to-buddy-orange text-white text-2xl font-bold">
+                            <UserRound className="h-16 w-16" />
+                          </AvatarFallback>
+                        </Avatar>
+                        {selectedAvatar && (
+                          <div className="absolute -top-2 -right-2 w-8 h-8 bg-buddy-green rounded-full flex items-center justify-center">
+                            <Check className="h-5 w-5 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="rounded-full border-2 border-buddy-purple/20 hover:border-buddy-purple transition-colors px-6 py-3"
+                          >
+                            <Camera className="h-4 w-4 mr-2" />
+                            Select Avatar
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="rounded-2xl border-2 border-buddy-purple/20 p-2">
+                          {avatarOptions.map((avatar) => (
+                            <DropdownMenuItem
+                              key={avatar.id}
+                              onClick={() =>
+                                handleSelectAvatar(avatar.id, avatar.url)
+                              }
+                              className="rounded-xl p-3 hover:bg-buddy-purple/10"
+                            >
+                              <Avatar className="w-10 h-10 mr-3 ring-2 ring-buddy-purple/20">
+                                <AvatarImage
+                                  src={avatar.url}
+                                  alt={avatar.label}
+                                  className="object-cover"
+                                />
+                                <AvatarFallback className="bg-buddy-purple text-white text-sm">
+                                  {avatar.label.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-semibold text-buddy-gray-900">
+                                  {avatar.label}
+                                </p>
+                                <p className="text-xs text-buddy-gray-500">
+                                  3D Avatar
+                                </p>
+                              </div>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-buddy-gray-900 font-semibold flex items-center space-x-2">
+                      <Star className="h-4 w-4 text-buddy-orange" />
+                      <span>Tell your story (Optional)</span>
+                    </FormLabel>
+                    <FormDescription className="text-buddy-gray-600">
+                      ✨ Share what makes you unique and what activities you
+                      love
+                    </FormDescription>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Hi! I'm passionate about exploring new activities and meeting amazing people. I love hiking, photography, and trying new cuisines. Looking forward to creating unforgettable memories with awesome buddies! 🌟"
+                        className="min-h-[120px] rounded-2xl border-2 border-buddy-orange/20 focus:border-buddy-orange transition-colors resize-none"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="pt-6 space-y-4">
+              <div className="bg-gradient-to-r from-buddy-green/10 to-buddy-blue/10 p-6 rounded-2xl border border-buddy-green/20">
+                <div className="text-center space-y-3">
+                  <h3 className="font-bold text-lg text-buddy-gray-900">
+                    You're Almost There!
+                  </h3>
+                  <p className="text-sm text-buddy-gray-600">
+                    Your amazing profile is ready to help you find incredible
+                    buddies and create unforgettable experiences!
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full rounded-full bg-gradient-to-r from-buddy-purple to-buddy-orange hover:from-buddy-purple/90 hover:to-buddy-orange/90 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                size="lg"
+              >
+                Complete My Profile & Start Exploring!{" "}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </OnboardingLayout>
   );
 };

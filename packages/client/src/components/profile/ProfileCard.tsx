@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Card } from "@/components/common/Card";
-import Avatar from "@/components/common/Avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -95,19 +95,23 @@ const ProfileCard = ({
           {/* Profile Avatar */}
           <div className="flex justify-between items-end mb-4">
             <div className="relative">
-              <Avatar
-                size="lg"
-                status="online"
-                src={image}
-                className="border-4 border-white rounded-full shadow-2xl transform group-hover:scale-110 transition-all duration-500"
-              />
+              <Avatar className="h-20 w-20 border-4 border-white rounded-full shadow-2xl transform group-hover:scale-110 transition-all duration-500">
+                <AvatarImage
+                  src={image}
+                  alt={name || "User avatar"}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-gradient-to-br from-buddy-purple to-buddy-orange text-white font-semibold text-xl">
+                  {name ? name.charAt(0).toUpperCase() : "U"}
+                </AvatarFallback>
+              </Avatar>
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-buddy-green to-buddy-blue rounded-full border-2 border-white flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
               </div>
             </div>
 
             <div className="flex space-x-2">
-              {showJoinButton ? (
+              {/* {showJoinButton ? (
                 <Button
                   size="sm"
                   className="rounded-2xl bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
@@ -115,20 +119,20 @@ const ProfileCard = ({
                   <UserPlus className="w-4 h-4 mr-2" />
                   Join Now
                 </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-2xl border-2 border-buddy-purple/30 hover:bg-buddy-purple/10 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Message
-                </Button>
-              )}
+              ) : ( */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-2xl border-2 border-buddy-purple/30 hover:bg-buddy-purple/30 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Message
+              </Button>
+              {/* )} */}
 
               <Button
                 size="sm"
-                className="rounded-2xl bg-gradient-to-r from-buddy-green to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
+                className="rounded-2xl bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Add Buddy

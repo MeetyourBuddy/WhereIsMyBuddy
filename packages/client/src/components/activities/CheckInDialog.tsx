@@ -153,7 +153,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl bg-white rounded-2xl border shadow-2xl p-6">
         {/* Motivational Header */}
-        <div className="bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden">
+        <div className="rounded-xl bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
 
@@ -235,7 +235,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
               <Button
                 variant={checkinType === "text" ? "default" : "outline"}
                 onClick={() => setCheckinType("text")}
-                className={`flex-1 ${
+                className={`flex-1 rounded-full ${
                   checkinType === "text"
                     ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
                     : "hover:border-buddy-purple/50"
@@ -247,7 +247,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
               <Button
                 variant={checkinType === "image" ? "default" : "outline"}
                 onClick={() => setCheckinType("image")}
-                className={`flex-1 ${
+                className={`flex-1 rounded-full ${
                   checkinType === "image"
                     ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
                     : "hover:border-buddy-purple/50"
@@ -328,7 +328,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
             <Button
               variant="outline"
               onClick={() => setOpen(false)}
-              className="flex-1"
+              className="flex-1 rounded-full"
               disabled={isSubmitting}
             >
               Maybe Later
@@ -340,7 +340,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
                 (checkinType === "text" && !message.trim()) ||
                 (checkinType === "image" && !uploadedImageId)
               }
-              className="flex-1 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              className="flex-1 bg-gradient-to-r rounded-full from-buddy-purple to-buddy-blue text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               {isSubmitting ? (
                 <>

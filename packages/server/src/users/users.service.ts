@@ -6,7 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
-import { UpdateUserDto, PaginationQueryDto } from './dto';
+import { UpdateUserDto, UserSearchQueryDto } from './dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { ServiceResponse } from './interfaces/common.interface';
 import { SanitizeUpdateDto } from './dto/sanitize-update.dto';
@@ -15,16 +15,46 @@ import { SanitizeUpdateDto } from './dto/sanitize-update.dto';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async findAll(query: PaginationQueryDto): Promise<ServiceResponse<User[]>> {
-    const { limit = 10, offset = 0 } = query;
+  async findAll(
+    query: UserSearchQueryDto,
+    currentUserId?: string,
+  ): Promise<ServiceResponse<User[]>> {
+    const { limit = 20, offset = 0, search, interests, country, city } = query;
+
+    // Build search query
+    const searchQuery: any = {};
+
+    // Exclude current user
+    if (currentUserId) {
+      searchQuery._id = { $ne: currentUserId };
+    }
+
+    // Text search
+    if (search) {
+      searchQuery.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { bio: { $regex: search, $options: 'i' } },
+        { interests: { $in: [new RegExp(search, 'i')] } },
+      ];
+    }
+
+    // Interest filter
+    if (interests && interests.length > 0) {
+      searchQuery.interests = { $in: interests };
+    }
+
+    // Location filters
+    if (country) searchQuery.country = country;
+    if (city) searchQuery.city = { $regex: city, $options: 'i' };
+
     const users = await this.userModel
-      .find()
+      .find(searchQuery)
       .select('-password -refreshToken')
       .skip(offset)
       .limit(limit)
       .exec();
 
-    const total = await this.userModel.countDocuments();
+    const total = await this.userModel.countDocuments(searchQuery);
 
     return {
       success: true,

@@ -44,7 +44,14 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
   bannerImage?: string;
-  avatar: string;
+  avatar?: string;
+  picture?: string; // For Google OAuth users
+  googleId?: string; // For Google OAuth users
+  lastLogin?: string;
+  lastLogout?: string;
+  lastTokenRefresh?: string;
+  age?: number;
+  dateOfBirth?: string;
 }
 
 export interface AuthResponse {

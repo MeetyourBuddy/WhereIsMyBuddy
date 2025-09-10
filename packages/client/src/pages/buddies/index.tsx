@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
@@ -27,141 +27,150 @@ import {
   Heart,
   CalendarDays,
   Clock,
-  User,
+  User as UserIcon,
 } from "lucide-react";
-import BuddyCard from "@/components/buddies/BuddyCard";
+import EnhancedBuddyCard from "@/components/buddies/EnhancedBuddyCard";
+import { useBuddyConnectionStore } from "@/store/buddy-connection.store";
+import { useAuth } from "@/store/auth.store";
+import { UserSearchParams } from "@/services/api/user/user-search.service";
+import { User } from "@/types/auth-types";
+
+// Type for buddy data from backend
+type BuddyUser = User;
+
+// Debounce utility
+const debounce = (func: Function, wait: number) => {
+  let timeout: NodeJS.Timeout;
+  return function executedFunction(...args: any[]) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
 
 const Buddies = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const { user } = useAuth();
+  const {
+    searchResults = [],
+    searchQuery = "",
+    searchFilters = {},
+    isLoadingSearch = false,
+    searchMetadata = null,
+    searchUsers,
+    setSearchQuery,
+    setSearchFilters,
+    clearSearch,
+  } = useBuddyConnectionStore();
+
+  const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8); // 2x4 grid
+  const [itemsPerPage] = useState(20); // 5x4 grid
 
-  const buddies = [
-    {
-      id: "b1",
-      name: "Riley Morgan",
-      image:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070",
-      interests: ["Fitness", "Reading", "Hiking"],
-      activeStreak: 7,
-      mutualActivities: 2,
-      mutualBuddies: 3,
-      bio: "Fitness enthusiast and bookworm. Looking for running buddies and people to discuss classic literature with.",
-      completedActivities: 24,
-      joinedDate: "3 months ago",
-      location: "New York, NY",
-      status: "online" as const,
-    },
-    {
-      id: "b2",
-      name: "Jordan Taylor",
-      image:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070",
-      interests: ["Coding", "Photography", "Gaming"],
-      activeStreak: 12,
-      mutualActivities: 1,
-      mutualBuddies: 2,
-      bio: "Software developer by day, photographer by night. Always looking to learn new programming languages and techniques.",
-      completedActivities: 37,
-      joinedDate: "6 months ago",
-      location: "San Francisco, CA",
-      status: "offline" as const,
-    },
-    {
-      id: "b3",
-      name: "Quinn Rivers",
-      image:
-        "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1961",
-      interests: ["Yoga", "Meditation", "Music"],
-      activeStreak: 5,
-      mutualActivities: 3,
-      mutualBuddies: 1,
-      bio: "Mindfulness coach and amateur musician. Passionate about helping others find balance in their lives.",
-      completedActivities: 19,
-      joinedDate: "2 months ago",
-      location: "Austin, TX",
-      status: "offline" as const,
-    },
-    {
-      id: "b4",
-      name: "Avery Chen",
-      image:
-        "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974",
-      interests: ["Dancing", "Cooking", "Languages"],
-      activeStreak: 9,
-      mutualActivities: 0,
-      mutualBuddies: 0,
-      bio: "Multilingual foodie who loves to dance. Looking for cooking partners and language exchange buddies.",
-      completedActivities: 28,
-      joinedDate: "4 months ago",
-      location: "Chicago, IL",
-      status: "offline" as const,
-    },
-    {
-      id: "b5",
-      name: "Morgan Kim",
-      image:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      interests: ["Photography", "Hiking", "Travel"],
-      activeStreak: 15,
-      mutualActivities: 1,
-      mutualBuddies: 4,
-      bio: "Nature photographer with a passion for outdoor adventures. Always planning my next hike or trip.",
-      completedActivities: 45,
-      joinedDate: "8 months ago",
-      location: "Denver, CO",
-      status: "offline" as const,
-    },
-    {
-      id: "b6",
-      name: "Taylor Lee",
-      image:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      interests: ["Art", "Writing", "Film"],
-      activeStreak: 3,
-      mutualActivities: 0,
-      mutualBuddies: 2,
-      bio: "Creative writer and film enthusiast. Looking for people to collaborate on creative projects.",
-      completedActivities: 12,
-      joinedDate: "1 month ago",
-      location: "Los Angeles, CA",
-      status: "offline" as const,
-    },
-    {
-      id: "b7",
-      name: "Casey Martinez",
-      image:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      interests: ["Fitness", "Nutrition", "Coaching"],
-      activeStreak: 21,
-      mutualActivities: 2,
-      mutualBuddies: 5,
-      bio: "Personal trainer and nutrition coach. Passionate about helping others achieve their fitness goals.",
-      completedActivities: 67,
-      joinedDate: "1 year ago",
-      location: "Miami, FL",
-      status: "offline" as const,
-    },
-    {
-      id: "b8",
-      name: "Alex Johnson",
-      image:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      interests: ["Coding", "Gaming", "Music Production"],
-      activeStreak: 6,
-      mutualActivities: 1,
-      mutualBuddies: 3,
-      bio: "Full-stack developer and amateur music producer. Looking for coding buddies and collaboration on music projects.",
-      completedActivities: 31,
-      joinedDate: "5 months ago",
-      location: "Seattle, WA",
-      status: "offline" as const,
-    },
-  ];
+  // Load initial data on component mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        console.log("Loading initial data...");
+        if (searchUsers) {
+          const result = await searchUsers({
+            limit: itemsPerPage,
+            offset: 0,
+          });
+          console.log("Initial data load result:", result);
+        } else {
+          console.log("searchUsers function not available");
+        }
+      } catch (error) {
+        console.error("Initial data load error:", error);
+      }
+    };
 
+    loadInitialData();
+  }, [searchUsers, itemsPerPage]);
+
+  // Debug effect to monitor searchResults changes
+  useEffect(() => {
+    console.log("searchResults changed:", searchResults);
+    console.log("searchResults length:", searchResults.length);
+    console.log("isLoadingSearch:", isLoadingSearch);
+  }, [searchResults, isLoadingSearch]);
+
+  // Test direct API call
+  useEffect(() => {
+    const testDirectAPI = async () => {
+      try {
+        console.log("Testing direct API call...");
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api"}/users?limit=10&offset=0`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const data = await response.json();
+        console.log("Direct API response:", data);
+      } catch (error) {
+        console.error("Direct API error:", error);
+      }
+    };
+
+    testDirectAPI();
+  }, []);
+
+  // Enhanced search handler with debounce
+  const handleSearch = useCallback(
+    debounce(async (query: string, filters: UserSearchParams) => {
+      try {
+        if (searchUsers) {
+          // Convert active filters to interests array
+          const interests = activeFilters.filter((filter) => filter !== "All");
+
+          await searchUsers({
+            search: query,
+            interests: interests.length > 0 ? interests : undefined,
+            ...filters,
+            limit: itemsPerPage,
+            offset: (currentPage - 1) * itemsPerPage,
+          });
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+        // Don't throw the error, just log it to prevent white screen
+      }
+    }, 300),
+    [searchUsers, currentPage, itemsPerPage, activeFilters]
+  );
+
+  // Handle search input changes
+  const handleSearchInputChange = (value: string) => {
+    try {
+      if (setSearchQuery) {
+        setSearchQuery(value);
+      }
+      if (value.trim()) {
+        handleSearch(value, searchFilters);
+      } else {
+        if (clearSearch) {
+          clearSearch();
+        }
+      }
+    } catch (error) {
+      console.error("Search input error:", error);
+      // Fallback to clearing search on error
+      if (clearSearch) {
+        clearSearch();
+      }
+    }
+  };
+
+  // Interest categories for filtering
   const interestCategories = [
     "All",
     "Fitness",
@@ -173,65 +182,188 @@ const Buddies = () => {
     "Hiking",
     "Cooking",
     "Languages",
+    "Gaming",
+    "Travel",
+    "Writing",
+    "Dancing",
+    "Meditation",
+    "Nutrition",
   ];
 
+  // Use real search results from backend
   const filteredBuddies = useMemo(() => {
-    return buddies.filter((buddy) => {
-      const matchesSearch =
-        buddy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        buddy.bio.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        buddy.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        buddy.interests.some((interest) =>
-          interest.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+    try {
+      // Debug logging
+      console.log("Search results:", searchResults);
+      console.log("Search results length:", searchResults.length);
+      console.log("Active filters:", activeFilters);
 
-      const matchesInterest =
-        activeFilters.length === 0 ||
-        activeFilters.includes("All") ||
-        buddy.interests.some((interest) => activeFilters.includes(interest));
+      // Filter search results based on active filters
+      if (searchResults.length === 0) {
+        console.log("No search results, returning empty array");
+        return [];
+      }
 
-      return matchesSearch && matchesInterest;
-    });
-  }, [searchQuery, activeFilters]);
+      const filtered = searchResults.filter((buddy) => {
+        // If no filters are active or "All" is selected, show all users
+        if (activeFilters.length === 0 || activeFilters.includes("All")) {
+          return true;
+        }
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredBuddies.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedBuddies = filteredBuddies.slice(startIndex, endIndex);
+        // Filter by interests if any are selected
+        const matchesInterest =
+          buddy.interestsCategories &&
+          buddy.interestsCategories.some((interest) =>
+            activeFilters.includes(interest.toString())
+          );
+
+        return matchesInterest;
+      });
+
+      console.log("Filtered buddies:", filtered);
+      return filtered;
+    } catch (error) {
+      console.error("Filter error:", error);
+      // Return empty array as fallback
+      return [];
+    }
+  }, [searchResults, activeFilters]);
+
+  // Pagination logic - use backend pagination
+  const totalPages = searchMetadata
+    ? Math.ceil(searchMetadata.total / itemsPerPage)
+    : 1;
+  const paginatedBuddies = filteredBuddies || [];
 
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, activeFilters]);
 
-  const toggleFilter = (filter: string) => {
-    if (filter === "All") {
-      setActiveFilters(["All"]);
-      return;
-    }
-
-    let newFilters = [...activeFilters];
-
-    newFilters = newFilters.filter((f) => f !== "All");
-
-    if (newFilters.includes(filter)) {
-      newFilters = newFilters.filter((f) => f !== filter);
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Trigger search with new page
+    if (searchQuery.trim()) {
+      handleSearch(searchQuery, searchFilters);
     } else {
-      newFilters.push(filter);
+      // Load users for new page
+      if (searchUsers) {
+        const interests = activeFilters.filter((f) => f !== "All");
+        searchUsers({
+          interests: interests.length > 0 ? interests : undefined,
+          limit: itemsPerPage,
+          offset: (page - 1) * itemsPerPage,
+        });
+      }
     }
+  };
 
-    if (newFilters.length === 0) {
-      newFilters = ["All"];
+  const toggleFilter = (filter: string) => {
+    try {
+      if (filter === "All") {
+        setActiveFilters(["All"]);
+        // Trigger search with no interest filters
+        if (searchQuery.trim()) {
+          handleSearch(searchQuery, searchFilters);
+        } else {
+          // Load all users if no search query
+          if (searchUsers) {
+            searchUsers({
+              limit: itemsPerPage,
+              offset: (currentPage - 1) * itemsPerPage,
+            });
+          }
+        }
+        return;
+      }
+
+      let newFilters = [...activeFilters];
+
+      newFilters = newFilters.filter((f) => f !== "All");
+
+      if (newFilters.includes(filter)) {
+        newFilters = newFilters.filter((f) => f !== filter);
+      } else {
+        newFilters.push(filter);
+      }
+
+      if (newFilters.length === 0) {
+        newFilters = ["All"];
+      }
+
+      setActiveFilters(newFilters);
+
+      // Trigger search with new filters
+      if (searchQuery.trim()) {
+        handleSearch(searchQuery, searchFilters);
+      } else {
+        // Load users with interest filters
+        if (searchUsers) {
+          const interests = newFilters.filter((f) => f !== "All");
+          searchUsers({
+            interests: interests.length > 0 ? interests : undefined,
+            limit: itemsPerPage,
+            offset: (currentPage - 1) * itemsPerPage,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Filter toggle error:", error);
+      // Fallback to "All" filter
+      setActiveFilters(["All"]);
     }
-
-    setActiveFilters(newFilters);
   };
 
   const clearFilters = () => {
-    setActiveFilters(["All"]);
-    setSearchQuery("");
+    try {
+      setActiveFilters(["All"]);
+      if (setSearchQuery) {
+        setSearchQuery("");
+      }
+      if (clearSearch) {
+        clearSearch();
+      }
+      // Load all users after clearing filters
+      if (searchUsers) {
+        searchUsers({
+          limit: itemsPerPage,
+          offset: 0,
+        });
+      }
+    } catch (error) {
+      console.error("Clear filters error:", error);
+      // Fallback to basic state reset
+      setActiveFilters(["All"]);
+      if (setSearchQuery) {
+        setSearchQuery("");
+      }
+    }
   };
+
+  // Show loading state
+  if (isLoadingSearch) {
+    return (
+      <div className="min-h-screen bg-buddy-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-buddy-purple border-t-transparent" />
+          <p className="text-buddy-gray-600">Searching for buddies...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Safety check to prevent crashes
+  if (!filteredBuddies || !Array.isArray(filteredBuddies)) {
+    console.error("filteredBuddies is not an array:", filteredBuddies);
+    return (
+      <div className="min-h-screen bg-buddy-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-buddy-gray-600">Loading buddies...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-buddy-gray-100">
@@ -254,7 +386,7 @@ const Buddies = () => {
                   placeholder="Search buddies by name, interests, or location..."
                   className="pl-10 bg-white rounded-full"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
                 />
               </div>
 
@@ -344,18 +476,11 @@ const Buddies = () => {
             {filteredBuddies.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {paginatedBuddies.map((buddy) => (
-                    <BuddyCard
-                      key={buddy.id}
-                      id={buddy.id}
-                      name={buddy.name}
-                      image={buddy.image}
-                      location={buddy.location}
-                      bio={buddy.bio}
-                      interests={buddy.interests}
-                      mutualActivities={buddy.mutualActivities}
-                      mutualBuddies={buddy.mutualBuddies || 0}
-                      status={buddy.status}
+                  {paginatedBuddies.map((buddy, index) => (
+                    <EnhancedBuddyCard
+                      key={buddy._id || buddy.id || `buddy-${index}`}
+                      user={buddy}
+                      isRealUser={searchResults.length > 0}
                     />
                   ))}
                 </div>
@@ -365,8 +490,8 @@ const Buddies = () => {
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                      totalItems={filteredBuddies.length}
+                      onPageChange={handlePageChange}
+                      totalItems={searchMetadata?.total || 0}
                       itemsPerPage={itemsPerPage}
                     />
                   </div>
@@ -394,82 +519,81 @@ const Buddies = () => {
 
           <TabsContent value="my">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {buddies
-                .filter((buddy) => buddy.mutualActivities > 0)
-                .map((buddy) => (
-                  <BuddyCard
-                    key={buddy.id}
-                    id={buddy.id}
-                    name={buddy.name}
-                    image={buddy.image}
-                    location={buddy.location}
-                    bio={buddy.bio}
-                    interests={buddy.interests}
-                    mutualActivities={buddy.mutualActivities}
-                    mutualBuddies={buddy.mutualBuddies || 0}
-                    status={buddy.status}
+              {filteredBuddies.length > 0 ? (
+                filteredBuddies.map((buddy, index) => (
+                  <EnhancedBuddyCard
+                    key={buddy._id || `my-buddy-${index}`}
+                    user={buddy}
+                    isRealUser={true}
                   />
-                ))}
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-buddy-gray-600">No buddies found</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="recommended">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {buddies.slice(0, 4).map((buddy) => (
-                <BuddyCard
-                  key={buddy.id}
-                  id={buddy.id}
-                  name={buddy.name}
-                  image={buddy.image}
-                  location={buddy.location}
-                  bio={buddy.bio}
-                  interests={buddy.interests}
-                  mutualActivities={buddy.mutualActivities}
-                  mutualBuddies={buddy.mutualBuddies || 0}
-                  status={buddy.status || "offline"}
-                />
-              ))}
+              {filteredBuddies.length > 0 ? (
+                filteredBuddies
+                  .slice(0, 4)
+                  .map((buddy, index) => (
+                    <EnhancedBuddyCard
+                      key={buddy._id || `recommended-${index}`}
+                      user={buddy}
+                      isRealUser={true}
+                    />
+                  ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-buddy-gray-600">
+                    No recommended buddies found
+                  </p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="active">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {buddies
-                .sort((a, b) => b.activeStreak - a.activeStreak)
-                .slice(0, 4)
-                .map((buddy) => (
-                  <BuddyCard
-                    key={buddy.id}
-                    id={buddy.id}
-                    name={buddy.name}
-                    image={buddy.image}
-                    location={buddy.location}
-                    bio={buddy.bio}
-                    interests={buddy.interests}
-                    mutualActivities={buddy.mutualActivities}
-                    mutualBuddies={buddy.mutualBuddies || 0}
-                    status={buddy.status || "offline"}
-                  />
-                ))}
+              {filteredBuddies.length > 0 ? (
+                filteredBuddies
+                  .slice(0, 4)
+                  .map((buddy, index) => (
+                    <EnhancedBuddyCard
+                      key={buddy._id || `active-${index}`}
+                      user={buddy}
+                      isRealUser={true}
+                    />
+                  ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-buddy-gray-600">No active buddies found</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="nearby">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {buddies.slice(4, 8).map((buddy) => (
-                <BuddyCard
-                  key={buddy.id}
-                  id={buddy.id}
-                  name={buddy.name}
-                  image={buddy.image}
-                  location={buddy.location}
-                  bio={buddy.bio}
-                  interests={buddy.interests}
-                  mutualActivities={buddy.mutualActivities}
-                  mutualBuddies={buddy.mutualBuddies || 0}
-                  status={buddy.status || "offline"}
-                />
-              ))}
+              {filteredBuddies.length > 0 ? (
+                filteredBuddies
+                  .slice(0, 4)
+                  .map((buddy, index) => (
+                    <EnhancedBuddyCard
+                      key={buddy._id || `nearby-${index}`}
+                      user={buddy}
+                      isRealUser={true}
+                    />
+                  ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-buddy-gray-600">No nearby buddies found</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
@@ -503,7 +627,7 @@ const Buddies = () => {
                   <Flame className="w-6 h-6 text-buddy-green-dark" />
                 </div>
                 <div className="absolute w-14 h-14 bg-buddy-orange-light rounded-full bottom-0 left-5 flex items-center justify-center">
-                  <User className="w-8 h-8 text-buddy-orange-dark" />
+                  <UserIcon className="w-8 h-8 text-buddy-orange-dark" />
                 </div>
               </div>
             </div>
