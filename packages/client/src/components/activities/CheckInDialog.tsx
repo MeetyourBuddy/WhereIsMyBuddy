@@ -107,10 +107,90 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         const now = new Date();
         const startDate = new Date(activity.startDate);
 
-        // For now, use current time as scheduled date
-        // TODO: Implement proper scheduling based on activity frequency
-        // This would consider checkinFrequency, checkinFrequencyUnit, checkinDays, etc.
-        return now.toISOString();
+        // Calculate the current check-in period based on activity frequency
+        const calculateCheckInPeriod = (
+          activity: IActivityResult,
+          date: Date
+        ) => {
+          const { checkinFrequency, checkinFrequencyUnit } = activity;
+
+          // Calculate period duration based on frequency unit
+          let periodDuration: number;
+          switch (checkinFrequencyUnit) {
+            case "daily":
+              periodDuration = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+              break;
+            case "weekly":
+              periodDuration = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+              break;
+            case "monthly":
+              periodDuration = 30 * 24 * 60 * 60 * 1000; // 1 month in milliseconds
+              break;
+            default:
+              periodDuration = 24 * 60 * 60 * 1000; // Default to daily
+          }
+
+          // Calculate how many periods have passed since activity start
+          const timeSinceStart = date.getTime() - startDate.getTime();
+          const periodsPassed = Math.floor(
+            timeSinceStart / (periodDuration * checkinFrequency)
+          );
+
+          // Calculate the start of the current period
+          const periodStart = new Date(
+            startDate.getTime() +
+              periodsPassed * periodDuration * checkinFrequency
+          );
+
+          return periodStart;
+        };
+
+        // Get the current check-in period start date
+        const currentPeriodStart = calculateCheckInPeriod(activity, now);
+
+        // If we have specific check-in days, find the next valid day
+        if (activity.checkinDays && activity.checkinDays.length > 0) {
+          const dayNames = [
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+          ];
+          const currentDay = now.getDay();
+          const allowedDays = activity.checkinDays.map((day) =>
+            dayNames.indexOf(day.toLowerCase())
+          );
+
+          // Find the next allowed day within the current period
+          for (let i = 0; i < 7; i++) {
+            const checkDay = (currentDay + i) % 7;
+            if (allowedDays.includes(checkDay)) {
+              const targetDate = new Date(now);
+              targetDate.setDate(targetDate.getDate() + i);
+              targetDate.setHours(0, 0, 0, 0);
+              return targetDate.toISOString();
+            }
+          }
+        }
+
+        // If we have specific dates of month, check if today matches
+        if (
+          activity.checkinDatesOfMonth &&
+          activity.checkinDatesOfMonth.length > 0
+        ) {
+          const currentDate = now.getDate();
+          if (activity.checkinDatesOfMonth.includes(currentDate)) {
+            const targetDate = new Date(now);
+            targetDate.setHours(0, 0, 0, 0);
+            return targetDate.toISOString();
+          }
+        }
+
+        // Default: use the current period start date
+        return currentPeriodStart.toISOString();
       };
 
       // Prepare check-in data

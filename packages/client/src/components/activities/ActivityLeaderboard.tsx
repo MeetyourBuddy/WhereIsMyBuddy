@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Medal,
   CheckCircle,
@@ -11,6 +11,7 @@ import {
   XCircle,
   ChevronUp,
   ChevronDown,
+  Users,
 } from "lucide-react";
 import {
   Table,
@@ -42,6 +43,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { CheckInService } from "@/services/api/activity/reaction.service";
 
 // Mock data for the leaderboard
 const mockLeaderboardData = [
@@ -111,6 +113,7 @@ const mockLeaderboardData = [
 interface ActivityLeaderboardProps {
   activityId: string;
   userRole?: string; // 'admin', 'moderator', or 'member'
+  currentUserId?: string; // Current user's ID to prevent self-actions
 }
 
 type SortField =
@@ -126,22 +129,69 @@ type SortDirection = "asc" | "desc";
 const ActivityLeaderboard = ({
   activityId,
   userRole = "admin",
+  currentUserId,
 }: ActivityLeaderboardProps) => {
-  const [leaderboardData] = useState(mockLeaderboardData);
-  const [actionParticipant, setActionParticipant] = useState<
-    (typeof mockLeaderboardData)[0] | null
-  >(null);
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionParticipant, setActionParticipant] = useState<any>(null);
   const [actionType, setActionType] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
   const [sortField, setSortField] = useState<SortField>("position");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  const canPerformActions = userRole === "admin" || userRole === "moderator";
+  useEffect(() => {
+    const fetchLeaderboardData = async () => {
+      if (!activityId) return;
 
-  const handleAction = (
-    participant: (typeof mockLeaderboardData)[0],
-    action: string
-  ) => {
+      setIsLoading(true);
+      try {
+        const response =
+          await CheckInService.getActivityLeaderboard(activityId);
+        if (response.data?.participants) {
+          // Add position to each participant
+          const participantsWithPosition = response.data.participants.map(
+            (participant, index) => ({
+              ...participant,
+              position: index + 1,
+              image: participant.avatar, // Map avatar to image for compatibility
+            })
+          );
+
+          // Calculate pagination
+          const totalItems = participantsWithPosition.length;
+          const totalPages = Math.ceil(totalItems / itemsPerPage);
+          setTotalPages(totalPages);
+
+          // Get current page data
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const currentPageData = participantsWithPosition.slice(
+            startIndex,
+            endIndex
+          );
+
+          setLeaderboardData(currentPageData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch leaderboard data:", error);
+        // Keep empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeaderboardData();
+  }, [activityId, currentPage]);
+
+  const canPerformActions = userRole === "admin";
+  const canPerformActionOnParticipant = (participant: any) => {
+    return canPerformActions && participant.id !== currentUserId;
+  };
+
+  const handleAction = (participant: any, action: string) => {
     setActionParticipant(participant);
     setActionType(action);
     setDialogOpen(true);
@@ -296,6 +346,37 @@ const ActivityLeaderboard = ({
       .sort((a, b) => a.position - b.position);
   }, [leaderboardData]);
 
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-buddy-purple mx-auto mb-4"></div>
+            <p className="text-buddy-gray-600">Loading leaderboard data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (leaderboardData.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Users className="h-12 w-12 text-buddy-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-buddy-gray-800 mb-2">
+              No Participants Yet
+            </h3>
+            <p className="text-buddy-gray-600">
+              This activity doesn't have any participants yet.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       {/* Top 3 Participants Cards */}
@@ -313,7 +394,7 @@ const ActivityLeaderboard = ({
                 <div
                   className={`
                   absolute transform rotate-45 translate-y-[-50%] translate-x-[25%]
-                  w-full h-6 flex items-center justify-center
+                  w-full h-6 flex items-center justify-center mt-4
                   ${
                     participant.position === 1
                       ? "bg-amber-500"
@@ -521,11 +602,15 @@ const ActivityLeaderboard = ({
                       {participant.points}
                     </span>
                   </TableCell>
-                  {canPerformActions && (
+                  {canPerformActionOnParticipant(participant) && (
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="rounded-full "
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -580,6 +665,78 @@ const ActivityLeaderboard = ({
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-buddy-gray-200">
+            <div className="text-sm text-buddy-gray-600">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, leaderboardData.length)} of{" "}
+              {leaderboardData.length} participants
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="rounded-full"
+              >
+                Previous
+              </Button>
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`rounded-full w-8 h-8 p-0 ${
+                        currentPage === pageNum
+                          ? "bg-buddy-purple hover:bg-buddy-purple/90"
+                          : ""
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                {totalPages > 5 && (
+                  <>
+                    <span className="text-buddy-gray-400">...</span>
+                    <Button
+                      variant={
+                        currentPage === totalPages ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      className={`rounded-full w-8 h-8 p-0 ${
+                        currentPage === totalPages
+                          ? "bg-buddy-purple hover:bg-buddy-purple/90"
+                          : ""
+                      }`}
+                    >
+                      {totalPages}
+                    </Button>
+                  </>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="rounded-full"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

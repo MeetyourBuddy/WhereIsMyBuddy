@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
@@ -15,16 +15,51 @@ import {
   SortAsc,
   X,
   Users,
+  Clock,
+  Star,
+  Plus,
 } from "lucide-react";
 import { useActivityStore } from "@/store/activity.store";
+import { useAuth } from "@/store/auth.store";
+import {
+  isActivityCreator,
+  isActivityParticipant,
+} from "@/types/activity-types";
+import { CheckInService } from "@/services/api/activity/reaction.service";
+import { tokenService } from "@/services/token/token-service";
 
 const Activities = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const {
+    user,
+    isAuthenticated,
+    isInitialized,
+    setUser,
+    verifyUserWithBackend,
+    forceReinitialize,
+  } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9); // 3x3 grid
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Progress tracking state
+  const [userProgressData, setUserProgressData] = useState<
+    Record<
+      string,
+      {
+        progress: number;
+        completedCheckIns: number;
+        totalAvailableCheckIns: number;
+        currentStreak?: number;
+        lastCheckInDate?: string;
+      }
+    >
+  >({});
+  const [isLoadingProgress, setIsLoadingProgress] = useState(false);
+
   const {
     activities: activitiesFromStore,
     isLoading: isLoadingActivities,
@@ -33,8 +68,148 @@ const Activities = () => {
 
   // Fetch activities from store
   useEffect(() => {
+    console.log("🔄 Fetching activities from store...");
     fetchActivities();
   }, [fetchActivities]);
+
+  // Debug effect to monitor activities changes
+  useEffect(() => {
+    console.log("📊 Activities from store changed:", activitiesFromStore);
+    console.log("📊 Activities count:", activitiesFromStore?.length || 0);
+  }, [activitiesFromStore]);
+
+  // Debug effect to monitor user changes
+  useEffect(() => {
+    console.log("👤 Current user changed:", user);
+    console.log("👤 User ID:", user?._id);
+    console.log("👤 User object keys:", user ? Object.keys(user) : "no user");
+    console.log("👤 Auth store state:", {
+      isAuthenticated: user ? "authenticated" : "not authenticated",
+      hasUser: !!user,
+      userId: user?._id,
+      userEmail: user?.email,
+      userName: user?.name,
+    });
+
+    // Note: Auth flow is now working properly with ID field normalization
+  }, [user, isAuthenticated, isInitialized]);
+
+  // Function to fetch user progress
+  const fetchUserProgress = useCallback(async () => {
+    console.log("🔍 fetchUserProgress function called");
+    console.log("👤 User ID:", user?._id);
+    console.log("📚 Activities count:", activitiesFromStore?.length);
+
+    if (
+      !user?._id ||
+      !activitiesFromStore ||
+      activitiesFromStore.length === 0
+    ) {
+      console.log("❌ Early return - missing user or activities");
+      return;
+    }
+
+    // Only fetch progress for "My Activities" tab or when we have user activities
+    const userActivities = activitiesFromStore.filter((activity) => {
+      const isAdmin = isActivityCreator(activity, user._id);
+      const isParticipant = isActivityParticipant(activity, user._id);
+      console.log(`🔍 Activity "${activity.title}":`, {
+        isAdmin,
+        isParticipant,
+        shouldInclude: isAdmin || isParticipant,
+        currentUserId: user._id,
+        currentUserIdType: typeof user._id,
+        activityAdmin: activity.admin,
+        activityAdminId: activity.admin?._id,
+        activityAdminIdType: typeof activity.admin?._id,
+        activityParticipants: activity.participants,
+        activityId: activity._id || activity.id,
+        activityIdType: typeof (activity._id || activity.id),
+        idsMatch: user._id === activity.admin?._id,
+        idsMatchStrict: user._id === activity.admin?._id,
+        idsMatchString:
+          user._id?.toString() === activity.admin?._id?.toString(),
+      });
+
+      // TEMPORARY: For debugging, include ALL activities to test progress API
+      console.log(
+        `🚨 TEMPORARY DEBUG: Including activity "${activity.title}" for progress testing`
+      );
+      return true; // Temporarily return true for all activities
+    });
+
+    console.log("👥 User activities found:", userActivities.length);
+    console.log(
+      "👥 User activities:",
+      userActivities.map((a) => ({ title: a.title, id: a._id || a.id }))
+    );
+
+    if (userActivities.length === 0) {
+      console.log("❌ No user activities found - returning early");
+      return;
+    }
+
+    setIsLoadingProgress(true);
+    try {
+      const activityIds = userActivities.map((activity) =>
+        (activity._id || activity.id)?.toString()
+      );
+      console.log("🔄 Fetching progress for activities:", activityIds);
+
+      const response =
+        await CheckInService.getUserProgressForActivities(activityIds);
+      console.log("📊 Progress response:", response);
+      console.log("📊 Progress response.data:", response.data);
+      console.log("📊 Progress response.data type:", typeof response.data);
+      console.log(
+        "📊 Progress response.data keys:",
+        response.data ? Object.keys(response.data) : "no data"
+      );
+
+      setUserProgressData(response.data || {});
+    } catch (error) {
+      console.error("❌ Failed to fetch user progress:", error);
+    } finally {
+      setIsLoadingProgress(false);
+    }
+  }, [user?._id, activitiesFromStore]);
+
+  // Fetch user progress when user or activities change
+  useEffect(() => {
+    console.log("🚀 fetchUserProgress useEffect triggered");
+    console.log("👤 User:", user);
+    console.log("👤 User ID:", user?._id);
+    console.log("📚 Activities from store:", activitiesFromStore);
+    console.log("📚 Activities count:", activitiesFromStore?.length);
+    console.log("🔗 Dependencies check:", {
+      userId: user?._id,
+      hasActivities: !!activitiesFromStore,
+      activitiesLength: activitiesFromStore?.length,
+    });
+
+    fetchUserProgress();
+  }, [fetchUserProgress]);
+
+  // Manual trigger for progress fetching when "My Activities" tab is active
+  useEffect(() => {
+    if (activeTab === "my" && user?._id && activitiesFromStore?.length > 0) {
+      console.log("🎯 Manual trigger for My Activities tab");
+      console.log("🎯 Dependencies:", {
+        activeTab,
+        userId: user._id,
+        activitiesLength: activitiesFromStore?.length,
+      });
+      fetchUserProgress();
+    }
+  }, [activeTab, user?._id, activitiesFromStore?.length, fetchUserProgress]);
+
+  // Force trigger when activities are loaded
+  useEffect(() => {
+    if (activitiesFromStore && activitiesFromStore.length > 0 && user?._id) {
+      console.log("🚀 Activities loaded, forcing progress fetch");
+      fetchUserProgress();
+    }
+  }, [activitiesFromStore, user?._id, fetchUserProgress]);
 
   console.log("activitiesFromStore", activitiesFromStore);
 
@@ -212,17 +387,125 @@ const Activities = () => {
     "Hiking",
   ];
 
-  const filteredActivities = useMemo(() => {
+  // Create reusable empty state component
+  const EmptyState = ({
+    title,
+    description,
+    buttonText,
+    onButtonClick,
+    icon: Icon = Search,
+  }: {
+    title: string;
+    description: string;
+    buttonText: string;
+    onButtonClick: () => void;
+    icon?: React.ComponentType<{ className?: string }>;
+  }) => (
+    <Card className="p-8 text-center">
+      <div className="flex flex-col items-center">
+        <div className="w-16 h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-4">
+          <Icon className="w-8 h-8 text-buddy-gray-400" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <p className="text-buddy-gray-600 mb-6">{description}</p>
+        <Button onClick={onButtonClick} className="rounded-full">
+          {buttonText}
+        </Button>
+      </div>
+    </Card>
+  );
+
+  // Tab-specific filtering logic
+  const getFilteredActivitiesByTab = useMemo(() => {
     if (!activitiesFromStore) return [];
 
-    return activitiesFromStore.filter((activity) => {
+    // Debug logging
+    console.log("📊 All activities from store:", activitiesFromStore);
+    console.log("👤 Current user:", user);
+    console.log("🏷️ Active tab:", activeTab);
+
+    let filtered = [...activitiesFromStore];
+
+    // Apply tab-specific filtering
+    switch (activeTab) {
+      case "my":
+        // Show activities where user is admin or participant
+        filtered = filtered.filter((activity) => {
+          // Debug logging
+          console.log("🔍 Checking activity:", activity.title);
+          console.log("👤 Current user ID:", user?._id);
+          console.log("👑 Activity admin:", activity.admin);
+          console.log("👥 Activity participants:", activity.participants);
+
+          // Use helper functions for more reliable checking
+          const isAdmin = isActivityCreator(activity, user?._id);
+          const isParticipant = isActivityParticipant(activity, user?._id);
+
+          console.log("✅ Is admin (helper):", isAdmin);
+          console.log("✅ Is participant (helper):", isParticipant);
+          console.log("✅ Should show:", isAdmin || isParticipant);
+
+          // Temporary: If no user ID, show all activities for debugging
+          if (!user?._id) {
+            console.log(
+              "⚠️ No user ID found, showing all activities for debugging"
+            );
+            return true;
+          }
+
+          return isAdmin || isParticipant;
+        });
+        break;
+
+      case "popular":
+        // Sort by participant count (most popular first)
+        filtered = filtered
+          .filter((activity) => (activity.participants?.length || 0) > 0)
+          .sort(
+            (a, b) =>
+              (b.participants?.length || 0) - (a.participants?.length || 0)
+          );
+        break;
+
+      case "new":
+        // Sort by creation date (newest first)
+        filtered = filtered.sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.startDate);
+          const dateB = new Date(b.createdAt || b.startDate);
+          return dateB.getTime() - dateA.getTime();
+        });
+        break;
+
+      case "soon":
+        // Show activities starting within the next 7 days
+        const now = new Date();
+        const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        filtered = filtered
+          .filter((activity) => {
+            const startDate = new Date(activity.startDate);
+            return startDate >= now && startDate <= nextWeek;
+          })
+          .sort((a, b) => {
+            const dateA = new Date(a.startDate);
+            const dateB = new Date(b.startDate);
+            return dateA.getTime() - dateB.getTime();
+          });
+        break;
+
+      default:
+        // "all" tab - no additional filtering
+        break;
+    }
+
+    // Apply search and category filters
+    return filtered.filter((activity) => {
       const matchesSearch =
         activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         activity.description
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-        activity.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.category.toLowerCase().includes(searchQuery.toLowerCase());
+        activity.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        activity.category?.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory =
         activeFilters.length === 0 ||
@@ -231,18 +514,36 @@ const Activities = () => {
 
       return matchesSearch && matchesCategory;
     });
-  }, [activitiesFromStore, searchQuery, activeFilters]);
+
+    // Debug final results
+    console.log("🎯 Final filtered activities for tab:", activeTab, filtered);
+    console.log("📊 Total count:", filtered.length);
+
+    return filtered;
+  }, [activitiesFromStore, activeTab, searchQuery, activeFilters, user?._id]);
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
+  const totalPages = Math.ceil(
+    getFilteredActivitiesByTab.length / itemsPerPage
+  );
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedActivities = filteredActivities.slice(startIndex, endIndex);
+  const paginatedActivities = getFilteredActivitiesByTab.slice(
+    startIndex,
+    endIndex
+  );
 
-  // Reset to first page when filters change
+  // Reset to first page when filters or tab change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, activeFilters]);
+  }, [searchQuery, activeFilters, activeTab]);
+
+  // Tab change handler
+  const handleTabChange = (value: string) => {
+    console.log("🔄 Tab changed to:", value);
+    setActiveTab(value);
+    setCurrentPage(1);
+  };
 
   const toggleFilter = (filter: string) => {
     if (filter === "All") {
@@ -270,6 +571,7 @@ const Activities = () => {
   const clearFilters = () => {
     setActiveFilters(["All"]);
     setSearchQuery("");
+    setActiveTab("all");
   };
 
   return (
@@ -364,7 +666,11 @@ const Activities = () => {
       </div>
 
       <Container className="py-8">
-        <Tabs defaultValue="all" className="w-full mb-8">
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="w-full mb-8"
+        >
           <TabsList className="mb-6 bg-buddy-gray-200/50">
             <TabsTrigger value="all" className="rounded-full">
               All Activities
@@ -384,7 +690,7 @@ const Activities = () => {
           </TabsList>
 
           <TabsContent value="all" className="space-y-6">
-            {filteredActivities.length > 0 ? (
+            {paginatedActivities.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {paginatedActivities.map((activity) => (
@@ -413,123 +719,247 @@ const Activities = () => {
                       currentPage={currentPage}
                       totalPages={totalPages}
                       onPageChange={setCurrentPage}
-                      totalItems={filteredActivities.length}
+                      totalItems={getFilteredActivitiesByTab.length}
                       itemsPerPage={itemsPerPage}
                     />
                   </div>
                 )}
               </>
             ) : (
-              <Card className="p-8 text-center">
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-4">
-                    <Search className="w-8 h-8 text-buddy-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">
-                    No activities found
-                  </h3>
-                  <p className="text-buddy-gray-600 mb-6">
-                    We couldn't find any activities matching your search
-                    criteria.
-                  </p>
-                  <Button onClick={clearFilters} className="rounded-full">
-                    Clear Filters
-                  </Button>
-                </div>
-              </Card>
+              <EmptyState
+                title="No activities found"
+                description="We couldn't find any activities matching your search criteria."
+                buttonText="Clear Filters"
+                onButtonClick={clearFilters}
+                icon={Search}
+              />
             )}
           </TabsContent>
 
-          <TabsContent value="my">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activitiesFromStore.slice(1, 4).map((activity) => (
-                <ActivityCard
-                  key={activity._id || activity.id}
-                  id={activity._id || activity.id}
-                  title={activity.title}
-                  description={activity.description}
-                  startDate={activity.startDate}
-                  endDate={activity.endDate}
-                  category={activity.category}
-                  bannerImage={activity.bannerImage}
-                  participants={activity.participants || []}
-                  maxParticipants={activity.maxParticipants}
-                  admin={activity.admin}
-                  onClick={() =>
-                    navigate(`/activities/${activity._id || activity.id}`)
+          <TabsContent value="my" className="space-y-6">
+            {paginatedActivities.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedActivities.map((activity) => {
+                    const activityId = (
+                      activity._id || activity.id
+                    )?.toString();
+                    const progressData = userProgressData[activityId];
+
+                    console.log("🎯 Activity Progress Debug:", {
+                      activityTitle: activity.title,
+                      activityId,
+                      activityIdType: typeof activityId,
+                      progressData,
+                      hasProgressData: !!progressData,
+                      userProgressDataKeys: Object.keys(userProgressData),
+                      userProgressData: userProgressData,
+                      exactMatch: userProgressData[activityId],
+                      stringMatch: userProgressData[activityId?.toString()],
+                      allKeys: Object.keys(userProgressData).map((key) => ({
+                        key,
+                        type: typeof key,
+                        value: userProgressData[key],
+                      })),
+                    });
+
+                    return (
+                      <ActivityCard
+                        key={activityId}
+                        id={activityId}
+                        title={activity.title}
+                        description={activity.description}
+                        startDate={activity.startDate}
+                        endDate={activity.endDate}
+                        category={activity.category}
+                        bannerImage={activity.bannerImage}
+                        participants={activity.participants || []}
+                        maxParticipants={activity.maxParticipants}
+                        admin={activity.admin}
+                        showProgress={true}
+                        userProgress={progressData}
+                        onClick={() => navigate(`/activities/${activityId}`)}
+                      />
+                    );
+                  })}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      totalItems={getFilteredActivitiesByTab.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <EmptyState
+                title="No activities yet"
+                description={
+                  activitiesFromStore.length === 0
+                    ? "No activities are available at the moment. Create your first activity to get started!"
+                    : "You haven't joined or created any activities yet. Start exploring to find activities that interest you!"
+                }
+                buttonText={
+                  activitiesFromStore.length === 0
+                    ? "Create Activity"
+                    : "View All Activities"
+                }
+                onButtonClick={() => {
+                  if (activitiesFromStore.length === 0) {
+                    navigate("/activities/create");
+                  } else {
+                    setActiveTab("all");
                   }
-                />
-              ))}
-            </div>
+                }}
+                icon={Users}
+              />
+            )}
           </TabsContent>
 
-          <TabsContent value="popular">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activitiesFromStore.slice(0, 3).map((activity) => (
-                <ActivityCard
-                  key={activity._id || activity.id}
-                  id={activity._id || activity.id}
-                  title={activity.title}
-                  description={activity.description}
-                  startDate={activity.startDate}
-                  endDate={activity.endDate}
-                  category={activity.category}
-                  bannerImage={activity.bannerImage}
-                  participants={activity.participants || []}
-                  maxParticipants={activity.maxParticipants}
-                  admin={activity.admin}
-                  onClick={() =>
-                    navigate(`/activities/${activity._id || activity.id}`)
-                  }
-                />
-              ))}
-            </div>
+          <TabsContent value="popular" className="space-y-6">
+            {paginatedActivities.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedActivities.map((activity) => (
+                    <ActivityCard
+                      key={activity._id || activity.id}
+                      id={activity._id || activity.id}
+                      title={activity.title}
+                      description={activity.description}
+                      startDate={activity.startDate}
+                      endDate={activity.endDate}
+                      category={activity.category}
+                      bannerImage={activity.bannerImage}
+                      participants={activity.participants || []}
+                      maxParticipants={activity.maxParticipants}
+                      admin={activity.admin}
+                      onClick={() =>
+                        navigate(`/activities/${activity._id || activity.id}`)
+                      }
+                    />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      totalItems={getFilteredActivitiesByTab.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <EmptyState
+                title="No popular activities"
+                description="There are no activities with participants yet. Be the first to join an activity!"
+                buttonText="View All Activities"
+                onButtonClick={() => setActiveTab("all")}
+                icon={Star}
+              />
+            )}
           </TabsContent>
 
-          <TabsContent value="new">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activitiesFromStore.slice(3, 6).map((activity) => (
-                <ActivityCard
-                  key={activity._id || activity.id}
-                  id={activity._id || activity.id}
-                  title={activity.title}
-                  description={activity.description}
-                  startDate={activity.startDate}
-                  endDate={activity.endDate}
-                  category={activity.category}
-                  bannerImage={activity.bannerImage}
-                  participants={activity.participants || []}
-                  maxParticipants={activity.maxParticipants}
-                  admin={activity.admin}
-                  onClick={() =>
-                    navigate(`/activities/${activity._id || activity.id}`)
-                  }
-                />
-              ))}
-            </div>
+          <TabsContent value="new" className="space-y-6">
+            {paginatedActivities.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedActivities.map((activity) => (
+                    <ActivityCard
+                      key={activity._id || activity.id}
+                      id={activity._id || activity.id}
+                      title={activity.title}
+                      description={activity.description}
+                      startDate={activity.startDate}
+                      endDate={activity.endDate}
+                      category={activity.category}
+                      bannerImage={activity.bannerImage}
+                      participants={activity.participants || []}
+                      maxParticipants={activity.maxParticipants}
+                      admin={activity.admin}
+                      onClick={() =>
+                        navigate(`/activities/${activity._id || activity.id}`)
+                      }
+                    />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      totalItems={getFilteredActivitiesByTab.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <EmptyState
+                title="No new activities"
+                description="There are no recently added activities. Check back later or create your own activity!"
+                buttonText="Create Activity"
+                onButtonClick={() => navigate("/activities/create")}
+                icon={Plus}
+              />
+            )}
           </TabsContent>
 
-          <TabsContent value="soon">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activitiesFromStore.slice(0, 2).map((activity) => (
-                <ActivityCard
-                  key={activity._id || activity.id}
-                  id={activity._id || activity.id}
-                  title={activity.title}
-                  description={activity.description}
-                  startDate={activity.startDate}
-                  endDate={activity.endDate}
-                  category={activity.category}
-                  bannerImage={activity.bannerImage}
-                  participants={activity.participants || []}
-                  maxParticipants={activity.maxParticipants}
-                  admin={activity.admin}
-                  onClick={() =>
-                    navigate(`/activities/${activity._id || activity.id}`)
-                  }
-                />
-              ))}
-            </div>
+          <TabsContent value="soon" className="space-y-6">
+            {paginatedActivities.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedActivities.map((activity) => (
+                    <ActivityCard
+                      key={activity._id || activity.id}
+                      id={activity._id || activity.id}
+                      title={activity.title}
+                      description={activity.description}
+                      startDate={activity.startDate}
+                      endDate={activity.endDate}
+                      category={activity.category}
+                      bannerImage={activity.bannerImage}
+                      participants={activity.participants || []}
+                      maxParticipants={activity.maxParticipants}
+                      admin={activity.admin}
+                      onClick={() =>
+                        navigate(`/activities/${activity._id || activity.id}`)
+                      }
+                    />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      totalItems={getFilteredActivitiesByTab.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <EmptyState
+                title="No upcoming activities"
+                description="There are no activities starting in the next 7 days. Check back later or create your own activity!"
+                buttonText="Create Activity"
+                onButtonClick={() => navigate("/activities/create")}
+                icon={Clock}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </Container>

@@ -11,6 +11,7 @@ import {
   UserPlus,
   UserMinus,
   Users,
+  Target,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ interface ActivityInfoProps {
   duration: string;
   frequency: string;
   tags?: string[];
+  goals?: string[];
   participants?: any[];
   admin?: {
     _id: string;
@@ -68,6 +70,7 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
   duration,
   frequency,
   tags,
+  goals,
   participants = [],
   admin,
   rules,
@@ -216,6 +219,26 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
             </div>
           </div> */}
         </div>
+
+        {/* Goals */}
+        {goals && goals.length > 0 && (
+          <div>
+            <h4 className="text-xs font-medium text-buddy-gray-500 mb-2 flex items-center">
+              <Target className="h-4 w-4 text-buddy-green mr-1" />
+              Activity Goals
+            </h4>
+            <div className="space-y-2">
+              {goals.map((goal, index) => (
+                <div key={index} className="flex items-start space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-buddy-green mt-2 flex-shrink-0"></div>
+                  <p className="text-sm text-buddy-gray-700 leading-relaxed">
+                    {goal}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tags */}
         <div>

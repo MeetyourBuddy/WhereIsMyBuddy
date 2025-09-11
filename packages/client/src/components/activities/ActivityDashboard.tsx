@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -25,65 +25,81 @@ import { Button } from "@/components/ui/button";
 import Avatar from "@/components/common/Avatar";
 import ActivityInfo from "./ActivityInfo";
 import { IActivityResult } from "@/types/activity-types";
+import { CheckInService } from "@/services/api/activity/reaction.service";
 interface ActivityDashboardProps {
   activity: IActivityResult;
   onViewAllMembers?: () => void;
 }
 
 const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
-  // Mock data for charts and metrics (would come from API in a real app)
-  const checkInData = [
-    { name: "Mon", checkins: 18 },
-    { name: "Tue", checkins: 22 },
-    { name: "Wed", checkins: 16 },
-    { name: "Thu", checkins: 25 },
-    { name: "Fri", checkins: 20 },
-    { name: "Sat", checkins: 12 },
-    { name: "Sun", checkins: 15 },
-  ];
+  const [checkInData, setCheckInData] = useState([
+    { name: "Mon", checkins: 0 },
+    { name: "Tue", checkins: 0 },
+    { name: "Wed", checkins: 0 },
+    { name: "Thu", checkins: 0 },
+    { name: "Fri", checkins: 0 },
+    { name: "Sat", checkins: 0 },
+    { name: "Sun", checkins: 0 },
+  ]);
+  const [participants, setParticipants] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const participants = [
-    {
-      id: 1,
-      name: "Sophia Kim",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      checkIns: 28,
-      streak: 14,
-    },
-    {
-      id: 2,
-      name: "Marcus Chen",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      checkIns: 26,
-      streak: 8,
-    },
-    {
-      id: 3,
-      name: "Aisha Patel",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      checkIns: 24,
-      streak: 12,
-    },
-    {
-      id: 4,
-      name: "James Wilson",
-      avatar:
-        "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      checkIns: 22,
-      streak: 6,
-    },
-    {
-      id: 5,
-      name: "Emma Davis",
-      avatar:
-        "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      checkIns: 20,
-      streak: 4,
-    },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!activity?._id && !activity?.id) return;
+
+      const activityId = activity._id || activity.id;
+      setIsLoading(true);
+
+      try {
+        // Fetch weekly activity data
+        const weeklyResponse =
+          await CheckInService.getWeeklyActivity(activityId);
+        if (weeklyResponse.data?.weeklyData) {
+          setCheckInData(weeklyResponse.data.weeklyData);
+        }
+
+        // Fetch participant history data for the dashboard
+        const historyResponse =
+          await CheckInService.getParticipantHistory(activityId);
+        if (historyResponse.data?.participants) {
+          // Take top 5 participants for the dashboard
+          const topParticipants = historyResponse.data.participants
+            .slice(0, 5)
+            .map((p, index) => ({
+              id: p.id,
+              name: p.name,
+              avatar: p.avatar,
+              checkIns: p.checkIns,
+              streak: p.streak,
+              position: index + 1,
+              last7Days: p.last7Days, // Include the last 7 days data
+            }));
+          setParticipants(topParticipants);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+        // Keep default empty data on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [activity]);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 bg-gradient-to-br from-white via-buddy-gray-50/50 to-white animate-fade-in">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-buddy-purple mx-auto mb-4"></div>
+            <p className="text-buddy-gray-600">Loading dashboard data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gradient-to-br from-white via-buddy-gray-50/50 to-white animate-fade-in">
@@ -224,21 +240,23 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex space-x-1">
-                          {[...Array(7)].map((_, i) => {
-                            // Random completed status for demonstration
-                            const completed = Math.random() > 0.3;
-                            return completed ? (
-                              <CheckCircle
-                                key={i}
-                                className="h-4 w-4 text-buddy-green"
-                              />
+                          {participant.last7Days?.map((day, i) => {
+                            return day.checkedIn ? (
+                              <div key={i} title={`${day.date} - Checked in`}>
+                                <CheckCircle className="h-4 w-4 text-buddy-green" />
+                              </div>
                             ) : (
+                              <div key={i} title={`${day.date} - No check-in`}>
+                                <XCircle className="h-4 w-4 text-buddy-gray-300" />
+                              </div>
+                            );
+                          }) ||
+                            [...Array(7)].map((_, i) => (
                               <XCircle
                                 key={i}
                                 className="h-4 w-4 text-buddy-gray-300"
                               />
-                            );
-                          })}
+                            ))}
                         </div>
                       </td>
                     </tr>
@@ -267,6 +285,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
               duration={`${activity.checkinFrequency}`}
               frequency={activity.checkinFrequencyUnit}
               tags={activity.tags || []}
+              goals={activity.goals || []}
               participants={activity.participants || []}
               admin={activity.admin}
               rules={activity.rules || []}

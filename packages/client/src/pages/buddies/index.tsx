@@ -70,6 +70,7 @@ const Buddies = () => {
   const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20); // 5x4 grid
+  const [activeTab, setActiveTab] = useState("all");
 
   // Load initial data on component mount
   useEffect(() => {
@@ -190,35 +191,83 @@ const Buddies = () => {
     "Nutrition",
   ];
 
-  // Use real search results from backend
+  // Use real search results from backend with tab-specific filtering
   const filteredBuddies = useMemo(() => {
     try {
       // Debug logging
       console.log("Search results:", searchResults);
       console.log("Search results length:", searchResults.length);
       console.log("Active filters:", activeFilters);
+      console.log("Active tab:", activeTab);
 
-      // Filter search results based on active filters
+      // Filter search results based on active filters and tab
       if (searchResults.length === 0) {
         console.log("No search results, returning empty array");
         return [];
       }
 
-      const filtered = searchResults.filter((buddy) => {
-        // If no filters are active or "All" is selected, show all users
-        if (activeFilters.length === 0 || activeFilters.includes("All")) {
-          return true;
+      let filtered = searchResults.filter((buddy) => {
+        // Apply tab-specific filtering first
+        switch (activeTab) {
+          case "my":
+            // For "My Buddies", show no users for now since we don't have buddy connections yet
+            // In a real app, this would check actual buddy connections from the database
+            return false; // No buddies connected yet
+
+          case "recommended":
+            // For "Recommended", show users with similar interests
+            if (
+              user?.interestsCategories &&
+              user.interestsCategories.length > 0
+            ) {
+              return (
+                buddy.interestsCategories &&
+                buddy.interestsCategories.length > 0 &&
+                buddy.interestsCategories.some((interest) =>
+                  user.interestsCategories!.some(
+                    (userInterest) =>
+                      userInterest.toString() === interest.toString()
+                  )
+                )
+              );
+            }
+            return false; // Show no recommendations if user has no interests
+
+          case "active":
+            // For "Most Active", show users who have completed onboarding
+            // In a real app, this would sort by activity metrics
+            return buddy.hasCompletedOnboarding === true;
+
+          case "nearby":
+            // For "Nearby", show users from same country/city
+            if (user?.country || user?.city) {
+              return (
+                (user.country &&
+                  buddy.country &&
+                  buddy.country.toString() === user.country.toString()) ||
+                (user.city && buddy.city === user.city)
+              );
+            }
+            return false; // Show no nearby users if no location data
+
+          case "all":
+          default:
+            // For "All Buddies", show all users
+            return true;
         }
-
-        // Filter by interests if any are selected
-        const matchesInterest =
-          buddy.interestsCategories &&
-          buddy.interestsCategories.some((interest) =>
-            activeFilters.includes(interest.toString())
-          );
-
-        return matchesInterest;
       });
+
+      // Apply interest filters if any are selected
+      if (activeFilters.length > 0 && !activeFilters.includes("All")) {
+        filtered = filtered.filter((buddy) => {
+          const matchesInterest =
+            buddy.interestsCategories &&
+            buddy.interestsCategories.some((interest) =>
+              activeFilters.includes(interest.toString())
+            );
+          return matchesInterest;
+        });
+      }
 
       console.log("Filtered buddies:", filtered);
       return filtered;
@@ -227,7 +276,7 @@ const Buddies = () => {
       // Return empty array as fallback
       return [];
     }
-  }, [searchResults, activeFilters]);
+  }, [searchResults, activeFilters, activeTab, user]);
 
   // Pagination logic - use backend pagination
   const totalPages = searchMetadata
@@ -238,7 +287,105 @@ const Buddies = () => {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, activeFilters]);
+  }, [searchQuery, activeFilters, activeTab]);
+
+  // Tab-specific loading functions
+  const loadMyBuddies = async () => {
+    try {
+      // For now, we'll load all users and filter in the frontend
+      // In a real app, this would fetch actual buddy connections from a separate endpoint
+      if (searchUsers) {
+        await searchUsers({
+          limit: itemsPerPage,
+          offset: 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading my buddies:", error);
+    }
+  };
+
+  const loadRecommendedUsers = async () => {
+    try {
+      // For now, get users with similar interests
+      // In a real app, this would use a recommendation algorithm
+      if (searchUsers) {
+        const currentUserInterests = user?.interestsCategories || [];
+        await searchUsers({
+          interests:
+            currentUserInterests.length > 0
+              ? currentUserInterests.map((i) => i.toString())
+              : undefined,
+          limit: itemsPerPage,
+          offset: 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading recommended users:", error);
+    }
+  };
+
+  const loadMostActiveUsers = async () => {
+    try {
+      // For now, get users who have completed onboarding (more likely to be active)
+      // In a real app, this would sort by activity metrics
+      if (searchUsers) {
+        await searchUsers({
+          limit: itemsPerPage,
+          offset: 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading most active users:", error);
+    }
+  };
+
+  const loadNearbyUsers = async () => {
+    try {
+      // For now, get users from the same country/city
+      // In a real app, this would use geolocation and distance calculations
+      if (searchUsers) {
+        await searchUsers({
+          country: user?.country ? user.country.toString() : undefined,
+          city: user?.city,
+          limit: itemsPerPage,
+          offset: 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading nearby users:", error);
+    }
+  };
+
+  // Handle tab change
+  const handleTabChange = (tabValue: string) => {
+    setActiveTab(tabValue);
+    setCurrentPage(1);
+
+    // Load data based on tab
+    if (searchUsers) {
+      switch (tabValue) {
+        case "all":
+          searchUsers({
+            limit: itemsPerPage,
+            offset: 0,
+          });
+          break;
+        case "my":
+          loadMyBuddies();
+          break;
+        case "recommended":
+          loadRecommendedUsers();
+          break;
+        case "active":
+          loadMostActiveUsers();
+          break;
+        case "nearby":
+          loadNearbyUsers();
+          break;
+      }
+    }
+  };
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -318,6 +465,7 @@ const Buddies = () => {
   const clearFilters = () => {
     try {
       setActiveFilters(["All"]);
+      setActiveTab("all");
       if (setSearchQuery) {
         setSearchQuery("");
       }
@@ -335,11 +483,38 @@ const Buddies = () => {
       console.error("Clear filters error:", error);
       // Fallback to basic state reset
       setActiveFilters(["All"]);
+      setActiveTab("all");
       if (setSearchQuery) {
         setSearchQuery("");
       }
     }
   };
+
+  // Reusable empty state component
+  const EmptyState = ({
+    title,
+    description,
+    buttonText,
+    onButtonClick,
+  }: {
+    title: string;
+    description: string;
+    buttonText: string;
+    onButtonClick: () => void;
+  }) => (
+    <Card className="p-8 text-center">
+      <div className="flex flex-col items-center">
+        <div className="w-16 h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-4">
+          <Search className="w-8 h-8 text-buddy-gray-400" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <p className="text-buddy-gray-600 mb-6">{description}</p>
+        <Button onClick={onButtonClick} className="rounded-full">
+          {buttonText}
+        </Button>
+      </div>
+    </Card>
+  );
 
   // Show loading state
   if (isLoadingSearch) {
@@ -453,7 +628,11 @@ const Buddies = () => {
       </div>
 
       <Container className="py-8">
-        <Tabs defaultValue="all" className="w-full mb-8">
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="w-full mb-8"
+        >
           <TabsList className="mb-6 bg-buddy-gray-200/50">
             <TabsTrigger value="all" className="rounded-full">
               All Buddies
@@ -498,103 +677,125 @@ const Buddies = () => {
                 )}
               </>
             ) : (
-              <Card className="p-8 text-center">
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-4">
-                    <Search className="w-8 h-8 text-buddy-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">
-                    No buddies found
-                  </h3>
-                  <p className="text-buddy-gray-600 mb-6">
-                    We couldn't find any buddies matching your search criteria.
-                  </p>
-                  <Button onClick={clearFilters} className="rounded-full">
-                    Clear Filters
-                  </Button>
-                </div>
-              </Card>
+              <EmptyState
+                title={(() => {
+                  switch (activeTab) {
+                    case "my":
+                      return "No buddies yet";
+                    case "recommended":
+                      return "No recommendations";
+                    case "active":
+                      return "No active users";
+                    case "nearby":
+                      return "No nearby users";
+                    default:
+                      return "No buddies found";
+                  }
+                })()}
+                description={(() => {
+                  switch (activeTab) {
+                    case "my":
+                      return "You haven't connected with any buddies yet. Start by exploring the All Buddies tab!";
+                    case "recommended":
+                      return "Complete your profile with interests to get personalized recommendations.";
+                    case "active":
+                      return "No active users found. Try the All Buddies tab to see everyone.";
+                    case "nearby":
+                      return "No users found in your area. Try the All Buddies tab to see everyone.";
+                    default:
+                      return "We couldn't find any buddies matching your search criteria.";
+                  }
+                })()}
+                buttonText={
+                  activeTab === "all" ? "Clear Filters" : "View All Buddies"
+                }
+                onButtonClick={clearFilters}
+              />
             )}
           </TabsContent>
 
           <TabsContent value="my">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredBuddies.length > 0 ? (
-                filteredBuddies.map((buddy, index) => (
+            {filteredBuddies.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredBuddies.map((buddy, index) => (
                   <EnhancedBuddyCard
                     key={buddy._id || `my-buddy-${index}`}
                     user={buddy}
                     isRealUser={true}
                   />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-buddy-gray-600">No buddies found</p>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No buddies yet"
+                description="You haven't connected with any buddies yet. Start by exploring the All Buddies tab!"
+                buttonText="View All Buddies"
+                onButtonClick={() => setActiveTab("all")}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="recommended">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredBuddies.length > 0 ? (
-                filteredBuddies
-                  .slice(0, 4)
-                  .map((buddy, index) => (
-                    <EnhancedBuddyCard
-                      key={buddy._id || `recommended-${index}`}
-                      user={buddy}
-                      isRealUser={true}
-                    />
-                  ))
-              ) : (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-buddy-gray-600">
-                    No recommended buddies found
-                  </p>
-                </div>
-              )}
-            </div>
+            {filteredBuddies.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredBuddies.slice(0, 4).map((buddy, index) => (
+                  <EnhancedBuddyCard
+                    key={buddy._id || `recommended-${index}`}
+                    user={buddy}
+                    isRealUser={true}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No recommendations"
+                description="Complete your profile with interests to get personalized recommendations."
+                buttonText="View All Buddies"
+                onButtonClick={() => setActiveTab("all")}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="active">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredBuddies.length > 0 ? (
-                filteredBuddies
-                  .slice(0, 4)
-                  .map((buddy, index) => (
-                    <EnhancedBuddyCard
-                      key={buddy._id || `active-${index}`}
-                      user={buddy}
-                      isRealUser={true}
-                    />
-                  ))
-              ) : (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-buddy-gray-600">No active buddies found</p>
-                </div>
-              )}
-            </div>
+            {filteredBuddies.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredBuddies.slice(0, 4).map((buddy, index) => (
+                  <EnhancedBuddyCard
+                    key={buddy._id || `active-${index}`}
+                    user={buddy}
+                    isRealUser={true}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No active users"
+                description="No active users found. Try the All Buddies tab to see everyone."
+                buttonText="View All Buddies"
+                onButtonClick={() => setActiveTab("all")}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="nearby">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredBuddies.length > 0 ? (
-                filteredBuddies
-                  .slice(0, 4)
-                  .map((buddy, index) => (
-                    <EnhancedBuddyCard
-                      key={buddy._id || `nearby-${index}`}
-                      user={buddy}
-                      isRealUser={true}
-                    />
-                  ))
-              ) : (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-buddy-gray-600">No nearby buddies found</p>
-                </div>
-              )}
-            </div>
+            {filteredBuddies.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredBuddies.slice(0, 4).map((buddy, index) => (
+                  <EnhancedBuddyCard
+                    key={buddy._id || `nearby-${index}`}
+                    user={buddy}
+                    isRealUser={true}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No nearby users"
+                description="No users found in your area. Try the All Buddies tab to see everyone."
+                buttonText="View All Buddies"
+                onButtonClick={() => setActiveTab("all")}
+              />
+            )}
           </TabsContent>
         </Tabs>
 

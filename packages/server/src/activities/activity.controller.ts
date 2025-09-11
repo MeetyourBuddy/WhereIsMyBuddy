@@ -44,6 +44,67 @@ export class ActivityController {
     return await this.activityService.findOne(id, userId);
   }
 
+  @Get(':id/statistics')
+  @UseGuards(JwtAuthGuard)
+  async getActivityStatistics(@Param('id') id: string): Promise<{
+    longestStreak: number;
+    highestCheckIns: number;
+    averageProgress: number;
+    totalParticipants: number;
+    totalCheckIns: number;
+  }> {
+    return await this.activityService.getActivityStatistics(id);
+  }
+
+  @Get(':id/leaderboard')
+  @UseGuards(JwtAuthGuard)
+  async getActivityLeaderboard(@Param('id') id: string): Promise<{
+    participants: Array<{
+      id: string;
+      name: string;
+      email: string;
+      avatar?: string;
+      checkIns: number;
+      streak: number;
+      points: number;
+      role: string;
+      joinDate: Date;
+      lastCheckIn?: Date;
+    }>;
+  }> {
+    return await this.activityService.getActivityLeaderboard(id);
+  }
+
+  @Get(':id/weekly-activity')
+  @UseGuards(JwtAuthGuard)
+  async getWeeklyActivity(@Param('id') id: string): Promise<{
+    weeklyData: Array<{
+      name: string;
+      checkins: number;
+      date: string;
+    }>;
+  }> {
+    return await this.activityService.getWeeklyActivity(id);
+  }
+
+  @Get(':id/participant-history')
+  @UseGuards(JwtAuthGuard)
+  async getParticipantHistory(@Param('id') id: string): Promise<{
+    participants: Array<{
+      id: string;
+      name: string;
+      avatar?: string;
+      checkIns: number;
+      streak: number;
+      last7Days: Array<{
+        date: string;
+        checkedIn: boolean;
+      }>;
+    }>;
+  }> {
+    return await this.activityService.getParticipantHistory(id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   async update(

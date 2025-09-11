@@ -51,4 +51,67 @@ export const CheckInService = {
       completedCheckIns: number;
       totalAvailableCheckIns: number;
     }>(`/checkins/activity/${activityId}/user-progress`),
+
+  getUserProgressForActivities: (activityIds: string[]) =>
+    apiMethods.post<
+      Record<
+        string,
+        {
+          progress: number;
+          completedCheckIns: number;
+          totalAvailableCheckIns: number;
+          currentStreak?: number;
+          lastCheckInDate?: string;
+        }
+      >
+    >(`/checkins/user-progress/batch`, { activityIds }),
+
+  getActivityStatistics: (activityId: string) =>
+    apiMethods.get<{
+      longestStreak: number;
+      highestCheckIns: number;
+      averageProgress: number;
+      totalParticipants: number;
+      totalCheckIns: number;
+    }>(`/activities/${activityId}/statistics`),
+
+  getActivityLeaderboard: (activityId: string) =>
+    apiMethods.get<{
+      participants: Array<{
+        id: string;
+        name: string;
+        email: string;
+        avatar?: string;
+        checkIns: number;
+        streak: number;
+        points: number;
+        role: string;
+        joinDate: string;
+        lastCheckIn?: string;
+      }>;
+    }>(`/activities/${activityId}/leaderboard`),
+
+  getWeeklyActivity: (activityId: string) =>
+    apiMethods.get<{
+      weeklyData: Array<{
+        name: string;
+        checkins: number;
+        date: string;
+      }>;
+    }>(`/activities/${activityId}/weekly-activity`),
+
+  getParticipantHistory: (activityId: string) =>
+    apiMethods.get<{
+      participants: Array<{
+        id: string;
+        name: string;
+        avatar?: string;
+        checkIns: number;
+        streak: number;
+        last7Days: Array<{
+          date: string;
+          checkedIn: boolean;
+        }>;
+      }>;
+    }>(`/activities/${activityId}/participant-history`),
 };

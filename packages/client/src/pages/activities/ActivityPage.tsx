@@ -19,6 +19,7 @@ import {
   Share2,
   Edit3,
   Flame,
+  Download,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ import ActivityDashboard from "@/components/activities/ActivityDashboard";
 import ActivityLeaderboard from "@/components/activities/ActivityLeaderboard";
 import ActivityGallery from "@/components/activities/ActivityGallery";
 import ActivitySchedule from "@/components/activities/ActivitySchedule";
+import MilestoneProgress from "@/components/activities/MilestoneProgress";
+import DataExport from "@/components/activities/DataExport";
 import ActivityCheckin from "@/components/activities/ActivityCheckin";
 import ActivityPartners from "@/components/activities/ActivityPartners";
 import MessageBoard from "@/components/activities/MessageBoard";
@@ -48,6 +51,7 @@ import {
   isActivityCreator,
   isActivityParticipant,
 } from "@/types/activity-types";
+import { CheckInService } from "@/services/api/activity/reaction.service";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -80,6 +84,14 @@ const ActivityPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isBannerEditModalOpen, setIsBannerEditModalOpen] = useState(false);
+  const [hasCheckedInCurrentPeriod, setHasCheckedInCurrentPeriod] =
+    useState(false);
+  const [isLoadingCheckInStatus, setIsLoadingCheckInStatus] = useState(false);
+  const [activityStats, setActivityStats] = useState({
+    longestStreak: 0,
+    highestCheckIns: 0,
+    averageProgress: 0,
+  });
   const isMobile = useIsMobile();
 
   const {
@@ -136,6 +148,57 @@ const ActivityPage = () => {
     fetchUserBadges,
     refreshActivityData,
   ]);
+
+  // Check if user has checked in for current period
+  useEffect(() => {
+    const checkCurrentPeriodStatus = async () => {
+      if (!user?._id || !activityId) return;
+
+      setIsLoadingCheckInStatus(true);
+      try {
+        const response =
+          await CheckInService.getCurrentPeriodStatus(activityId);
+        setHasCheckedInCurrentPeriod(response.data.hasCheckedIn);
+      } catch (error) {
+        console.error("Failed to check current period status:", error);
+      } finally {
+        setIsLoadingCheckInStatus(false);
+      }
+    };
+
+    checkCurrentPeriodStatus();
+  }, [activityId, user?._id]);
+
+  // Fetch activity statistics
+  useEffect(() => {
+    const fetchActivityStatistics = async () => {
+      if (!activityId) return;
+
+      try {
+        console.log("📊 Fetching activity statistics for:", activityId);
+        const response = await CheckInService.getActivityStatistics(activityId);
+        console.log("📊 Activity statistics response:", response);
+
+        setActivityStats({
+          longestStreak: response.data.longestStreak,
+          highestCheckIns: response.data.highestCheckIns,
+          averageProgress: response.data.averageProgress,
+        });
+      } catch (error) {
+        console.error("Failed to fetch activity statistics:", error);
+        // Fallback to basic stats from activity data
+        if (currentActivity) {
+          setActivityStats({
+            longestStreak: currentActivity.streakCount || 0,
+            highestCheckIns: currentActivity.checkins || 0,
+            averageProgress: currentActivity.progress || 0,
+          });
+        }
+      }
+    };
+
+    fetchActivityStatistics();
+  }, [activityId]);
 
   if (isLoadingActivities || isLoading) {
     return <div>Loading...</div>;
@@ -291,16 +354,25 @@ const ActivityPage = () => {
                   {isUserParticipant && (
                     <CheckInDialog
                       activity={currentActivity}
-                      onCheckInComplete={() =>
-                        console.log("Check-in completed")
-                      }
+                      onCheckInComplete={() => {
+                        console.log("Check-in completed");
+                        // Refresh check-in status after successful check-in
+                        setHasCheckedInCurrentPeriod(true);
+                      }}
                     >
                       <Button
                         variant="default"
-                        className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-5 text-white"
+                        disabled={
+                          hasCheckedInCurrentPeriod || isLoadingCheckInStatus
+                        }
+                        className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-5 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Check-in Now
+                        {isLoadingCheckInStatus
+                          ? "Checking..."
+                          : hasCheckedInCurrentPeriod
+                            ? "Already Checked In"
+                            : "Check-in Now"}
                       </Button>
                     </CheckInDialog>
                   )}
@@ -347,8 +419,11 @@ const ActivityPage = () => {
               </div>
               <div>
                 <p className="text-xs md:text-sm text-buddy-gray-600">
-                  Check-ins
+                  Most Check-ins
                 </p>
+                {/* <p className="text-xs text-buddy-gray-500">
+                  Highest: {activityStats.highestCheckIns}
+                </p> */}
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-blue to-buddy-blue-light bg-clip-text text-transparent">
                   {displayData.checkins}
                 </p>
@@ -361,11 +436,14 @@ const ActivityPage = () => {
               </div>
               <div>
                 <p className="text-xs md:text-sm text-buddy-gray-600">
-                  Progress
+                  Avg. Activity Progress
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-green to-buddy-green-light bg-clip-text text-transparent">
-                  {displayData.progress}%
+                  {activityStats.averageProgress}%
                 </p>
+                {/* <p className="text-xs text-buddy-gray-500">
+                  Avg: {activityStats.averageProgress}%
+                </p> */}
               </div>
             </Card>
 
@@ -378,8 +456,11 @@ const ActivityPage = () => {
                   Longest Streak
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">
-                  {displayData.streakCount} days
+                  {activityStats.longestStreak} days
                 </p>
+                {/* <p className="text-xs text-buddy-gray-500">
+                  Across all participants
+                </p> */}
               </div>
             </Card>
           </div>
@@ -411,6 +492,15 @@ const ActivityPage = () => {
                   <Medal className="mr-2 h-4 w-4" />
                   {!isMobile && "Leaderboard"}
                 </TabsTrigger>
+
+                {/* TODO: Re-enable milestones tab after MVP launch */}
+                {/* <TabsTrigger
+                  value="milestones"
+                  className="flex-1 py-4 px-3 md:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50"
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  {!isMobile && "Milestones"}
+                </TabsTrigger> */}
 
                 {/* TODO: Add gallery tab in v2 */}
                 {/* <TabsTrigger
@@ -454,6 +544,15 @@ const ActivityPage = () => {
                   <MessageCircle className="mr-2 h-4 w-4" />
                   {!isMobile && "Messages"}
                 </TabsTrigger>
+
+                {/* TODO: Re-enable export tab after MVP launch */}
+                {/* <TabsTrigger
+                  value="export"
+                  className="flex-1 py-4 px-3 md:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {!isMobile && "Export"}
+                </TabsTrigger> */}
               </div>
             </TabsList>
 
@@ -465,8 +564,25 @@ const ActivityPage = () => {
               value="leaderboard"
               className="p-0 mt-0 animate-fade-in"
             >
-              <ActivityLeaderboard activityId={displayData.id} />
+              <ActivityLeaderboard
+                activityId={displayData.id}
+                userRole={isUserAdmin ? "admin" : "member"}
+                currentUserId={userId}
+              />
             </TabsContent>
+
+            {/* TODO: Re-enable milestones tab content after MVP launch */}
+            {/* <TabsContent
+              value="milestones"
+              className="p-0 mt-0 animate-fade-in"
+            >
+              <div className="p-6">
+                <MilestoneProgress
+                  activityId={displayData.id}
+                  userId={userId}
+                />
+              </div>
+            </TabsContent> */}
 
             {/* TODO: Add gallery tab in v2 */}
             {/* <TabsContent value="gallery" className="p-0 mt-0 animate-fade-in">
@@ -492,6 +608,16 @@ const ActivityPage = () => {
                 <MessageBoard activityId={displayData.id} />
               </div>
             </TabsContent>
+
+            {/* TODO: Re-enable export tab content after MVP launch */}
+            {/* <TabsContent value="export" className="p-0 mt-0 animate-fade-in">
+              <div className="p-6">
+                <DataExport
+                  activityId={displayData.id}
+                  activityTitle={displayData.title}
+                />
+              </div>
+            </TabsContent> */}
           </Tabs>
         </Card>
       </div>

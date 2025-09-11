@@ -71,11 +71,21 @@ export const useActivityStore = create<ActivityState>()(
       fetchActivities: async () => {
         try {
           set({ isLoading: true, error: null });
+          console.log("🔄 ActivityStore: Fetching activities...");
           const response = await ActivityService.getActivities();
+          console.log("📊 ActivityStore: Activities response:", response);
 
           set({ activities: response.data });
+          console.log(
+            "✅ ActivityStore: Activities set in store:",
+            response.data
+          );
         } catch (error: unknown) {
           const apiError = error as ApiError;
+          console.error(
+            "❌ ActivityStore: Error fetching activities:",
+            apiError
+          );
           set({ error: apiError.message || "Failed to fetch activities" });
         } finally {
           set({ isLoading: false });

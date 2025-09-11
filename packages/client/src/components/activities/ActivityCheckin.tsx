@@ -59,6 +59,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
       fetchCheckInStats,
       hasCheckedInToday,
       refreshActivityData,
+      getComments,
     } = useCheckInStore();
     const { userBadges, fetchUserBadges } = useBadgeStore();
     const [hasCheckedInCurrentPeriod, setHasCheckedInCurrentPeriod] =
@@ -264,11 +265,9 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
           image: firstCheckIn?.imageUrl || undefined,
           totalParticipants,
           checkedInParticipants,
-          comments: 0, // TODO: Implement comments
+          comments: getComments(firstCheckIn._id).length, // Real comment count
           likes: 0, // Note: Likes are now handled by the ReactionButton component
-          isCheckedIn: dayCheckIns.some(
-            (ci) => ci.user._id === currentActivity?.admin?._id
-          ), // TODO: Check current user
+          isCheckedIn: dayCheckIns.some((ci) => ci.user._id === user?._id), // Check current user
           checkIns: dayCheckIns,
         };
       })

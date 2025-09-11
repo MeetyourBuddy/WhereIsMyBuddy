@@ -11,6 +11,8 @@ import {
   UserPlus,
   UserMinus,
   Shield,
+  Flame,
+  CheckCircle,
 } from "lucide-react";
 import { User } from "@/types/auth-types";
 import { IUserResponse } from "@/types/user-types";
@@ -18,6 +20,8 @@ import { formatDate } from "date-fns";
 import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   isActivityCreator,
   isActivityParticipant,
@@ -36,6 +40,15 @@ interface ActivityCardProps {
   maxParticipants: number;
   admin?: IUserResponse;
   onClick?: () => void;
+  // Progress tracking props (optional)
+  showProgress?: boolean;
+  userProgress?: {
+    progress: number;
+    completedCheckIns: number;
+    totalAvailableCheckIns: number;
+    currentStreak?: number;
+    lastCheckInDate?: string;
+  };
 }
 
 const ActivityCard = ({
@@ -51,6 +64,8 @@ const ActivityCard = ({
   maxParticipants,
   admin,
   onClick,
+  showProgress = false,
+  userProgress,
 }: ActivityCardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -115,6 +130,14 @@ const ActivityCard = ({
   // Calculate the images to display for group avatar
 
   console.log("details in activity card", category);
+  console.log("🔍 ActivityCard Debug:", {
+    title,
+    showProgress,
+    userProgress,
+    hasUserProgress: !!userProgress,
+    progressValue: userProgress?.progress,
+    activityId: id,
+  });
   const participantImages = participants.map((p) => p.avatar || "");
 
   // Determine category background color
@@ -212,6 +235,44 @@ const ActivityCard = ({
           <p className="text-buddy-gray-600 text-sm mb-4 line-clamp-2">
             {description}
           </p>
+
+          {/* Progress Indicators - Only show if showProgress is true and userProgress is available */}
+          {showProgress && userProgress && (
+            <div className="mb-4 p-3 bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 rounded-lg border border-buddy-purple/10">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-buddy-green" />
+                  <span className="text-sm font-medium text-buddy-gray-700">
+                    Your Progress
+                  </span>
+                </div>
+                <span className="text-sm font-semibold text-buddy-purple">
+                  {userProgress.progress || 0}%
+                </span>
+              </div>
+
+              <Progress
+                value={userProgress.progress || 0}
+                className="h-2 mb-2 bg-buddy-gray-200"
+              />
+
+              <div className="flex items-center justify-between text-xs text-buddy-gray-600">
+                <span>
+                  {userProgress.completedCheckIns || 0}/
+                  {userProgress.totalAvailableCheckIns || 0} check-ins
+                </span>
+                {userProgress.currentStreak &&
+                  userProgress.currentStreak > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <Flame className="w-3 h-3 text-orange-500" />
+                      <span className="text-orange-600 font-medium">
+                        {userProgress.currentStreak} day streak
+                      </span>
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2 mb-4">
             {/* <div className="flex items-center text-buddy-gray-700 text-sm">

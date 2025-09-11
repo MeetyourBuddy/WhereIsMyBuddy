@@ -103,4 +103,23 @@ export class CheckInController {
   }> {
     return this.checkInService.getUserProgress(activityId, userId);
   }
+
+  @Post('user-progress/batch')
+  async getUserProgressForActivities(
+    @Body() body: { activityIds: string[] },
+    @GetUser('userId') userId: string,
+  ) {
+    const data = await this.checkInService.getUserProgressForActivities(
+      body.activityIds,
+      userId,
+    );
+
+    return {
+      success: true,
+      message: 'User progress retrieved successfully',
+      data,
+      timestamp: new Date().toISOString(),
+      path: '/api/checkins/user-progress/batch',
+    };
+  }
 }

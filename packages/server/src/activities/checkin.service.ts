@@ -46,6 +46,36 @@ export class CheckInService {
       );
     }
 
+    // Validate check-in type is allowed
+    const allowedTypes = activity.allowedCheckInTypes?.map(
+      (type: any) => type.type,
+    ) || ['text', 'image'];
+    if (!allowedTypes.includes(type)) {
+      throw new BadRequestException(
+        `Check-in type '${type}' is not allowed for this activity. Allowed types: ${allowedTypes.join(', ')}`,
+      );
+    }
+
+    // Validate content based on type
+    if (type === 'text') {
+      if (!content || content.trim().length === 0) {
+        throw new BadRequestException(
+          'Text content is required for text check-ins',
+        );
+      }
+      if (content.length > 1000) {
+        throw new BadRequestException(
+          'Text content cannot exceed 1000 characters',
+        );
+      }
+    }
+
+    if (type === 'image') {
+      if (!imageUrl && !fileId) {
+        throw new BadRequestException('Image is required for image check-ins');
+      }
+    }
+
     // Calculate the requested check-in period based on activity frequency
     const requestedPeriod = this.calculateCheckInPeriod(
       activity,
@@ -426,9 +456,112 @@ export class CheckInService {
   private async getNextScheduledDate(
     activityId: string,
   ): Promise<Date | undefined> {
-    // This would need to be implemented based on activity's check-in frequency
-    // For now, return undefined
-    return undefined;
+    try {
+      const activity = await this.activityModel.findById(activityId).exec();
+      if (!activity) {
+        return undefined;
+      }
+
+      const now = new Date();
+      const startDate = new Date(activity.startDate);
+
+      // Calculate the next valid check-in date based on activity rules
+      const calculateNextScheduledDate = (activity: any, fromDate: Date) => {
+        const {
+          checkinFrequency,
+          checkinFrequencyUnit,
+          checkinDays,
+          checkinDatesOfMonth,
+        } = activity;
+
+        // Calculate period duration based on frequency unit
+        let periodDuration: number;
+        switch (checkinFrequencyUnit) {
+          case 'daily':
+            periodDuration = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+            break;
+          case 'weekly':
+            periodDuration = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+            break;
+          case 'monthly':
+            periodDuration = 30 * 24 * 60 * 60 * 1000; // 1 month in milliseconds
+            break;
+          default:
+            periodDuration = 24 * 60 * 60 * 1000; // Default to daily
+        }
+
+        // If we have specific check-in days, find the next valid day
+        if (checkinDays && checkinDays.length > 0) {
+          const dayNames = [
+            'sunday',
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+          ];
+          const allowedDays = checkinDays.map((day: string) =>
+            dayNames.indexOf(day.toLowerCase()),
+          );
+
+          // Look for the next allowed day within the next few weeks
+          for (let i = 0; i < 14; i++) {
+            const checkDate = new Date(fromDate);
+            checkDate.setDate(checkDate.getDate() + i);
+            const dayOfWeek = checkDate.getDay();
+
+            if (allowedDays.includes(dayOfWeek)) {
+              checkDate.setHours(0, 0, 0, 0);
+              return checkDate;
+            }
+          }
+        }
+
+        // If we have specific dates of month, find the next valid date
+        if (checkinDatesOfMonth && checkinDatesOfMonth.length > 0) {
+          const currentMonth = fromDate.getMonth();
+          const currentYear = fromDate.getFullYear();
+
+          // Check current month first
+          for (const day of checkinDatesOfMonth) {
+            const checkDate = new Date(currentYear, currentMonth, day);
+            if (checkDate >= fromDate) {
+              checkDate.setHours(0, 0, 0, 0);
+              return checkDate;
+            }
+          }
+
+          // Check next month
+          const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+          const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+
+          for (const day of checkinDatesOfMonth) {
+            const checkDate = new Date(nextYear, nextMonth, day);
+            checkDate.setHours(0, 0, 0, 0);
+            return checkDate;
+          }
+        }
+
+        // Default: calculate next period based on frequency
+        const timeSinceStart = fromDate.getTime() - startDate.getTime();
+        const periodsPassed = Math.floor(
+          timeSinceStart / (periodDuration * checkinFrequency),
+        );
+
+        const nextPeriodStart = new Date(
+          startDate.getTime() +
+            (periodsPassed + 1) * periodDuration * checkinFrequency,
+        );
+
+        return nextPeriodStart;
+      };
+
+      return calculateNextScheduledDate(activity, now);
+    } catch (error) {
+      console.error('Error calculating next scheduled date:', error);
+      return undefined;
+    }
   }
 
   private calculateCheckInPeriod(
@@ -549,6 +682,118 @@ export class CheckInService {
     });
 
     return { progress, completedCheckIns, totalAvailableCheckIns };
+  }
+
+  async getUserProgressForActivities(
+    activityIds: string[],
+    userId: string,
+  ): Promise<
+    Record<
+      string,
+      {
+        progress: number;
+        completedCheckIns: number;
+        totalAvailableCheckIns: number;
+        currentStreak?: number;
+        lastCheckInDate?: string;
+      }
+    >
+  > {
+    const result: Record<string, any> = {};
+
+    // Get all activities at once
+    const activities = await this.activityModel
+      .find({ _id: { $in: activityIds } })
+      .exec();
+
+    // Get all check-ins for the user and these activities
+    const checkIns = await this.checkInModel
+      .find({
+        user: userId,
+        activity: { $in: activityIds },
+        isDeleted: false,
+      })
+      .sort({ checkInDate: -1 })
+      .exec();
+
+    // Group check-ins by activity
+    const checkInsByActivity = checkIns.reduce(
+      (acc, checkIn) => {
+        const activityId = checkIn.activity.toString();
+        if (!acc[activityId]) {
+          acc[activityId] = [];
+        }
+        acc[activityId].push(checkIn);
+        return acc;
+      },
+      {} as Record<string, any[]>,
+    );
+
+    // Calculate progress for each activity
+    for (const activity of activities) {
+      const activityId = activity._id.toString();
+      const activityCheckIns = checkInsByActivity[activityId] || [];
+
+      const completedCheckIns = activityCheckIns.length;
+      const totalAvailableCheckIns =
+        this.calculateTotalAvailableCheckIns(activity);
+      const progress =
+        totalAvailableCheckIns > 0
+          ? Math.round((completedCheckIns / totalAvailableCheckIns) * 100)
+          : 0;
+
+      // Calculate current streak
+      const currentStreak = this.calculateUserStreak(activityCheckIns);
+
+      // Get last check-in date
+      const lastCheckInDate =
+        activityCheckIns.length > 0
+          ? activityCheckIns[0].checkInDate
+          : undefined;
+
+      result[activityId] = {
+        progress,
+        completedCheckIns,
+        totalAvailableCheckIns,
+        currentStreak,
+        lastCheckInDate,
+      };
+    }
+
+    return result;
+  }
+
+  private calculateUserStreak(checkIns: any[]): number {
+    if (checkIns.length === 0) return 0;
+
+    // Sort check-ins by date (most recent first)
+    const sortedCheckIns = checkIns.sort(
+      (a, b) =>
+        new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime(),
+    );
+
+    let streak = 0;
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    for (const checkIn of sortedCheckIns) {
+      const checkInDate = new Date(checkIn.checkInDate);
+      checkInDate.setHours(0, 0, 0, 0);
+
+      const daysDiff = Math.floor(
+        (currentDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      if (daysDiff === streak) {
+        streak++;
+        currentDate = new Date(checkInDate);
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
   }
 
   private calculateTotalAvailableCheckIns(activity: any): number {
