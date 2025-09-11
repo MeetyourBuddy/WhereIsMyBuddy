@@ -18,6 +18,13 @@ import {
   Eye,
   Loader2,
   Flame,
+  Users,
+  Target,
+  Zap,
+  Star,
+  Activity,
+  Mail,
+  Inbox,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
@@ -186,6 +193,88 @@ const Notifications: React.FC = () => {
 
   const filteredNotifications = notifications;
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // Function to get empty state content based on filter
+  const getEmptyStateContent = (filterType: string) => {
+    switch (filterType) {
+      case "all":
+        return {
+          icon: Bell,
+          title: "No notifications yet",
+          message: "You don't have any notifications yet. Check back later!",
+          iconColor: "text-buddy-purple/70",
+          bgColor: "from-buddy-purple/20 to-buddy-blue/20",
+        };
+      case "unread":
+        return {
+          icon: Inbox,
+          title: "All caught up!",
+          message:
+            "You have no unread notifications. Great job staying on top of things!",
+          iconColor: "text-green-500/70",
+          bgColor: "from-green-500/20 to-emerald-500/20",
+        };
+      case "buddy_request":
+        return {
+          icon: UserPlus,
+          title: "No buddy requests",
+          message: "You don't have any pending buddy requests at the moment.",
+          iconColor: "text-blue-500/70",
+          bgColor: "from-blue-500/20 to-cyan-500/20",
+        };
+      case "activity_comment":
+        return {
+          icon: MessageSquare,
+          title: "No comments yet",
+          message:
+            "No one has commented on your activities yet. Start engaging with others!",
+          iconColor: "text-orange-500/70",
+          bgColor: "from-orange-500/20 to-amber-500/20",
+        };
+      case "milestone_achieved":
+        return {
+          icon: Trophy,
+          title: "No milestones yet",
+          message:
+            "Keep working on your activities to unlock amazing milestones!",
+          iconColor: "text-yellow-500/70",
+          bgColor: "from-yellow-500/20 to-orange-500/20",
+        };
+      case "streak_milestone":
+        return {
+          icon: Flame,
+          title: "No streak milestones",
+          message: "Build your activity streaks to unlock streak milestones!",
+          iconColor: "text-red-500/70",
+          bgColor: "from-red-500/20 to-pink-500/20",
+        };
+      case "activity_reminder":
+        return {
+          icon: Clock,
+          title: "No reminders",
+          message: "You don't have any activity reminders set up yet.",
+          iconColor: "text-purple-500/70",
+          bgColor: "from-purple-500/20 to-indigo-500/20",
+        };
+      case "system_welcome":
+        return {
+          icon: Sparkles,
+          title: "Welcome to Buddy!",
+          message:
+            "You're all set up! Check out other notification types to stay connected.",
+          iconColor: "text-buddy-purple/70",
+          bgColor: "from-buddy-purple/20 to-buddy-blue/20",
+        };
+      default:
+        return {
+          icon: Bell,
+          title: "No notifications found",
+          message: `No ${filterType} notifications at the moment.`,
+          iconColor: "text-buddy-gray-500/70",
+          bgColor: "from-buddy-gray-500/20 to-buddy-gray-400/20",
+        };
+    }
+  };
 
   // Helper function to get notification icon and color
   const getNotificationIcon = (type: string) => {
@@ -416,6 +505,39 @@ const Notifications: React.FC = () => {
                       <Trophy className="w-4 h-4 mr-3" />
                       <span className="font-medium">Milestones</span>
                     </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="streak_milestone"
+                      className={`flex items-center justify-start px-4 py-3 rounded-full w-full transition-all duration-300 ${
+                        filter === "streak_milestone"
+                          ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
+                          : "hover:bg-buddy-gray-50 border border-transparent hover:border-buddy-purple/20"
+                      }`}
+                    >
+                      <Flame className="w-4 h-4 mr-3" />
+                      <span className="font-medium">Streak Milestones</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="activity_reminder"
+                      className={`flex items-center justify-start px-4 py-3 rounded-full w-full transition-all duration-300 ${
+                        filter === "activity_reminder"
+                          ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
+                          : "hover:bg-buddy-gray-50 border border-transparent hover:border-buddy-purple/20"
+                      }`}
+                    >
+                      <Clock className="w-4 h-4 mr-3" />
+                      <span className="font-medium">Reminders</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="system_welcome"
+                      className={`flex items-center justify-start px-4 py-3 rounded-full w-full transition-all duration-300 ${
+                        filter === "system_welcome"
+                          ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
+                          : "hover:bg-buddy-gray-50 border border-transparent hover:border-buddy-purple/20"
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4 mr-3" />
+                      <span className="font-medium">System</span>
+                    </ToggleGroupItem>
                   </ToggleGroup>
                 </Card.Content>
               </Card>
@@ -431,19 +553,27 @@ const Notifications: React.FC = () => {
                   </p>
                 </Card>
               ) : filteredNotifications.length === 0 ? (
-                <Card className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/80 shadow-lg bg-white/90 backdrop-blur-sm">
-                  <div className="bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 p-6 rounded-full mb-6 shadow-lg">
-                    <Bell className="w-16 h-16 text-buddy-purple/70" />
-                  </div>
-                  <h3 className="text-2xl font-semibold text-buddy-gray-800 mb-3">
-                    No notifications found
-                  </h3>
-                  <p className="text-buddy-gray-600 text-center max-w-md text-lg">
-                    {filter === "all"
-                      ? "You don't have any notifications yet. Check back later!"
-                      : `No ${filter} notifications at the moment.`}
-                  </p>
-                </Card>
+                (() => {
+                  const emptyState = getEmptyStateContent(filter);
+                  const IconComponent = emptyState.icon;
+                  return (
+                    <Card className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/80 shadow-lg bg-white/90 backdrop-blur-sm">
+                      <div
+                        className={`bg-gradient-to-br ${emptyState.bgColor} p-6 rounded-full mb-6 shadow-lg`}
+                      >
+                        <IconComponent
+                          className={`w-16 h-16 ${emptyState.iconColor}`}
+                        />
+                      </div>
+                      <h3 className="text-2xl font-semibold text-buddy-gray-800 mb-3">
+                        {emptyState.title}
+                      </h3>
+                      <p className="text-buddy-gray-600 text-center max-w-md text-lg">
+                        {emptyState.message}
+                      </p>
+                    </Card>
+                  );
+                })()
               ) : (
                 filteredNotifications.map((notification) => (
                   <motion.div

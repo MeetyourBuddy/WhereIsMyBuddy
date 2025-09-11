@@ -8,7 +8,10 @@ import {
 } from '../activities/schemas/activity.schema';
 import { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
-import { NotificationType, NotificationPriority } from '../activities/schemas/notification.schema';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../activities/schemas/notification.schema';
 
 async function seedNotifications() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -77,7 +80,7 @@ async function seedNotifications() {
       },
       {
         recipientId: user._id.toString(),
-        type: 'activity_reminder' as const,
+        type: NotificationType.ACTIVITY_REMINDER,
         title: 'Activity Reminder ⏰',
         message: `Don't forget about your "${activity.title}" session today! You're doing great!`,
         priority: NotificationPriority.MEDIUM,

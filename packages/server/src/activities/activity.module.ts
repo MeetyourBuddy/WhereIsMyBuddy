@@ -41,6 +41,7 @@ import {
   BuddyConnection,
   BuddyConnectionSchema,
 } from '../users/schemas/buddy-connection.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -56,6 +57,7 @@ import { UsersModule } from '../users/users.module';
       { name: UserMilestone.name, schema: UserMilestoneSchema },
       { name: Notification.name, schema: NotificationSchema },
       { name: BuddyConnection.name, schema: BuddyConnectionSchema },
+      { name: User.name, schema: UserSchema },
     ]),
     UsersModule,
   ],
