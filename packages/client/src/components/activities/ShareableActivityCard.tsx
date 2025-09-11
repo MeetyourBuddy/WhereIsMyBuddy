@@ -22,6 +22,8 @@ import {
   Globe,
   LogIn,
   Shield,
+  CheckCircle,
+  Flame,
 } from "lucide-react";
 import {
   Sheet,
@@ -47,9 +49,22 @@ import {
 
 interface ShareableActivityCardProps {
   activity: IActivityResult;
+  // Progress tracking props (optional)
+  showProgress?: boolean;
+  userProgress?: {
+    progress: number;
+    completedCheckIns: number;
+    totalAvailableCheckIns: number;
+    currentStreak?: number;
+    lastCheckInDate?: string;
+  };
 }
 
-const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
+const ShareableActivityCard = ({
+  activity,
+  showProgress = false,
+  userProgress,
+}: ShareableActivityCardProps) => {
   console.log("🚀 ShareableActivityCard RENDERED with activity:", activity);
   console.log("🔥 FIRE TEST - This should definitely show up in console!");
 
@@ -313,13 +328,16 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
                   className="w-full mt-6"
                 >
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="qr" className="flex items-center gap-2">
+                    <TabsTrigger
+                      value="qr"
+                      className="flex items-center gap-2 rounded-full"
+                    >
                       <QrCode className="w-4 h-4" />
                       QR Code
                     </TabsTrigger>
                     <TabsTrigger
                       value="link"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 rounded-full"
                     >
                       <LinkIcon className="w-4 h-4" />
                       Link
@@ -349,9 +367,9 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
                           onClick={handleDownloadQR}
                           variant="outline"
                           size="sm"
-                          className="text-buddy-purple border-buddy-purple/30 hover:bg-buddy-purple/10"
+                          className="text-buddy-purple border-buddy-purple/30 hover:bg-buddy-purple/10 rounded-full"
                         >
-                          <QrCode className="w-4 h-4 mr-2" />
+                          <QrCode className="w-4 h-4 " />
                           Download QR Code
                         </Button>
                       </div>
@@ -380,17 +398,19 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
                           variant={copied ? "default" : "outline"}
                           size="sm"
                           className={
-                            copied ? "bg-green-500 hover:bg-green-600" : ""
+                            copied
+                              ? "bg-green-500 hover:bg-green-600 rounded-full"
+                              : "rounded-full"
                           }
                         >
                           {copied ? (
                             <>
-                              <Check className="w-4 h-4 mr-2" />
+                              <Check className="w-4 h-4 " />
                               Copied!
                             </>
                           ) : (
                             <>
-                              <Copy className="w-4 h-4 mr-2" />
+                              <Copy className="w-4 h-4 " />
                               Copy
                             </>
                           )}
@@ -401,7 +421,7 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10"
+                          className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10 rounded-full"
                           onClick={() => {
                             window.open(
                               `mailto:?subject=Check out this activity&body=${activityUrl}`,
@@ -409,13 +429,13 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
                             );
                           }}
                         >
-                          <Globe className="w-4 h-4 mr-2" />
+                          <Globe className="w-4 h-4 " />
                           Email
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-buddy-green border-buddy-green/30 hover:bg-buddy-green/10"
+                          className="text-buddy-green border-buddy-green/30 hover:bg-buddy-green/10 rounded-full"
                           onClick={() => {
                             if (navigator.share) {
                               navigator.share({
@@ -428,7 +448,7 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
                             }
                           }}
                         >
-                          <Share2 className="w-4 h-4 mr-2" />
+                          <Share2 className="w-4 h-4 " />
                           Share
                         </Button>
                       </div>
@@ -511,25 +531,82 @@ const ShareableActivityCard = ({ activity }: ShareableActivityCardProps) => {
             </div>
 
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-purple/10 transform hover:translate-y-[-2px] transition-all duration-300 hover:shadow-lg">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-lg font-semibold text-buddy-gray-800">
-                    Activity Progress
-                  </span>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-buddy-blue to-buddy-purple bg-clip-text text-transparent">
-                    {progress}%
-                  </span>
+              {/* Progress Indicators - Only show if showProgress is true and userProgress is available */}
+              {showProgress && userProgress && (
+                <div className="bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-purple/10 transform hover:translate-y-[-2px] transition-all duration-300 hover:shadow-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-5 h-5 text-buddy-green" />
+                      <span className="text-lg font-semibold text-buddy-gray-800">
+                        Your Progress
+                      </span>
+                    </div>
+                    <span className="text-2xl font-bold bg-gradient-to-r from-buddy-blue to-buddy-purple bg-clip-text text-transparent">
+                      {userProgress.progress || 0}%
+                    </span>
+                  </div>
+
+                  <div className="h-3 bg-buddy-gray-100 rounded-full overflow-hidden shadow-inner mb-3">
+                    <div
+                      className="h-full bg-gradient-to-r from-buddy-blue via-buddy-purple to-buddy-green rounded-full transition-all duration-1000 ease-out shadow-lg"
+                      style={{ width: `${userProgress.progress || 0}%` }}
+                    ></div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm text-buddy-gray-600 mb-2">
+                    <span>
+                      {userProgress.completedCheckIns || 0}/
+                      {userProgress.totalAvailableCheckIns || 0} check-ins
+                    </span>
+                    {userProgress.currentStreak &&
+                      userProgress.currentStreak > 0 && (
+                        <div className="flex items-center space-x-1">
+                          <Flame className="w-4 h-4 text-orange-500" />
+                          <span className="text-orange-600 font-medium">
+                            {userProgress.currentStreak} day streak
+                          </span>
+                        </div>
+                      )}
+                  </div>
+
+                  <p className="text-sm text-buddy-gray-600">
+                    {userProgress.progress === 100
+                      ? "Congratulations! You've completed this activity! 🎉"
+                      : userProgress.progress >= 75
+                        ? "Almost there! You're doing amazing! 🚀"
+                        : userProgress.progress >= 50
+                          ? "Great progress! You're halfway there! 💪"
+                          : userProgress.progress >= 25
+                            ? "Keep going! You're making great progress! 📈"
+                            : "Every step counts! Keep up the great work! 🌟"}
+                  </p>
                 </div>
-                <div className="h-3 bg-buddy-gray-100 rounded-full overflow-hidden shadow-inner">
-                  <div
-                    className="h-full bg-gradient-to-r from-buddy-blue via-buddy-purple to-buddy-green rounded-full transition-all duration-1000 ease-out shadow-lg"
-                    style={{ width: `${progress}%` }}
-                  ></div>
+              )}
+
+              {/* Default progress display when no user progress is available */}
+              {!showProgress && (
+                <div className="bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-purple/10 transform hover:translate-y-[-2px] transition-all duration-300 hover:shadow-lg">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-lg font-semibold text-buddy-gray-800">
+                      Activity Progress
+                    </span>
+                    <span className="text-2xl font-bold bg-gradient-to-r from-buddy-blue to-buddy-purple bg-clip-text text-transparent">
+                      {progress}%
+                    </span>
+                  </div>
+                  <div className="h-3 bg-buddy-gray-100 rounded-full overflow-hidden shadow-inner">
+                    <div
+                      className="h-full bg-gradient-to-r from-buddy-blue via-buddy-purple to-buddy-green rounded-full transition-all duration-1000 ease-out shadow-lg"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-buddy-gray-600 mt-2">
+                    {isParticipant
+                      ? "Join this activity to start tracking your progress!"
+                      : "Join this activity to start tracking your progress!"}
+                  </p>
                 </div>
-                <p className="text-sm text-buddy-gray-600 mt-2">
-                  Keep going! You're making great progress 🎉
-                </p>
-              </div>
+              )}
 
               <div className="bg-gradient-to-r from-buddy-green/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-green/10">
                 <div className="flex justify-between items-center">

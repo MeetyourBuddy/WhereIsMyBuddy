@@ -6,6 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
+import { CheckInService } from "@/services/api/activity/reaction.service";
+import { isActivityParticipant } from "@/types/activity-types";
 
 const ActivityPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,10 +17,26 @@ const ActivityPage = () => {
   const { currentActivity, fetchActivityById, isLoading } = useActivityStore();
   const [isLoadingPage, setIsLoadingPage] = useState(true);
 
+  // Progress tracking state
+  const [userProgress, setUserProgress] = useState<{
+    progress: number;
+    completedCheckIns: number;
+    totalAvailableCheckIns: number;
+    currentStreak?: number;
+    lastCheckInDate?: string;
+  } | null>(null);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(false);
+
   // Direct admin comparison check - use both _id and id fields
   const userId = user?._id || user?.id;
   const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
   const isUserAdmin = user && currentActivity?.admin && userId === adminId;
+
+  // Check if user is a participant
+  const isParticipant =
+    currentActivity && userId
+      ? isActivityParticipant(currentActivity, userId)
+      : false;
 
   // Check if user is coming from within the app or external link
   const isInternalNavigation =
@@ -26,6 +44,23 @@ const ActivityPage = () => {
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  // Function to fetch user progress
+  const fetchUserProgress = async () => {
+    if (!id || !user?._id || !isParticipant) {
+      return;
+    }
+
+    setIsLoadingProgress(true);
+    try {
+      const response = await CheckInService.getUserProgress(id);
+      setUserProgress(response.data);
+    } catch (error) {
+      console.error("Failed to fetch user progress:", error);
+    } finally {
+      setIsLoadingProgress(false);
+    }
   };
 
   useEffect(() => {
@@ -37,6 +72,13 @@ const ActivityPage = () => {
       setIsLoadingPage(false);
     }
   }, [id, fetchActivityById]);
+
+  // Fetch user progress when activity is loaded and user is a participant
+  useEffect(() => {
+    if (currentActivity && user && isParticipant) {
+      fetchUserProgress();
+    }
+  }, [currentActivity, user, isParticipant]);
 
   if (isLoadingPage || isLoading) {
     return (
@@ -88,7 +130,11 @@ const ActivityPage = () => {
             Back
           </Button>
         )}
-        <ShareableActivityCard activity={currentActivity} />
+        <ShareableActivityCard
+          activity={currentActivity}
+          showProgress={isParticipant}
+          userProgress={userProgress || undefined}
+        />
       </div>
     </div>
   );

@@ -143,7 +143,7 @@ const ProfileCard = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-2xl bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-md hover:from-white/30 hover:to-white/20 transition-all duration-300 transform hover:scale-110 hover:rotate-12 shadow-lg"
+                    className="rounded-full bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-md hover:from-white/30 hover:to-white/20 transition-all duration-300 transform hover:scale-110 hover:rotate-12 shadow-lg"
                   >
                     <Share2 className="w-5 h-5" />
                   </Button>
@@ -159,14 +159,14 @@ const ProfileCard = ({
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger
                         value="qr"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 rounded-full"
                       >
                         <QrCode className="w-4 h-4" />
                         QR Code
                       </TabsTrigger>
                       <TabsTrigger
                         value="link"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 rounded-full"
                       >
                         <Link className="w-4 h-4" />
                         Link
@@ -200,17 +200,17 @@ const ProfileCard = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-buddy-purple border-buddy-purple/30 hover:bg-buddy-purple/10"
+                            className="text-buddy-purple border-buddy-purple/30 hover:bg-buddy-purple/10 rounded-full"
                           >
-                            <Copy className="w-4 h-4 mr-2" />
+                            <Copy className="w-4 h-4 " />
                             Copy Image
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10"
+                            className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10 rounded-full"
                           >
-                            <ExternalLink className="w-4 h-4 mr-2" />
+                            <ExternalLink className="w-4 h-4 " />
                             Download QR
                           </Button>
                         </div>
@@ -231,17 +231,19 @@ const ProfileCard = ({
                             variant={copied ? "default" : "outline"}
                             size="sm"
                             className={
-                              copied ? "bg-green-500 hover:bg-green-600" : ""
+                              copied
+                                ? "bg-green-500 hover:bg-green-600 rounded-full"
+                                : "rounded-full"
                             }
                           >
                             {copied ? (
                               <>
-                                <Check className="w-4 h-4 mr-2" />
+                                <Check className="w-4 h-4 " />
                                 Copied!
                               </>
                             ) : (
                               <>
-                                <Copy className="w-4 h-4 mr-2" />
+                                <Copy className="w-4 h-4 " />
                                 Copy
                               </>
                             )}
@@ -252,7 +254,7 @@ const ProfileCard = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10"
+                            className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10 rounded-full"
                             onClick={() => {
                               window.open(
                                 `mailto:?subject=Check out ${name}'s profile&body=${profileUrl}`,
@@ -260,13 +262,13 @@ const ProfileCard = ({
                               );
                             }}
                           >
-                            <MessageCircle className="w-4 h-4 mr-2" />
+                            <MessageCircle className="w-4 h-4 " />
                             Email
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-buddy-green border-buddy-green/30 hover:bg-buddy-green/10"
+                            className="text-buddy-green border-buddy-green/30 hover:bg-buddy-green/10 rounded-full"
                             onClick={() => {
                               if (navigator.share) {
                                 navigator.share({
@@ -279,7 +281,7 @@ const ProfileCard = ({
                               }
                             }}
                           >
-                            <Share2 className="w-4 h-4 mr-2" />
+                            <Share2 className="w-4 h-4 " />
                             Share
                           </Button>
                         </div>

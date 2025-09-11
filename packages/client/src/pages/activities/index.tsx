@@ -746,23 +746,6 @@ const Activities = () => {
                     )?.toString();
                     const progressData = userProgressData[activityId];
 
-                    console.log("🎯 Activity Progress Debug:", {
-                      activityTitle: activity.title,
-                      activityId,
-                      activityIdType: typeof activityId,
-                      progressData,
-                      hasProgressData: !!progressData,
-                      userProgressDataKeys: Object.keys(userProgressData),
-                      userProgressData: userProgressData,
-                      exactMatch: userProgressData[activityId],
-                      stringMatch: userProgressData[activityId?.toString()],
-                      allKeys: Object.keys(userProgressData).map((key) => ({
-                        key,
-                        type: typeof key,
-                        value: userProgressData[key],
-                      })),
-                    });
-
                     return (
                       <ActivityCard
                         key={activityId}

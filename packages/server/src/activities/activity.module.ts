@@ -16,6 +16,8 @@ import { ExportController } from './export.controller';
 import { ExportService } from './export.service';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
+import { NotificationManagerController } from './controllers/notification-manager.controller';
+import { NotificationManagerService } from './services/notification-manager.service';
 import { Activity, ActivitySchema } from './schemas/activity.schema';
 import { CheckIn, CheckInSchema } from './schemas/checkin.schema';
 import { Badge, BadgeSchema } from './schemas/badge.schema';
@@ -31,6 +33,10 @@ import {
   UserMilestone,
   UserMilestoneSchema,
 } from './schemas/milestone.schema';
+import {
+  Notification,
+  NotificationSchema,
+} from './schemas/notification.schema';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -44,6 +50,7 @@ import { UsersModule } from '../users/users.module';
       { name: CheckInComment.name, schema: CheckInCommentSchema },
       { name: Milestone.name, schema: MilestoneSchema },
       { name: UserMilestone.name, schema: UserMilestoneSchema },
+      { name: Notification.name, schema: NotificationSchema },
     ]),
     UsersModule,
   ],
@@ -56,6 +63,7 @@ import { UsersModule } from '../users/users.module';
     MilestoneController,
     ExportController,
     NotificationController,
+    NotificationManagerController,
   ],
   providers: [
     ActivityService,
@@ -66,6 +74,7 @@ import { UsersModule } from '../users/users.module';
     MilestoneService,
     ExportService,
     NotificationService,
+    NotificationManagerService,
   ],
   exports: [
     ActivityService,
@@ -76,6 +85,7 @@ import { UsersModule } from '../users/users.module';
     MilestoneService,
     ExportService,
     NotificationService,
+    NotificationManagerService,
   ],
 })
 export class ActivityModule {}
