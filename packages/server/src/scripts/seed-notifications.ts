@@ -8,6 +8,7 @@ import {
 } from '../activities/schemas/activity.schema';
 import { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
+import { NotificationType, NotificationPriority } from '../activities/schemas/notification.schema';
 
 async function seedNotifications() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -37,18 +38,18 @@ async function seedNotifications() {
     const sampleNotifications = [
       {
         recipientId: user._id.toString(),
-        type: 'system_welcome' as const,
+        type: NotificationType.SYSTEM_WELCOME,
         title: 'Welcome to Buddy! 🎉',
         message:
           'Thanks for joining Buddy. Complete your profile to get started and find your perfect activity buddies!',
-        priority: 'high' as const,
+        priority: NotificationPriority.HIGH,
       },
       {
         recipientId: user._id.toString(),
-        type: 'milestone_achieved' as const,
+        type: NotificationType.MILESTONE_ACHIEVED,
         title: 'Halfway There! 💪',
         message: `Great progress on "${activity.title}"! You're 50% complete with 5 check-ins.`,
-        priority: 'medium' as const,
+        priority: NotificationPriority.MEDIUM,
         activityId: activity._id.toString(),
         metadata: {
           progress: 50,
@@ -61,10 +62,10 @@ async function seedNotifications() {
       },
       {
         recipientId: user._id.toString(),
-        type: 'streak_milestone' as const,
+        type: NotificationType.STREAK_MILESTONE,
         title: '🔥 7-Day Streak!',
         message: `Amazing! You've maintained a 7-day streak in "${activity.title}"!`,
-        priority: 'medium' as const,
+        priority: NotificationPriority.MEDIUM,
         activityId: activity._id.toString(),
         metadata: {
           currentStreak: 7,
@@ -79,7 +80,7 @@ async function seedNotifications() {
         type: 'activity_reminder' as const,
         title: 'Activity Reminder ⏰',
         message: `Don't forget about your "${activity.title}" session today! You're doing great!`,
-        priority: 'medium' as const,
+        priority: NotificationPriority.MEDIUM,
         activityId: activity._id.toString(),
         metadata: { reminderType: 'daily check-in' },
       },

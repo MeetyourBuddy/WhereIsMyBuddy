@@ -14,8 +14,8 @@ import { MilestoneController } from './milestone.controller';
 import { MilestoneService } from './milestone.service';
 import { ExportController } from './export.controller';
 import { ExportService } from './export.service';
-import { NotificationController } from './notification.controller';
-import { NotificationService } from './notification.service';
+// import { NotificationController } from './notification.controller';
+// import { NotificationService } from './notification.service';
 import { NotificationManagerController } from './controllers/notification-manager.controller';
 import { NotificationManagerService } from './services/notification-manager.service';
 import { Activity, ActivitySchema } from './schemas/activity.schema';
@@ -37,6 +37,10 @@ import {
   Notification,
   NotificationSchema,
 } from './schemas/notification.schema';
+import {
+  BuddyConnection,
+  BuddyConnectionSchema,
+} from '../users/schemas/buddy-connection.schema';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -51,6 +55,7 @@ import { UsersModule } from '../users/users.module';
       { name: Milestone.name, schema: MilestoneSchema },
       { name: UserMilestone.name, schema: UserMilestoneSchema },
       { name: Notification.name, schema: NotificationSchema },
+      { name: BuddyConnection.name, schema: BuddyConnectionSchema },
     ]),
     UsersModule,
   ],
@@ -62,7 +67,7 @@ import { UsersModule } from '../users/users.module';
     CheckInCommentController,
     MilestoneController,
     ExportController,
-    NotificationController,
+    // NotificationController, // Removed - using NotificationManagerController instead
     NotificationManagerController,
   ],
   providers: [
@@ -73,7 +78,7 @@ import { UsersModule } from '../users/users.module';
     CheckInCommentService,
     MilestoneService,
     ExportService,
-    NotificationService,
+    // NotificationService, // Removed - using NotificationManagerService instead
     NotificationManagerService,
   ],
   exports: [
@@ -84,7 +89,7 @@ import { UsersModule } from '../users/users.module';
     CheckInCommentService,
     MilestoneService,
     ExportService,
-    NotificationService,
+    // NotificationService, // Removed - using NotificationManagerService instead
     NotificationManagerService,
   ],
 })

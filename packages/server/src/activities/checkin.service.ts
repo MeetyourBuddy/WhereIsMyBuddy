@@ -47,34 +47,34 @@ export class CheckInService {
     }
 
     // Validate check-in type is allowed
-    const allowedTypes = activity.allowedCheckInTypes?.map(
-      (type: any) => type.type,
-    ) || ['text', 'image'];
-    if (!allowedTypes.includes(type)) {
-      throw new BadRequestException(
-        `Check-in type '${type}' is not allowed for this activity. Allowed types: ${allowedTypes.join(', ')}`,
-      );
-    }
+    // const allowedTypes = activity.allowedCheckInTypes?.map(
+    //   (type: any) => type.type,
+    // ) || ['text', 'image'];
+    // if (!allowedTypes.includes(type)) {
+    //   throw new BadRequestException(
+    //     `Check-in type '${type}' is not allowed for this activity. Allowed types: ${allowedTypes.join(', ')}`,
+    //   );
+    // }
 
     // Validate content based on type
-    if (type === 'text') {
-      if (!content || content.trim().length === 0) {
-        throw new BadRequestException(
-          'Text content is required for text check-ins',
-        );
-      }
-      if (content.length > 1000) {
-        throw new BadRequestException(
-          'Text content cannot exceed 1000 characters',
-        );
-      }
-    }
+    // if (type === 'text') {
+    // if (!content || content.trim().length === 0) {
+    //   throw new BadRequestException(
+    //     'Text content is required for text check-ins',
+    //   );
+    // }
+    // if (content.length > 1000) {
+    //   throw new BadRequestException(
+    //     'Text content cannot exceed 1000 characters',
+    //   );
+    // }
+    // }
 
-    if (type === 'image') {
-      if (!imageUrl && !fileId) {
-        throw new BadRequestException('Image is required for image check-ins');
-      }
-    }
+    // if (type === 'image') {
+    //   if (!imageUrl && !fileId) {
+    //     throw new BadRequestException('Image is required for image check-ins');
+    //   }
+    // }
 
     // Calculate the requested check-in period based on activity frequency
     const requestedPeriod = this.calculateCheckInPeriod(
