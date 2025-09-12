@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
   Calendar,
   CheckCircle,
   XCircle,
@@ -22,8 +14,9 @@ import {
 } from "@/components/ui/hover-card";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Avatar from "@/components/common/Avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ActivityInfo from "./ActivityInfo";
+import ActivityCalendarGrid from "./ActivityCalendarGrid";
 import { IActivityResult } from "@/types/activity-types";
 import { CheckInService } from "@/services/api/activity/reaction.service";
 interface ActivityDashboardProps {
@@ -33,13 +26,13 @@ interface ActivityDashboardProps {
 
 const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
   const [checkInData, setCheckInData] = useState([
-    { name: "Mon", checkins: 0 },
-    { name: "Tue", checkins: 0 },
-    { name: "Wed", checkins: 0 },
-    { name: "Thu", checkins: 0 },
-    { name: "Fri", checkins: 0 },
-    { name: "Sat", checkins: 0 },
-    { name: "Sun", checkins: 0 },
+    { name: "Mon", checkins: 0, date: "" },
+    { name: "Tue", checkins: 0, date: "" },
+    { name: "Wed", checkins: 0, date: "" },
+    { name: "Thu", checkins: 0, date: "" },
+    { name: "Fri", checkins: 0, date: "" },
+    { name: "Sat", checkins: 0, date: "" },
+    { name: "Sun", checkins: 0, date: "" },
   ]);
   const [participants, setParticipants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,49 +99,11 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - Chart and Participant History (2/3 width) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Weekly Check-in Activity Chart */}
-          <Card className="p-6 border border-white/80 rounded-2xl shadow-sm bg-white/90 backdrop-blur-sm hover:shadow-md transition-all duration-300">
-            <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
-              Weekly Check-in Activity
-            </h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={checkInData}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
-                >
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "1px solid #E2E6EF",
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                    }}
-                  />
-                  <Bar
-                    dataKey="checkins"
-                    name="Check-ins"
-                    fill="url(#barGradient)"
-                    radius={[4, 4, 0, 0]}
-                    animationDuration={1000}
-                  />
-                  <defs>
-                    <linearGradient
-                      id="barGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="0%" stopColor="#6E56CF" />
-                      <stop offset="100%" stopColor="#9E8CFC" />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
+          {/* Activity Calendar Grid */}
+          <ActivityCalendarGrid
+            activityId={activity._id || activity.id}
+            weeklyData={checkInData}
+          />
 
           {/* Participant Check-in History */}
           <Card className="p-6 border border-white/80 rounded-2xl shadow-sm bg-white/90 backdrop-blur-sm hover:shadow-md transition-all duration-300">
@@ -183,12 +138,18 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center">
-                          <Avatar
-                            src={participant.avatar}
-                            alt={participant.name}
-                            className="mr-3"
-                            size="sm"
-                          />
+                          <Avatar className="w-8 h-8 mr-3">
+                            <AvatarImage
+                              src={participant.avatar}
+                              alt={participant.name}
+                            />
+                            <AvatarFallback className="bg-buddy-purple/10 text-buddy-purple text-xs">
+                              {participant.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </AvatarFallback>
+                          </Avatar>
                           <span className="font-medium text-buddy-gray-800">
                             {participant.name}
                           </span>
@@ -234,7 +195,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
                         </HoverCard>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium text-buddy-gray-800 bg-amber-100/50 text-amber-600 px-2 py-0.5 rounded-full">
+                        <span className="font-medium bg-amber-100/50 text-amber-600 px-2 py-0.5 rounded-full">
                           {participant.streak} days
                         </span>
                       </td>

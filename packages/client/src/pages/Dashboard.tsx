@@ -153,9 +153,12 @@ const Dashboard = () => {
             >
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent mb-1">
-                    Hey there, {user?.name || "friend"}! 👋
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent mb-1">
+                      Hey there, {user?.name || "friend"}!
+                    </h2>
+                    <h2 className="text-3xl">👋</h2>
+                  </div>
                   <p className="text-buddy-gray-600 text-sm">
                     Ready to make today amazing? Let's find your perfect
                     activity buddy!

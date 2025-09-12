@@ -479,15 +479,42 @@ const ShareableActivityCard = ({
           </div>
 
           <div className="absolute bottom-4 left-4 right-4">
-            <div className="bg-gradient-to-r from-black/40 to-transparent backdrop-blur-sm rounded-2xl p-4 -m-4">
-              <h1 className="text-3xl font-bold text-white mb-2 text-shadow-lg leading-tight">
-                {title}
-              </h1>
-              <p className="text-white/90 text-sm font-medium">
-                Join {participants.length}{" "}
-                {participants.length === 1 ? "person" : "people"} in this
-                amazing journey
-              </p>
+            <div className="bg-gradient-to-r from-black/40 to-transparent backdrop-blur-sm rounded-tr-2xl rounded-tl-2xl p-4 -m-4 flex flex-row items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-2 text-shadow-lg leading-tight">
+                  {title}
+                </h1>
+
+                {(isParticipant || isAdmin) && (
+                  <p className="text-white/90 text-sm font-medium">
+                    You are joined by {participants.length}{" "}
+                    {participants.length === 1 ? "person" : "people"} in this
+                    amazing journey
+                  </p>
+                )}
+
+                {!isAdmin && !isParticipant && (
+                  <p className="text-white/90 text-sm font-medium">
+                    Join {participants.length}{" "}
+                    {participants.length === 1 ? "person" : "people"} in this
+                    amazing journey
+                  </p>
+                )}
+              </div>
+
+              {isAdmin && (
+                <div className="flex items-center rounded-full gap-3 px-8 py-4 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+                  <Shield className="w-6 h-6" />
+                  CREATOR
+                </div>
+              )}
+
+              {isParticipant && (
+                <div className="flex items-center rounded-full gap-3 px-8 py-4 bg-gradient-to-r from-buddy-green to-buddy-blue text-white text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+                  <Users className="w-6 h-6" />
+                  JOINED
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -658,14 +685,17 @@ const ShareableActivityCard = ({
             </div>
           </div>
 
-          {/* Show CREATOR badge for activity creators, join/quit button for others */}
+          {/* Show view activity button for activity creators, join/quit button for others */}
           {isAdmin ? (
-            <div className="mt-8 flex justify-center">
-              <div className="flex items-center rounded-full gap-3 px-8 py-4 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-                <Shield className="w-6 h-6" />
-                CREATOR
-              </div>
-            </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full h-12 mt-8 rounded-full border-2 border-buddy-purple/30 hover:bg-buddy-purple/10 transition-all duration-300 transform hover:translate-y-[-2px] hover:scale-105 text-buddy-purple font-semibold"
+              onClick={() => navigate(`/activities/${id}`)}
+            >
+              View Activity
+              <ChevronRight className="w-5 h-5 ml-2" />
+            </Button>
           ) : (
             <div className="mt-8 space-y-4">
               <Button

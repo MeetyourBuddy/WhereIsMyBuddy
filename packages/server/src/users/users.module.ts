@@ -10,6 +10,10 @@ import {
   BuddyConnection,
   BuddyConnectionSchema,
 } from './schemas/buddy-connection.schema';
+import {
+  UserSettings,
+  UserSettingsSchema,
+} from './schemas/user-settings.schema';
 import { BuddyConnectionController } from './controllers/buddy-connection.controller';
 import { BuddyConnectionService } from './services/buddy-connection.service';
 
@@ -28,6 +32,7 @@ import { GoogleStrategy } from './auth/strategies/google.strategy';
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: BuddyConnection.name, schema: BuddyConnectionSchema },
+      { name: UserSettings.name, schema: UserSettingsSchema },
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

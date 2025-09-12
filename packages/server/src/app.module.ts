@@ -4,13 +4,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER } from '@nestjs/core';
 
-import { UsersController } from './users/users.controller';
-import { UsersService } from './users/users.service';
-import { User, UserSchema } from './users/schemas/user.schema';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ActivityModule } from './activities/activity.module';
 import { AuthModule } from './users/auth/auth.module';
 import { UploadModule } from './upload/upload.module';
+import { UsersModule } from './users/users.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -24,7 +23,6 @@ import { UploadModule } from './upload/upload.module';
       }),
       inject: [ConfigService],
     }),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -37,15 +35,14 @@ import { UploadModule } from './upload/upload.module';
     ActivityModule,
     AuthModule,
     UploadModule,
+    UsersModule,
+    SettingsModule,
   ],
-  controllers: [UsersController],
   providers: [
-    UsersService,
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
     },
   ],
-  exports: [UsersService],
 })
 export class AppModule {}

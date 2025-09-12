@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   User,
@@ -77,6 +77,17 @@ import {
   citiesByCountry,
 } from "@/lib/constants/country-city.constants";
 import { activityCategories } from "@/lib/constants/category-interests.constants";
+import { useAuthStore } from "@/store/auth.store";
+import {
+  settingsService,
+  UserSettings,
+  UpdateProfileData,
+  UpdatePreferencesData,
+  UpdateNotificationsData,
+  UpdatePrivacyData,
+  UpdateAccountData,
+  ChangePasswordData,
+} from "@/services/api/settings/settings.service";
 
 // Avatar options (same as onboarding)
 const avatarOptions = [
@@ -94,7 +105,10 @@ for (let i = 0; i < avatarOptions.length; i++) {
 }
 
 const Settings: React.FC = () => {
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Modal states
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -119,41 +133,41 @@ const Settings: React.FC = () => {
   const [currentAvatar, setCurrentAvatar] = useState(avatarOptions[0].url);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
-  // Profile form state
+  // Profile form state - initialized with user data
   const [profile, setProfile] = useState({
-    name: "John Doe",
-    bio: "I'm passionate about fitness, reading, and coding. Looking for buddies to join me on my journey!",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    country: "United States",
-    city: "San Francisco",
-    timezone: "Pacific Time (PT)",
-    interests: ["Fitness", "Reading", "Coding", "Meditation"],
+    name: user?.name || "",
+    bio: user?.bio || "",
+    email: user?.email || "",
+    phone: user?.phoneNumber || "",
+    country: user?.country || "",
+    city: user?.city || "",
+    timezone: user?.timezone || "Pacific Time (PT)",
+    interests: user?.interestsCommodities || [],
+    interestsCategories: user?.interestsCategories || [],
   });
+
+  // Settings state
+  const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
 
   // Preferences state
   const [preferences, setPreferences] = useState({
     dashboardLayout: "detailed",
     activityDisplay: "cards",
-    searchFilters: "all",
-    language: "en-US",
-    region: "US",
-    notificationFrequency: "daily",
     buddyRadius: 25,
     autoAcceptBuddies: false,
   });
 
   // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState({
-    email: true,
-    push: true,
-    buddyRequests: true,
-    activityReminders: true,
-    milestones: true,
-    newsletter: false,
+    emailNotifications: true,
+    pushNotifications: true,
+    buddyRequestNotifications: true,
+    activityReminderNotifications: true,
+    milestoneNotifications: true,
+    newsletterNotifications: false,
     quietHours: false,
-    quietStart: "22:00",
-    quietEnd: "08:00",
+    quietHoursStart: "22:00",
+    quietHoursEnd: "08:00",
   });
 
   // Privacy settings state
@@ -174,13 +188,142 @@ const Settings: React.FC = () => {
     dataRetention: "indefinite",
   });
 
+  // Fetch user profile and settings data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user) return;
+
+      try {
+        setIsLoading(true);
+        const response = await settingsService.getProfileWithSettings();
+
+        if (response.success && response.data) {
+          const { profile: profileData, settings } = response.data;
+
+          // Update profile state with fetched data
+          setProfile({
+            name: profileData.name || "",
+            bio: profileData.bio || "",
+            email: profileData.email || "",
+            phone: profileData.phoneNumber || "",
+            country: profileData.country || "",
+            city: profileData.city || "",
+            timezone: profileData.timezone || "Pacific Time (PT)",
+            interests: profileData.interestsCommodities || [],
+            interestsCategories:
+              profileData.interestsCategories?.map((cat) => String(cat)) || [],
+          });
+
+          // Update settings state
+          setUserSettings(settings);
+
+          // Update preferences from settings
+          setPreferences({
+            dashboardLayout: settings.dashboardLayout || "detailed",
+            activityDisplay: settings.activityDisplay || "cards",
+            buddyRadius: settings.buddyRadius || 25,
+            autoAcceptBuddies: settings.autoAcceptBuddies || false,
+          });
+
+          // Update notification settings
+          setNotificationSettings({
+            emailNotifications: settings.emailNotifications ?? true,
+            pushNotifications: settings.pushNotifications ?? true,
+            buddyRequestNotifications:
+              settings.buddyRequestNotifications ?? true,
+            activityReminderNotifications:
+              settings.activityReminderNotifications ?? true,
+            milestoneNotifications: settings.milestoneNotifications ?? true,
+            newsletterNotifications: settings.newsletterNotifications ?? false,
+            quietHours: settings.quietHours ?? false,
+            quietHoursStart: settings.quietHoursStart || "22:00",
+            quietHoursEnd: settings.quietHoursEnd || "08:00",
+          });
+
+          // Update privacy settings
+          setPrivacySettings({
+            publicProfile: settings.publicProfile ?? true,
+            showActivity: settings.showActivity ?? true,
+            showLocation: settings.showLocation ?? false,
+            showInterests: settings.showInterests ?? true,
+            profileVisibility: settings.profileVisibility || "public",
+            locationSharing: settings.locationSharing || "city",
+          });
+
+          // Update account settings
+          setAccountSettings({
+            twoFactorAuth: settings.twoFactorAuth ?? false,
+            loginNotifications: settings.loginNotifications ?? true,
+            sessionTimeout: settings.sessionTimeout || 30,
+            dataRetention: settings.dataRetention || "indefinite",
+          });
+
+          // Set avatar
+          if (profileData.avatar) {
+            setCurrentAvatar(profileData.avatar);
+          }
+
+          // Set country and cities
+          if (profileData.country) {
+            setSelectedCountry(profileData.country);
+            setAvailableCities(
+              citiesByCountry[
+                profileData.country as keyof typeof citiesByCountry
+              ] || []
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load user settings",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
   // Handle profile form submission
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been successfully updated",
-    });
+
+    try {
+      setIsSaving(true);
+
+      const updateData: UpdateProfileData = {
+        name: profile.name,
+        bio: profile.bio,
+        phoneNumber: profile.phone,
+        avatar: currentAvatar,
+        country: (selectedCountry as any) || undefined,
+        city: profile.city,
+        interestsCategories: profile.interestsCategories as any,
+        interestsCommodities: profile.interests,
+      };
+
+      const response = await settingsService.updateProfile(updateData);
+
+      if (response.success) {
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been successfully updated",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Handle adding new interest
@@ -214,7 +357,7 @@ const Settings: React.FC = () => {
   };
 
   // Handle password change
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (newPassword.new !== newPassword.confirm) {
       toast({
         title: "Error",
@@ -231,13 +374,175 @@ const Settings: React.FC = () => {
       });
       return;
     }
-    // Here you would typically call an API to change the password
-    toast({
-      title: "Password changed",
-      description: "Your password has been successfully updated.",
-    });
-    setNewPassword({ current: "", new: "", confirm: "" });
-    setIsChangePasswordOpen(false);
+
+    try {
+      setIsSaving(true);
+
+      const changePasswordData: ChangePasswordData = {
+        currentPassword: newPassword.current,
+        newPassword: newPassword.new,
+        confirmPassword: newPassword.confirm,
+      };
+
+      const response = await settingsService.changePassword(changePasswordData);
+
+      if (response.success) {
+        toast({
+          title: "Password changed",
+          description: "Your password has been successfully updated.",
+        });
+        setNewPassword({ current: "", new: "", confirm: "" });
+        setIsChangePasswordOpen(false);
+      }
+    } catch (error) {
+      console.error("Failed to change password:", error);
+      toast({
+        title: "Error",
+        description: "Failed to change password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle preferences update
+  const handlePreferencesUpdate = async () => {
+    try {
+      setIsSaving(true);
+
+      const updateData: UpdatePreferencesData = {
+        dashboardLayout: preferences.dashboardLayout,
+        activityDisplay: preferences.activityDisplay,
+        buddyRadius: preferences.buddyRadius,
+        autoAcceptBuddies: preferences.autoAcceptBuddies,
+      };
+
+      const response = await settingsService.updatePreferences(updateData);
+
+      if (response.success) {
+        toast({
+          title: "Preferences updated",
+          description: "Your preferences have been successfully updated",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update preferences:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update preferences. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle notifications update
+  const handleNotificationsUpdate = async () => {
+    try {
+      setIsSaving(true);
+
+      const updateData: UpdateNotificationsData = {
+        emailNotifications: notificationSettings.emailNotifications,
+        pushNotifications: notificationSettings.pushNotifications,
+        buddyRequestNotifications:
+          notificationSettings.buddyRequestNotifications,
+        activityReminderNotifications:
+          notificationSettings.activityReminderNotifications,
+        milestoneNotifications: notificationSettings.milestoneNotifications,
+        newsletterNotifications: notificationSettings.newsletterNotifications,
+        quietHours: notificationSettings.quietHours,
+        quietHoursStart: notificationSettings.quietHoursStart,
+        quietHoursEnd: notificationSettings.quietHoursEnd,
+      };
+
+      const response = await settingsService.updateNotifications(updateData);
+
+      if (response.success) {
+        toast({
+          title: "Notification settings updated",
+          description:
+            "Your notification settings have been successfully updated",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update notifications:", error);
+      toast({
+        title: "Error",
+        description:
+          "Failed to update notification settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle privacy update
+  const handlePrivacyUpdate = async () => {
+    try {
+      setIsSaving(true);
+
+      const updateData: UpdatePrivacyData = {
+        publicProfile: privacySettings.publicProfile,
+        showActivity: privacySettings.showActivity,
+        showLocation: privacySettings.showLocation,
+        showInterests: privacySettings.showInterests,
+        profileVisibility: privacySettings.profileVisibility,
+        locationSharing: privacySettings.locationSharing,
+      };
+
+      const response = await settingsService.updatePrivacy(updateData);
+
+      if (response.success) {
+        toast({
+          title: "Privacy settings updated",
+          description: "Your privacy settings have been successfully updated",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update privacy:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update privacy settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle account update
+  const handleAccountUpdate = async () => {
+    try {
+      setIsSaving(true);
+
+      const updateData: UpdateAccountData = {
+        twoFactorAuth: accountSettings.twoFactorAuth,
+        loginNotifications: accountSettings.loginNotifications,
+        sessionTimeout: accountSettings.sessionTimeout,
+        dataRetention: accountSettings.dataRetention,
+      };
+
+      const response = await settingsService.updateAccount(updateData);
+
+      if (response.success) {
+        toast({
+          title: "Account settings updated",
+          description: "Your account settings have been successfully updated",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update account:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update account settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Bio word count
@@ -258,7 +563,7 @@ const Settings: React.FC = () => {
   // Handle country selection
   const handleCountryChange = (countryId: string) => {
     setSelectedCountry(countryId);
-    setProfile({ ...profile, country: countryId });
+    setProfile({ ...profile, country: countryId as any });
     // Reset city when country changes
     setProfile({ ...profile, city: "" });
   };
@@ -347,21 +652,6 @@ const Settings: React.FC = () => {
     }
   };
 
-  // Handle notification toggle
-  const handleNotificationToggle = (
-    setting: keyof typeof notificationSettings
-  ) => {
-    setNotificationSettings({
-      ...notificationSettings,
-      [setting]: !notificationSettings[setting],
-    });
-
-    toast({
-      title: "Notification settings updated",
-      description: `${setting} notifications ${!notificationSettings[setting] ? "enabled" : "disabled"}`,
-    });
-  };
-
   // Handle privacy toggle
   const handlePrivacyToggle = (setting: keyof typeof privacySettings) => {
     setPrivacySettings({
@@ -388,6 +678,21 @@ const Settings: React.FC = () => {
     });
   };
 
+  // Handle notification toggle
+  const handleNotificationToggle = (
+    setting: keyof typeof notificationSettings
+  ) => {
+    setNotificationSettings({
+      ...notificationSettings,
+      [setting]: !notificationSettings[setting],
+    });
+
+    toast({
+      title: "Notification settings updated",
+      description: `${setting} setting ${!notificationSettings[setting] ? "enabled" : "disabled"}`,
+    });
+  };
+
   // Handle account toggle
   const handleAccountToggle = (setting: keyof typeof accountSettings) => {
     setAccountSettings({
@@ -400,6 +705,21 @@ const Settings: React.FC = () => {
       description: `${setting} setting ${!accountSettings[setting] ? "enabled" : "disabled"}`,
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pb-6 bg-gradient-to-br from-white via-blue-50/20 to-green-50/20">
+        <Container>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-buddy-purple mx-auto mb-4"></div>
+              <p className="text-buddy-gray-600">Loading your settings...</p>
+            </div>
+          </div>
+        </Container>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-6 bg-gradient-to-br from-white via-blue-50/20 to-green-50/20">
@@ -728,7 +1048,7 @@ const Settings: React.FC = () => {
                               <span>Country</span>
                             </Label>
                             <Select
-                              value={profile.country}
+                              value={profile.country as string}
                               onValueChange={handleCountryChange}
                             >
                               <SelectTrigger className="rounded-full border-2 border-buddy-purple/20 focus:border-buddy-purple transition-colors">
@@ -1084,10 +1404,20 @@ const Settings: React.FC = () => {
                           </Button>
                           <Button
                             type="submit"
+                            disabled={isSaving}
                             className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 text-sm md:text-base"
                           >
-                            <Save className="h-4 w-4 mr-2" />
-                            Save Changes
+                            {isSaving ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Changes
+                              </>
+                            )}
                           </Button>
                         </div>
                       </form>
@@ -1291,9 +1621,11 @@ const Settings: React.FC = () => {
                                 </div>
                               </div>
                               <Switch
-                                checked={notificationSettings.email}
+                                checked={
+                                  notificationSettings.emailNotifications
+                                }
                                 onCheckedChange={() =>
-                                  handleNotificationToggle("email")
+                                  handleNotificationToggle("emailNotifications")
                                 }
                               />
                             </div>
@@ -1313,9 +1645,9 @@ const Settings: React.FC = () => {
                                 </div>
                               </div>
                               <Switch
-                                checked={notificationSettings.push}
+                                checked={notificationSettings.pushNotifications}
                                 onCheckedChange={() =>
-                                  handleNotificationToggle("push")
+                                  handleNotificationToggle("pushNotifications")
                                 }
                               />
                             </div>
@@ -1340,9 +1672,13 @@ const Settings: React.FC = () => {
                                 </div>
                               </div>
                               <Switch
-                                checked={notificationSettings.buddyRequests}
+                                checked={
+                                  notificationSettings.buddyRequestNotifications
+                                }
                                 onCheckedChange={() =>
-                                  handleNotificationToggle("buddyRequests")
+                                  handleNotificationToggle(
+                                    "buddyRequestNotifications"
+                                  )
                                 }
                               />
                             </div>
@@ -1362,9 +1698,13 @@ const Settings: React.FC = () => {
                                 </div>
                               </div>
                               <Switch
-                                checked={notificationSettings.activityReminders}
+                                checked={
+                                  notificationSettings.activityReminderNotifications
+                                }
                                 onCheckedChange={() =>
-                                  handleNotificationToggle("activityReminders")
+                                  handleNotificationToggle(
+                                    "activityReminderNotifications"
+                                  )
                                 }
                               />
                             </div>
@@ -1384,9 +1724,13 @@ const Settings: React.FC = () => {
                                 </div>
                               </div>
                               <Switch
-                                checked={notificationSettings.milestones}
+                                checked={
+                                  notificationSettings.milestoneNotifications
+                                }
                                 onCheckedChange={() =>
-                                  handleNotificationToggle("milestones")
+                                  handleNotificationToggle(
+                                    "milestoneNotifications"
+                                  )
                                 }
                               />
                             </div>
@@ -1406,9 +1750,13 @@ const Settings: React.FC = () => {
                                 </div>
                               </div>
                               <Switch
-                                checked={notificationSettings.newsletter}
+                                checked={
+                                  notificationSettings.newsletterNotifications
+                                }
                                 onCheckedChange={() =>
-                                  handleNotificationToggle("newsletter")
+                                  handleNotificationToggle(
+                                    "newsletterNotifications"
+                                  )
                                 }
                               />
                             </div>

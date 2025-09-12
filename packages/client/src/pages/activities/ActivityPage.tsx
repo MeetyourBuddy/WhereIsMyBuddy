@@ -283,7 +283,7 @@ const ActivityPage = () => {
       <div className="relative mb-8">
         <div className="absolute inset-0 z-[-10] bg-gradient-to-r from-buddy-purple/70 to-buddy-blue/70 mix-blend-multiply" />
         <div
-          className="relative h-64 md:h-80 w-full bg-cover bg-center z-[1]"
+          className="relative h-80 md:h-80 w-full bg-cover bg-center z-[1]"
           style={{ backgroundImage: `url(${displayData.bannerImage})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70 z-[-1]"></div>
@@ -350,7 +350,7 @@ const ActivityPage = () => {
                     {displayData.description}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-4 md:mt-0 z-[10]">
+                <div className="flex flex-row gap-2 mt-4 md:mt-0 z-[10]">
                   {isUserParticipant && (
                     <CheckInDialog
                       activity={currentActivity}
@@ -365,14 +365,23 @@ const ActivityPage = () => {
                         disabled={
                           hasCheckedInCurrentPeriod || isLoadingCheckInStatus
                         }
-                        className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-5 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-3 sm:px-5 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                       >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        {isLoadingCheckInStatus
-                          ? "Checking..."
-                          : hasCheckedInCurrentPeriod
-                            ? "Already Checked In"
-                            : "Check-in Now"}
+                        <CheckCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">
+                          {isLoadingCheckInStatus
+                            ? "Checking..."
+                            : hasCheckedInCurrentPeriod
+                              ? "Already Checked In"
+                              : "Check-in Now"}
+                        </span>
+                        <span className="sm:hidden">
+                          {isLoadingCheckInStatus
+                            ? "Checking..."
+                            : hasCheckedInCurrentPeriod
+                              ? "Checked In"
+                              : "Check-in"}
+                        </span>
                       </Button>
                     </CheckInDialog>
                   )}
@@ -382,10 +391,13 @@ const ActivityPage = () => {
                       <EditActivityDialog activity={currentActivity}>
                         <Button
                           variant="outline"
-                          className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
+                          className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-3 sm:px-5 text-xs sm:text-sm"
                         >
-                          <Settings className="w-4 h-4 mr-2" />
-                          Manage Activity
+                          <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">
+                            Manage Activity
+                          </span>
+                          <span className="sm:hidden">Manage</span>
                         </Button>
                       </EditActivityDialog>
                     )}
@@ -476,21 +488,21 @@ const ActivityPage = () => {
             className="w-full"
           >
             <TabsList className="w-full bg-white dark:bg-buddy-gray-800 border-b border-buddy-gray-200/50 rounded-none p-0 h-auto overflow-x-auto">
-              <div className="flex w-full">
+              <div className="flex w-full min-w-max">
                 <TabsTrigger
                   value="dashboard"
-                  className="flex-1 py-4 px-3 md:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50"
+                  className="flex-1 py-3 md:py-4 px-2 md:px-3 lg:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50 whitespace-nowrap"
                 >
-                  <ChartPieIcon className="mr-2 h-4 w-4" />
-                  {!isMobile && "Dashboard"}
+                  <ChartPieIcon className="mr-1 md:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
                 </TabsTrigger>
 
                 <TabsTrigger
                   value="leaderboard"
-                  className="flex-1 py-4 px-3 md:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50"
+                  className="flex-1 py-3 md:py-4 px-2 md:px-3 lg:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50 whitespace-nowrap"
                 >
-                  <Medal className="mr-2 h-4 w-4" />
-                  {!isMobile && "Leaderboard"}
+                  <Medal className="mr-1 md:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Leaderboard</span>
                 </TabsTrigger>
 
                 {/* TODO: Re-enable milestones tab after MVP launch */}
@@ -522,27 +534,26 @@ const ActivityPage = () => {
 
                 <TabsTrigger
                   value="checkin"
-                  className="flex-1 py-4 px-3 md:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50"
+                  className="flex-1 py-3 md:py-4 px-2 md:px-3 lg:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50 whitespace-nowrap"
                 >
-                  <ClipboardCheck className="mr-2 h-4 w-4" />
-                  {!isMobile && "Check-in"}
+                  <ClipboardCheck className="mr-1 md:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Check-in</span>
                 </TabsTrigger>
 
-                {/* TODO: Add partners tab in v2 */}
-                {/* <TabsTrigger
+                <TabsTrigger
                   value="partners"
-                  className="flex-1 py-4 px-3 md:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50"
+                  className="flex-1 py-3 md:py-4 px-2 md:px-3 lg:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50 whitespace-nowrap"
                 >
-                  <Users className="mr-2 h-4 w-4" />
-                  {!isMobile && "Partners"}
-                </TabsTrigger> */}
+                  <Users className="mr-1 md:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Partners</span>
+                </TabsTrigger>
 
                 <TabsTrigger
                   value="messages"
-                  className="flex-1 py-4 px-3 md:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50"
+                  className="flex-1 py-3 md:py-4 px-2 md:px-3 lg:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50 whitespace-nowrap"
                 >
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  {!isMobile && "Messages"}
+                  <MessageCircle className="mr-1 md:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Messages</span>
                 </TabsTrigger>
 
                 {/* TODO: Re-enable export tab after MVP launch */}
@@ -562,7 +573,7 @@ const ActivityPage = () => {
 
             <TabsContent
               value="leaderboard"
-              className="p-0 mt-0 animate-fade-in"
+              className="p-0 mt-0 animate-fade-in overflow-hidden"
             >
               <ActivityLeaderboard
                 activityId={displayData.id}
@@ -599,9 +610,9 @@ const ActivityPage = () => {
             </TabsContent>
 
             {/* TODO: Add partners tab in v2 */}
-            {/* <TabsContent value="partners" className="p-0 mt-0 animate-fade-in">
-                  <ActivityPartners activityId={displayData.id} />
-                </TabsContent> */}
+            <TabsContent value="partners" className="p-0 mt-0 animate-fade-in">
+              <ActivityPartners activityId={displayData.id} />
+            </TabsContent>
 
             <TabsContent value="messages" className="p-0 mt-0 animate-fade-in">
               <div className="p-6">
