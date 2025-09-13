@@ -4,9 +4,9 @@ export interface ReactionStats {
   like: number;
   love: number;
   fire: number;
-  rock: number;
   celebrate: number;
-  support: number;
+  star: number;
+  rocket: number;
   total: number;
 }
 
@@ -19,9 +19,9 @@ export type ReactionType =
   | "like"
   | "love"
   | "fire"
-  | "rock"
   | "celebrate"
-  | "support";
+  | "star"
+  | "rocket";
 
 export const ReactionService = {
   addReaction: (checkInId: string, reactionType: ReactionType) =>

@@ -1,25 +1,10 @@
 import React, { useState, useEffect } from "react";
 import {
-  Heart,
-  Zap,
-  PartyPopper,
-  HandMetal,
-  ThumbsUp,
-  HandHeart,
-} from "lucide-react";
-import {
   ReactionService,
   ReactionStats,
   UserReaction,
   ReactionType,
 } from "@/services/api/activity/reaction.service";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface ReactionButtonProps {
   checkInId: string;
@@ -29,16 +14,12 @@ interface ReactionButtonProps {
 }
 
 const reactionConfig = {
-  like: { icon: ThumbsUp, label: "Like", color: "text-blue-500" },
-  love: { icon: Heart, label: "Love", color: "text-red-500" },
-  fire: { icon: Zap, label: "Fire", color: "text-orange-500" },
-  rock: { icon: HandMetal, label: "Rock-on", color: "text-purple-500" },
-  celebrate: {
-    icon: PartyPopper,
-    label: "Celebrate",
-    color: "text-yellow-500",
-  },
-  support: { icon: HandHeart, label: "Support", color: "text-green-500" },
+  like: { emoji: "👍", label: "Like", color: "text-blue-500" },
+  love: { emoji: "❤️", label: "Love", color: "text-red-500" },
+  fire: { emoji: "🔥", label: "Fire", color: "text-orange-500" },
+  celebrate: { emoji: "🎉", label: "Celebrate", color: "text-yellow-500" },
+  star: { emoji: "⭐", label: "Star", color: "text-yellow-400" },
+  rocket: { emoji: "🚀", label: "Rocket", color: "text-purple-500" },
 };
 
 const ReactionButton: React.FC<ReactionButtonProps> = ({
@@ -52,9 +33,9 @@ const ReactionButton: React.FC<ReactionButtonProps> = ({
       like: 0,
       love: 0,
       fire: 0,
-      rock: 0,
       celebrate: 0,
-      support: 0,
+      star: 0,
+      rocket: 0,
       total: 0,
     }
   );
@@ -146,11 +127,10 @@ const ReactionButton: React.FC<ReactionButtonProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* Horizontal reaction buttons - only show when clicked */}
+      {/* Horizontal emoji reaction buttons - only show when clicked */}
       {showReactions && (
         <div className="flex items-center gap-1 bg-white rounded-full p-2 shadow-lg border border-buddy-gray-200 animate-fade-in">
           {Object.entries(reactionConfig).map(([type, config]) => {
-            const Icon = config.icon;
             const count = stats[type as keyof ReactionStats] as number;
             const isUserReaction = userReaction?.type === type;
 
@@ -160,19 +140,22 @@ const ReactionButton: React.FC<ReactionButtonProps> = ({
                 onClick={() => handleReaction(type as ReactionType)}
                 disabled={isLoading}
                 className={`
-                  relative p-2 rounded-full transition-all duration-200 hover:scale-110
+                  relative w-10 h-10 rounded-full transition-all duration-200 hover:scale-110 flex items-center justify-center
                   ${
                     isUserReaction
-                      ? `${config.color} bg-opacity-20`
-                      : "text-buddy-gray-600 hover:bg-buddy-gray-100"
+                      ? "bg-buddy-purple/20 border-2 border-buddy-purple shadow-md"
+                      : "bg-buddy-gray-100 hover:bg-buddy-gray-200 border border-buddy-gray-200"
                   }
                   ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                 `}
                 title={config.label}
               >
-                <Icon
-                  className={`w-5 h-5 ${isUserReaction ? "fill-current" : ""}`}
-                />
+                <span className="text-lg">{config.emoji}</span>
+                {count > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-buddy-purple text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium">
+                    {count}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -191,11 +174,11 @@ const ReactionButton: React.FC<ReactionButtonProps> = ({
         `}
       >
         {userReaction ? (
-          React.createElement(reactionConfig[userReaction.type].icon, {
-            className: `w-4 h-4 ${reactionConfig[userReaction.type].color} fill-current`,
-          })
+          <span className="text-lg">
+            {reactionConfig[userReaction.type].emoji}
+          </span>
         ) : (
-          <Heart className="w-4 h-4 text-buddy-gray-400" />
+          <span className="text-lg">❤️</span>
         )}
 
         {/* Show count if user has reacted */}

@@ -190,14 +190,14 @@ export class BoostService {
     ]);
 
     return {
-      topSenders: topSenders.map((stat) => ({
-        userId: stat.userId._id,
+      topSenders: topSenders.map((stat: any) => ({
+        userId: stat.userId._id.toString(),
         totalSent: stat.totalSent,
         name: stat.userId.name,
         avatar: stat.userId.avatar,
       })),
-      topReceivers: topReceivers.map((stat) => ({
-        userId: stat.userId._id,
+      topReceivers: topReceivers.map((stat: any) => ({
+        userId: stat.userId._id.toString(),
         totalReceived: stat.totalReceived,
         name: stat.userId.name,
         avatar: stat.userId.avatar,
@@ -219,7 +219,9 @@ export class BoostService {
   }
 
   // Get or create boost stats for a user
-  private async getOrCreateBoostStats(userId: string): Promise<BoostStats> {
+  private async getOrCreateBoostStats(
+    userId: string,
+  ): Promise<BoostStatsDocument> {
     let stats = await this.boostStatsModel.findOne({ userId });
 
     if (!stats) {

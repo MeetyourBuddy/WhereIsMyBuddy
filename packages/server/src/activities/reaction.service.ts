@@ -12,9 +12,9 @@ export interface ReactionStats {
   like: number;
   love: number;
   fire: number;
-  rock: number;
+  star: number;
   celebrate: number;
-  support: number;
+  rocket: number;
   total: number;
 }
 
@@ -102,9 +102,9 @@ export class ReactionService {
       like: 0,
       love: 0,
       fire: 0,
-      rock: 0,
+      star: 0,
       celebrate: 0,
-      support: 0,
+      rocket: 0,
       total: reactions.length,
     };
 

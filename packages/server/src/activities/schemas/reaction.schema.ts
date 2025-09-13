@@ -13,10 +13,10 @@ export class Reaction {
 
   @Prop({
     type: String,
-    enum: ['like', 'love', 'fire', 'rock', 'celebrate', 'support'],
+    enum: ['like', 'love', 'fire', 'star', 'celebrate', 'rocket'],
     required: true,
   })
-  type: 'like' | 'love' | 'fire' | 'rock' | 'celebrate' | 'support';
+  type: 'like' | 'love' | 'fire' | 'star' | 'celebrate' | 'rocket';
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
