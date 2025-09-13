@@ -17,6 +17,7 @@ import {
   Heart,
   Home,
   HelpCircle,
+  Zap,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -260,6 +261,15 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                 >
                   <User className="w-5 h-5" />
                   <span className="font-medium">Buddies</span>
+                </Link>
+
+                <Link
+                  to="/boost-wall"
+                  className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
+                  onClick={toggleMenu}
+                >
+                  <Zap className="w-5 h-5" />
+                  <span className="font-medium">Boost Wall</span>
                 </Link>
 
                 <Link

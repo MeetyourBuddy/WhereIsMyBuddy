@@ -542,7 +542,7 @@ const Buddies = () => {
 
   return (
     <div className="min-h-screen bg-buddy-gray-100">
-      <div className="pt-20 pb-12 bg-gradient-to-b from-[#E5DEFF] to-buddy-gray-100">
+      <div className="pt-4 sm:pt-6 md:pt-8 pb-8 sm:pb-10 md:pb-12 bg-gradient-to-b from-[#E5DEFF] to-buddy-gray-100">
         <Container>
           <div className="flex flex-col space-y-4">
             <h1 className="text-3xl md:text-4xl font-bold text-buddy-gray-900">

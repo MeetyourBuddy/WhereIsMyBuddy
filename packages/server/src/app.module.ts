@@ -10,6 +10,7 @@ import { AuthModule } from './users/auth/auth.module';
 import { UploadModule } from './upload/upload.module';
 import { UsersModule } from './users/users.module';
 import { SettingsModule } from './settings/settings.module';
+import { BoostModule } from './boost/boost.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { SettingsModule } from './settings/settings.module';
     UploadModule,
     UsersModule,
     SettingsModule,
+    BoostModule,
   ],
   providers: [
     {

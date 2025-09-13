@@ -681,7 +681,7 @@ const Activities = () => {
           onValueChange={handleTabChange}
           className="w-full mb-6 sm:mb-8"
         >
-          <TabsList className="mb-4 sm:mb-6 bg-buddy-gray-200/50 overflow-x-auto">
+          <TabsList className="mb-4 sm:mb-6 bg-buddy-gray-200/50">
             <div className="flex min-w-max">
               <TabsTrigger
                 value="all"

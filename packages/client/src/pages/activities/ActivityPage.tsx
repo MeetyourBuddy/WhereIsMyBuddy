@@ -287,121 +287,120 @@ const ActivityPage = () => {
           style={{ backgroundImage: `url(${displayData.bannerImage})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70 z-[-1]"></div>
-          <div className="mx-auto absolute top-4 right-0 flex items-center justify-between md:px-8 lg:px-12 w-full max-w-7xl z-10">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/activities")}
-              className="shadow-lg rounded-full bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <div className="flex items-center gap-2">
-              <Badge
-                className="py-1 px-3"
-                variant={
-                  variant as VariantProps<typeof badgeVariants>["variant"]
-                }
-              >
-                {label}
-              </Badge>
-              {isUserAdmin && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsBannerEditModalOpen(true)}
-                  className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
-                  title="Edit banner"
-                >
-                  <Edit3 className="h-4 w-4" />
-                </Button>
-              )}
+
+          <div className="flex flex-col justify-between h-full pb-8 px-4 md:px-8 lg:px-12 w-full max-w-7xl mx-auto">
+            <div className="mx-auto py-2 flex  justify-between w-full max-w-7xl z-10">
               <Button
                 variant="outline"
-                size="sm"
-                onClick={() => setIsShareModalOpen(true)}
-                className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
-                title="Share"
+                onClick={() => navigate("/activities")}
+                className="shadow-lg rounded-full bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
               >
-                <Share2 className="h-4 w-4" />
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
               </Button>
+              <div className="flex items-center gap-2">
+                <Badge
+                  className="py-1 px-3"
+                  variant={
+                    variant as VariantProps<typeof badgeVariants>["variant"]
+                  }
+                >
+                  {label}
+                </Badge>
+                {isUserAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsBannerEditModalOpen(true)}
+                    className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
+                    title="Edit banner"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
+                  title="Share"
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-end h-full pb-8 px-4 md:px-8 lg:px-12 w-full max-w-7xl mx-auto">
-            <div className="w-full text-white">
-              <div className="flex flex-col md:flex-row md:justify-between md:items-end">
-                <div>
-                  <div className="flex flex-wrap gap-3 mb-2">
-                    <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {displayData.category}
-                    </span>
-                    <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {displayData.duration}
-                    </span>
-                    <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {displayData.frequency}
-                    </span>
-                  </div>
-                  <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shadow-lg">
-                    {displayData.name}
-                  </h1>
-                  <p className="max-w-3xl text-white text-shadow-lg text-sm md:text-base line-clamp-3">
-                    {displayData.description}
-                  </p>
+            <div className="w-full text-white flex flex-col md:flex-row md:justify-between md:items-end">
+              <div>
+                <div className="flex flex-wrap gap-3 mb-2">
+                  <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                    {displayData.category}
+                  </span>
+                  <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                    {displayData.duration}
+                  </span>
+                  <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                    {displayData.frequency}
+                  </span>
                 </div>
-                <div className="flex flex-row gap-2 mt-4 md:mt-0 z-[10]">
-                  {isUserParticipant && (
-                    <CheckInDialog
-                      activity={currentActivity}
-                      onCheckInComplete={() => {
-                        console.log("Check-in completed");
-                        // Refresh check-in status after successful check-in
-                        setHasCheckedInCurrentPeriod(true);
-                      }}
+                <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shadow-lg">
+                  {displayData.name}
+                </h1>
+                <p className="max-w-3xl text-white text-shadow-lg text-sm md:text-base line-clamp-3">
+                  {displayData.description}
+                </p>
+              </div>
+              <div className="flex flex-row gap-2 mt-4 md:mt-0 z-[10]">
+                {isUserParticipant && (
+                  <CheckInDialog
+                    activity={currentActivity}
+                    onCheckInComplete={() => {
+                      console.log("Check-in completed");
+                      // Refresh check-in status after successful check-in
+                      setHasCheckedInCurrentPeriod(true);
+                    }}
+                  >
+                    <Button
+                      variant="default"
+                      disabled={
+                        hasCheckedInCurrentPeriod || isLoadingCheckInStatus
+                      }
+                      className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-3 sm:px-5 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
                     >
+                      <CheckCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">
+                        {isLoadingCheckInStatus
+                          ? "Checking..."
+                          : hasCheckedInCurrentPeriod
+                            ? "Already Checked In"
+                            : "Check-in Now"}
+                      </span>
+                      <span className="sm:hidden">
+                        {isLoadingCheckInStatus
+                          ? "Checking..."
+                          : hasCheckedInCurrentPeriod
+                            ? "Checked In"
+                            : "Check-in"}
+                      </span>
+                    </Button>
+                  </CheckInDialog>
+                )}
+                {user &&
+                  currentActivity &&
+                  isActivityCreator(currentActivity, userId) && (
+                    <EditActivityDialog activity={currentActivity}>
                       <Button
-                        variant="default"
-                        disabled={
-                          hasCheckedInCurrentPeriod || isLoadingCheckInStatus
-                        }
-                        className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-3 sm:px-5 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
+                        variant="outline"
+                        className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-3 sm:px-5 text-xs sm:text-sm"
                       >
-                        <CheckCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">
-                          {isLoadingCheckInStatus
-                            ? "Checking..."
-                            : hasCheckedInCurrentPeriod
-                              ? "Already Checked In"
-                              : "Check-in Now"}
+                          Manage Activity
                         </span>
-                        <span className="sm:hidden">
-                          {isLoadingCheckInStatus
-                            ? "Checking..."
-                            : hasCheckedInCurrentPeriod
-                              ? "Checked In"
-                              : "Check-in"}
-                        </span>
+                        <span className="sm:hidden">Manage</span>
                       </Button>
-                    </CheckInDialog>
+                    </EditActivityDialog>
                   )}
-                  {user &&
-                    currentActivity &&
-                    isActivityCreator(currentActivity, userId) && (
-                      <EditActivityDialog activity={currentActivity}>
-                        <Button
-                          variant="outline"
-                          className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-3 sm:px-5 text-xs sm:text-sm"
-                        >
-                          <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                          <span className="hidden sm:inline">
-                            Manage Activity
-                          </span>
-                          <span className="sm:hidden">Manage</span>
-                        </Button>
-                      </EditActivityDialog>
-                    )}
-                </div>
               </div>
             </div>
           </div>

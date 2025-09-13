@@ -132,6 +132,11 @@ const navItems: SidebarNavItem[] = [
     icon: Users,
     // badge: 2,
   },
+  {
+    title: "Boost Wall",
+    href: "/boost-wall",
+    icon: Zap,
+  },
   // {
   //   title: "Analytics",
   //   href: "/analytics",
@@ -187,6 +192,16 @@ const AppSidebar = () => {
   const location = useLocation();
 
   const { user } = useAuthStore();
+
+  // Helper function to check if a route is active (including child routes)
+  const isRouteActive = (href: string) => {
+    if (href === "/dashboard" && location.pathname === "/") {
+      return true; // Home route special case
+    }
+    return (
+      location.pathname === href || location.pathname.startsWith(href + "/")
+    );
+  };
 
   // Inject mobile sidebar styles
   React.useEffect(() => {
@@ -257,13 +272,13 @@ const AppSidebar = () => {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={location.pathname === item.href}
+                isActive={isRouteActive(item.href)}
                 tooltip={item.title}
                 className={cn(
                   "text-buddy-gray-200 hover:text-white hover:bg-buddy-purple-dark/40",
                   "transform transition-all duration-200 hover:scale-105",
                   "min-h-[44px] sm:min-h-[40px]", // Better touch targets on mobile
-                  location.pathname === item.href &&
+                  isRouteActive(item.href) &&
                     "bg-buddy-purple-dark text-white hover:bg-buddy-purple-dark"
                 )}
               >

@@ -509,7 +509,7 @@ const ShareableActivityCard = ({
                 </div>
               )}
 
-              {isParticipant && (
+              {isParticipant && !isAdmin && (
                 <div className="flex items-center rounded-full gap-3 px-8 py-4 bg-gradient-to-r from-buddy-green to-buddy-blue text-white text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                   <Users className="w-6 h-6" />
                   JOINED
