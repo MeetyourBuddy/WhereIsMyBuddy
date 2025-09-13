@@ -15,6 +15,8 @@ import {
   Calendar,
   MessageCircle,
   Heart,
+  Home,
+  HelpCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -214,85 +216,121 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
         </div>
       </Container>
 
-      {/* Mobile menu */}
+      {/* New Mobile Menu */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-white dark:bg-buddy-gray-900 pt-20 px-6 pb-6 md:hidden animate-fade-in">
-          <div className="flex flex-col space-y-6 mt-8">
+        <div className="fixed inset-0 z-50 bg-white md:hidden">
+          {/* Header with close button */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-buddy-purple">Menu</h2>
+            <button
+              onClick={toggleMenu}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-6 h-6 text-buddy-purple" />
+            </button>
+          </div>
+
+          {/* Navigation Items */}
+          <div className="p-4 space-y-2 bg-white border-bl-2xl rounded-br-2xl shadow-lg border-buddy-gray-200">
             {isLoggedIn ? (
               <>
+                {/* Navigation items matching AppSidebar */}
+                <Link
+                  to="/dashboard"
+                  className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
+                  onClick={toggleMenu}
+                >
+                  <Home className="w-5 h-5" />
+                  <span className="font-medium">Home</span>
+                </Link>
+
                 <Link
                   to="/activities"
-                  className="flex items-center space-x-3 py-2 text-lg"
+                  className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
                   onClick={toggleMenu}
                 >
                   <Calendar className="w-5 h-5" />
-                  <span>Activities</span>
+                  <span className="font-medium">Activities</span>
                 </Link>
+
                 <Link
                   to="/buddies"
-                  className="flex items-center space-x-3 py-2 text-lg"
+                  className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
                   onClick={toggleMenu}
                 >
                   <User className="w-5 h-5" />
-                  <span>Buddies</span>
+                  <span className="font-medium">Buddies</span>
                 </Link>
-                <Link
-                  to="/messages"
-                  className="flex items-center space-x-3 py-2 text-lg"
-                  onClick={toggleMenu}
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>Messages</span>
-                </Link>
+
                 <Link
                   to="/notifications"
-                  className="flex items-center space-x-3 py-2 text-lg"
+                  className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
                   onClick={toggleMenu}
                 >
                   <Bell className="w-5 h-5" />
-                  <span>Notifications</span>
+                  <span className="font-medium">Notifications</span>
                 </Link>
-                <Link
-                  to="/search"
-                  className="flex items-center space-x-3 py-2 text-lg"
-                  onClick={toggleMenu}
-                >
-                  <Search className="w-5 h-5" />
-                  <span>Search</span>
-                </Link>
-                <Link
-                  to="/profile"
-                  className="flex items-center space-x-3 py-2 text-lg"
-                  onClick={toggleMenu}
-                >
-                  <Avatar size="sm" />
-                  <span>Profile</span>
-                </Link>
+
                 <Link
                   to="/settings"
-                  className="flex items-center space-x-3 py-2 text-lg"
+                  className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
                   onClick={toggleMenu}
                 >
                   <Settings className="w-5 h-5" />
-                  <span>Settings</span>
+                  <span className="font-medium">Settings</span>
                 </Link>
+
                 <Link
-                  to="/signin"
-                  className="flex items-center space-x-3 py-2 text-lg text-red-600"
-                  onClick={handleLogout}
+                  to="/support"
+                  className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
+                  onClick={toggleMenu}
+                >
+                  <HelpCircle className="w-5 h-5" />
+                  <span className="font-medium">Help & Support</span>
+                </Link>
+
+                {/* User Profile Section */}
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <Link
+                    to={`/profile/${user?._id || user?.id}`}
+                    className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
+                    onClick={toggleMenu}
+                  >
+                    <Avatar size="sm" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {user?.name || "Profile"}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        View Profile
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+
+                {/* Logout */}
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    toggleMenu();
+                  }}
+                  className="flex items-center space-x-3 p-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full text-left"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span>Logout</span>
-                </Link>
+                  <span className="font-medium">Logout</span>
+                </button>
               </>
             ) : (
-              <>
+              <div className="space-y-4">
                 <Link
                   to="/signin"
                   className="block w-full"
                   onClick={toggleMenu}
                 >
-                  <Button variant="outline" className="w-full rounded-full">
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-full border-buddy-purple text-buddy-purple hover:bg-buddy-purple hover:text-white"
+                  >
                     Sign In
                   </Button>
                 </Link>
@@ -301,9 +339,11 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                   className="block w-full"
                   onClick={toggleMenu}
                 >
-                  <Button className="w-full rounded-full">Sign Up</Button>
+                  <Button className="w-full rounded-full bg-buddy-purple text-white hover:bg-buddy-purple-dark">
+                    Sign Up
+                  </Button>
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </div>

@@ -401,14 +401,19 @@ const Activities = () => {
     onButtonClick: () => void;
     icon?: React.ComponentType<{ className?: string }>;
   }) => (
-    <Card className="p-8 text-center">
+    <Card className="p-6 sm:p-8 text-center">
       <div className="flex flex-col items-center">
-        <div className="w-16 h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-4">
-          <Icon className="w-8 h-8 text-buddy-gray-400" />
+        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+          <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-buddy-gray-400" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-buddy-gray-600 mb-6">{description}</p>
-        <Button onClick={onButtonClick} className="rounded-full">
+        <h3 className="text-lg sm:text-xl font-semibold mb-2">{title}</h3>
+        <p className="text-sm sm:text-base text-buddy-gray-600 mb-4 sm:mb-6">
+          {description}
+        </p>
+        <Button
+          onClick={onButtonClick}
+          className="rounded-full text-sm sm:text-base"
+        >
           {buttonText}
         </Button>
       </div>
@@ -576,35 +581,38 @@ const Activities = () => {
 
   return (
     <div className="min-h-screen bg-buddy-gray-100">
-      <div className="pt-8 pb-12 bg-gradient-to-b from-[#F2FCE2] to-buddy-gray-100">
+      <div className="pt-4 sm:pt-6 md:pt-8 pb-8 sm:pb-10 md:pb-12 bg-gradient-to-b from-[#F2FCE2] to-buddy-gray-100">
         <Container>
-          <div className="flex flex-col space-y-4">
-            <div className="flex justify-between items-center ">
-              <h1 className="text-3xl md:text-4xl font-bold text-buddy-gray-900">
+          <div className="flex flex-col space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-buddy-gray-900">
                 Discover Activities
               </h1>
               <Button
                 variant="outline"
-                className="border-buddy-purple text-buddy-purple rounded-full"
-                icon={<Users className="w-5 h-5" />}
+                className="border-buddy-purple text-buddy-purple rounded-full w-full sm:w-auto"
+                icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />}
                 onClick={() => navigate("/activities/create")}
               >
-                Create Your Own Activity
+                <span className="hidden sm:inline">
+                  Create Your Own Activity
+                </span>
+                <span className="sm:hidden">Create Activity</span>
               </Button>
             </div>
-            <p className="text-buddy-gray-600 max-w-3xl">
+            <p className="text-sm sm:text-base text-buddy-gray-600 max-w-3xl">
               Find activities that match your interests, connect with
               like-minded people, and start your accountability journey
               together.
             </p>
 
-            <div className="flex flex-col md:flex-row gap-4 mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-3 sm:mt-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-buddy-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-buddy-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                 <Input
                   type="search"
                   placeholder="Search activities or categories..."
-                  className="pl-10 bg-white h-11 rounded-full"
+                  className="pl-9 sm:pl-10 bg-white h-10 sm:h-11 rounded-full text-sm sm:text-base"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -613,22 +621,23 @@ const Activities = () => {
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
-                  className="bg-white rounded-full"
-                  icon={<Filter className="w-4 h-4" />}
+                  className="bg-white rounded-full text-xs sm:text-sm px-3 sm:px-4"
+                  icon={<Filter className="w-3 h-3 sm:w-4 sm:h-4" />}
                 >
-                  Filters
+                  <span className="hidden sm:inline">Filters</span>
+                  <span className="sm:hidden">Filter</span>
                 </Button>
                 <Button
                   variant="outline"
-                  className="bg-white rounded-full"
-                  icon={<SortAsc className="w-4 h-4" />}
+                  className="bg-white rounded-full text-xs sm:text-sm px-3 sm:px-4"
+                  icon={<SortAsc className="w-3 h-3 sm:w-4 sm:h-4" />}
                 >
                   Sort
                 </Button>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
               {categories.map((category) => (
                 <Button
                   key={category}
@@ -638,8 +647,8 @@ const Activities = () => {
                   size="small"
                   className={
                     activeFilters.includes(category)
-                      ? "bg-buddy-purple text-white rounded-full"
-                      : "bg-white text-buddy-gray-700 rounded-full"
+                      ? "bg-buddy-purple text-white rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                      : "bg-white text-buddy-gray-700 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                   }
                   onClick={() => toggleFilter(category)}
                 >
@@ -653,11 +662,12 @@ const Activities = () => {
                 <Button
                   variant="ghost"
                   size="small"
-                  className="text-buddy-gray-500 rounded-full"
+                  className="text-buddy-gray-500 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                   onClick={clearFilters}
-                  icon={<X className="w-4 h-4" />}
+                  icon={<X className="w-3 h-3 sm:w-4 sm:h-4" />}
                 >
-                  Clear Filters
+                  <span className="hidden sm:inline">Clear Filters</span>
+                  <span className="sm:hidden">Clear</span>
                 </Button>
               )}
             </div>
@@ -665,34 +675,55 @@ const Activities = () => {
         </Container>
       </div>
 
-      <Container className="py-8">
+      <Container className="py-4 sm:py-6 md:py-8">
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
-          className="w-full mb-8"
+          className="w-full mb-6 sm:mb-8"
         >
-          <TabsList className="mb-6 bg-buddy-gray-200/50">
-            <TabsTrigger value="all" className="rounded-full">
-              All Activities
-            </TabsTrigger>
-            <TabsTrigger value="my" className="rounded-full">
-              My Activities
-            </TabsTrigger>
-            <TabsTrigger value="popular" className="rounded-full">
-              Popular
-            </TabsTrigger>
-            <TabsTrigger value="new" className="rounded-full">
-              Newly Added
-            </TabsTrigger>
-            <TabsTrigger value="soon" className="rounded-full">
-              Starting Soon
-            </TabsTrigger>
+          <TabsList className="mb-4 sm:mb-6 bg-buddy-gray-200/50 overflow-x-auto">
+            <div className="flex min-w-max">
+              <TabsTrigger
+                value="all"
+                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+              >
+                <span className="hidden sm:inline">All Activities</span>
+                <span className="sm:hidden">All</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="my"
+                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+              >
+                <span className="hidden sm:inline">My Activities</span>
+                <span className="sm:hidden">My</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="popular"
+                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+              >
+                Popular
+              </TabsTrigger>
+              <TabsTrigger
+                value="new"
+                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+              >
+                <span className="hidden sm:inline">Newly Added</span>
+                <span className="sm:hidden">New</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="soon"
+                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+              >
+                <span className="hidden sm:inline">Starting Soon</span>
+                <span className="sm:hidden">Soon</span>
+              </TabsTrigger>
+            </div>
           </TabsList>
 
-          <TabsContent value="all" className="space-y-6">
+          <TabsContent value="all" className="space-y-4 sm:space-y-6">
             {paginatedActivities.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {paginatedActivities.map((activity) => (
                     <ActivityCard
                       key={activity._id || activity.id}
@@ -714,7 +745,7 @@ const Activities = () => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="mt-8">
+                  <div className="mt-6 sm:mt-8">
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
@@ -736,10 +767,10 @@ const Activities = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="my" className="space-y-6">
+          <TabsContent value="my" className="space-y-4 sm:space-y-6">
             {paginatedActivities.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {paginatedActivities.map((activity) => {
                     const activityId = (
                       activity._id || activity.id
@@ -768,7 +799,7 @@ const Activities = () => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="mt-8">
+                  <div className="mt-6 sm:mt-8">
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
@@ -804,10 +835,10 @@ const Activities = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="popular" className="space-y-6">
+          <TabsContent value="popular" className="space-y-4 sm:space-y-6">
             {paginatedActivities.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {paginatedActivities.map((activity) => (
                     <ActivityCard
                       key={activity._id || activity.id}
@@ -829,7 +860,7 @@ const Activities = () => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="mt-8">
+                  <div className="mt-6 sm:mt-8">
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
@@ -851,10 +882,10 @@ const Activities = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="new" className="space-y-6">
+          <TabsContent value="new" className="space-y-4 sm:space-y-6">
             {paginatedActivities.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {paginatedActivities.map((activity) => (
                     <ActivityCard
                       key={activity._id || activity.id}
@@ -876,7 +907,7 @@ const Activities = () => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="mt-8">
+                  <div className="mt-6 sm:mt-8">
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
@@ -898,10 +929,10 @@ const Activities = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="soon" className="space-y-6">
+          <TabsContent value="soon" className="space-y-4 sm:space-y-6">
             {paginatedActivities.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {paginatedActivities.map((activity) => (
                     <ActivityCard
                       key={activity._id || activity.id}
@@ -923,7 +954,7 @@ const Activities = () => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="mt-8">
+                  <div className="mt-6 sm:mt-8">
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
