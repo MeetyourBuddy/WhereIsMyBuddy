@@ -18,6 +18,13 @@ import { ExportService } from './export.service';
 // import { NotificationService } from './notification.service';
 import { NotificationManagerController } from './controllers/notification-manager.controller';
 import { NotificationManagerService } from './services/notification-manager.service';
+import { ActivityMessageController } from './activity-message.controller';
+import { ActivityMessageService } from './activity-message.service';
+import {
+  PartnerController,
+  PartnerInvitationController,
+} from './partner.controller';
+import { PartnerService } from './partner.service';
 import { Activity, ActivitySchema } from './schemas/activity.schema';
 import { CheckIn, CheckInSchema } from './schemas/checkin.schema';
 import { Badge, BadgeSchema } from './schemas/badge.schema';
@@ -38,6 +45,15 @@ import {
   NotificationSchema,
 } from './schemas/notification.schema';
 import {
+  ActivityMessage,
+  ActivityMessageSchema,
+} from './schemas/activity-message.schema';
+import { Partner, PartnerSchema } from './schemas/partner.schema';
+import {
+  PartnerInvitation,
+  PartnerInvitationSchema,
+} from './schemas/partner-invitation.schema';
+import {
   BuddyConnection,
   BuddyConnectionSchema,
 } from '../users/schemas/buddy-connection.schema';
@@ -56,12 +72,20 @@ import { UsersModule } from '../users/users.module';
       { name: Milestone.name, schema: MilestoneSchema },
       { name: UserMilestone.name, schema: UserMilestoneSchema },
       { name: Notification.name, schema: NotificationSchema },
+      { name: ActivityMessage.name, schema: ActivityMessageSchema },
+      { name: Partner.name, schema: PartnerSchema },
+      { name: PartnerInvitation.name, schema: PartnerInvitationSchema },
       { name: BuddyConnection.name, schema: BuddyConnectionSchema },
       { name: User.name, schema: UserSchema },
     ]),
     UsersModule,
   ],
   controllers: [
+    // More specific routes first
+    PartnerController,
+    PartnerInvitationController,
+    ActivityMessageController,
+    // General routes last
     ActivityController,
     CheckInController,
     BadgeController,
@@ -80,6 +104,8 @@ import { UsersModule } from '../users/users.module';
     CheckInCommentService,
     MilestoneService,
     ExportService,
+    ActivityMessageService,
+    PartnerService,
     // NotificationService, // Removed - using NotificationManagerService instead
     NotificationManagerService,
   ],
@@ -91,6 +117,8 @@ import { UsersModule } from '../users/users.module';
     CheckInCommentService,
     MilestoneService,
     ExportService,
+    ActivityMessageService,
+    PartnerService,
     // NotificationService, // Removed - using NotificationManagerService instead
     NotificationManagerService,
   ],

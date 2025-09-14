@@ -393,15 +393,12 @@ const Notifications: React.FC = () => {
           className="py-8"
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <div className="flex items-center">
-              <div className="bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 p-3 rounded-full mr-4 shadow-lg">
-                <Bell className="w-7 h-7 text-buddy-purple" />
-              </div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
                   Notifications
                 </h1>
-                <p className="text-buddy-gray-600 mt-1 text-sm md:text-base">
+                <p className="text-buddy-gray-500 mt-1 text-sm md:text-base">
                   Stay updated with your activities and buddies
                 </p>
               </div>

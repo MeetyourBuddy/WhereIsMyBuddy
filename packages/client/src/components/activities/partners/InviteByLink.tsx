@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import QRCode from "react-qr-code";
+import { partnerService } from "@/services/api/activity/partner.service";
 
 interface InviteByLinkProps {
   activityId: string;
@@ -26,16 +27,17 @@ const InviteByLink: React.FC<InviteByLinkProps> = ({
   const generateInviteLink = async () => {
     setIsGenerating(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Create a link invitation (no specific recipient)
+      const invitation = await partnerService.createInvitation(activityId, {
+        isLinkInvitation: "true", // Flag to indicate this is a link invitation
+      });
 
       const baseUrl = window.location.origin;
-      const link = `${baseUrl}/invite/partner/${activityId}?token=${Math.random().toString(36).substr(2, 9)}`;
+      const link = `${baseUrl}/invite/partner/${invitation.invitationToken}`;
       setInviteLink(link);
 
-      // Set expiry date (7 days from now)
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 7);
+      // Set expiry date from the invitation
+      const expiry = new Date(invitation.expiresAt);
       setLinkExpiry(expiry);
 
       toast({

@@ -26,35 +26,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/store/auth.store";
 import InvitePartnersModal from "./partners/InvitePartnersModal";
+import {
+  partnerService,
+  Partner,
+  PartnerInvitation,
+} from "@/services/api/activity/partner.service";
 
 interface ActivityPartnersProps {
   activityId: string;
 }
 
-interface Partner {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  streak: number;
-  progress: number;
-  lastCheckIn: string;
-  status: "active" | "pending" | "inactive";
-  activities: number;
-  totalCheckIns: number;
-}
-
-interface PartnerInvitation {
-  id: string;
-  fromUser: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  message?: string;
-  status: "pending" | "accepted" | "declined";
-  createdAt: string;
-}
+// Remove local interfaces - using imported ones from service
 
 const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
   const [activeTab, setActiveTab] = useState("partners");
@@ -65,82 +47,18 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Mock partners data - replace with real API call
+  // Load real partners data from API
   useEffect(() => {
     const loadPartnersData = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const [partnersData, invitationsData] = await Promise.all([
+          partnerService.getPartners(activityId),
+          partnerService.getPendingInvitations(activityId),
+        ]);
 
-        const mockPartners: Partner[] = [
-          {
-            id: "1",
-            name: "Alex Johnson",
-            email: "alex@example.com",
-            avatar: "/placeholder.svg",
-            streak: 7,
-            progress: 76,
-            lastCheckIn: "Today",
-            status: "active",
-            activities: 3,
-            totalCheckIns: 45,
-          },
-          {
-            id: "2",
-            name: "Jamie Smith",
-            email: "jamie@example.com",
-            avatar: "/placeholder.svg",
-            streak: 5,
-            progress: 64,
-            lastCheckIn: "Yesterday",
-            status: "active",
-            activities: 2,
-            totalCheckIns: 32,
-          },
-          {
-            id: "3",
-            name: "Taylor Brown",
-            email: "taylor@example.com",
-            avatar: "/placeholder.svg",
-            streak: 0,
-            progress: 42,
-            lastCheckIn: "3 days ago",
-            status: "inactive",
-            activities: 1,
-            totalCheckIns: 18,
-          },
-          {
-            id: "4",
-            name: "Jordan Lee",
-            email: "jordan@example.com",
-            avatar: "/placeholder.svg",
-            streak: 0,
-            progress: 0,
-            lastCheckIn: "",
-            status: "pending",
-            activities: 0,
-            totalCheckIns: 0,
-          },
-        ];
-
-        const mockInvitations: PartnerInvitation[] = [
-          {
-            id: "1",
-            fromUser: {
-              id: "5",
-              name: "Sam Wilson",
-              avatar: "/placeholder.svg",
-            },
-            message:
-              "Hey! I'd love to be your accountability partner for this activity.",
-            status: "pending",
-            createdAt: "2024-01-15T10:30:00Z",
-          },
-        ];
-
-        setPartners(mockPartners);
-        setInvitations(mockInvitations);
+        setPartners(partnersData);
+        setInvitations(invitationsData);
       } catch (error) {
         console.error("Failed to load partners data:", error);
         toast({
@@ -156,13 +74,28 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
     loadPartnersData();
   }, [activityId, toast]);
 
-  const handleInviteSent = () => {
+  const handleInviteSent = async () => {
     // Refresh partners data after invitation sent
-    // In real implementation, this would trigger a data refresh
-    toast({
-      title: "Invitation Sent!",
-      description: "Your partnership invitation has been sent successfully",
-    });
+    try {
+      const [partnersData, invitationsData] = await Promise.all([
+        partnerService.getPartners(activityId),
+        partnerService.getPendingInvitations(activityId),
+      ]);
+
+      setPartners(partnersData);
+      setInvitations(invitationsData);
+
+      toast({
+        title: "Invitation Sent!",
+        description: "Your partnership invitation has been sent successfully",
+      });
+    } catch (error) {
+      console.error("Failed to refresh data after invitation:", error);
+      toast({
+        title: "Invitation Sent!",
+        description: "Your partnership invitation has been sent successfully",
+      });
+    }
   };
 
   const handleInvitationResponse = async (
@@ -170,16 +103,18 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
     action: "accept" | "decline"
   ) => {
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await partnerService.respondToInvitation(activityId, invitationId, {
+        action,
+      });
 
-      setInvitations((prev) =>
-        prev.map((inv) =>
-          inv.id === invitationId
-            ? { ...inv, status: action === "accept" ? "accepted" : "declined" }
-            : inv
-        )
-      );
+      // Refresh data after responding to invitation
+      const [partnersData, invitationsData] = await Promise.all([
+        partnerService.getPartners(activityId),
+        partnerService.getPendingInvitations(activityId),
+      ]);
+
+      setPartners(partnersData);
+      setInvitations(invitationsData);
 
       if (action === "accept") {
         toast({
@@ -283,9 +218,7 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
                           className={`rounded-2xl border p-4 transition-all duration-200 ${
                             partner.status === "active"
                               ? "border-green-200 bg-green-50/50"
-                              : partner.status === "pending"
-                                ? "border-blue-200 bg-blue-50/50"
-                                : "border-gray-200 bg-gray-50/50"
+                              : "border-gray-200 bg-gray-50/50"
                           }`}
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -313,11 +246,6 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
                                       Active
                                     </Badge>
                                   )}
-                                  {partner.status === "pending" && (
-                                    <Badge className="bg-blue-100 text-blue-700 border-blue-200 rounded-full">
-                                      Pending
-                                    </Badge>
-                                  )}
                                   {partner.status === "inactive" && (
                                     <Badge className="bg-gray-100 text-gray-600 border-gray-200 rounded-full">
                                       Inactive
@@ -327,12 +255,10 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
                                 <p className="text-sm text-gray-600">
                                   {partner.email}
                                 </p>
-                                {partner.status !== "pending" && (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Last check-in:{" "}
-                                    {partner.lastCheckIn || "Never"}
-                                  </p>
-                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Last check-in:{" "}
+                                  {partner.lastCheckIn || "Never"}
+                                </p>
                               </div>
                             </div>
 
@@ -378,9 +304,12 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
                               </div>
                             )}
 
-                            {partner.status === "pending" && (
-                              <div className="text-sm text-blue-600">
-                                Invitation sent, waiting for response
+                            {partner.status === "inactive" && (
+                              <div className="text-sm text-gray-500">
+                                Last active:{" "}
+                                {new Date(
+                                  partner.lastCheckIn
+                                ).toLocaleDateString()}
                               </div>
                             )}
                           </div>

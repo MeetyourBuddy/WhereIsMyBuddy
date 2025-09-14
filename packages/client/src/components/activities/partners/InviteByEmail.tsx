@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { partnerService } from "@/services/api/activity/partner.service";
 
 interface InviteByEmailProps {
   activityId: string;
@@ -50,8 +51,10 @@ const InviteByEmail: React.FC<InviteByEmailProps> = ({
 
     setIsSending(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await partnerService.createInvitation(activityId, {
+        toEmail: email,
+        message: message.trim() || undefined,
+      });
 
       toast({
         title: "Invitation Sent!",
@@ -60,7 +63,9 @@ const InviteByEmail: React.FC<InviteByEmailProps> = ({
 
       onInviteSent();
       setEmail("");
-      setMessage("");
+      setMessage(
+        "Hey! I'd love for you to be my accountability partner on this activity. Let's motivate each other to reach our goals together! 🎯"
+      );
     } catch (error) {
       console.error("Invite failed:", error);
       toast({

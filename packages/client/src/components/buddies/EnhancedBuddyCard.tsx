@@ -258,11 +258,11 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
     // Check if this is a received request
     if (currentConnectionStatus === "pending" && currentConnectionId) {
       return (
-        <div className="flex space-x-1">
+        <div className="flex space-x-2 w-1/2 justify-between">
           <Button
             variant="default"
             size="sm"
-            className="rounded-full bg-green-500 hover:bg-green-600 text-white"
+            className="rounded-full bg-green-500 hover:bg-green-600 text-white w-full"
             onClick={handleAcceptRequest}
             disabled={isProcessing}
           >
@@ -271,7 +271,7 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            className="rounded-full border-red-200 text-red-500 hover:bg-red-50"
+            className="rounded-full border-red-200 text-red-500 hover:bg-red-500 w-full"
             onClick={handleDeclineRequest}
             disabled={isProcessing}
           >
@@ -527,7 +527,7 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
           </div>
 
           {/* Action buttons */}
-          <div className="flex space-x-2">
+          <div className="flex space-x-1 w-full justify-between">
             <Button
               variant="outline"
               size="sm"

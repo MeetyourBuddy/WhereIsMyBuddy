@@ -7,15 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/store/auth.store";
+import { partnerService, User } from "@/services/api/activity/partner.service";
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  isPartner?: boolean;
-  isPending?: boolean;
-}
+// Remove local interface - using imported one from service
 
 interface InviteBySearchProps {
   activityId: string;
@@ -33,7 +27,7 @@ const InviteBySearch: React.FC<InviteBySearchProps> = ({
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Mock search function - replace with real API call
+  // Real search function using API
   const searchUsers = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -42,44 +36,8 @@ const InviteBySearch: React.FC<InviteBySearchProps> = ({
 
     setIsSearching(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Mock data - replace with real API call
-      const mockUsers: User[] = [
-        {
-          _id: "1",
-          name: "Alex Johnson",
-          email: "alex@example.com",
-          avatar: "/placeholder.svg",
-          isPartner: false,
-          isPending: false,
-        },
-        {
-          _id: "2",
-          name: "Jamie Smith",
-          email: "jamie@example.com",
-          avatar: "/placeholder.svg",
-          isPartner: true,
-          isPending: false,
-        },
-        {
-          _id: "3",
-          name: "Taylor Brown",
-          email: "taylor@example.com",
-          avatar: "/placeholder.svg",
-          isPartner: false,
-          isPending: true,
-        },
-      ];
-
-      const filteredUsers = mockUsers.filter(
-        (u) =>
-          u.name.toLowerCase().includes(query.toLowerCase()) ||
-          u.email.toLowerCase().includes(query.toLowerCase())
-      );
-
-      setSearchResults(filteredUsers);
+      const users = await partnerService.searchUsers(activityId, query);
+      setSearchResults(users);
     } catch (error) {
       console.error("Search failed:", error);
       toast({
@@ -104,8 +62,9 @@ const InviteBySearch: React.FC<InviteBySearchProps> = ({
   const handleInviteUser = async (userId: string, userName: string) => {
     setIsInviting(userId);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await partnerService.createInvitation(activityId, {
+        toUserId: userId,
+      });
 
       toast({
         title: "Invitation Sent!",
