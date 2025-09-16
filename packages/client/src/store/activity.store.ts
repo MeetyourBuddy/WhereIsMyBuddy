@@ -21,12 +21,17 @@ interface ActivityState {
     activityData: Partial<IActivity>
   ) => Promise<ApiResponse<IActivityResult>>;
   deleteActivity: (id: string) => Promise<void>;
+  joinActivity: (activityId: string) => Promise<ApiResponse<IActivityResult>>;
+  quitActivity: (activityId: string) => Promise<ApiResponse<IActivityResult>>;
   clearError: () => void;
 
   // Local state actions
   setActivities: (activities: IActivityResult[]) => void;
   setCurrentActivity: (activity: IActivityResult | null) => void;
   setError: (error: string | null) => void;
+
+  // Utility functions
+  isUserParticipant: (activity: IActivityResult, userId: string) => boolean;
 }
 
 export const useActivityStore = create<ActivityState>()(
@@ -43,11 +48,8 @@ export const useActivityStore = create<ActivityState>()(
           const response = await ActivityService.createActivity(
             activityData as IActivity
           );
-          console.log("Activity creation response:", response);
           if (response.success && response.data) {
             const newActivity = response.data;
-
-            console.log("New activity:", newActivity);
 
             set((state) => ({
               activities: [...state.activities, newActivity],
@@ -71,8 +73,6 @@ export const useActivityStore = create<ActivityState>()(
           set({ isLoading: true, error: null });
           const response = await ActivityService.getActivities();
 
-          console.log("Activities:", response.data);
-
           set({ activities: response.data });
         } catch (error: unknown) {
           const apiError = error as ApiError;
@@ -86,8 +86,6 @@ export const useActivityStore = create<ActivityState>()(
         try {
           set({ isLoading: true, error: null });
           const response = await ActivityService.getActivityById(id);
-
-          console.log("Activity by id:", response.data);
 
           set({ currentActivity: response.data });
         } catch (error: unknown) {
@@ -137,11 +135,71 @@ export const useActivityStore = create<ActivityState>()(
         }
       },
 
+      joinActivity: async (activityId: string) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await ActivityService.joinActivity(activityId);
+
+          if (response.data) {
+            // Update the current activity with the new participant
+            set((state) => ({
+              currentActivity: response.data,
+              activities: state.activities.map((activity) =>
+                activity.id === activityId ? response.data : activity
+              ),
+            }));
+            return response;
+          }
+          throw new Error("Invalid response format");
+        } catch (error: unknown) {
+          const apiError = error as ApiError;
+          console.error("Join activity error:", apiError);
+          set({ error: apiError.message });
+          throw apiError;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      quitActivity: async (activityId: string) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await ActivityService.quitActivity(activityId);
+
+          if (response.data) {
+            // Update the current activity with the removed participant
+            set((state) => ({
+              currentActivity: response.data,
+              activities: state.activities.map((activity) =>
+                activity.id === activityId ? response.data : activity
+              ),
+            }));
+            return response;
+          }
+          throw new Error("Invalid response format");
+        } catch (error: unknown) {
+          const apiError = error as ApiError;
+          console.error("Quit activity error:", apiError);
+          set({ error: apiError.message });
+          throw apiError;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       clearError: () => set({ error: null }),
 
       setActivities: (activities) => set({ activities }),
       setCurrentActivity: (activity) => set({ currentActivity: activity }),
       setError: (error) => set({ error }),
+
+      isUserParticipant: (activity, userId) => {
+        return (
+          activity.participants?.some(
+            (participant) => participant._id === userId
+          ) || false
+        );
+      },
     }),
     { name: "activity-store" }
   )

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
@@ -6,14 +6,19 @@ import Button from "@/components/common/Button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import Pagination from "@/components/ui/pagination";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Filter, 
-  MapPin, 
+import {
+  Search,
+  Filter,
+  MapPin,
   UserPlus,
-  SortAsc, 
+  SortAsc,
   X,
   Users,
   Star,
@@ -22,7 +27,7 @@ import {
   Heart,
   CalendarDays,
   Clock,
-  User
+  User,
 } from "lucide-react";
 import BuddyCard from "@/components/buddies/BuddyCard";
 
@@ -31,12 +36,15 @@ const Buddies = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(8); // 2x4 grid
+
   const buddies = [
     {
       id: "b1",
       name: "Riley Morgan",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070",
+      image:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070",
       interests: ["Fitness", "Reading", "Hiking"],
       activeStreak: 7,
       mutualActivities: 2,
@@ -50,7 +58,8 @@ const Buddies = () => {
     {
       id: "b2",
       name: "Jordan Taylor",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070",
+      image:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070",
       interests: ["Coding", "Photography", "Gaming"],
       activeStreak: 12,
       mutualActivities: 1,
@@ -64,7 +73,8 @@ const Buddies = () => {
     {
       id: "b3",
       name: "Quinn Rivers",
-      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1961",
+      image:
+        "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=1961",
       interests: ["Yoga", "Meditation", "Music"],
       activeStreak: 5,
       mutualActivities: 3,
@@ -78,7 +88,8 @@ const Buddies = () => {
     {
       id: "b4",
       name: "Avery Chen",
-      image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974",
+      image:
+        "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974",
       interests: ["Dancing", "Cooking", "Languages"],
       activeStreak: 9,
       mutualActivities: 0,
@@ -92,7 +103,8 @@ const Buddies = () => {
     {
       id: "b5",
       name: "Morgan Kim",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+      image:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
       interests: ["Photography", "Hiking", "Travel"],
       activeStreak: 15,
       mutualActivities: 1,
@@ -106,7 +118,8 @@ const Buddies = () => {
     {
       id: "b6",
       name: "Taylor Lee",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+      image:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
       interests: ["Art", "Writing", "Film"],
       activeStreak: 3,
       mutualActivities: 0,
@@ -120,7 +133,8 @@ const Buddies = () => {
     {
       id: "b7",
       name: "Casey Martinez",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+      image:
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
       interests: ["Fitness", "Nutrition", "Coaching"],
       activeStreak: 21,
       mutualActivities: 2,
@@ -134,7 +148,8 @@ const Buddies = () => {
     {
       id: "b8",
       name: "Alex Johnson",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+      image:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
       interests: ["Coding", "Gaming", "Music Production"],
       activeStreak: 6,
       mutualActivities: 1,
@@ -144,51 +159,75 @@ const Buddies = () => {
       joinedDate: "5 months ago",
       location: "Seattle, WA",
       status: "offline" as const,
-    }
+    },
   ];
 
-  const interestCategories = ["All", "Fitness", "Coding", "Reading", "Art", "Music", "Photography", "Hiking", "Cooking", "Languages"];
-  
-  const filteredBuddies = buddies.filter(buddy => {
-    const matchesSearch = 
-      buddy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      buddy.bio.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      buddy.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      buddy.interests.some(interest => 
-        interest.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    
-    const matchesInterest = 
-      activeFilters.length === 0 || 
-      activeFilters.includes("All") ||
-      buddy.interests.some(interest => activeFilters.includes(interest));
-    
-    return matchesSearch && matchesInterest;
-  });
+  const interestCategories = [
+    "All",
+    "Fitness",
+    "Coding",
+    "Reading",
+    "Art",
+    "Music",
+    "Photography",
+    "Hiking",
+    "Cooking",
+    "Languages",
+  ];
+
+  const filteredBuddies = useMemo(() => {
+    return buddies.filter((buddy) => {
+      const matchesSearch =
+        buddy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        buddy.bio.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        buddy.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        buddy.interests.some((interest) =>
+          interest.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+      const matchesInterest =
+        activeFilters.length === 0 ||
+        activeFilters.includes("All") ||
+        buddy.interests.some((interest) => activeFilters.includes(interest));
+
+      return matchesSearch && matchesInterest;
+    });
+  }, [searchQuery, activeFilters]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredBuddies.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedBuddies = filteredBuddies.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilters]);
 
   const toggleFilter = (filter: string) => {
     if (filter === "All") {
       setActiveFilters(["All"]);
       return;
     }
-    
+
     let newFilters = [...activeFilters];
-    
-    newFilters = newFilters.filter(f => f !== "All");
-    
+
+    newFilters = newFilters.filter((f) => f !== "All");
+
     if (newFilters.includes(filter)) {
-      newFilters = newFilters.filter(f => f !== filter);
+      newFilters = newFilters.filter((f) => f !== filter);
     } else {
       newFilters.push(filter);
     }
-    
+
     if (newFilters.length === 0) {
       newFilters = ["All"];
     }
-    
+
     setActiveFilters(newFilters);
   };
-  
+
   const clearFilters = () => {
     setActiveFilters(["All"]);
     setSearchQuery("");
@@ -203,67 +242,73 @@ const Buddies = () => {
               Find Buddies
             </h1>
             <p className="text-buddy-gray-600 max-w-3xl">
-              Connect with like-minded individuals who share your interests and goals.
-              Find accountability partners to help you stay on track.
+              Connect with like-minded individuals who share your interests and
+              goals. Find accountability partners to help you stay on track.
             </p>
-            
+
             <div className="flex flex-col md:flex-row gap-4 mt-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-buddy-gray-400" />
                 <Input
                   type="search"
                   placeholder="Search buddies by name, interests, or location..."
-                  className="pl-10 bg-white"
+                  className="pl-10 bg-white rounded-full"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              
+
               <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  className="bg-white"
+                <Button
+                  variant="outline"
+                  className="bg-white rounded-full"
                   icon={<Filter className="w-4 h-4" />}
                 >
                   Filters
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="bg-white"
+                <Button
+                  variant="outline"
+                  className="bg-white rounded-full"
                   icon={<SortAsc className="w-4 h-4" />}
                 >
                   Sort
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="bg-white"
+                <Button
+                  variant="outline"
+                  className="bg-white rounded-full"
                   icon={<MapPin className="w-4 h-4" />}
                 >
                   Near Me
                 </Button>
               </div>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 mt-2">
-              {interestCategories.map(interest => (
+              {interestCategories.map((interest) => (
                 <Button
                   key={interest}
-                  variant={activeFilters.includes(interest) ? "primary" : "outline"}
+                  variant={
+                    activeFilters.includes(interest) ? "primary" : "outline"
+                  }
                   size="small"
-                  className={activeFilters.includes(interest) 
-                    ? "bg-buddy-purple text-white" 
-                    : "bg-white text-buddy-gray-700"}
+                  className={
+                    activeFilters.includes(interest)
+                      ? "bg-buddy-purple text-white rounded-full"
+                      : "bg-white text-buddy-gray-700 rounded-full"
+                  }
                   onClick={() => toggleFilter(interest)}
                 >
                   {interest}
                 </Button>
               ))}
-              
-              {(searchQuery || (activeFilters.length > 0 && !activeFilters.includes("All"))) && (
+
+              {(searchQuery ||
+                (activeFilters.length > 0 &&
+                  !activeFilters.includes("All"))) && (
                 <Button
                   variant="ghost"
                   size="small"
-                  className="text-buddy-gray-500"
+                  className="text-buddy-gray-500 rounded-full"
                   onClick={clearFilters}
                   icon={<X className="w-4 h-4" />}
                 >
@@ -274,22 +319,83 @@ const Buddies = () => {
           </div>
         </Container>
       </div>
-      
+
       <Container className="py-8">
         <Tabs defaultValue="all" className="w-full mb-8">
           <TabsList className="mb-6 bg-buddy-gray-200/50">
-            <TabsTrigger value="all">All Buddies</TabsTrigger>
-            <TabsTrigger value="my">My Buddies</TabsTrigger>
-            <TabsTrigger value="recommended">Recommended</TabsTrigger>
-            <TabsTrigger value="active">Most Active</TabsTrigger>
-            <TabsTrigger value="nearby">Nearby</TabsTrigger>
+            <TabsTrigger value="all" className="rounded-full">
+              All Buddies
+            </TabsTrigger>
+            <TabsTrigger value="my" className="rounded-full">
+              My Buddies
+            </TabsTrigger>
+            <TabsTrigger value="recommended" className="rounded-full">
+              Recommended
+            </TabsTrigger>
+            <TabsTrigger value="active" className="rounded-full">
+              Most Active
+            </TabsTrigger>
+            <TabsTrigger value="nearby" className="rounded-full">
+              Nearby
+            </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="all" className="space-y-6">
             {filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredBuddies.map(buddy => (
-                  <BuddyCard 
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {paginatedBuddies.map((buddy) => (
+                    <BuddyCard
+                      key={buddy.id}
+                      id={buddy.id}
+                      name={buddy.name}
+                      image={buddy.image}
+                      location={buddy.location}
+                      bio={buddy.bio}
+                      interests={buddy.interests}
+                      mutualActivities={buddy.mutualActivities}
+                      mutualBuddies={buddy.mutualBuddies || 0}
+                      status={buddy.status}
+                    />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      totalItems={filteredBuddies.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <Card className="p-8 text-center">
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-4">
+                    <Search className="w-8 h-8 text-buddy-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">
+                    No buddies found
+                  </h3>
+                  <p className="text-buddy-gray-600 mb-6">
+                    We couldn't find any buddies matching your search criteria.
+                  </p>
+                  <Button onClick={clearFilters}>Clear Filters</Button>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="my">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {buddies
+                .filter((buddy) => buddy.mutualActivities > 0)
+                .map((buddy) => (
+                  <BuddyCard
                     key={buddy.id}
                     id={buddy.id}
                     name={buddy.name}
@@ -302,46 +408,13 @@ const Buddies = () => {
                     status={buddy.status}
                   />
                 ))}
-              </div>
-            ) : (
-              <Card className="p-8 text-center">
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-4">
-                    <Search className="w-8 h-8 text-buddy-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No buddies found</h3>
-                  <p className="text-buddy-gray-600 mb-6">
-                    We couldn't find any buddies matching your search criteria.
-                  </p>
-                  <Button onClick={clearFilters}>Clear Filters</Button>
-                </div>
-              </Card>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="my">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {buddies.filter(buddy => buddy.mutualActivities > 0).map(buddy => (
-                <BuddyCard 
-                  key={buddy.id}
-                  id={buddy.id}
-                  name={buddy.name}
-                  image={buddy.image}
-                  location={buddy.location}
-                  bio={buddy.bio}
-                  interests={buddy.interests}
-                  mutualActivities={buddy.mutualActivities}
-                  mutualBuddies={buddy.mutualBuddies || 0}
-                  status={buddy.status}
-                />
-              ))}
             </div>
           </TabsContent>
-          
+
           <TabsContent value="recommended">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {buddies.slice(0, 4).map(buddy => (
-                <BuddyCard 
+              {buddies.slice(0, 4).map((buddy) => (
+                <BuddyCard
                   key={buddy.id}
                   id={buddy.id}
                   name={buddy.name}
@@ -356,14 +429,14 @@ const Buddies = () => {
               ))}
             </div>
           </TabsContent>
-          
+
           <TabsContent value="active">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {buddies
                 .sort((a, b) => b.activeStreak - a.activeStreak)
                 .slice(0, 4)
-                .map(buddy => (
-                  <BuddyCard 
+                .map((buddy) => (
+                  <BuddyCard
                     key={buddy.id}
                     id={buddy.id}
                     name={buddy.name}
@@ -378,11 +451,11 @@ const Buddies = () => {
                 ))}
             </div>
           </TabsContent>
-          
+
           <TabsContent value="nearby">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {buddies.slice(4, 8).map(buddy => (
-                <BuddyCard 
+              {buddies.slice(4, 8).map((buddy) => (
+                <BuddyCard
                   key={buddy.id}
                   id={buddy.id}
                   name={buddy.name}
@@ -398,7 +471,7 @@ const Buddies = () => {
             </div>
           </TabsContent>
         </Tabs>
-        
+
         <div className="mt-12 bg-gradient-to-r from-[#FFDEE2]/30 to-[#FDE1D3]/30 rounded-2xl p-8">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-2/3 mb-8 md:mb-0 md:pr-8">
@@ -409,8 +482,8 @@ const Buddies = () => {
                 Complete your profile to improve your visibility and help others
                 with similar interests discover you.
               </p>
-              <Button 
-                className="bg-buddy-purple text-white"
+              <Button
+                className="bg-buddy-purple text-white rounded-full"
                 icon={<Star className="w-5 h-5" />}
               >
                 Complete Your Profile

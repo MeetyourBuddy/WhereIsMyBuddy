@@ -1,13 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/common/Card";
 import Avatar from "@/components/common/Avatar";
-import Button from "@/components/common/Button";
-import { MapPin, Calendar, Clock, Users, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  MapPin,
+  Calendar,
+  Clock,
+  Users,
+  ChevronRight,
+  UserPlus,
+  UserMinus,
+  Shield,
+} from "lucide-react";
 import { User } from "@/types/auth-types";
 import { IUserResponse } from "@/types/user-types";
 import { formatDate } from "date-fns";
+import { useActivityStore } from "@/store/activity.store";
+import { useAuth } from "@/store/auth.store";
+import { useToast } from "@/hooks/use-toast";
+import {
+  isActivityCreator,
+  isActivityParticipant,
+} from "@/types/activity-types";
 
 interface ActivityCardProps {
+  id?: string;
   title: string;
   description: string;
   avatar?: string;
@@ -17,10 +34,12 @@ interface ActivityCardProps {
   bannerImage?: string;
   participants: IUserResponse[];
   maxParticipants: number;
+  admin?: IUserResponse;
   onClick?: () => void;
 }
 
 const ActivityCard = ({
+  id,
   title,
   description,
   avatar,
@@ -30,8 +49,69 @@ const ActivityCard = ({
   bannerImage,
   participants,
   maxParticipants,
+  admin,
   onClick,
 }: ActivityCardProps) => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { joinActivity, quitActivity, isLoading } = useActivityStore();
+  const [isJoining, setIsJoining] = useState(false);
+
+  // Check if user is a participant and creator using helper functions
+  // Use both _id and id fields to handle different API responses
+  const userId = user?._id || user?.id;
+  const isParticipant = isActivityParticipant(
+    { participants, admin } as any,
+    userId
+  );
+  const isCreator = isActivityCreator({ admin } as any, userId);
+
+  const handleJoinQuit = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to join activities",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!id) {
+      toast({
+        title: "Error",
+        description: "Activity ID is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      if (isParticipant) {
+        await quitActivity(id);
+        toast({
+          title: "Left activity",
+          description: "You have successfully left the activity",
+        });
+      } else {
+        await joinActivity(id);
+        toast({
+          title: "Joined activity",
+          description: "You have successfully joined the activity",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update activity participation",
+        variant: "destructive",
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
   // Calculate the images to display for group avatar
 
   console.log("details in activity card", category);
@@ -169,17 +249,53 @@ const ActivityCard = ({
             </span>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-buddy-gray-500 hover:text-buddy-gray-900"
-            onClick={(e) => {
-              e.stopPropagation();
-              // onClick && onClick();
-            }}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {id && (
+              <>
+                {isCreator ? (
+                  <div className="h-9 flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full text-sm font-medium">
+                    <Shield className="w-4 h-4" />
+                    CREATOR
+                  </div>
+                ) : (
+                  <Button
+                    variant="default"
+                    onClick={handleJoinQuit}
+                    disabled={isJoining || isLoading}
+                    className={`h-9 rounded-full ${
+                      isParticipant
+                        ? "bg-red-500 hover:bg-red-600 text-white"
+                        : ""
+                    }`}
+                  >
+                    {isParticipant ? (
+                      <>
+                        <UserMinus className="w-4 h-4" />
+                        {isJoining ? "Leaving..." : "Quit"}
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        {isJoining ? "Joining..." : "Join"}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-buddy-gray-500 rounded-full border hover:border-buddy-gray-400 hover:text-buddy-gray-900 hover:bg-buddy-gray-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick && onClick();
+              }}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </Card.Content>
     </Card>

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import CheckInThread from "./CheckInThread";
+import { IActivityResult } from "@/types/activity-types";
 
 interface CheckInCardProps {
   date: Date;
@@ -26,6 +27,8 @@ interface CheckInCardProps {
   comments: number;
   likes: number;
   isCheckedIn?: boolean;
+  activity: IActivityResult;
+  checkIns: any[]; // Real check-in data from backend
 }
 
 const CheckInCard: React.FC<CheckInCardProps> = ({
@@ -38,6 +41,8 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
   comments,
   likes,
   isCheckedIn = false,
+  activity,
+  checkIns,
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -66,49 +71,8 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
   const defaultImage =
     "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80";
 
-  // Mock data for individual check-ins
-  const individualCheckIns = [
-    {
-      id: "1",
-      user: {
-        name: "Alex Johnson",
-        avatar: "https://i.pravatar.cc/100?img=3",
-      },
-      content:
-        "Completed my morning yoga session! Focused on breathing techniques and balance poses.",
-      image:
-        "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
-      time: "08:15 AM",
-      likes: 5,
-      comments: 2,
-    },
-    {
-      id: "2",
-      user: {
-        name: "Jamie Smith",
-        avatar: "https://i.pravatar.cc/100?img=4",
-      },
-      content:
-        "Today's practice was challenging but rewarding. I'm getting better at the warrior poses!",
-      time: "09:45 AM",
-      likes: 3,
-      comments: 1,
-    },
-    {
-      id: "3",
-      user: {
-        name: "Taylor Rivera",
-        avatar: "https://i.pravatar.cc/100?img=5",
-      },
-      content:
-        "First time doing the full routine without taking breaks. Feeling stronger each day!",
-      image:
-        "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80",
-      time: "10:30 AM",
-      likes: 7,
-      comments: 4,
-    },
-  ];
+  // Use real check-in data passed from parent component
+  // The checkIns prop should be passed from ActivityCheckin component
 
   const toggleThread = () => {
     setIsThreadExpanded(!isThreadExpanded);
@@ -168,7 +132,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
           </div>
 
           {!isCheckedIn && (
-            <CheckInDialog>
+            <CheckInDialog activity={activity}>
               <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-xl px-4 py-2 shadow-sm hover:shadow-md transition-all duration-300">
                 Check In
               </Button>
@@ -181,18 +145,25 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
         <div className="mt-3 pl-4 border-l-2 border-buddy-purple/30 animate-slide-down">
           <div className="flex items-center mb-4 text-sm text-buddy-gray-500">
             <MessageCircle className="w-4 h-4 mr-1" />
-            <span>{individualCheckIns.length} check-ins for this day</span>
+            <span>{checkIns.length} check-ins for this day</span>
           </div>
 
           <div className="space-y-4">
-            {individualCheckIns.map((checkIn) => (
-              <CheckInThread key={checkIn.id} checkIn={checkIn} />
-            ))}
+            {checkIns.length > 0 ? (
+              checkIns.map((checkIn) => (
+                <CheckInThread key={checkIn._id} checkIn={checkIn} />
+              ))
+            ) : (
+              <div className="text-center py-8 text-buddy-gray-500">
+                <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No check-ins yet for this day</p>
+              </div>
+            )}
           </div>
 
           {!isCheckedIn && (
             <div className="mt-4 flex justify-center">
-              <CheckInDialog>
+              <CheckInDialog activity={activity}>
                 <Button className="bg-gradient-to-r from-buddy-purple/80 to-buddy-blue/80 text-white rounded-xl px-6 py-2 shadow-sm hover:shadow-md transition-all duration-300">
                   Add Your Check-in
                 </Button>

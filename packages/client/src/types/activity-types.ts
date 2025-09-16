@@ -123,4 +123,25 @@ export interface IActivityResult extends IActivity {
   maxParticipants: number;
 }
 
+// Helper function to check if a user is the creator of an activity
+export const isActivityCreator = (
+  activity: IActivityResult,
+  userId?: string
+): boolean => {
+  // Check both _id and id fields
+  const adminId = activity.admin?._id || activity.admin?.id;
+  return adminId === userId;
+};
+
+// Helper function to check if a user is a participant of an activity
+export const isActivityParticipant = (
+  activity: IActivityResult,
+  userId?: string
+): boolean => {
+  return (
+    activity.participants?.some((participant) => participant._id === userId) ||
+    false
+  );
+};
+
 export type { InterestCategory };

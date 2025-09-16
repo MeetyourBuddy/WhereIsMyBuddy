@@ -1683,7 +1683,7 @@ const CreateActivity = () => {
                       type="button"
                       variant="outline"
                       onClick={handleBack}
-                      className="border-buddy-purple/30 text-buddy-gray-700 hover:bg-buddy-purple/10 transition-all duration-200"
+                      className="rounded-full border-buddy-purple/30 text-buddy-gray-700 hover:bg-buddy-purple/10 transition-all duration-200"
                     >
                       <ArrowLeft className="w-4 h-4 mr-2" />
                       {currentStep === 0 ? "Cancel" : "Back"}
@@ -1692,7 +1692,7 @@ const CreateActivity = () => {
                       type="button"
                       onClick={handleContinue}
                       disabled={isLoading}
-                      className="bg-gradient-to-r from-buddy-purple to-buddy-purple-light hover:from-buddy-purple-dark hover:to-buddy-purple text-white transition-all duration-300"
+                      className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-purple-light hover:from-buddy-purple-dark hover:to-buddy-purple text-white transition-all duration-300"
                     >
                       {isLoading && currentStep === STEPS.length - 1
                         ? "Creating..."

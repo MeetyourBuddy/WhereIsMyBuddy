@@ -123,12 +123,22 @@ const AppSidebar = () => {
 
   return (
     <Sidebar
-      className="bg-buddy-purple border-none"
+      className={cn(
+        "bg-buddy-purple border-none",
+        state === "collapsed" && "sidebar-icon-mode"
+      )}
       variant="sidebar"
       collapsible="icon"
     >
-      <SidebarHeader className="py-4 px-3">
-        <div className="flex items-center justify-between">
+      <SidebarHeader
+        className={cn("py-4", state === "expanded" ? "px-3" : "px-2")}
+      >
+        <div
+          className={cn(
+            "flex items-center",
+            state === "expanded" ? "justify-between" : "justify-center"
+          )}
+        >
           {state === "expanded" ? (
             <Link to="/" className="flex items-center">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-buddy-blue to-buddy-blue flex items-center justify-center">
@@ -139,14 +149,27 @@ const AppSidebar = () => {
               </div>
             </Link>
           ) : (
-            <div className="w-8 h-8 rounded-md flex items-center justify-center mx-auto">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-buddy-purple to-buddy-blue flex items-center justify-center">
-                <HeartHandshake className="w-6 h-6 text-white" />
-              </div>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-buddy-blue to-buddy-blue"
+                >
+                  <HeartHandshake className="w-5 h-5 text-white" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Buddy</TooltipContent>
+            </Tooltip>
           )}
-          <SidebarTrigger className="text-white hover:bg-buddy-purple-dark" />
+          {state === "expanded" && (
+            <SidebarTrigger className="text-white hover:bg-buddy-purple-dark" />
+          )}
         </div>
+        {state === "collapsed" && (
+          <div className="flex justify-center mt-3">
+            <SidebarTrigger className="text-white hover:bg-buddy-purple-dark" />
+          </div>
+        )}
         <div className="mt-4">{/* <SearchInput /> */}</div>
       </SidebarHeader>
 
@@ -157,17 +180,15 @@ const AppSidebar = () => {
               <SidebarMenuButton
                 asChild
                 isActive={location.pathname === item.href}
-                tooltip={item.title} // Always provide the tooltip, will only show when collapsed
+                tooltip={item.title}
+                className={cn(
+                  "text-buddy-gray-200 hover:text-white hover:bg-buddy-purple-dark/40",
+                  "transform transition-all duration-200 hover:scale-105",
+                  location.pathname === item.href &&
+                    "bg-buddy-purple-dark text-white hover:bg-buddy-purple-dark"
+                )}
               >
-                <Link
-                  to={item.href}
-                  className={cn(
-                    "text-buddy-gray-200 hover:text-white hover:bg-buddy-purple-dark/40 min-h-10",
-                    "transform transition-all duration-200 hover:scale-105",
-                    location.pathname === item.href &&
-                      "bg-buddy-purple-dark text-white hover:bg-buddy-purple-dark"
-                  )}
-                >
+                <Link to={item.href}>
                   <item.icon className="h-5 w-5" />
                   <span>{item.title}</span>
                   {item.badge && (
@@ -183,19 +204,19 @@ const AppSidebar = () => {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-buddy-purple-dark/30 pt-2">
-        <div className="px-3 py-2">
+        <div className={cn("py-2", state === "expanded" ? "px-3" : "px-2")}>
           {state === "expanded" ? (
             <div className="flex items-center">
               <Avatar className="h-9 w-9 border-2 border-buddy-purple-light">
                 <AvatarImage src={user?.avatar} />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
               <div className="ml-3">
                 <p className="text-sm font-medium text-white">{user?.name}</p>
                 <p className="text-xs text-buddy-gray-400">Basic Member</p>
               </div>
               <Link
-                to={`/profile/${user?._id}`}
+                to={`/profile/${user?._id || user?.id}`}
                 className="ml-auto text-buddy-gray-400 hover:text-white"
               >
                 <User className="h-4 w-4" />
@@ -204,14 +225,21 @@ const AppSidebar = () => {
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex justify-center">
-                  <Avatar className="h-9 w-9 border-2 border-buddy-purple-light cursor-pointer">
+                <Link
+                  to={`/profile/${user?._id || user?.id}`}
+                  className="flex justify-center"
+                >
+                  <Avatar className="h-9 w-9 border-2 border-buddy-purple-light cursor-pointer hover:border-buddy-purple-light/80 transition-colors">
                     <AvatarImage src={user?.avatar} />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarFallback>
+                      {user?.name?.charAt(0) || "U"}
+                    </AvatarFallback>
                   </Avatar>
-                </div>
+                </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">John Doe</TooltipContent>
+              <TooltipContent side="right">
+                {user?.name || "User"}
+              </TooltipContent>
             </Tooltip>
           )}
         </div>

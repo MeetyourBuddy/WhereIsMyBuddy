@@ -15,6 +15,8 @@ import {
   Settings,
   Link,
   CheckCircle,
+  ArrowLeft,
+  Share2,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +35,14 @@ import { differenceInDays } from "date-fns";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { VariantProps } from "class-variance-authority";
 import EditActivityDialog from "@/components/activities/EditActivityDialog";
+import ShareActivityModal from "@/components/activities/ShareActivityModal";
 import { useActivityStore } from "@/store/activity.store";
+import { useAuth } from "@/store/auth.store";
+import { useToast } from "@/hooks/use-toast";
+import {
+  isActivityCreator,
+  isActivityParticipant,
+} from "@/types/activity-types";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -60,8 +69,11 @@ const formatFrequency = (frequency: number, unit: string) => {
 const ActivityPage = () => {
   const { activityId } = useParams<{ activityId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const {
@@ -77,8 +89,6 @@ const ActivityPage = () => {
 
     fetchActivityById(activityId);
   }, [activityId, navigate, fetchActivityById]);
-
-  console.log("current activity", currentActivity);
 
   if (isLoadingActivities || isLoading) {
     return <div>Loading...</div>;
@@ -126,6 +136,16 @@ const ActivityPage = () => {
     currentActivity.endDate ? new Date(currentActivity.endDate) : new Date()
   );
 
+  // Check if current user is a participant using helper function
+  const userId = user?._id || user?.id;
+  const isUserParticipant = currentActivity
+    ? isActivityParticipant(currentActivity, userId)
+    : false;
+
+  // Direct admin comparison check - use both _id and id fields
+  const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
+  const isUserAdmin = user && currentActivity?.admin && userId === adminId;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-buddy-purple/5 via-white to-buddy-blue/5 relative">
       <div className="absolute inset-0 z-[-10] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5MzUxRTkiIGZpbGwtb3BhY2l0eT0iMC4wMSI+PHBhdGggZD0iTTM2IDM0aDN2M2gtM3Ztf00zMCAzaDN2M2gtM3pNMTcgMTdoM3YzaC0zek0zNiAxN2gzdjNoLTN6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
@@ -165,27 +185,54 @@ const ActivityPage = () => {
                     {displayData.description}
                   </p>
                 </div>
-                <div className="flex gap-2 mt-4 md:mt-0 z-[10]">
-                  <CheckInDialog
-                    onCheckInComplete={() => console.log("Check-in completed")}
+                <div className="flex flex-wrap gap-2 mt-4 md:mt-0 z-[10]">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/activities")}
+                    className="shadow-lg rounded-full bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
                   >
-                    <Button
-                      variant="default"
-                      className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-5 text-white"
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsShareModalOpen(true)}
+                    className="shadow-lg rounded-full bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
+                  >
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Share
+                  </Button>
+
+                  {isUserParticipant && (
+                    <CheckInDialog
+                      activity={currentActivity}
+                      onCheckInComplete={() =>
+                        console.log("Check-in completed")
+                      }
                     >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Check-in Now
-                    </Button>
-                  </CheckInDialog>
-                  <EditActivityDialog activity={currentActivity}>
-                    <Button
-                      variant="outline"
-                      className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Manage Activity
-                    </Button>
-                  </EditActivityDialog>
+                      <Button
+                        variant="default"
+                        className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-5 text-white"
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Check-in Now
+                      </Button>
+                    </CheckInDialog>
+                  )}
+                  {user &&
+                    currentActivity &&
+                    isActivityCreator(currentActivity, userId) && (
+                      <EditActivityDialog activity={currentActivity}>
+                        <Button
+                          variant="outline"
+                          className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 rounded-full px-5"
+                        >
+                          <Settings className="w-4 h-4 mr-2" />
+                          Manage Activity
+                        </Button>
+                      </EditActivityDialog>
+                    )}
                 </div>
               </div>
             </div>
@@ -369,6 +416,14 @@ const ActivityPage = () => {
           </Tabs>
         </Card>
       </div>
+
+      {/* Share Activity Modal */}
+      <ShareActivityModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        activityUrl={`${window.location.origin}/activity/${activityId}`}
+        activityTitle={currentActivity?.title}
+      />
     </div>
   );
 };
