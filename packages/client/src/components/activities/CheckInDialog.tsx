@@ -360,6 +360,10 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         hasSelectedFile: !!selectedFile,
         hasImageUrl: !!imageUrl,
         hasFileId: !!fileId,
+        selectedFileName: selectedFile?.name,
+        selectedFileSize: selectedFile?.size,
+        selectedFileType: selectedFile?.type,
+        uploadResponse: selectedFile ? "Upload attempted" : "No file selected",
       });
 
       // Create check-in via API

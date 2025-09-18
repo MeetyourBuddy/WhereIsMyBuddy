@@ -14,6 +14,7 @@ interface CheckInThreadProps {
     };
     content: string;
     imageUrl?: string;
+    fileId?: string;
     type?: "text" | "image";
     checkInDate: string;
     likes: number;
@@ -27,7 +28,12 @@ const CheckInThread: React.FC<CheckInThreadProps> = ({ checkIn }) => {
     id: checkIn._id,
     content: checkIn.content,
     imageUrl: checkIn.imageUrl,
+    fileId: checkIn.fileId,
     type: checkIn.type || "unknown",
+    hasImageUrl: !!checkIn.imageUrl,
+    hasFileId: !!checkIn.fileId,
+    imageUrlLength: checkIn.imageUrl?.length || 0,
+    fullCheckInObject: checkIn,
   });
 
   return (
@@ -65,7 +71,19 @@ const CheckInThread: React.FC<CheckInThreadProps> = ({ checkIn }) => {
             <img
               src={checkIn.imageUrl}
               alt="Check-in media"
-              className="w-full h-24 object-cover"
+              className="w-full h-[300px] object-cover"
+              onError={(e) => {
+                console.error("❌ Image failed to load:", {
+                  imageUrl: checkIn.imageUrl,
+                  fileId: checkIn.fileId,
+                  error: e,
+                });
+                // Hide the image container on error
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+              onLoad={() => {
+                console.log("✅ Image loaded successfully:", checkIn.imageUrl);
+              }}
             />
           </div>
         )}
