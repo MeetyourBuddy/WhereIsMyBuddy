@@ -17,7 +17,7 @@ import {
 import { User } from "@/types/auth-types";
 import { IUserResponse } from "@/types/user-types";
 import { formatDate } from "date-fns";
-import { useActivityStore } from "@/store/activity.store";
+import { useActivityData } from "@/hooks/useActivityData";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
@@ -69,7 +69,7 @@ const ActivityCard = ({
 }: ActivityCardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { joinActivity, quitActivity, isLoading } = useActivityStore();
+  const { joinActivityMutation, quitActivityMutation } = useActivityData();
   const [isJoining, setIsJoining] = useState(false);
 
   // Check if user is a participant and creator using helper functions
@@ -105,19 +105,11 @@ const ActivityCard = ({
     setIsJoining(true);
     try {
       if (isParticipant) {
-        await quitActivity(id);
-        toast({
-          title: "Left activity",
-          description: "You have successfully left the activity",
-        });
+        await quitActivityMutation.mutateAsync(id);
       } else {
-        await joinActivity(id);
-        toast({
-          title: "Joined activity",
-          description: "You have successfully joined the activity",
-        });
+        await joinActivityMutation.mutateAsync(id);
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to update activity participation",
@@ -322,7 +314,11 @@ const ActivityCard = ({
                   <Button
                     variant="default"
                     onClick={handleJoinQuit}
-                    disabled={isJoining || isLoading}
+                    disabled={
+                      isJoining ||
+                      joinActivityMutation.isPending ||
+                      quitActivityMutation.isPending
+                    }
                     className={`h-9 rounded-full ${
                       isParticipant
                         ? "bg-red-500 hover:bg-red-600 text-white"

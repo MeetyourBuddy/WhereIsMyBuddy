@@ -19,7 +19,7 @@ import {
   Star,
   Plus,
 } from "lucide-react";
-import { useActivityStore } from "@/store/activity.store";
+import { useActivityData, useUserProgress } from "@/hooks/useActivityData";
 import { useAuth } from "@/store/auth.store";
 import {
   isActivityCreator,
@@ -45,32 +45,25 @@ const Activities = () => {
   const [itemsPerPage] = useState(9); // 3x3 grid
   const [activeTab, setActiveTab] = useState("all");
 
-  // Progress tracking state
-  const [userProgressData, setUserProgressData] = useState<
-    Record<
-      string,
-      {
-        progress: number;
-        completedCheckIns: number;
-        totalAvailableCheckIns: number;
-        currentStreak?: number;
-        lastCheckInDate?: string;
-      }
-    >
-  >({});
-  const [isLoadingProgress, setIsLoadingProgress] = useState(false);
-
   const {
+    activitiesQuery,
+    joinActivityMutation,
+    quitActivityMutation,
     activities: activitiesFromStore,
     isLoading: isLoadingActivities,
-    fetchActivities,
-  } = useActivityStore();
+  } = useActivityData();
 
-  // Fetch activities from store
-  useEffect(() => {
-    console.log("🔄 Fetching activities from store...");
-    fetchActivities();
-  }, [fetchActivities]);
+  // Get user progress data for activities
+  const userActivityIds = activitiesFromStore
+    .filter((activity) => {
+      const isAdmin = isActivityCreator(activity, user?._id);
+      const isParticipant = isActivityParticipant(activity, user?._id);
+      return isAdmin || isParticipant;
+    })
+    .map((activity) => activity._id || activity.id);
+
+  const { progressData: userProgressData, isLoading: isLoadingProgress } =
+    useUserProgress(userActivityIds);
 
   // Debug effect to monitor activities changes
   useEffect(() => {
@@ -94,122 +87,11 @@ const Activities = () => {
     // Note: Auth flow is now working properly with ID field normalization
   }, [user, isAuthenticated, isInitialized]);
 
-  // Function to fetch user progress
-  const fetchUserProgress = useCallback(async () => {
-    console.log("🔍 fetchUserProgress function called");
-    console.log("👤 User ID:", user?._id);
-    console.log("📚 Activities count:", activitiesFromStore?.length);
-
-    if (
-      !user?._id ||
-      !activitiesFromStore ||
-      activitiesFromStore.length === 0
-    ) {
-      console.log("❌ Early return - missing user or activities");
-      return;
-    }
-
-    // Only fetch progress for "My Activities" tab or when we have user activities
-    const userActivities = activitiesFromStore.filter((activity) => {
-      const isAdmin = isActivityCreator(activity, user._id);
-      const isParticipant = isActivityParticipant(activity, user._id);
-      console.log(`🔍 Activity "${activity.title}":`, {
-        isAdmin,
-        isParticipant,
-        shouldInclude: isAdmin || isParticipant,
-        currentUserId: user._id,
-        currentUserIdType: typeof user._id,
-        activityAdmin: activity.admin,
-        activityAdminId: activity.admin?._id,
-        activityAdminIdType: typeof activity.admin?._id,
-        activityParticipants: activity.participants,
-        activityId: activity._id || activity.id,
-        activityIdType: typeof (activity._id || activity.id),
-        idsMatch: user._id === activity.admin?._id,
-        idsMatchStrict: user._id === activity.admin?._id,
-        idsMatchString:
-          user._id?.toString() === activity.admin?._id?.toString(),
-      });
-
-      // TEMPORARY: For debugging, include ALL activities to test progress API
-      console.log(
-        `🚨 TEMPORARY DEBUG: Including activity "${activity.title}" for progress testing`
-      );
-      return true; // Temporarily return true for all activities
-    });
-
-    console.log("👥 User activities found:", userActivities.length);
-    console.log(
-      "👥 User activities:",
-      userActivities.map((a) => ({ title: a.title, id: a._id || a.id }))
-    );
-
-    if (userActivities.length === 0) {
-      console.log("❌ No user activities found - returning early");
-      return;
-    }
-
-    setIsLoadingProgress(true);
-    try {
-      const activityIds = userActivities.map((activity) =>
-        (activity._id || activity.id)?.toString()
-      );
-      console.log("🔄 Fetching progress for activities:", activityIds);
-
-      const response =
-        await CheckInService.getUserProgressForActivities(activityIds);
-      console.log("📊 Progress response:", response);
-      console.log("📊 Progress response.data:", response.data);
-      console.log("📊 Progress response.data type:", typeof response.data);
-      console.log(
-        "📊 Progress response.data keys:",
-        response.data ? Object.keys(response.data) : "no data"
-      );
-
-      setUserProgressData(response.data || {});
-    } catch (error) {
-      console.error("❌ Failed to fetch user progress:", error);
-    } finally {
-      setIsLoadingProgress(false);
-    }
-  }, [user?._id, activitiesFromStore]);
-
-  // Fetch user progress when user or activities change
+  // Debug effect to monitor activities changes
   useEffect(() => {
-    console.log("🚀 fetchUserProgress useEffect triggered");
-    console.log("👤 User:", user);
-    console.log("👤 User ID:", user?._id);
-    console.log("📚 Activities from store:", activitiesFromStore);
-    console.log("📚 Activities count:", activitiesFromStore?.length);
-    console.log("🔗 Dependencies check:", {
-      userId: user?._id,
-      hasActivities: !!activitiesFromStore,
-      activitiesLength: activitiesFromStore?.length,
-    });
-
-    fetchUserProgress();
-  }, [fetchUserProgress]);
-
-  // Manual trigger for progress fetching when "My Activities" tab is active
-  useEffect(() => {
-    if (activeTab === "my" && user?._id && activitiesFromStore?.length > 0) {
-      console.log("🎯 Manual trigger for My Activities tab");
-      console.log("🎯 Dependencies:", {
-        activeTab,
-        userId: user._id,
-        activitiesLength: activitiesFromStore?.length,
-      });
-      fetchUserProgress();
-    }
-  }, [activeTab, user?._id, activitiesFromStore?.length, fetchUserProgress]);
-
-  // Force trigger when activities are loaded
-  useEffect(() => {
-    if (activitiesFromStore && activitiesFromStore.length > 0 && user?._id) {
-      console.log("🚀 Activities loaded, forcing progress fetch");
-      fetchUserProgress();
-    }
-  }, [activitiesFromStore, user?._id, fetchUserProgress]);
+    console.log("📊 Activities from store changed:", activitiesFromStore);
+    console.log("📊 Activities count:", activitiesFromStore?.length || 0);
+  }, [activitiesFromStore]);
 
   console.log("activitiesFromStore", activitiesFromStore);
 

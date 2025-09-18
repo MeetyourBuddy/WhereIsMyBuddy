@@ -25,7 +25,11 @@ import { useCheckInStore } from "@/store/checkin.store";
 import { useBadgeStore } from "@/store/badge.store";
 import { useAuth } from "@/store/auth.store";
 import { CheckInService } from "@/services/api/activity/reaction.service";
-import { IActivityResult } from "@/types/activity-types";
+import {
+  IActivityResult,
+  isActivityParticipant,
+  isActivityCreator,
+} from "@/types/activity-types";
 import { format } from "date-fns";
 
 interface ActivityCheckinProps {
@@ -37,20 +41,30 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
     "🎯 ActivityCheckin component rendered with activityId:",
     activityId
   );
-  console.log(
-    "🎯 ActivityCheckin component rendered with activityId:",
-    activityId
-  );
-  console.log(
-    "🎯 ActivityCheckin component rendered with activityId:",
-    activityId
-  );
-  // alert("ActivityCheckin component called with activityId: " + activityId);
+
   try {
     const { fetchActivityById, currentActivity } = useActivityStore();
     const { user } = useAuth();
     console.log("👤 User object:", user);
     console.log("👤 User ID:", user?._id);
+
+    // Check if user is a participant or admin
+    const userId = user?._id || user?.id;
+    const isUserParticipant = currentActivity
+      ? isActivityParticipant(currentActivity, userId)
+      : false;
+    const isUserAdmin = currentActivity
+      ? isActivityCreator(currentActivity, userId)
+      : false;
+    const canAccessCheckIn = isUserParticipant || isUserAdmin;
+
+    console.log("🔐 Access check:", {
+      isUserParticipant,
+      isUserAdmin,
+      canAccessCheckIn,
+      userId,
+      activityId,
+    });
     const {
       checkIns,
       stats,
@@ -72,8 +86,45 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
     });
     const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
-    // Note: Check-in data is now loaded at the ActivityPage level
-    // This component will use the data that's already loaded
+    // Fetch check-in data when component mounts
+    useEffect(() => {
+      const loadCheckInData = async () => {
+        if (!activityId) {
+          console.log("❌ No activityId provided to ActivityCheckin");
+          return;
+        }
+
+        console.log(
+          "🔄 ActivityCheckin: Loading check-in data for activity:",
+          activityId
+        );
+
+        try {
+          // Fetch activity data first, then check-ins and stats
+          await fetchActivityById(activityId);
+
+          // Fetch check-ins and stats for this activity
+          await Promise.all([
+            fetchCheckInsByActivity(activityId),
+            fetchCheckInStats(activityId),
+          ]);
+
+          console.log("✅ ActivityCheckin: Check-in data loaded successfully");
+        } catch (error) {
+          console.error(
+            "❌ ActivityCheckin: Failed to load check-in data:",
+            error
+          );
+        }
+      };
+
+      loadCheckInData();
+    }, [
+      activityId,
+      fetchActivityById,
+      fetchCheckInsByActivity,
+      fetchCheckInStats,
+    ]);
 
     // Check current period status
     useEffect(() => {
@@ -236,6 +287,17 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
       description: userBadge.badge.description,
     }));
 
+    // Log check-in data for debugging
+    console.log("📊 ActivityCheckin: Current check-in data:", {
+      checkInsCount: checkIns.length,
+      checkIns: checkIns,
+      stats: stats,
+      isLoading: isLoading,
+      user: user?._id,
+      currentActivity: currentActivity,
+      activityId: activityId,
+    });
+
     // Group check-ins by date for display
     const checkInsByDate = checkIns.reduce(
       (acc, checkIn) => {
@@ -249,14 +311,41 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
       {} as Record<string, typeof checkIns>
     );
 
+    console.log(
+      "📅 ActivityCheckin: Check-ins grouped by date:",
+      checkInsByDate
+    );
+
     // Convert real check-ins to display format
     const checkInPeriods = Object.entries(checkInsByDate)
       .map(([dateString, dayCheckIns]) => {
         const date = new Date(dateString);
         const firstCheckIn = dayCheckIns[0];
-        const totalParticipants = currentActivity?.participants?.length || 0;
-        const checkedInParticipants = dayCheckIns.length;
-        // Note: Likes are now handled by the ReactionButton component
+
+        // Debug: Log the current activity data
+        console.log("🔍 Processing check-in period for date:", dateString, {
+          currentActivity: currentActivity,
+          participants: currentActivity?.participants,
+          participantsLength: currentActivity?.participants?.length,
+          dayCheckIns: dayCheckIns,
+          dayCheckInsLength: dayCheckIns.length,
+        });
+
+        // Fix: Use the actual number of unique participants who checked in on this day
+        const uniqueParticipants = new Set(
+          dayCheckIns.map((ci) => ci.user._id)
+        );
+        const totalParticipants = Math.max(
+          currentActivity?.participants?.length || 1, // At least 1 (the current user)
+          uniqueParticipants.size // Or the number of unique participants who checked in
+        );
+        const checkedInParticipants = uniqueParticipants.size;
+
+        console.log("📊 Calculated participants:", {
+          totalParticipants,
+          checkedInParticipants,
+          uniqueParticipants: Array.from(uniqueParticipants),
+        });
 
         return {
           date,
@@ -272,6 +361,56 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
         };
       })
       .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+    console.log(
+      "🎯 ActivityCheckin: Final check-in periods to display:",
+      checkInPeriods
+    );
+
+    // Debug: Log each period's check-ins data
+    checkInPeriods.forEach((period, index) => {
+      console.log(`📋 Period ${index + 1} (${period.title}):`, {
+        date: period.date,
+        checkInsCount: period.checkIns.length,
+        checkIns: period.checkIns,
+        totalParticipants: period.totalParticipants,
+        checkedInParticipants: period.checkedInParticipants,
+        isCheckedIn: period.isCheckedIn,
+      });
+    });
+
+    // Show access denied message for non-participants
+    if (!canAccessCheckIn) {
+      return (
+        <div className="p-4 md:p-6">
+          <Card className="p-8 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-4 bg-buddy-gray-100 rounded-full flex items-center justify-center">
+                <Users className="w-8 h-8 text-buddy-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+                Join Activity to Check In
+              </h3>
+              <p className="text-buddy-gray-600 mb-6">
+                You need to be a participant in this activity to access check-in
+                features and view check-in history.
+              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-buddy-gray-500">
+                  As a participant, you'll be able to:
+                </p>
+                <ul className="text-sm text-buddy-gray-600 space-y-1">
+                  <li>• Check in and track your progress</li>
+                  <li>• View your streak and statistics</li>
+                  <li>• See check-in history and threads</li>
+                  <li>• Earn badges and achievements</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+    }
 
     return (
       <div className="p-4 md:p-6">

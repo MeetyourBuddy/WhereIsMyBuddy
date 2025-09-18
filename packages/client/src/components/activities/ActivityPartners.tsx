@@ -25,6 +25,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/store/auth.store";
+import { useActivityStore } from "@/store/activity.store";
+import {
+  isActivityParticipant,
+  isActivityCreator,
+} from "@/types/activity-types";
 import InvitePartnersModal from "./partners/InvitePartnersModal";
 import {
   partnerService,
@@ -46,10 +51,27 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { currentActivity } = useActivityStore();
 
-  // Load real partners data from API
+  // Check if user is a participant or admin
+  const userId = user?._id || user?.id;
+  const isUserParticipant = currentActivity
+    ? isActivityParticipant(currentActivity, userId)
+    : false;
+  const isUserAdmin = currentActivity
+    ? isActivityCreator(currentActivity, userId)
+    : false;
+  const canAccessPartners = isUserParticipant || isUserAdmin;
+
+  // Load real partners data from API - only for participants
   useEffect(() => {
     const loadPartnersData = async () => {
+      // Only load data if user has access
+      if (!canAccessPartners) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const [partnersData, invitationsData] = await Promise.all([
@@ -72,9 +94,14 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
     };
 
     loadPartnersData();
-  }, [activityId, toast]);
+  }, [activityId, toast, canAccessPartners]);
 
   const handleInviteSent = async () => {
+    // Only refresh data if user has access
+    if (!canAccessPartners) {
+      return;
+    }
+
     // Refresh partners data after invitation sent
     try {
       const [partnersData, invitationsData] = await Promise.all([
@@ -102,6 +129,11 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
     invitationId: string,
     action: "accept" | "decline"
   ) => {
+    // Only process if user has access
+    if (!canAccessPartners) {
+      return;
+    }
+
     try {
       await partnerService.respondToInvitation(activityId, invitationId, {
         action,
@@ -153,6 +185,39 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show access denied message for non-participants
+  if (!canAccessPartners) {
+    return (
+      <div className="p-4 md:p-6">
+        <Card className="p-8 text-center">
+          <div className="max-w-md mx-auto">
+            <div className="w-16 h-16 mx-auto mb-4 bg-buddy-gray-100 rounded-full flex items-center justify-center">
+              <Users className="w-8 h-8 text-buddy-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+              Join Activity to Access Partners
+            </h3>
+            <p className="text-buddy-gray-600 mb-6">
+              You need to be a participant in this activity to access
+              partnership features and invite accountability partners.
+            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-buddy-gray-500">
+                As a participant, you'll be able to:
+              </p>
+              <ul className="text-sm text-buddy-gray-600 space-y-1">
+                <li>• Invite friends as accountability partners</li>
+                <li>• View partner progress and statistics</li>
+                <li>• Accept or decline partnership requests</li>
+                <li>• Track group progress together</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -491,12 +556,33 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
                   </div>
 
                   <div className="mb-2">
-                    <Progress value={64} className="h-2.5" />
+                    <Progress
+                      value={
+                        partners.length > 0
+                          ? Math.round(
+                              partners.reduce((sum, p) => sum + p.progress, 0) /
+                                partners.length
+                            )
+                          : 0
+                      }
+                      className="h-2.5"
+                    />
                   </div>
 
                   <div className="flex justify-between text-xs text-gray-600">
-                    <span>162 check-ins</span>
-                    <span>64% complete</span>
+                    <span>
+                      {partners.reduce((sum, p) => sum + p.totalCheckIns, 0)}{" "}
+                      check-ins
+                    </span>
+                    <span>
+                      {partners.length > 0
+                        ? Math.round(
+                            partners.reduce((sum, p) => sum + p.progress, 0) /
+                              partners.length
+                          )
+                        : 0}
+                      % complete
+                    </span>
                   </div>
                 </div>
 

@@ -6,6 +6,7 @@ import {
   Clock,
   CheckCircle,
 } from "lucide-react";
+import { CheckInService } from "@/services/api/checkin/checkin-service";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,20 +55,69 @@ const ActivityCalendarGrid: React.FC<ActivityCalendarGridProps> = ({
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [calendarData, setCalendarData] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [allCheckIns, setAllCheckIns] = useState<any[]>([]);
 
-  // Convert weekly data to calendar format
+  // Fetch all check-ins for the activity
+  useEffect(() => {
+    const fetchAllCheckIns = async () => {
+      if (!activityId) return;
+
+      try {
+        console.log("🔄 Fetching all check-ins for calendar:", activityId);
+        const checkIns = await CheckInService.getCheckInsByActivity(activityId);
+        if (checkIns) {
+          console.log(
+            "✅ All check-ins fetched:",
+            checkIns.length,
+            "check-ins"
+          );
+          setAllCheckIns(checkIns);
+        }
+      } catch (error) {
+        console.error("❌ Failed to fetch all check-ins:", error);
+      }
+    };
+
+    fetchAllCheckIns();
+  }, [activityId]);
+
+  // Convert check-in data to calendar format
   useEffect(() => {
     const dataMap: Record<string, number> = {};
-    weeklyData.forEach((day) => {
-      if (day.date) {
-        const date = new Date(day.date);
-        const dateKey = format(date, "yyyy-MM-dd");
-        dataMap[dateKey] = day.checkins;
-      }
-    });
+
+    if (allCheckIns.length > 0) {
+      // Use all check-ins data
+      console.log(
+        "📅 Processing all check-ins for calendar:",
+        allCheckIns.length
+      );
+
+      allCheckIns.forEach((checkIn) => {
+        const checkInDate = new Date(checkIn.checkInDate);
+        const dateKey = format(checkInDate, "yyyy-MM-dd");
+
+        if (!dataMap[dateKey]) {
+          dataMap[dateKey] = 0;
+        }
+        dataMap[dateKey] += 1;
+      });
+
+      console.log("🗓️ Calendar data map:", dataMap);
+    } else {
+      // Fallback to weekly data if no check-ins available
+      console.log("📅 Using weekly data as fallback");
+      weeklyData.forEach((day) => {
+        if (day.date) {
+          const date = new Date(day.date);
+          const dateKey = format(date, "yyyy-MM-dd");
+          dataMap[dateKey] = day.checkins;
+        }
+      });
+    }
+
     setCalendarData(dataMap);
     setIsLoading(false);
-  }, [weeklyData]);
+  }, [allCheckIns, weeklyData]);
 
   // Generate calendar days based on view mode
   const calendarDays = useMemo(() => {
@@ -287,6 +337,11 @@ const ActivityCalendarGrid: React.FC<ActivityCalendarGridProps> = ({
                         {checkins === 0
                           ? "No check-ins"
                           : `${checkins} check-in${checkins > 1 ? "s" : ""}`}
+                        {/* {allCheckIns.length > 0 && (
+                          <div className="text-xs text-gray-400 mt-1">
+                            (All-time data)
+                          </div>
+                        )} */}
                       </div>
                     </div>
                   </TooltipContent>

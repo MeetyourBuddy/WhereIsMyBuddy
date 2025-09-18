@@ -11,14 +11,13 @@ export const UploadService = {
     const formData = new FormData();
     formData.append("file", file);
 
-    return apiMethods.post<UploadResponse>("/uploads", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    // Don't set Content-Type header - let the browser set it with proper boundary
+    return apiMethods.post<UploadResponse>("/uploads", formData);
   },
 
   getImageUrl: (fileId: string): string => {
-    return `${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"}/api/uploads/${fileId}`;
+    const baseUrl =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+    return `${baseUrl}/uploads/${fileId}`;
   },
 };

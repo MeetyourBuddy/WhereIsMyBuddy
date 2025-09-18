@@ -26,7 +26,12 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import CheckInThread from "./CheckInThread";
-import { IActivityResult } from "@/types/activity-types";
+import {
+  IActivityResult,
+  isActivityParticipant,
+  isActivityCreator,
+} from "@/types/activity-types";
+import { useAuth } from "@/store/auth.store";
 
 interface CheckInCardProps {
   date: Date;
@@ -101,6 +106,27 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isThreadExpanded, setIsThreadExpanded] = useState(false);
+  const { user } = useAuth();
+
+  // Check if user is a participant or admin
+  const userId = user?._id || user?.id;
+  const isUserParticipant = isActivityParticipant(activity, userId);
+  const isUserAdmin = isActivityCreator(activity, userId);
+  const canAccessCheckIn = isUserParticipant || isUserAdmin;
+
+  // Debug: Log the props received by CheckInCard
+  console.log("🎴 CheckInCard received props:", {
+    date,
+    title,
+    description,
+    totalParticipants,
+    checkedInParticipants,
+    comments,
+    likes,
+    isCheckedIn,
+    checkInsCount: checkIns?.length || 0,
+    checkIns: checkIns,
+  });
 
   // Get motivational image based on date of month
   const motivationalImage = useMemo(() => {
@@ -224,7 +250,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
             </div>
           </div>
 
-          {!isCheckedIn && (
+          {!isCheckedIn && canAccessCheckIn && (
             <CheckInDialog activity={activity}>
               <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                 <Zap className="w-4 h-4 mr-2" />
@@ -272,7 +298,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
               )}
             </div>
 
-            {!isCheckedIn && (
+            {!isCheckedIn && canAccessCheckIn && (
               <div className="mt-4 flex justify-center">
                 <CheckInDialog activity={activity}>
                   <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">

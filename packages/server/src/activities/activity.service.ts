@@ -533,19 +533,11 @@ export class ActivityService {
         throw new NotFoundException('Activity not found');
       }
 
-      // Get check-ins from the last 7 days
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 7);
-
-      const checkIns = await this.checkInModel
+      // Get ALL check-ins for this activity (same logic as calendar)
+      const allCheckIns = await this.checkInModel
         .find({
           activity: activityId,
           isDeleted: false,
-          checkInDate: {
-            $gte: startDate,
-            $lte: endDate,
-          },
         })
         .exec();
 
@@ -553,10 +545,10 @@ export class ActivityService {
       const dailyCheckIns = new Map();
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-      // Initialize all days with 0 check-ins using actual dates
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(startDate);
-        date.setDate(date.getDate() + i);
+      // Initialize last 7 days with 0 check-ins using actual dates
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
         const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
         const dayName = dayNames[date.getDay()];
         dailyCheckIns.set(dateKey, {
@@ -566,8 +558,8 @@ export class ActivityService {
         });
       }
 
-      // Count check-ins for each actual date
-      checkIns.forEach((checkIn) => {
+      // Count check-ins for each actual date (using ALL check-ins)
+      allCheckIns.forEach((checkIn) => {
         const checkInDate = new Date(checkIn.checkInDate);
         const dateKey = checkInDate.toISOString().split('T')[0];
         if (dailyCheckIns.has(dateKey)) {
@@ -612,33 +604,49 @@ export class ActivityService {
         throw new NotFoundException('Activity not found');
       }
 
-      // Get check-ins from the last 7 days
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 7);
-
-      const checkIns = await this.checkInModel
+      // Get ALL check-ins for this activity (all-time data)
+      const allCheckIns = await this.checkInModel
         .find({
           activity: activityId,
           isDeleted: false,
-          checkInDate: {
-            $gte: startDate,
-            $lte: endDate,
-          },
         })
         .populate('user', 'name email avatar picture')
         .exec();
 
-      // Create a map of dates for the last 7 days
+      // Debug: Log all check-ins for the specific user
+      console.log(`🔍 All check-ins for activity ${activityId}:`);
+      allCheckIns.forEach((checkIn, index) => {
+        if (checkIn.user._id.toString() === '680c53fd405ddf136f28f48e') {
+          const checkInDate = new Date(checkIn.checkInDate);
+          const scheduledDate = new Date(checkIn.scheduledDate);
+          console.log(`  ${index + 1}. ID: ${checkIn._id}`);
+          console.log(
+            `     CheckIn: ${checkInDate.toISOString()} (${checkInDate.toISOString().split('T')[0]})`,
+          );
+          console.log(
+            `     Scheduled: ${scheduledDate.toISOString()} (${scheduledDate.toISOString().split('T')[0]})`,
+          );
+          console.log(`     Raw checkInDate: ${checkIn.checkInDate}`);
+          console.log(`     Raw scheduledDate: ${checkIn.scheduledDate}`);
+        }
+      });
+
+      // Create a map of dates for the last 7 days (same logic as frontend)
       const last7Days = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
         last7Days.push({
-          date: date.toISOString().split('T')[0], // YYYY-MM-DD format
+          date: dateStr, // YYYY-MM-DD format
           checkedIn: false,
         });
       }
+
+      console.log(
+        `📅 Last 7 days being checked:`,
+        last7Days.map((d) => d.date),
+      );
 
       // Get all participants (admin + regular participants, no duplicates)
       const regularParticipants = activity.participants.filter(
@@ -651,11 +659,29 @@ export class ActivityService {
 
       for (const participant of allParticipants) {
         const participantId = participant._id.toString();
-        const participantCheckIns = checkIns.filter(
+
+        // Use the EXACT same logic as the leaderboard endpoint
+        const participantCheckIns = allCheckIns.filter(
           (ci) => ci.user._id.toString() === participantId,
         );
 
-        // Calculate streak using the same logic as CheckInService
+        // Debug logging for the first participant
+        if (participantId === '680c53fd405ddf136f28f48e') {
+          console.log(
+            `👤 Participant ${participantId} (${(participant as any).name}) has ${participantCheckIns.length} check-ins:`,
+          );
+          participantCheckIns.forEach((checkIn, index) => {
+            const checkInDate = new Date(checkIn.checkInDate);
+            const checkInDateStr = checkInDate.toISOString().split('T')[0];
+            const scheduledDate = new Date(checkIn.scheduledDate);
+            const scheduledDateStr = scheduledDate.toISOString().split('T')[0];
+            console.log(
+              `  ${index + 1}. CheckIn: ${checkInDateStr} (${checkIn.checkInDate}) | Scheduled: ${scheduledDateStr} (${checkIn.scheduledDate})`,
+            );
+          });
+        }
+
+        // Calculate streak using the EXACT same logic as leaderboard
         let streak = 0;
         if (participantCheckIns.length > 0) {
           // Sort check-ins by checkInDate (not scheduledDate) for consistency
@@ -701,13 +727,40 @@ export class ActivityService {
           streak = currentStreak;
         }
 
-        // Create last 7 days data for this participant
+        // Create last 7 days data for this participant (using ALL check-ins for accuracy)
         const participantLast7Days = last7Days.map((day) => {
           const hasCheckedIn = participantCheckIns.some((checkIn) => {
+            // Use checkInDate (when they actually checked in) not scheduledDate
             const checkInDate = new Date(checkIn.checkInDate);
-            const checkInDateStr = checkInDate.toISOString().split('T')[0];
+
+            // Handle timezone by using UTC date components
+            const checkInYear = checkInDate.getUTCFullYear();
+            const checkInMonth = String(checkInDate.getUTCMonth() + 1).padStart(
+              2,
+              '0',
+            );
+            const checkInDay = String(checkInDate.getUTCDate()).padStart(
+              2,
+              '0',
+            );
+            const checkInDateStr = `${checkInYear}-${checkInMonth}-${checkInDay}`;
+
+            // Debug logging for the first participant
+            if (participantId === '680c53fd405ddf136f28f48e') {
+              console.log(
+                `🔍 Checking ${day.date} against checkIn ${checkInDateStr} (${checkIn.checkInDate}) - Match: ${checkInDateStr === day.date}`,
+              );
+            }
+
             return checkInDateStr === day.date;
           });
+
+          // Debug logging for the first participant
+          if (participantId === '680c53fd405ddf136f28f48e') {
+            console.log(
+              `📅 ${day.date}: ${hasCheckedIn ? 'CHECKED IN' : 'NO CHECK-IN'}`,
+            );
+          }
 
           return {
             ...day,
@@ -719,9 +772,9 @@ export class ActivityService {
           id: participantId,
           name: (participant as any).name || 'Unknown User',
           avatar: (participant as any).avatar || (participant as any).picture,
-          checkIns: participantCheckIns.length,
-          streak,
-          last7Days: participantLast7Days,
+          checkIns: participantCheckIns.length, // Use EXACT same logic as leaderboard
+          streak, // Use EXACT same logic as leaderboard
+          last7Days: participantLast7Days, // Use last 7 days data for display
         });
       }
 

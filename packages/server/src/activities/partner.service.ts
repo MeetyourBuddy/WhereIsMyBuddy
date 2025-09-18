@@ -13,6 +13,7 @@ import {
   PartnerInvitationDocument,
 } from './schemas/partner-invitation.schema';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
+import { CheckIn, CheckInDocument } from './schemas/checkin.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { CreatePartnerInvitationDto } from './dto/create-partner-invitation.dto';
 import { RespondToInvitationDto } from './dto/respond-to-invitation.dto';
@@ -28,6 +29,8 @@ export class PartnerService {
     private partnerInvitationModel: Model<PartnerInvitationDocument>,
     @InjectModel(Activity.name)
     private activityModel: Model<ActivityDocument>,
+    @InjectModel(CheckIn.name)
+    private checkInModel: Model<CheckInDocument>,
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
   ) {}
@@ -142,6 +145,13 @@ export class PartnerService {
 
     // If inviting by userId, verify user exists
     if (toUserId) {
+      // Prevent self-invitation
+      if (toUserId === fromUserId) {
+        throw new BadRequestException(
+          'You cannot send an invitation to yourself',
+        );
+      }
+
       const targetUser = await this.userModel.findById(toUserId).exec();
       if (!targetUser) {
         throw new NotFoundException('Target user not found');
@@ -172,6 +182,20 @@ export class PartnerService {
 
       if (existingInvitation) {
         throw new ConflictException('Invitation already sent to this user');
+      }
+    }
+
+    // If inviting by email, prevent self-invitation
+    if (toEmail) {
+      const currentUser = await this.userModel.findById(fromUserId).exec();
+      if (
+        currentUser &&
+        currentUser.email &&
+        currentUser.email.toLowerCase() === toEmail.toLowerCase()
+      ) {
+        throw new BadRequestException(
+          'You cannot send an invitation to yourself',
+        );
       }
     }
 
@@ -226,23 +250,106 @@ export class PartnerService {
       .sort({ joinedAt: -1 })
       .exec();
 
-    // Get partner statistics (mock data for now - can be enhanced with real stats)
-    return partners.map((partner) => ({
-      id: partner._id.toString(),
-      userId: partner.userId._id.toString(),
-      name: partner.userId.name,
-      email: partner.userId.email,
-      avatar: partner.userId.avatar,
-      status: partner.partnerStatus,
-      joinedAt: partner.joinedAt,
-      invitedBy: partner.invitedBy.name,
-      // Mock statistics - replace with real data from check-ins
-      streak: Math.floor(Math.random() * 30),
-      progress: Math.floor(Math.random() * 100),
-      lastCheckIn: partner.joinedAt.toISOString(),
-      activities: 1,
-      totalCheckIns: Math.floor(Math.random() * 50),
-    }));
+    // Get real partner statistics from check-ins
+    const partnersWithStats = await Promise.all(
+      partners.map(async (partner: any) => {
+        // Get real check-in statistics for this partner
+        const checkIns = await this.checkInModel
+          .find({
+            user: partner.userId._id,
+            activity: new Types.ObjectId(activityId),
+            isDeleted: false,
+          })
+          .sort({ checkInDate: -1 })
+          .exec();
+
+        // Calculate real statistics
+        const totalCheckIns = checkIns.length;
+        const lastCheckIn =
+          checkIns.length > 0 ? checkIns[0].checkInDate : null;
+
+        // Calculate current streak
+        let currentStreak = 0;
+        if (checkIns.length > 0) {
+          const now = new Date();
+          let currentDate = new Date(now);
+          currentDate.setHours(0, 0, 0, 0);
+
+          for (const checkIn of checkIns) {
+            const checkInDate = new Date(checkIn.checkInDate);
+            checkInDate.setHours(0, 0, 0, 0);
+
+            const daysDiff = Math.floor(
+              (currentDate.getTime() - checkInDate.getTime()) /
+                (1000 * 60 * 60 * 24),
+            );
+
+            if (daysDiff === currentStreak) {
+              currentStreak++;
+              currentDate = new Date(checkInDate);
+              currentDate.setDate(currentDate.getDate() - 1);
+            } else {
+              break;
+            }
+          }
+        }
+
+        // Calculate progress based on activity duration and frequency
+        const activity = await this.activityModel.findById(activityId).exec();
+        let progress = 0;
+        if (activity && totalCheckIns > 0) {
+          const startDate = new Date(activity.startDate);
+          const endDate = activity.endDate
+            ? new Date(activity.endDate)
+            : new Date();
+          const totalDuration = endDate.getTime() - startDate.getTime();
+
+          // Calculate expected check-ins based on frequency
+          let periodDuration: number;
+          switch (activity.checkinFrequencyUnit) {
+            case 'daily':
+              periodDuration = 24 * 60 * 60 * 1000;
+              break;
+            case 'weekly':
+              periodDuration = 7 * 24 * 60 * 60 * 1000;
+              break;
+            case 'monthly':
+              periodDuration = 30 * 24 * 60 * 60 * 1000;
+              break;
+            default:
+              periodDuration = 24 * 60 * 60 * 1000;
+          }
+
+          const totalExpectedCheckIns = Math.floor(
+            totalDuration / (periodDuration * activity.checkinFrequency),
+          );
+
+          progress =
+            totalExpectedCheckIns > 0
+              ? Math.round((totalCheckIns / totalExpectedCheckIns) * 100)
+              : 0;
+        }
+
+        return {
+          id: partner._id.toString(),
+          userId: partner.userId._id.toString(),
+          name: partner.userId.name,
+          email: partner.userId.email,
+          avatar: partner.userId.avatar,
+          status: partner.partnerStatus,
+          joinedAt: partner.joinedAt,
+          invitedBy: partner.invitedBy.name,
+          // Real statistics from check-ins
+          streak: currentStreak,
+          progress: Math.min(progress, 100), // Cap at 100%
+          lastCheckIn: lastCheckIn ? lastCheckIn.toISOString() : null,
+          activities: 1,
+          totalCheckIns: totalCheckIns,
+        };
+      }),
+    );
+
+    return partnersWithStats;
   }
 
   // Get pending invitations for an activity
@@ -281,7 +388,7 @@ export class PartnerService {
       .sort({ createdAt: -1 })
       .exec();
 
-    return invitations.map((invitation) => ({
+    return invitations.map((invitation: any) => ({
       id: invitation._id.toString(),
       fromUser: {
         id: invitation.fromUserId._id.toString(),
@@ -407,7 +514,7 @@ export class PartnerService {
 
   // Get invitation by token (for email/link invitations)
   async getInvitationByToken(token: string): Promise<any> {
-    const invitation = await this.partnerInvitationModel
+    const invitation: any = await this.partnerInvitationModel
       .findOne({
         invitationToken: token,
         status: 'pending',

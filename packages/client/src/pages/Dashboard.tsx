@@ -38,6 +38,7 @@ import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import { ActivityService } from "@/services/api/activity/activity-service";
 import { BuddyConnectionService } from "@/services/api/buddy/buddy-connection.service";
+import { CheckInService } from "@/services/api/activity/reaction.service";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -88,11 +89,49 @@ const Dashboard = () => {
         // For now, use empty array for suggested buddies (would need a separate endpoint)
         setSuggestedBuddies([]);
 
+        // Get user's progress across all activities to calculate overall streak
+        let overallStreak = 0;
+        if (activeActivitiesData.length > 0) {
+          try {
+            const activityIds = activeActivitiesData.map(
+              (activity) => activity._id || activity.id
+            );
+            const userProgressResponse =
+              await CheckInService.getUserProgressForActivities(activityIds);
+
+            // Extract the actual data from the response
+            const userProgressData = userProgressResponse.data;
+
+            // Calculate overall streak - find the maximum streak across all activities
+            const streaks = Object.values(userProgressData).map(
+              (progress) => progress.currentStreak || 0
+            );
+            overallStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
+
+            console.log("🎯 Dashboard streak calculation:", {
+              activityIds,
+              userProgressResponse,
+              userProgressData,
+              streaks,
+              overallStreak,
+              user: user?.name || user?._id,
+            });
+          } catch (error) {
+            console.error(
+              "Failed to fetch user progress for streak calculation:",
+              error
+            );
+            overallStreak = 0;
+          }
+        } else {
+          console.log("🎯 No active activities found, streak set to 0");
+        }
+
         // Calculate user stats
         setUserStats({
           activeGoals: activeActivitiesData.length,
           buddies: connections.length,
-          streak: (user as any).streak || 0,
+          streak: overallStreak,
           profileCompletion: calculateProfileCompletion(user),
         });
       } catch (error) {
@@ -142,6 +181,26 @@ const Dashboard = () => {
     return Math.round((activity.checkIns / activity.totalCheckIns) * 100);
   };
 
+  // Main loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pastel-purple/30 via-white to-pastel-blue/40 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-buddy-purple/20 border-t-buddy-purple rounded-full animate-spin mx-auto mb-6"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-buddy-blue/10 border-t-buddy-blue rounded-full animate-pulse mx-auto mb-6"></div>
+          </div>
+          <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+            Loading your dashboard
+          </h3>
+          <p className="text-buddy-gray-500">
+            Getting everything ready for you...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-8 min-h-screen bg-gradient-to-br from-pastel-purple/30 via-white to-pastel-blue/40">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5MzUxRTkiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTIwIDUwaDN2M2gtM3Ztf00zMCAyMGgzdjNoLTN6TTE3IDQwaDN2M2gtM3pNNDYgNDBoM3YzaC0zeiIvPjwvZz48L2c+PC9zdmc+')] opacity-75 pointer-events-none"></div>
@@ -185,11 +244,15 @@ const Dashboard = () => {
                       <Target className="h-5 w-5 text-buddy-purple" />
                     </div>
                     <div>
-                      <p className="text-sm text-buddy-gray-600">
-                        Active Goals
-                      </p>
+                      <p className="text-sm text-buddy-gray-600">Activities</p>
                       <p className="text-xl font-bold text-buddy-purple">
-                        {isLoading ? "..." : userStats.activeGoals}
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-buddy-purple/30 border-t-buddy-purple"></div>
+                          </div>
+                        ) : (
+                          userStats.activeGoals
+                        )}
                       </p>
                     </div>
                   </div>
@@ -202,7 +265,13 @@ const Dashboard = () => {
                     <div>
                       <p className="text-sm text-buddy-gray-600">Buddies</p>
                       <p className="text-xl font-bold text-buddy-blue">
-                        {isLoading ? "..." : userStats.buddies}
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-buddy-blue/30 border-t-buddy-blue"></div>
+                          </div>
+                        ) : (
+                          userStats.buddies
+                        )}
                       </p>
                     </div>
                   </div>
@@ -215,7 +284,13 @@ const Dashboard = () => {
                     <div>
                       <p className="text-sm text-buddy-gray-600">Streak</p>
                       <p className="text-xl font-bold text-buddy-orange">
-                        {isLoading ? "..." : `${userStats.streak} days`}
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-buddy-orange/30 border-t-buddy-orange"></div>
+                          </div>
+                        ) : (
+                          `${userStats.streak} days`
+                        )}
                       </p>
                     </div>
                   </div>
@@ -351,32 +426,39 @@ const Dashboard = () => {
                   })}
                 </div>
               ) : (
-                <Card className="p-8 text-center rounded-2xl bg-white/90 backdrop-blur-sm border border-white shadow-md">
-                  <div className="w-16 h-16 bg-buddy-purple/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Activity className="h-8 w-8 text-buddy-purple" />
+                <Card className="p-12 text-center rounded-2xl bg-white/90 backdrop-blur-sm border border-white shadow-lg">
+                  <div className="relative mb-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                      <Activity className="h-10 w-10 text-buddy-purple" />
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-buddy-orange/20 rounded-full flex items-center justify-center">
+                      <Sparkles className="h-3 w-3 text-buddy-orange" />
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">
+                  <h3 className="text-2xl font-bold text-buddy-gray-800 mb-3">
                     Ready to get started?
                   </h3>
-                  <p className="text-buddy-gray-500 mb-6">
+                  <p className="text-buddy-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
                     Join an activity or create your own to begin your journey!
+                    Find your perfect activity buddy and start achieving your
+                    goals together.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button
                       onClick={() => navigate("/activities")}
-                      className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 shadow-md hover:shadow-lg"
-                      size="small"
+                      className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-8 py-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                      size="default"
                     >
-                      <Compass className="w-4 h-4 mr-2" />
+                      <Compass className="w-5 h-5 mr-2" />
                       Explore Activities
                     </Button>
                     <Button
                       onClick={() => navigate("/activities/create")}
                       variant="outline"
-                      className="border-buddy-purple/20 text-buddy-purple hover:bg-buddy-purple/5 rounded-full px-6"
-                      size="small"
+                      className="border-buddy-purple/30 text-buddy-purple hover:bg-buddy-purple/10 rounded-full px-8 py-3 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                      size="default"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-5 h-5 mr-2" />
                       Create Activity
                     </Button>
                   </div>
@@ -420,90 +502,129 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="grid gap-4">
-                {suggestedActivities.map((activity, index) => (
-                  <Card
-                    key={activity._id || activity.id || index}
-                    className="overflow-hidden hover-card rounded-3xl bg-white/90 backdrop-blur-sm border border-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 relative group cursor-pointer"
-                    onClick={() =>
-                      navigate(`/activities/${activity._id || activity.id}`)
-                    }
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative w-full z-10 flex flex-col md:flex-row">
-                      <div className="relative max-w-[150px] overflow-hidden h-48 md:h-auto">
-                        <div className="absolute inset-0 bg-gradient-to-br from-buddy-purple/30 to-buddy-blue/30 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <img
-                          src={
-                            activity.bannerImage ||
-                            activity.image ||
-                            "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                          }
-                          alt={activity.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:bg-gradient-to-r"></div>
-                        <div className="absolute top-3 left-3">
-                          <Badge className="bg-white/90 text-buddy-purple border-0 shadow-sm">
-                            <Star className="w-3 h-3 mr-1" />
-                            Popular
-                          </Badge>
-                        </div>
-                        <div className="absolute bottom-3 left-3 md:hidden">
-                          <span className="bg-white/80 backdrop-blur-sm text-buddy-purple px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
-                            {activity.category}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex-grow p-5">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold text-lg">
-                                {activity.title}
-                              </h3>
-                              <span className="hidden md:inline-block bg-buddy-purple/10 text-buddy-purple px-2 py-0.5 rounded-full text-xs font-medium">
-                                {activity.category}
-                              </span>
-                            </div>
-                            <p className="text-sm text-buddy-gray-500 mb-4 line-clamp-3">
-                              {activity.description}
-                            </p>
+              {suggestedActivities.length > 0 ? (
+                <div className="grid gap-4">
+                  {suggestedActivities.map((activity, index) => (
+                    <Card
+                      key={activity._id || activity.id || index}
+                      className="overflow-hidden hover-card rounded-3xl bg-white/90 backdrop-blur-sm border border-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 relative group cursor-pointer"
+                      onClick={() =>
+                        navigate(`/activities/${activity._id || activity.id}`)
+                      }
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="relative w-full z-10 flex flex-col md:flex-row">
+                        <div className="relative max-w-[150px] overflow-hidden h-48 md:h-auto">
+                          <div className="absolute inset-0 bg-gradient-to-br from-buddy-purple/30 to-buddy-blue/30 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <img
+                            src={
+                              activity.bannerImage ||
+                              activity.image ||
+                              "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                            }
+                            alt={activity.title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:bg-gradient-to-r"></div>
+                          <div className="absolute top-3 left-3">
+                            <Badge className="bg-white/90 text-buddy-purple border-0 shadow-sm">
+                              <Star className="w-3 h-3 mr-1" />
+                              Popular
+                            </Badge>
                           </div>
-                          <div className="flex-shrink-0 mt-3 md:mt-0 w-full flex justify-between items-center">
-                            <div className="flex flex-wrap items-center text-xs text-buddy-gray-500 gap-2">
-                              <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
-                                <Clock className="h-3 w-3 mr-1 text-buddy-gray-400" />
-                                {formatDate(activity.startDate)}
-                              </span>
-                              <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
-                                <MapPin className="h-3 w-3 mr-1 text-buddy-gray-400" />
-                                {activity.location || "Virtual"}
-                              </span>
-                              <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
-                                <Users className="h-3 w-3 mr-1 text-buddy-gray-400" />
-                                {activity.participants?.length || 0} buddies
-                              </span>
-                            </div>
-                            <Button
-                              className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-6 hover:shadow-lg shadow-md group-hover:scale-105 transition-transform"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(
-                                  `/activities/${activity._id || activity.id}`
-                                );
-                              }}
-                            >
-                              <Heart className="w-4 h-4 mr-2" />
-                              Join Now
-                            </Button>
+                          <div className="absolute bottom-3 left-3 md:hidden">
+                            <span className="bg-white/80 backdrop-blur-sm text-buddy-purple px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
+                              {activity.category}
+                            </span>
                           </div>
                         </div>
+                        <div className="flex-grow p-5">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-lg">
+                                  {activity.title}
+                                </h3>
+                                <span className="hidden md:inline-block bg-buddy-purple/10 text-buddy-purple px-2 py-0.5 rounded-full text-xs font-medium">
+                                  {activity.category}
+                                </span>
+                              </div>
+                              <p className="text-sm text-buddy-gray-500 mb-4 line-clamp-3">
+                                {activity.description}
+                              </p>
+                            </div>
+                            <div className="flex-shrink-0 mt-3 md:mt-0 w-full flex justify-between items-center">
+                              <div className="flex flex-wrap items-center text-xs text-buddy-gray-500 gap-2">
+                                <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
+                                  <Clock className="h-3 w-3 mr-1 text-buddy-gray-400" />
+                                  {formatDate(activity.startDate)}
+                                </span>
+                                <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
+                                  <MapPin className="h-3 w-3 mr-1 text-buddy-gray-400" />
+                                  {activity.location || "Virtual"}
+                                </span>
+                                <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
+                                  <Users className="h-3 w-3 mr-1 text-buddy-gray-400" />
+                                  {activity.participants?.length || 0} buddies
+                                </span>
+                              </div>
+                              <Button
+                                className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-6 hover:shadow-lg shadow-md group-hover:scale-105 transition-transform"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(
+                                    `/activities/${activity._id || activity.id}`
+                                  );
+                                }}
+                              >
+                                <Heart className="w-4 h-4 mr-2" />
+                                Join Now
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-10 text-center rounded-2xl bg-white/90 backdrop-blur-sm border border-white shadow-lg">
+                  <div className="relative mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-buddy-blue/20 to-buddy-purple/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                      <Compass className="h-8 w-8 text-buddy-blue" />
                     </div>
-                  </Card>
-                ))}
-              </div>
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-buddy-orange/20 rounded-full flex items-center justify-center">
+                      <Sparkles className="h-2 w-2 text-buddy-orange" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-buddy-gray-800 mb-3">
+                    No activities to discover yet
+                  </h3>
+                  <p className="text-buddy-gray-500 mb-6 max-w-sm mx-auto">
+                    We're working on finding amazing activities for you. Check
+                    back soon or create your own!
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button
+                      onClick={() => navigate("/activities")}
+                      className="bg-gradient-to-r from-buddy-blue to-buddy-purple text-white rounded-full px-6 py-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                      size="small"
+                    >
+                      <Compass className="w-4 h-4 mr-2" />
+                      Browse All
+                    </Button>
+                    <Button
+                      onClick={() => navigate("/activities/create")}
+                      variant="outline"
+                      className="border-buddy-blue/30 text-buddy-blue hover:bg-buddy-blue/10 rounded-full px-6 py-2 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
+                      size="small"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create One
+                    </Button>
+                  </div>
+                </Card>
+              )}
             </section>
           </div>
 
@@ -586,24 +707,41 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : (
-                <Card className="p-4 text-center rounded-xl bg-white/90 backdrop-blur-sm border border-buddy-purple/20 shadow-sm">
-                  <div className="w-10 h-10 bg-buddy-purple/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Users className="h-5 w-5 text-buddy-purple" />
+                <Card className="p-8 text-center rounded-2xl bg-white/90 backdrop-blur-sm border border-buddy-purple/20 shadow-lg">
+                  <div className="relative mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                      <Users className="h-8 w-8 text-buddy-purple" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-buddy-orange/20 rounded-full flex items-center justify-center">
+                      <Heart className="h-2 w-2 text-buddy-orange" />
+                    </div>
                   </div>
-                  <h3 className="text-base font-semibold mb-1">
+                  <h3 className="text-xl font-bold text-buddy-gray-800 mb-3">
                     Find Your Squad!
                   </h3>
-                  <p className="text-buddy-gray-500 mb-3 text-xs">
-                    Connect with amazing people who share your interests
+                  <p className="text-buddy-gray-500 mb-6 max-w-sm mx-auto leading-relaxed">
+                    Connect with amazing people who share your interests and
+                    start building meaningful relationships together.
                   </p>
-                  <Button
-                    onClick={() => navigate("/buddies")}
-                    className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-4 shadow-sm hover:shadow-md"
-                    size="small"
-                  >
-                    <UserPlus className="w-3 h-3 mr-1" />
-                    Find Buddies
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button
+                      onClick={() => navigate("/buddies")}
+                      className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                      size="small"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Find Buddies
+                    </Button>
+                    <Button
+                      onClick={() => navigate("/activities")}
+                      variant="outline"
+                      className="border-buddy-purple/30 text-buddy-purple hover:bg-buddy-purple/10 rounded-full px-6 py-2 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
+                      size="small"
+                    >
+                      <Compass className="w-4 h-4 mr-2" />
+                      Join Activities
+                    </Button>
+                  </div>
                 </Card>
               )}
             </section>

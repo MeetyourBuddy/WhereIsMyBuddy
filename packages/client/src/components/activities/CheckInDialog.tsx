@@ -14,6 +14,9 @@ import {
   TrendingUp,
   Award,
   Sparkles,
+  Upload,
+  X,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   Dialog,
@@ -30,11 +33,13 @@ import { toast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
 import { Progress } from "../ui/progress";
 import { Badge } from "../ui/badge";
-import ImageUpload from "../common/ImageUpload";
 import { IActivityResult } from "@/types/activity-types";
 import { useCheckInStore } from "@/store/checkin.store";
 import { useBadgeStore } from "@/store/badge.store";
 import { UploadService } from "@/services/api/upload/upload-service";
+import { CheckInService } from "@/services/api/activity/reaction.service";
+import { ActivityService } from "@/services/api/activity/activity-service";
+import { useAuthStore } from "@/store/auth.store";
 
 interface CheckInDialogProps {
   children: React.ReactNode;
@@ -48,52 +53,174 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
   onCheckInComplete,
 }) => {
   const [open, setOpen] = useState(false);
-  const [checkinType, setCheckinType] = useState<"text" | "image">("text");
+  // Remove checkinType state since we now always support text + optional image
   const [message, setMessage] = useState("");
   const [uploadedImageId, setUploadedImageId] = useState<string | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userProgress, setUserProgress] = useState<{
+    progress: number;
+    completedCheckIns: number;
+    totalAvailableCheckIns: number;
+  } | null>(null);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
   const { stats, createCheckIn, fetchCheckInStats, isLoading } =
     useCheckInStore();
   const { fetchUserBadges } = useBadgeStore();
+  const { user } = useAuthStore();
+  const [overallStreak, setOverallStreak] = useState(0);
 
-  // Note: Stats are now fetched by the parent component when needed
-  // No automatic stats fetching when dialog opens
+  // Fetch user progress when dialog opens
+  useEffect(() => {
+    const fetchUserProgress = async () => {
+      if (!user?._id || !activity._id || !open) return;
+
+      setIsLoadingProgress(true);
+      try {
+        const response = await CheckInService.getUserProgress(activity._id);
+        setUserProgress(response.data);
+        console.log("🎯 CheckInDialog user progress:", response.data);
+      } catch (error) {
+        console.error(
+          "❌ Failed to fetch user progress in CheckInDialog:",
+          error
+        );
+      } finally {
+        setIsLoadingProgress(false);
+      }
+    };
+
+    fetchUserProgress();
+  }, [activity._id, user?._id, open]);
+
+  // Fetch overall user streak across all activities
+  useEffect(() => {
+    const fetchOverallStreak = async () => {
+      if (!user?._id || !open) return;
+
+      try {
+        // Get all user's activities
+        const activitiesResponse = await ActivityService.getActivities();
+        const allActivities = activitiesResponse.data || [];
+
+        // Filter to user's active activities (joined activities)
+        const activeActivities = allActivities.filter((act) =>
+          act.participants?.some((p) => p._id === user._id || p.id === user._id)
+        );
+
+        if (activeActivities.length > 0) {
+          const activityIds = activeActivities.map((act) => act._id || act.id);
+          const userProgressResponse =
+            await CheckInService.getUserProgressForActivities(activityIds);
+
+          // Extract the actual data from the response
+          const userProgressData = userProgressResponse.data;
+
+          // Calculate overall streak - find the maximum streak across all activities
+          const streaks = Object.values(userProgressData).map(
+            (progress) => progress.currentStreak || 0
+          );
+          const maxStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
+
+          setOverallStreak(maxStreak);
+
+          console.log("🎯 CheckInDialog overall streak calculation:", {
+            activityIds,
+            userProgressData,
+            streaks,
+            maxStreak,
+            user: user?.name || user?._id,
+          });
+        } else {
+          setOverallStreak(0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch overall streak:", error);
+        setOverallStreak(0);
+      }
+    };
+
+    fetchOverallStreak();
+  }, [user?._id, open]);
 
   // Real data from backend
-  const userStreak = stats?.currentStreak || 0;
+  const userStreak = overallStreak; // Use overall streak instead of activity-specific streak
   const totalCheckIns = stats?.totalCheckIns || 0;
-  const activityProgress = stats?.onTimePercentage || 0;
-  const nextMilestone = Math.max(10, Math.ceil(totalCheckIns * 1.5)); // Dynamic milestone
-  const pointsEarned = totalCheckIns * 10; // 10 points per check-in
+  const activityProgress = userProgress?.progress || 0; // Use userProgress.progress instead of stats.onTimePercentage
+
+  // Use the same data source as ActivityCard - userProgress from getUserProgress
+  const completedCheckIns = userProgress?.completedCheckIns || 0;
+  const totalAvailableCheckIns = userProgress?.totalAvailableCheckIns || 0;
+  const nextMilestone = totalAvailableCheckIns; // Use actual total from backend
+  const activityStreak = stats?.currentStreak || 0; // Use activity-specific streak for points calculation
+  const pointsEarned = completedCheckIns * 10 + activityStreak * 5; // Same formula as leaderboard: check-ins * 10 + streak * 5
   const isOnTime = true; // Will be determined by backend
 
-  const handleImageUploaded = (fileId: string, imageUrl: string) => {
-    setUploadedImageId(fileId);
-    setUploadedImageUrl(imageUrl);
-  };
+  // Debug: Log the milestone calculation
+  console.log("🎯 CheckInDialog milestone calculation:", {
+    userProgress,
+    completedCheckIns,
+    totalAvailableCheckIns,
+    nextMilestone,
+    activityStreak,
+    pointsEarned,
+    activityTitle: activity?.title,
+  });
 
-  const handleImageRemoved = () => {
-    setUploadedImageId(null);
-    setUploadedImageUrl(null);
-  };
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleCheckin = async () => {
-    // Validate input based on check-in type
-    if (checkinType === "text" && !message.trim()) {
+    // Validate file type
+    const acceptedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    if (!acceptedTypes.includes(file.type)) {
       toast({
-        title: "Message required",
-        description: "Please share your progress or thoughts",
+        title: "Invalid file type",
+        description:
+          "Please select a valid image file (JPEG, PNG, GIF, or WebP)",
         variant: "destructive",
       });
       return;
     }
 
-    if (checkinType === "image" && !uploadedImageId) {
+    // Validate file size (5MB max)
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > 5) {
       toast({
-        title: "Image required",
-        description: "Please upload an image for your check-in",
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Store the file and create preview
+    setSelectedFile(file);
+    const preview = URL.createObjectURL(file);
+    setPreviewUrl(preview);
+  };
+
+  const handleImageRemoved = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setUploadedImageId(null);
+    setUploadedImageUrl(null);
+  };
+
+  const handleCheckin = async () => {
+    // Validate input - text is always required
+    if (!message.trim()) {
+      toast({
+        title: "Message required",
+        description: "Please share your progress or thoughts",
         variant: "destructive",
       });
       return;
@@ -193,15 +320,47 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         return currentPeriodStart.toISOString();
       };
 
+      // Upload image if provided (optional)
+      let imageUrl = undefined;
+      let fileId = undefined;
+
+      if (selectedFile) {
+        try {
+          const uploadResponse = await UploadService.uploadImage(selectedFile);
+          fileId = uploadResponse.fileId;
+          imageUrl = UploadService.getImageUrl(uploadResponse.fileId);
+        } catch (error) {
+          console.error("Image upload failed:", error);
+          toast({
+            title: "Upload failed",
+            description: "Failed to upload image. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       // Prepare check-in data
       const checkInData = {
         activityId: activity._id,
-        type: checkinType,
-        content: checkinType === "text" ? message : "Image check-in",
-        imageUrl: checkinType === "image" ? uploadedImageUrl : undefined,
-        fileId: checkinType === "image" ? uploadedImageId : undefined,
+        type: (selectedFile ? "image" : "text") as "image" | "text", // Set type based on whether image is provided
+        content: message, // Always use the text message
+        imageUrl: imageUrl,
+        fileId: fileId,
         scheduledDate: getScheduledDate(activity),
       };
+
+      // Debug: Log the check-in data being sent
+      console.log("📤 CheckInDialog sending checkInData:", {
+        activityId: checkInData.activityId,
+        type: checkInData.type,
+        content: checkInData.content,
+        imageUrl: checkInData.imageUrl,
+        fileId: checkInData.fileId,
+        hasSelectedFile: !!selectedFile,
+        hasImageUrl: !!imageUrl,
+        hasFileId: !!fileId,
+      });
 
       // Create check-in via API
       const newCheckIn = await createCheckIn(checkInData);
@@ -209,6 +368,8 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
       if (newCheckIn) {
         // Reset form
         setMessage("");
+        setSelectedFile(null);
+        setPreviewUrl(null);
         setUploadedImageId(null);
         setUploadedImageUrl(null);
         setOpen(false);
@@ -231,9 +392,9 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl bg-white rounded-2xl border shadow-2xl p-6">
+      <DialogContent className="sm:max-w-2xl bg-white rounded-2xl border shadow-2xl p-0 overflow-hidden">
         {/* Motivational Header */}
-        <div className="rounded-xl bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
 
@@ -266,7 +427,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-1 mb-1">
                   <Target className="w-4 h-4" />
-                  <span className="font-semibold">{totalCheckIns}</span>
+                  <span className="font-semibold">{completedCheckIns}</span>
                 </div>
                 <p className="text-xs text-white/80">Total Check-ins</p>
               </div>
@@ -306,75 +467,100 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
             </p>
           </div>
 
-          {/* Check-in Type Selection */}
-          <div className="mb-6">
-            <Label className="block mb-3 text-buddy-gray-700 font-medium">
-              How would you like to share your progress today?
-            </Label>
-            <div className="flex gap-3">
-              <Button
-                variant={checkinType === "text" ? "default" : "outline"}
-                onClick={() => setCheckinType("text")}
-                className={`flex-1 rounded-full ${
-                  checkinType === "text"
-                    ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
-                    : "hover:border-buddy-purple/50"
-                }`}
-              >
-                <Type className="mr-2 h-4 w-4" />
-                Share Thoughts
-              </Button>
-              <Button
-                variant={checkinType === "image" ? "default" : "outline"}
-                onClick={() => setCheckinType("image")}
-                className={`flex-1 rounded-full ${
-                  checkinType === "image"
-                    ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
-                    : "hover:border-buddy-purple/50"
-                }`}
-              >
-                <Camera className="mr-2 h-4 w-4" />
-                Share Photo
-              </Button>
-            </div>
-          </div>
-
           {/* Check-in Content */}
           <div className="mb-6">
-            {checkinType === "text" && (
-              <div>
-                <Label
-                  htmlFor="checkin-message"
-                  className="block mb-2 text-buddy-gray-700 font-medium"
-                >
-                  What did you accomplish today? 💭
-                </Label>
-                <Textarea
-                  id="checkin-message"
-                  placeholder="Share your progress, thoughts, or how you're feeling about your journey..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full p-4 h-32 rounded-xl border-buddy-gray-200 focus:border-buddy-purple focus:ring-buddy-purple/20 resize-none"
-                />
-                <p className="text-xs text-buddy-gray-500 mt-2">
-                  {message.length}/500 characters
-                </p>
-              </div>
-            )}
+            <Label className="block mb-3 text-buddy-gray-700 font-medium">
+              Share your progress today
+            </Label>
+          </div>
 
-            {checkinType === "image" && (
-              <div>
-                <Label className="block mb-2 text-buddy-gray-700 font-medium">
-                  Share a photo of your progress 📸
-                </Label>
-                <ImageUpload
-                  onImageUploaded={handleImageUploaded}
-                  onImageRemoved={handleImageRemoved}
-                  maxSize={5}
-                  className="w-full"
-                />
-              </div>
-            )}
+          {/* Text Input - Always Required */}
+          <div className="mb-6">
+            <Label
+              htmlFor="checkin-message"
+              className="block mb-2 text-buddy-gray-700 font-medium"
+            >
+              What did you accomplish today? 💭
+            </Label>
+            <Textarea
+              id="checkin-message"
+              placeholder="Share your progress, thoughts, or how you're feeling about your journey..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full p-4 h-32 rounded-xl border-buddy-gray-200 focus:border-buddy-purple focus:ring-buddy-purple/20 resize-none"
+            />
+            <p className="text-xs text-buddy-gray-500 mt-2">
+              {message.length}/500 characters
+            </p>
+          </div>
+
+          {/* Optional Image Upload */}
+          <div className="mb-6">
+            <Label className="block mb-2 text-buddy-gray-700 font-medium">
+              Add a photo (optional) 📸
+            </Label>
+            <div className="space-y-4">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="image-upload"
+              />
+
+              {previewUrl ? (
+                <div className="relative group">
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-buddy-gray-200">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      onClick={handleImageRemoved}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="relative w-full h-48 border-2 border-dashed border-buddy-gray-300 rounded-lg flex flex-col items-center justify-center space-y-4 cursor-pointer transition-colors duration-200 hover:border-buddy-purple hover:bg-buddy-purple/5"
+                  onClick={() =>
+                    document.getElementById("image-upload")?.click()
+                  }
+                >
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="p-3 rounded-full bg-buddy-purple/10">
+                      <ImageIcon className="w-6 h-6 text-buddy-purple" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-buddy-gray-700">
+                        Click to add an image
+                      </p>
+                      <p className="text-xs text-buddy-gray-500">
+                        PNG, JPG, GIF, WebP up to 5MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById("image-upload")?.click()}
+                className="w-full"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {previewUrl ? "Change Image" : "Add Image"}
+              </Button>
+            </div>
           </div>
 
           {/* Milestone Progress */}
@@ -390,15 +576,19 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
                 variant="outline"
                 className="text-buddy-purple border-buddy-purple"
               >
-                {nextMilestone - totalCheckIns} more to go!
+                {nextMilestone - completedCheckIns} more to go!
               </Badge>
             </div>
             <Progress
-              value={(totalCheckIns / nextMilestone) * 100}
+              value={
+                nextMilestone > 0
+                  ? (completedCheckIns / nextMilestone) * 100
+                  : 0
+              }
               className="h-2"
             />
             <p className="text-xs text-buddy-gray-600 mt-2">
-              {totalCheckIns} of {nextMilestone} check-ins completed
+              {completedCheckIns} of {nextMilestone} check-ins completed
             </p>
           </div>
         </div>
@@ -416,9 +606,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
             <Button
               onClick={handleCheckin}
               disabled={
-                isSubmitting ||
-                (checkinType === "text" && !message.trim()) ||
-                (checkinType === "image" && !uploadedImageId)
+                isSubmitting || !message.trim() // Only require text message
               }
               className="flex-1 bg-gradient-to-r rounded-full from-buddy-purple to-buddy-blue text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >

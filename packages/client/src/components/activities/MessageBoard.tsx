@@ -21,6 +21,11 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/store/auth.store";
+import { useActivityStore } from "@/store/activity.store";
+import {
+  isActivityParticipant,
+  isActivityCreator,
+} from "@/types/activity-types";
 import { useToast } from "@/hooks/use-toast";
 import {
   activityMessageService,
@@ -47,7 +52,18 @@ interface MessageBoardProps {
 
 const MessageBoard: React.FC<MessageBoardProps> = ({ activityId }) => {
   const { user } = useAuth();
+  const { currentActivity } = useActivityStore();
   const { toast } = useToast();
+
+  // Check if user is a participant or admin
+  const userId = user?._id || user?.id;
+  const isUserParticipant = currentActivity
+    ? isActivityParticipant(currentActivity, userId)
+    : false;
+  const isUserActivityAdmin = currentActivity
+    ? isActivityCreator(currentActivity, userId)
+    : false;
+  const canAccessMessages = isUserParticipant || isUserActivityAdmin;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -79,6 +95,37 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ activityId }) => {
     );
   }
 
+  // Show access denied message for non-participants
+  if (!canAccessMessages) {
+    return (
+      <div className="h-full flex items-center justify-center bg-white rounded-2xl border border-buddy-gray-200">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 mx-auto mb-4 bg-buddy-gray-100 rounded-full flex items-center justify-center">
+            <MessageCircle className="w-8 h-8 text-buddy-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-buddy-gray-800 mb-2">
+            Join Activity to Access Messages
+          </h3>
+          <p className="text-buddy-gray-600 mb-6">
+            You need to be a participant in this activity to access the message
+            board and communicate with other participants.
+          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-buddy-gray-500">
+              As a participant, you'll be able to:
+            </p>
+            <ul className="text-sm text-buddy-gray-600 space-y-1">
+              <li>• Post messages and updates</li>
+              <li>• View messages from other participants</li>
+              <li>• Like and interact with messages</li>
+              <li>• Search and filter message history</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     if (messages && messages.length > 0) {
@@ -88,9 +135,15 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ activityId }) => {
     }
   }, [messages]);
 
-  // Load messages on component mount
+  // Load messages on component mount - only for participants
   useEffect(() => {
     const loadInitialMessages = async () => {
+      // Only load messages if user has access
+      if (!canAccessMessages) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         const response = await activityMessageService.getMessages(activityId, {
@@ -130,7 +183,7 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ activityId }) => {
     };
 
     loadInitialMessages();
-  }, [activityId, currentUserId, toast]);
+  }, [activityId, currentUserId, toast, canAccessMessages]);
 
   // Handle filter changes with manual refresh
   const handleFilterChange = async () => {

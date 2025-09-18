@@ -20,6 +20,9 @@ import {
   Edit3,
   Flame,
   Download,
+  Activity as ActivityIcon,
+  Sparkles,
+  Compass,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
@@ -42,16 +45,15 @@ import { VariantProps } from "class-variance-authority";
 import EditActivityDialog from "@/components/activities/EditActivityDialog";
 import ShareActivityModal from "@/components/activities/ShareActivityModal";
 import BannerEditModal from "@/components/activities/BannerEditModal";
-import { useActivityStore } from "@/store/activity.store";
-import { useCheckInStore } from "@/store/checkin.store";
+import { useActivityData } from "@/hooks/useActivityData";
 import { useBadgeStore } from "@/store/badge.store";
 import { useAuth } from "@/store/auth.store";
+import { CheckInService } from "@/services/api/activity/reaction.service";
 import { useToast } from "@/hooks/use-toast";
 import {
   isActivityCreator,
   isActivityParticipant,
 } from "@/types/activity-types";
-import { CheckInService } from "@/services/api/activity/reaction.service";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -91,18 +93,24 @@ const ActivityPage = () => {
     longestStreak: 0,
     highestCheckIns: 0,
     averageProgress: 0,
+    longestStreakParticipant: "",
+    highestCheckInsParticipant: "",
   });
+  const [leaderboardData, setLeaderboardData] = useState([]);
   const isMobile = useIsMobile();
 
   const {
-    isLoading: isLoadingActivities,
-    fetchActivityById,
+    activityQuery,
+    statsQuery,
+    progressQuery,
+    weeklyQuery,
+    participantsQuery,
+    updateActivityMutation,
+    refreshActivity,
+    getUnifiedActivityData,
     currentActivity,
-    updateActivity,
-  } = useActivityStore();
-
-  const { fetchCheckInsByActivity, fetchCheckInStats, refreshActivityData } =
-    useCheckInStore();
+    isLoading: isLoadingActivities,
+  } = useActivityData(activityId);
 
   const { fetchUserBadges } = useBadgeStore();
 
@@ -112,42 +120,17 @@ const ActivityPage = () => {
       return;
     }
 
-    // Load activity data
-    fetchActivityById(activityId);
-
-    // Load check-in related data
-    const loadCheckInData = async () => {
+    // Load user badges for this activity
+    const loadUserBadges = async () => {
       try {
-        console.log("🔄 Loading check-in data for activity:", activityId);
-
-        // Load check-ins for the activity
-        await fetchCheckInsByActivity(activityId);
-
-        // Load check-in stats for the current user
-        await fetchCheckInStats(activityId);
-
-        // Load user badges for this activity
         await fetchUserBadges(activityId);
-
-        // Refresh activity data to get updated stats
-        await refreshActivityData(activityId);
-
-        console.log("✅ Check-in data loaded successfully");
       } catch (error) {
-        console.error("❌ Failed to load check-in data:", error);
+        console.error("❌ Failed to load user badges:", error);
       }
     };
 
-    loadCheckInData();
-  }, [
-    activityId,
-    navigate,
-    fetchActivityById,
-    fetchCheckInsByActivity,
-    fetchCheckInStats,
-    fetchUserBadges,
-    refreshActivityData,
-  ]);
+    loadUserBadges();
+  }, [activityId, navigate, fetchUserBadges]);
 
   // Check if user has checked in for current period
   useEffect(() => {
@@ -169,43 +152,126 @@ const ActivityPage = () => {
     checkCurrentPeriodStatus();
   }, [activityId, user?._id]);
 
-  // Fetch activity statistics
+  // Fetch leaderboard data for accurate stats
   useEffect(() => {
-    const fetchActivityStatistics = async () => {
+    const fetchLeaderboardData = async () => {
       if (!activityId) return;
 
       try {
-        console.log("📊 Fetching activity statistics for:", activityId);
-        const response = await CheckInService.getActivityStatistics(activityId);
-        console.log("📊 Activity statistics response:", response);
+        const response =
+          await CheckInService.getActivityLeaderboard(activityId);
+        if (response.data?.participants) {
+          setLeaderboardData(response.data.participants);
 
-        setActivityStats({
-          longestStreak: response.data.longestStreak,
-          highestCheckIns: response.data.highestCheckIns,
-          averageProgress: response.data.averageProgress,
-        });
-      } catch (error) {
-        console.error("Failed to fetch activity statistics:", error);
-        // Fallback to basic stats from activity data
-        if (currentActivity) {
-          setActivityStats({
-            longestStreak: currentActivity.streakCount || 0,
-            highestCheckIns: currentActivity.checkins || 0,
-            averageProgress: currentActivity.progress || 0,
-          });
+          // Calculate accurate stats from leaderboard data
+          const participants = response.data.participants;
+          const longestStreakParticipant = participants.reduce(
+            (max, p) => (p.streak > max.streak ? p : max),
+            participants[0] || { streak: 0, name: "" }
+          );
+          const highestCheckInsParticipant = participants.reduce(
+            (max, p) => (p.checkIns > max.checkIns ? p : max),
+            participants[0] || { checkIns: 0, name: "" }
+          );
+
+          setActivityStats((prev) => ({
+            ...prev,
+            longestStreak: longestStreakParticipant.streak || 0,
+            highestCheckIns: highestCheckInsParticipant.checkIns || 0,
+            longestStreakParticipant: longestStreakParticipant.name || "",
+            highestCheckInsParticipant: highestCheckInsParticipant.name || "",
+          }));
         }
+      } catch (error) {
+        console.error("Failed to fetch leaderboard data:", error);
       }
     };
 
-    fetchActivityStatistics();
+    fetchLeaderboardData();
   }, [activityId]);
 
-  if (isLoadingActivities || isLoading) {
-    return <div>Loading...</div>;
+  // Update activity stats from unified data (fallback)
+  useEffect(() => {
+    if (statsQuery.data && leaderboardData.length === 0) {
+      setActivityStats((prev) => ({
+        ...prev,
+        longestStreak: statsQuery.data.longestStreak,
+        highestCheckIns: statsQuery.data.highestCheckIns,
+        averageProgress: statsQuery.data.averageProgress,
+      }));
+    } else if (currentActivity && leaderboardData.length === 0) {
+      // Fallback to basic stats from activity data
+      setActivityStats((prev) => ({
+        ...prev,
+        longestStreak: currentActivity.streakCount || 0,
+        highestCheckIns: currentActivity.checkins || 0,
+        averageProgress: currentActivity.progress || 0,
+      }));
+    }
+  }, [statsQuery.data, currentActivity, leaderboardData.length]);
+
+  // Show loading state while data is being fetched or if we don't have activity data yet
+  if (isLoadingActivities || isLoading || !currentActivity) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pastel-purple/30 via-white to-pastel-blue/40 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-buddy-purple/20 border-t-buddy-purple rounded-full animate-spin mx-auto mb-6"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-buddy-blue/10 border-t-buddy-blue rounded-full animate-pulse mx-auto mb-6"></div>
+          </div>
+          <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+            Loading activity
+          </h3>
+          <p className="text-buddy-gray-500">
+            Getting everything ready for you...
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  if (!currentActivity) {
-    return <div>Activity not found</div>;
+  // Only show "not found" if we're sure the activity doesn't exist (after loading is complete)
+  if (!isLoadingActivities && !isLoading && !currentActivity) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pastel-purple/30 via-white to-pastel-blue/40 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <ActivityIcon className="h-10 w-10 text-buddy-purple" />
+            </div>
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-buddy-orange/20 rounded-full flex items-center justify-center">
+              <Sparkles className="h-3 w-3 text-buddy-orange" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-buddy-gray-800 mb-3">
+            Activity not found
+          </h3>
+          <p className="text-buddy-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
+            The activity you're looking for doesn't exist or you don't have
+            permission to view it.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => navigate("/activities")}
+              className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-8 py-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              size="default"
+            >
+              <Compass className="w-5 h-5 mr-2" />
+              Browse Activities
+            </Button>
+            <Button
+              onClick={() => navigate("/dashboard")}
+              variant="outline"
+              className="border-buddy-purple/30 text-buddy-purple hover:bg-buddy-purple/10 rounded-full px-8 py-3 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+              size="default"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Add debug log
@@ -267,10 +333,10 @@ const ActivityPage = () => {
         bannerImage: newBanner,
       };
 
-      await updateActivity(activityId, updateData);
-
-      // Refresh the activity data to show the new banner
-      await fetchActivityById(activityId);
+      await updateActivityMutation.mutateAsync({
+        id: activityId,
+        data: updateData,
+      });
     } catch (error) {
       console.error("Error updating banner:", error);
       throw error;
@@ -432,11 +498,11 @@ const ActivityPage = () => {
                 <p className="text-xs md:text-sm text-buddy-gray-600">
                   Most Check-ins
                 </p>
-                {/* <p className="text-xs text-buddy-gray-500">
-                  Highest: {activityStats.highestCheckIns}
-                </p> */}
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-blue to-buddy-blue-light bg-clip-text text-transparent">
-                  {displayData.checkins}
+                  {activityStats.highestCheckIns}
+                  {/* <span className="text-sm text-buddy-gray-500 ml-2">
+                    ({activityStats.highestCheckInsParticipant})
+                  </span> */}
                 </p>
               </div>
             </Card>
@@ -452,9 +518,6 @@ const ActivityPage = () => {
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-green to-buddy-green-light bg-clip-text text-transparent">
                   {activityStats.averageProgress}%
                 </p>
-                {/* <p className="text-xs text-buddy-gray-500">
-                  Avg: {activityStats.averageProgress}%
-                </p> */}
               </div>
             </Card>
 
@@ -468,10 +531,10 @@ const ActivityPage = () => {
                 </p>
                 <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">
                   {activityStats.longestStreak} days
+                  {/* <span className="text-sm text-buddy-gray-500 ml-2">
+                    ({activityStats.longestStreakParticipant})
+                  </span> */}
                 </p>
-                {/* <p className="text-xs text-buddy-gray-500">
-                  Across all participants
-                </p> */}
               </div>
             </Card>
           </div>

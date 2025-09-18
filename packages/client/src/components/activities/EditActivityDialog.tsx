@@ -264,7 +264,7 @@ const EditActivityDialog = ({
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white/95 to-buddy-purple/5 backdrop-blur-sm border-2 border-white/20">
         <DialogHeader className="pb-6">
           <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
-            Edit Your Activity ✨
+            Edit Your Activity
           </DialogTitle>
           <DialogDescription className="text-center text-buddy-gray-600">
             Make updates to your activity and keep your buddies engaged! 🚀

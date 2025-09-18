@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { partnerService } from "@/services/api/activity/partner.service";
+import { useAuth } from "@/store/auth.store";
 
 interface InviteByEmailProps {
   activityId: string;
@@ -23,6 +24,7 @@ const InviteByEmail: React.FC<InviteByEmailProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [emailError, setEmailError] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,6 +35,12 @@ const InviteByEmail: React.FC<InviteByEmailProps> = ({
     setEmail(value);
     if (value && !validateEmail(value)) {
       setEmailError("Please enter a valid email address");
+    } else if (
+      value &&
+      user?.email &&
+      value.toLowerCase() === user.email.toLowerCase()
+    ) {
+      setEmailError("You cannot send an invitation to yourself");
     } else {
       setEmailError("");
     }
@@ -46,6 +54,11 @@ const InviteByEmail: React.FC<InviteByEmailProps> = ({
 
     if (!validateEmail(email)) {
       setEmailError("Please enter a valid email address");
+      return;
+    }
+
+    if (user?.email && email.toLowerCase() === user.email.toLowerCase()) {
+      setEmailError("You cannot send an invitation to yourself");
       return;
     }
 

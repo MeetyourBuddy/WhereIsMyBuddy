@@ -14,6 +14,7 @@ interface CheckInThreadProps {
     };
     content: string;
     imageUrl?: string;
+    type?: "text" | "image";
     checkInDate: string;
     likes: number;
     comments?: number;
@@ -21,6 +22,14 @@ interface CheckInThreadProps {
 }
 
 const CheckInThread: React.FC<CheckInThreadProps> = ({ checkIn }) => {
+  // Debug: Log the check-in data to see what's being received
+  console.log("🖼️ CheckInThread received checkIn:", {
+    id: checkIn._id,
+    content: checkIn.content,
+    imageUrl: checkIn.imageUrl,
+    type: checkIn.type || "unknown",
+  });
+
   return (
     <Card className="overflow-hidden hover:shadow-md transition-all duration-300 rounded-lg border border-buddy-gray-200">
       <div className="p-3">
