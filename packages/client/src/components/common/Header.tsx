@@ -163,7 +163,10 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                     </div>
                     <DropdownMenuItem className="flex items-center rounded-lg hover:bg-buddy-purple/10 cursor-pointer">
                       <User className="mr-2 h-4 w-4 text-buddy-gray-500" />
-                      <Link to="/profile/1" className="flex-1">
+                      <Link
+                        to={`/profile/${user?._id || user?.id}`}
+                        className="flex-1"
+                      >
                         Profile
                       </Link>
                     </DropdownMenuItem>
