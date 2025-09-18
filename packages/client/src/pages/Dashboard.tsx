@@ -115,6 +115,14 @@ const Dashboard = () => {
               streaks,
               overallStreak,
               user: user?.name || user?._id,
+              detailedStreaks: Object.entries(userProgressData).map(
+                ([activityId, progress]) => ({
+                  activityId,
+                  currentStreak: progress.currentStreak,
+                  completedCheckIns: progress.completedCheckIns,
+                  totalAvailableCheckIns: progress.totalAvailableCheckIns,
+                })
+              ),
             });
           } catch (error) {
             console.error(

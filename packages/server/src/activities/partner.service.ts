@@ -268,26 +268,44 @@ export class PartnerService {
         const lastCheckIn =
           checkIns.length > 0 ? checkIns[0].checkInDate : null;
 
-        // Calculate current streak
+        // Calculate current streak using the same logic as CheckInService
         let currentStreak = 0;
         if (checkIns.length > 0) {
-          const now = new Date();
-          let currentDate = new Date(now);
-          currentDate.setHours(0, 0, 0, 0);
+          // Sort check-ins by date (most recent first)
+          const sortedCheckIns = checkIns.sort(
+            (a, b) =>
+              new Date(b.checkInDate).getTime() -
+              new Date(a.checkInDate).getTime(),
+          );
 
-          for (const checkIn of checkIns) {
-            const checkInDate = new Date(checkIn.checkInDate);
+          // Group check-ins by date to avoid counting multiple check-ins on same day
+          const checkInsByDate = new Map<string, any[]>();
+          sortedCheckIns.forEach((checkIn) => {
+            const dateKey = new Date(checkIn.checkInDate).toDateString();
+            if (!checkInsByDate.has(dateKey)) {
+              checkInsByDate.set(dateKey, []);
+            }
+            checkInsByDate.get(dateKey)!.push(checkIn);
+          });
+
+          // Get sorted dates (most recent first)
+          const sortedDates = Array.from(checkInsByDate.keys()).sort(
+            (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+          );
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          // Calculate current streak from the most recent date
+          for (let i = 0; i < sortedDates.length; i++) {
+            const checkInDate = new Date(sortedDates[i]);
             checkInDate.setHours(0, 0, 0, 0);
 
-            const daysDiff = Math.floor(
-              (currentDate.getTime() - checkInDate.getTime()) /
-                (1000 * 60 * 60 * 24),
-            );
+            const expectedDate = new Date(today);
+            expectedDate.setDate(today.getDate() - i);
 
-            if (daysDiff === currentStreak) {
+            if (checkInDate.getTime() === expectedDate.getTime()) {
               currentStreak++;
-              currentDate = new Date(checkInDate);
-              currentDate.setDate(currentDate.getDate() - 1);
             } else {
               break;
             }

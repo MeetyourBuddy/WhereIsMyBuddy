@@ -772,22 +772,35 @@ export class CheckInService {
         new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime(),
     );
 
-    let streak = 0;
-    let currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
+    // Group check-ins by date to avoid counting multiple check-ins on same day
+    const checkInsByDate = new Map<string, any[]>();
+    sortedCheckIns.forEach((checkIn) => {
+      const dateKey = new Date(checkIn.checkInDate).toDateString();
+      if (!checkInsByDate.has(dateKey)) {
+        checkInsByDate.set(dateKey, []);
+      }
+      checkInsByDate.get(dateKey)!.push(checkIn);
+    });
 
-    for (const checkIn of sortedCheckIns) {
-      const checkInDate = new Date(checkIn.checkInDate);
+    // Get sorted dates (most recent first)
+    const sortedDates = Array.from(checkInsByDate.keys()).sort(
+      (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+    );
+
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Calculate current streak from the most recent date
+    for (let i = 0; i < sortedDates.length; i++) {
+      const checkInDate = new Date(sortedDates[i]);
       checkInDate.setHours(0, 0, 0, 0);
 
-      const daysDiff = Math.floor(
-        (currentDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
-      );
+      const expectedDate = new Date(today);
+      expectedDate.setDate(today.getDate() - i);
 
-      if (daysDiff === streak) {
+      if (checkInDate.getTime() === expectedDate.getTime()) {
         streak++;
-        currentDate = new Date(checkInDate);
-        currentDate.setDate(currentDate.getDate() - 1);
       } else {
         break;
       }
