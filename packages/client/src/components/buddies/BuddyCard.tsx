@@ -177,11 +177,11 @@ const BuddyCard = ({
     // Check if this is a received request
     if (connectionStatus === "pending" && connectionId) {
       return (
-        <div className="flex space-x-1">
+        <div className="flex space-x-1 w-full justify-between">
           <Button
             variant="default"
             size="sm"
-            className="rounded-full bg-green-500 hover:bg-green-600"
+            className="rounded-full bg-green-500 hover:bg-green-600 w-full"
             onClick={handleAcceptRequest}
             disabled={isProcessing}
           >
@@ -190,7 +190,7 @@ const BuddyCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="rounded-full"
+            className="rounded-full w-full hover:bg-red-500"
             onClick={handleDeclineRequest}
             disabled={isProcessing}
           >
