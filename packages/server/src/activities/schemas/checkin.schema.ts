@@ -36,11 +36,8 @@ export class CheckIn {
   @Prop({ type: Boolean, default: true })
   isOnTime: boolean;
 
-  @Prop({ type: Number, default: 0 })
-  likes: number;
-
-  @Prop([{ type: Types.ObjectId, ref: 'User' }])
-  likedBy: Types.ObjectId[];
+  // Reactions are now handled by a separate Reaction collection
+  // This provides better flexibility for different reaction types
 
   @Prop({ type: Boolean, default: false })
   isDeleted: boolean;

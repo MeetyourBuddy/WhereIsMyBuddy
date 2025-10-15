@@ -35,28 +35,67 @@ export const useAuthStore = create<AuthState>()(
       setInitialized: (value) => set({ isInitialized: value }),
       initializeAuth: async () => {
         try {
+          console.log("🚀 Starting auth initialization...");
+
           // Wait a bit for Zustand persist to restore state
           await new Promise((resolve) => setTimeout(resolve, 100));
 
-          // Check if we have a user in localStorage
           const currentState = get();
           const accessToken = tokenService.getAccessToken();
-
-          // Check what's actually in localStorage
           const storedAuth = localStorage.getItem("auth-storage");
+
+          console.log("🔍 Auth initialization state:", {
+            hasAccessToken: !!accessToken,
+            hasStoredAuth: !!storedAuth,
+            currentUser: currentState.user,
+            isAuthenticated: currentState.isAuthenticated,
+          });
+
+          // If we have a token but no user, try to fetch user from backend
+          if (accessToken && !currentState.user) {
+            console.log(
+              "🔧 Token found but no user - fetching from backend..."
+            );
+            try {
+              const response = await userService.getMe();
+              if (response.success && response.data) {
+                console.log("✅ User fetched from backend:", response.data);
+
+                // Fix field name mismatch: backend returns 'id', frontend expects '_id'
+                const userData = response.data;
+                if (userData.id && !userData._id) {
+                  userData._id = userData.id;
+                  console.log(
+                    "🔧 Fixed user ID field in backend fetch:",
+                    userData._id
+                  );
+                }
+
+                set({
+                  user: userData,
+                  isAuthenticated: true,
+                  isInitialized: true,
+                });
+                return;
+              }
+            } catch (error) {
+              console.error("❌ Failed to fetch user from backend:", error);
+            }
+          }
 
           // If Zustand persist didn't restore the user, try manual restoration
           if (!currentState.user && storedAuth) {
             try {
               const parsedAuth = JSON.parse(storedAuth);
+              console.log("🔍 Parsed auth data:", parsedAuth);
 
               if (parsedAuth.state?.user && parsedAuth.state?.isAuthenticated) {
+                console.log("✅ Restoring user from localStorage");
                 set({
                   user: parsedAuth.state.user,
                   isAuthenticated: parsedAuth.state.isAuthenticated,
                   isInitialized: true,
                 });
-
                 return;
               }
             } catch (error) {
@@ -73,10 +112,10 @@ export const useAuthStore = create<AuthState>()(
             currentState.isAuthenticated &&
             accessToken
           ) {
-            // Token exists and user is in localStorage - mark as authenticated
+            console.log("✅ Valid auth state found - marking as initialized");
             set({ isInitialized: true });
           } else {
-            // Clear auth state if no valid token or user
+            console.log("❌ No valid auth state - clearing");
             set({
               user: null,
               isAuthenticated: false,
@@ -110,8 +149,18 @@ export const useAuthStore = create<AuthState>()(
           const response = await userService.getMe();
 
           if (response.success && response.data) {
+            // Fix field name mismatch: backend returns 'id', frontend expects '_id'
+            const userData = response.data;
+            if (userData.id && !userData._id) {
+              userData._id = userData.id;
+              console.log(
+                "🔧 Fixed user ID field in verification:",
+                userData._id
+              );
+            }
+
             set({
-              user: response.data,
+              user: userData,
               isAuthenticated: true,
               isInitialized: true,
             });
@@ -153,13 +202,34 @@ export const useAuth = () => {
     mutationFn: (credentials: SignInCredentials) =>
       authService.login(credentials),
     onSuccess: (response) => {
-      setUser(response.data.user);
+      console.log("🔐 Login successful:", response);
+      console.log("🔐 User data:", response.data.user);
+      console.log("🔐 Tokens:", response.data.tokens);
+
+      // Fix field name mismatch: backend returns 'id', frontend expects '_id'
+      const userData = response.data.user;
+      if (userData.id && !userData._id) {
+        userData._id = userData.id;
+        console.log("🔧 Fixed user ID field:", userData._id);
+      }
+
+      // Set user and auth state
+      setUser(userData);
       setIsAuthenticated(true);
+
+      // Verify tokens were set
+      const accessToken = tokenService.getAccessToken();
+      console.log(
+        "🔐 Access token after login:",
+        accessToken ? "Found" : "Not found"
+      );
+
       queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success("Successfully logged in!");
       navigate("/dashboard");
     },
     onError: (error) => {
+      console.error("❌ Login failed:", error);
       toast.error(error.message || "Failed to login. Please try again.");
     },
   });
@@ -167,7 +237,13 @@ export const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: (userData: SignUpData) => authService.register(userData),
     onSuccess: (response) => {
-      setUser(response.data.user);
+      // Fix field name mismatch: backend returns 'id', frontend expects '_id'
+      const userData = response.data.user;
+      if (userData.id && !userData._id) {
+        userData._id = userData.id;
+      }
+
+      setUser(userData);
       setIsAuthenticated(true);
       queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success("Registration successful!");

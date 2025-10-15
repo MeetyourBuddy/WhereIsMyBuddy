@@ -26,9 +26,11 @@ import Support from "./pages/Support";
 import AppLayout from "./components/layout/AppLayout";
 import ProfilePage from "./pages/profile/[id]";
 import SharedActivityPage from "./pages/activity/[id]";
+import PartnerInvite from "./pages/PartnerInvite";
 import AdminPanel from "./pages/admin/index";
 import Oauth from "./pages/Oauth";
 import ImageUploadDemo from "./components/common/ImageUploadDemo";
+import BoostWall from "./pages/BoostWall";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,12 @@ const App = () => (
             {/* Sharable Profile and Activity Cards */}
             <Route path="/profile/:id" element={<ProfilePage />} />
             <Route path="/activity/:id" element={<SharedActivityPage />} />
+
+            {/* Partner Invitation */}
+            <Route
+              path="/invite/partner/:activityId"
+              element={<PartnerInvite />}
+            />
 
             {/* Dashboard & Core App */}
             <Route
@@ -112,6 +120,16 @@ const App = () => (
               element={
                 <AppLayout>
                   <Notifications />
+                </AppLayout>
+              }
+            />
+
+            {/* Boost Wall Route */}
+            <Route
+              path="/boost-wall"
+              element={
+                <AppLayout>
+                  <BoostWall />
                 </AppLayout>
               }
             />

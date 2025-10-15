@@ -2,8 +2,8 @@ import axiosInstance from "./axios-instance";
 import { ApiResponse } from "../types";
 
 export const apiMethods = {
-  get: async <T>(url: string) => {
-    const response = await axiosInstance.get<ApiResponse<T>>(url);
+  get: async <T>(url: string, config?: { params?: any }) => {
+    const response = await axiosInstance.get<ApiResponse<T>>(url, config);
     return response.data;
   },
 

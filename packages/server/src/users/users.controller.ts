@@ -18,6 +18,7 @@ import {
   PaginationQueryDto,
   CompleteOnboardingDto,
   UserResponseDto,
+  UserSearchQueryDto,
 } from './dto';
 
 @ApiTags('Users')
@@ -26,9 +27,12 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
   @Get()
-  @ApiOperation({ summary: 'Get all users' })
-  getAllUsers(@Query() query: PaginationQueryDto) {
-    return this.usersService.findAll(query);
+  @ApiOperation({ summary: 'Search and get users' })
+  getAllUsers(
+    @Query() query: UserSearchQueryDto,
+    @GetUser('userId') currentUserId?: string,
+  ) {
+    return this.usersService.findAll(query, currentUserId);
   }
 
   @Get('my-profile')

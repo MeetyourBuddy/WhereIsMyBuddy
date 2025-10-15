@@ -16,3 +16,8 @@ node_modules
 # Logs
 logs
 *.log
+
+# project readme file
+project.md
+progress-notification-integration.md
+settings-api.md

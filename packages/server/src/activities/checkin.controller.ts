@@ -78,4 +78,48 @@ export class CheckInController {
   ): Promise<CheckInStatsDto> {
     return this.checkInService.getCheckInStats(userId, activityId);
   }
+
+  @Get('activity/:activityId/current-period-status')
+  async getCurrentPeriodStatus(
+    @Param('activityId') activityId: string,
+    @GetUser('userId') userId: string,
+  ): Promise<{ hasCheckedIn: boolean }> {
+    const hasCheckedIn =
+      await this.checkInService.hasUserCheckedInForCurrentPeriod(
+        activityId,
+        userId,
+      );
+    return { hasCheckedIn };
+  }
+
+  @Get('activity/:activityId/user-progress')
+  async getUserProgress(
+    @Param('activityId') activityId: string,
+    @GetUser('userId') userId: string,
+  ): Promise<{
+    progress: number;
+    completedCheckIns: number;
+    totalAvailableCheckIns: number;
+  }> {
+    return this.checkInService.getUserProgress(activityId, userId);
+  }
+
+  @Post('user-progress/batch')
+  async getUserProgressForActivities(
+    @Body() body: { activityIds: string[] },
+    @GetUser('userId') userId: string,
+  ) {
+    const data = await this.checkInService.getUserProgressForActivities(
+      body.activityIds,
+      userId,
+    );
+
+    return {
+      success: true,
+      message: 'User progress retrieved successfully',
+      data,
+      timestamp: new Date().toISOString(),
+      path: '/api/checkins/user-progress/batch',
+    };
+  }
 }

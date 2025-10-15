@@ -40,6 +40,73 @@ import {
 } from "@/components/ui/tooltip";
 import { useAuthStore } from "@/store/auth.store";
 
+// Custom styles for mobile sidebar
+const mobileSidebarStyles = `
+  /* Mobile sidebar container */
+  [data-sidebar="sidebar"][data-mobile="true"] {
+    background-color: rgb(139 92 246) !important; /* buddy-purple */
+    color: white !important;
+  }
+  
+  /* Mobile sidebar content */
+  [data-sidebar="sidebar"][data-mobile="true"] > div {
+    background-color: rgb(139 92 246) !important; /* buddy-purple */
+  }
+  
+  /* Mobile sidebar header */
+  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="header"] {
+    background-color: rgb(139 92 246) !important; /* buddy-purple */
+    color: white !important;
+  }
+  
+  /* Mobile sidebar content area */
+  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="content"] {
+    background-color: rgb(139 92 246) !important; /* buddy-purple */
+    color: white !important;
+  }
+  
+  /* Mobile sidebar footer */
+  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="footer"] {
+    background-color: rgb(139 92 246) !important; /* buddy-purple */
+    color: white !important;
+  }
+  
+  /* Mobile sidebar menu buttons */
+  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="menu-button"] {
+    color: rgb(229 231 235) !important; /* buddy-gray-200 */
+    background-color: transparent !important;
+  }
+  
+  /* Mobile sidebar menu button hover */
+  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="menu-button"]:hover {
+    color: white !important;
+    background-color: rgba(139 92 246, 0.4) !important; /* buddy-purple-dark/40 */
+  }
+  
+  /* Mobile sidebar active menu button */
+  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="menu-button"][data-state="active"] {
+    background-color: rgb(139 92 246) !important; /* buddy-purple-dark */
+    color: white !important;
+  }
+  
+  /* Ensure all text is white on mobile */
+  [data-sidebar="sidebar"][data-mobile="true"] p,
+  [data-sidebar="sidebar"][data-mobile="true"] span,
+  [data-sidebar="sidebar"][data-mobile="true"] div {
+    color: white !important;
+  }
+  
+  /* Mobile sidebar links */
+  [data-sidebar="sidebar"][data-mobile="true"] a {
+    color: white !important;
+  }
+  
+  /* Mobile sidebar icons */
+  [data-sidebar="sidebar"][data-mobile="true"] svg {
+    color: white !important;
+  }
+`;
+
 type SidebarNavItem = {
   title: string;
   href: string;
@@ -64,6 +131,11 @@ const navItems: SidebarNavItem[] = [
     href: "/buddies",
     icon: Users,
     // badge: 2,
+  },
+  {
+    title: "Boost Wall",
+    href: "/boost-wall",
+    icon: Zap,
   },
   // {
   //   title: "Analytics",
@@ -121,17 +193,46 @@ const AppSidebar = () => {
 
   const { user } = useAuthStore();
 
+  // Helper function to check if a route is active (including child routes)
+  const isRouteActive = (href: string) => {
+    if (href === "/dashboard" && location.pathname === "/") {
+      return true; // Home route special case
+    }
+    return (
+      location.pathname === href || location.pathname.startsWith(href + "/")
+    );
+  };
+
+  // Inject mobile sidebar styles
+  React.useEffect(() => {
+    const styleId = "mobile-sidebar-styles";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = mobileSidebarStyles;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   return (
     <Sidebar
       className={cn(
         "bg-buddy-purple border-none",
-        state === "collapsed" && "sidebar-icon-mode"
+        state === "collapsed" && "sidebar-icon-mode",
+        // Override mobile styling to ensure solid background
+        "[&[data-mobile='true']]:bg-buddy-purple [&[data-mobile='true']]:text-white"
       )}
       variant="sidebar"
       collapsible="icon"
+      side="left"
     >
       <SidebarHeader
-        className={cn("py-4", state === "expanded" ? "px-3" : "px-2")}
+        className={cn(
+          "py-4 bg-buddy-purple",
+          state === "expanded" ? "px-3" : "px-2",
+          // Ensure mobile header has proper styling
+          "[&[data-mobile='true']]:bg-buddy-purple [&[data-mobile='true']]:text-white"
+        )}
       >
         <div
           className={cn(
@@ -139,28 +240,20 @@ const AppSidebar = () => {
             state === "expanded" ? "justify-between" : "justify-center"
           )}
         >
-          {state === "expanded" ? (
-            <Link to="/" className="flex items-center">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-buddy-blue to-buddy-blue flex items-center justify-center">
-                <HeartHandshake className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex flex-col ml-2">
-                <span className="text-2xl font-bold text-white">Buddy</span>
-              </div>
-            </Link>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-buddy-blue to-buddy-blue"
-                >
-                  <HeartHandshake className="w-5 h-5 text-white" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Buddy</TooltipContent>
-            </Tooltip>
-          )}
+          {/* Always show full logo on mobile, collapsed/expanded on desktop */}
+          <Link to="/" className="flex items-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-buddy-blue to-buddy-blue flex items-center justify-center">
+              <HeartHandshake className="w-5 h-5 text-white" />
+            </div>
+            <div
+              className={cn(
+                "flex flex-col ml-2",
+                state === "collapsed" ? "hidden" : "block"
+              )}
+            >
+              <span className="text-2xl font-bold text-white">Buddy</span>
+            </div>
+          </Link>
           {state === "expanded" && (
             <SidebarTrigger className="text-white hover:bg-buddy-purple-dark" />
           )}
@@ -173,18 +266,19 @@ const AppSidebar = () => {
         <div className="mt-4">{/* <SearchInput /> */}</div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="bg-buddy-purple [&[data-mobile='true']]:bg-buddy-purple [&[data-mobile='true']]:text-white">
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={location.pathname === item.href}
+                isActive={isRouteActive(item.href)}
                 tooltip={item.title}
                 className={cn(
                   "text-buddy-gray-200 hover:text-white hover:bg-buddy-purple-dark/40",
                   "transform transition-all duration-200 hover:scale-105",
-                  location.pathname === item.href &&
+                  "min-h-[44px] sm:min-h-[40px]", // Better touch targets on mobile
+                  isRouteActive(item.href) &&
                     "bg-buddy-purple-dark text-white hover:bg-buddy-purple-dark"
                 )}
               >
@@ -203,45 +297,29 @@ const AppSidebar = () => {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-buddy-purple-dark/30 pt-2">
+      <SidebarFooter className="border-t border-buddy-purple-dark/30 pt-2 bg-buddy-purple [&[data-mobile='true']]:bg-buddy-purple [&[data-mobile='true']]:text-white">
         <div className={cn("py-2", state === "expanded" ? "px-3" : "px-2")}>
-          {state === "expanded" ? (
-            <div className="flex items-center">
-              <Avatar className="h-9 w-9 border-2 border-buddy-purple-light">
-                <AvatarImage src={user?.avatar} />
-                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-              </Avatar>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-white">{user?.name}</p>
-                <p className="text-xs text-buddy-gray-400">Basic Member</p>
-              </div>
-              <Link
-                to={`/profile/${user?._id || user?.id}`}
-                className="ml-auto text-buddy-gray-400 hover:text-white"
-              >
-                <User className="h-4 w-4" />
-              </Link>
+          <div className="flex items-center">
+            <Avatar className="h-9 w-9 border-2 border-buddy-purple-light">
+              <AvatarImage src={user?.avatar} />
+              <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+            </Avatar>
+            <div
+              className={cn("ml-3", state === "collapsed" ? "hidden" : "block")}
+            >
+              <p className="text-sm font-medium text-white">{user?.name}</p>
+              <p className="text-xs text-buddy-gray-400">Basic Member</p>
             </div>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to={`/profile/${user?._id || user?.id}`}
-                  className="flex justify-center"
-                >
-                  <Avatar className="h-9 w-9 border-2 border-buddy-purple-light cursor-pointer hover:border-buddy-purple-light/80 transition-colors">
-                    <AvatarImage src={user?.avatar} />
-                    <AvatarFallback>
-                      {user?.name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {user?.name || "User"}
-              </TooltipContent>
-            </Tooltip>
-          )}
+            <Link
+              to={`/profile/${user?._id || user?.id}`}
+              className={cn(
+                "text-buddy-gray-400 hover:text-white",
+                state === "collapsed" ? "ml-auto" : "ml-auto"
+              )}
+            >
+              <User className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>

@@ -101,12 +101,18 @@ const ShareActivityModal: React.FC<ShareActivityModalProps> = ({
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="qr" className="flex items-center gap-2">
-              <QrCode className="w-4 h-4" />
+            <TabsTrigger
+              value="qr"
+              className="flex items-center gap-2 rounded-full"
+            >
+              <QrCode className="w-4 h-4 " />
               QR Code
             </TabsTrigger>
-            <TabsTrigger value="link" className="flex items-center gap-2">
-              <LinkIcon className="w-4 h-4" />
+            <TabsTrigger
+              value="link"
+              className="flex items-center gap-2 rounded-full"
+            >
+              <LinkIcon className="w-4 h-4 " />
               Link
             </TabsTrigger>
           </TabsList>
@@ -130,7 +136,7 @@ const ShareActivityModal: React.FC<ShareActivityModalProps> = ({
                   onClick={handleDownloadQR}
                   variant="outline"
                   size="sm"
-                  className="text-buddy-purple border-buddy-purple/30 hover:bg-buddy-purple/10"
+                  className="text-buddy-purple border-buddy-purple/30 hover:bg-buddy-purple/10 rounded-full"
                 >
                   <QrCode className="w-4 h-4 mr-2" />
                   Download QR Code
@@ -153,22 +159,27 @@ const ShareActivityModal: React.FC<ShareActivityModalProps> = ({
                 <Input
                   value={activityUrl}
                   readOnly
-                  className="flex-1 bg-buddy-gray-50 border-buddy-gray-200"
+                  className="flex-1 bg-buddy-gray-50 border-buddy-gray-200 "
                 />
                 <Button
                   onClick={handleCopyLink}
                   variant={copied ? "default" : "outline"}
                   size="sm"
-                  className={copied ? "bg-green-500 hover:bg-green-600" : ""}
+                  className={
+                    "rounded-full" +
+                    (copied
+                      ? "bg-green-500 hover:bg-green-600 rounded-full"
+                      : "")
+                  }
                 >
                   {copied ? (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
+                      <Check className="w-4 h-4 " />
                       Copied!
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4 mr-2" />
+                      <Copy className="w-4 h-4 " />
                       Copy
                     </>
                   )}
@@ -179,7 +190,7 @@ const ShareActivityModal: React.FC<ShareActivityModalProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10"
+                  className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10 rounded-full"
                   onClick={() => {
                     window.open(
                       `mailto:?subject=Check out this activity&body=${activityUrl}`,
@@ -193,7 +204,7 @@ const ShareActivityModal: React.FC<ShareActivityModalProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-buddy-green border-buddy-green/30 hover:bg-buddy-green/10"
+                  className="text-buddy-green border-buddy-green/30 hover:bg-buddy-green/10 rounded-full"
                   onClick={() => {
                     if (navigator.share) {
                       navigator.share({
@@ -234,7 +245,7 @@ const ShareActivityModal: React.FC<ShareActivityModalProps> = ({
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button onClick={onClose} variant="outline">
+          <Button onClick={onClose} variant="outline" className="rounded-full">
             Close
           </Button>
         </div>

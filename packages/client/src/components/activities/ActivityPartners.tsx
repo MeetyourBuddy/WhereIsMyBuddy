@@ -1,387 +1,618 @@
-
-import React, { useState } from "react";
-import { UserPlus, Mail, Link2, CheckCircle, Users, ArrowRight, Heart, Shield, Award, Flame } from "lucide-react";
-import { Card } from "@/components/common/Card";
-import Avatar from "@/components/common/Avatar";
-import Button from "@/components/common/Button";
+import React, { useState, useEffect } from "react";
+import {
+  UserPlus,
+  Mail,
+  Link2,
+  CheckCircle,
+  Users,
+  ArrowRight,
+  Heart,
+  Shield,
+  Award,
+  Flame,
+  Search,
+  Clock,
+  UserCheck,
+  UserX,
+} from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/store/auth.store";
+import { useActivityStore } from "@/store/activity.store";
+import {
+  isActivityParticipant,
+  isActivityCreator,
+} from "@/types/activity-types";
+import InvitePartnersModal from "./partners/InvitePartnersModal";
+import {
+  partnerService,
+  Partner,
+  PartnerInvitation,
+} from "@/services/api/activity/partner.service";
 
 interface ActivityPartnersProps {
   activityId: string;
 }
 
-interface Partner {
-  id: string;
-  name: string;
-  avatar: string;
-  streak: number;
-  progress: number;
-  lastCheckIn: string;
-  status: "active" | "pending" | "inactive";
-}
+// Remove local interfaces - using imported ones from service
 
 const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
-  const [email, setEmail] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [showLinkCopied, setShowLinkCopied] = useState(false);
-  
-  // Mock partners data
-  const partners: Partner[] = [
-    {
-      id: "1",
-      name: "Alex Johnson",
-      avatar: "/placeholder.svg",
-      streak: 7,
-      progress: 76,
-      lastCheckIn: "Today",
-      status: "active"
-    },
-    {
-      id: "2",
-      name: "Jamie Smith",
-      avatar: "/placeholder.svg",
-      streak: 5,
-      progress: 64,
-      lastCheckIn: "Yesterday",
-      status: "active"
-    },
-    {
-      id: "3",
-      name: "Taylor Brown",
-      avatar: "/placeholder.svg",
-      streak: 0,
-      progress: 42,
-      lastCheckIn: "3 days ago",
-      status: "inactive"
-    },
-    {
-      id: "4",
-      name: "Jordan Lee",
-      avatar: "/placeholder.svg",
-      streak: 0,
-      progress: 0,
-      lastCheckIn: "",
-      status: "pending"
+  const [activeTab, setActiveTab] = useState("partners");
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [invitations, setInvitations] = useState<PartnerInvitation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { currentActivity } = useActivityStore();
+
+  // Check if user is a participant or admin
+  const userId = user?._id || user?.id;
+  const isUserParticipant = currentActivity
+    ? isActivityParticipant(currentActivity, userId)
+    : false;
+  const isUserAdmin = currentActivity
+    ? isActivityCreator(currentActivity, userId)
+    : false;
+  const canAccessPartners = isUserParticipant || isUserAdmin;
+
+  // Load real partners data from API - only for participants
+  useEffect(() => {
+    const loadPartnersData = async () => {
+      // Only load data if user has access
+      if (!canAccessPartners) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const [partnersData, invitationsData] = await Promise.all([
+          partnerService.getPartners(activityId),
+          partnerService.getPendingInvitations(activityId),
+        ]);
+
+        setPartners(partnersData);
+        setInvitations(invitationsData);
+      } catch (error) {
+        console.error("Failed to load partners data:", error);
+        toast({
+          title: "Loading Failed",
+          description: "Unable to load partners data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPartnersData();
+  }, [activityId, toast, canAccessPartners]);
+
+  const handleInviteSent = async () => {
+    // Only refresh data if user has access
+    if (!canAccessPartners) {
+      return;
     }
-  ];
-  
-  const handleInvite = () => {
-    if (!email) return;
-    
-    setIsSending(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSending(false);
-      setEmail("");
-      
+
+    // Refresh partners data after invitation sent
+    try {
+      const [partnersData, invitationsData] = await Promise.all([
+        partnerService.getPartners(activityId),
+        partnerService.getPendingInvitations(activityId),
+      ]);
+
+      setPartners(partnersData);
+      setInvitations(invitationsData);
+
       toast({
         title: "Invitation Sent!",
-        description: `An invitation email has been sent to ${email}`,
-        variant: "default",
+        description: "Your partnership invitation has been sent successfully",
       });
-    }, 1500);
-  };
-  
-  const copyInviteLink = () => {
-    navigator.clipboard.writeText(`https://buddy-app.com/join/${activityId}`);
-    setShowLinkCopied(true);
-    
-    toast({
-      title: "Link Copied!",
-      description: "Share it with your accountability partners",
-      variant: "default",
-    });
-    
-    setTimeout(() => setShowLinkCopied(false), 3000);
+    } catch (error) {
+      console.error("Failed to refresh data after invitation:", error);
+      toast({
+        title: "Invitation Sent!",
+        description: "Your partnership invitation has been sent successfully",
+      });
+    }
   };
 
-  return (
-    <div className="p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8">
-          <Card className="p-6">
-            <h3 className="text-xl font-semibold mb-2">Accountability Partners</h3>
-            <p className="text-buddy-gray-600 mb-6 max-w-3xl">
-              Stay motivated by inviting friends to join your activity. Accountability partners 
-              can track each other's progress and help keep everyone on track.
+  const handleInvitationResponse = async (
+    invitationId: string,
+    action: "accept" | "decline"
+  ) => {
+    // Only process if user has access
+    if (!canAccessPartners) {
+      return;
+    }
+
+    try {
+      await partnerService.respondToInvitation(activityId, invitationId, {
+        action,
+      });
+
+      // Refresh data after responding to invitation
+      const [partnersData, invitationsData] = await Promise.all([
+        partnerService.getPartners(activityId),
+        partnerService.getPendingInvitations(activityId),
+      ]);
+
+      setPartners(partnersData);
+      setInvitations(invitationsData);
+
+      if (action === "accept") {
+        toast({
+          title: "Partnership Accepted!",
+          description: "You are now accountability partners",
+        });
+      } else {
+        toast({
+          title: "Invitation Declined",
+          description: "The partnership invitation has been declined",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to respond to invitation:", error);
+      toast({
+        title: "Action Failed",
+        description: "Unable to process your response. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="h-64 bg-gray-200 rounded-2xl"></div>
+              <div className="h-32 bg-gray-200 rounded-2xl"></div>
+            </div>
+            <div className="space-y-4">
+              <div className="h-48 bg-gray-200 rounded-2xl"></div>
+              <div className="h-32 bg-gray-200 rounded-2xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied message for non-participants
+  if (!canAccessPartners) {
+    return (
+      <div className="p-4 md:p-6">
+        <Card className="p-8 text-center">
+          <div className="max-w-md mx-auto">
+            <div className="w-16 h-16 mx-auto mb-4 bg-buddy-gray-100 rounded-full flex items-center justify-center">
+              <Users className="w-8 h-8 text-buddy-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+              Join Activity to Access Partners
+            </h3>
+            <p className="text-buddy-gray-600 mb-6">
+              You need to be a participant in this activity to access
+              partnership features and invite accountability partners.
             </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-              <div className="p-5 bg-buddy-purple/5 rounded-xl border border-buddy-purple/20">
-                <Heart className="w-8 h-8 text-buddy-purple mb-3" />
-                <h4 className="font-semibold text-lg mb-1">Support Each Other</h4>
-                <p className="text-sm text-buddy-gray-600">
-                  Motivation is higher when you have someone to share your journey with.
-                </p>
-              </div>
-              
-              <div className="p-5 bg-buddy-blue/5 rounded-xl border border-buddy-blue/20">
-                <Shield className="w-8 h-8 text-buddy-blue mb-3" />
-                <h4 className="font-semibold text-lg mb-1">Stay Accountable</h4>
-                <p className="text-sm text-buddy-gray-600">
-                  You're 65% more likely to complete your goals with an accountability partner.
-                </p>
-              </div>
+            <div className="space-y-3">
+              <p className="text-sm text-buddy-gray-500">
+                As a participant, you'll be able to:
+              </p>
+              <ul className="text-sm text-buddy-gray-600 space-y-1">
+                <li>• Invite friends as accountability partners</li>
+                <li>• View partner progress and statistics</li>
+                <li>• Accept or decline partnership requests</li>
+                <li>• Track group progress together</li>
+              </ul>
             </div>
-            
-            <div className="mb-8">
-              <h4 className="font-semibold mb-4">Invite by Email</h4>
-              <div className="flex gap-3">
-                <Input
-                  placeholder="friend@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1"
-                />
-                <Button 
-                  variant="primary" 
-                  icon={<Mail />}
-                  isLoading={isSending}
-                  onClick={handleInvite}
-                  disabled={!email.includes('@')}
-                >
-                  Send Invite
-                </Button>
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <h4 className="font-semibold mb-4">Or Share a Link</h4>
-              <div className="flex gap-3">
-                <Input
-                  value={`https://buddy-app.com/join/${activityId}`}
-                  readOnly
-                  className="flex-1 bg-buddy-gray-50"
-                />
-                <Button 
-                  variant="outline" 
-                  icon={<Link2 />}
-                  onClick={copyInviteLink}
-                >
-                  {showLinkCopied ? "Copied!" : "Copy Link"}
-                </Button>
-              </div>
-            </div>
-            
-            <Separator className="my-6" />
-            
-            <h4 className="font-semibold mb-4">Your Partners</h4>
-            
-            {partners.length > 0 ? (
-              <div className="space-y-4">
-                {partners.map((partner) => (
-                  <div 
-                    key={partner.id}
-                    className={`rounded-lg border ${
-                      partner.status === "active" 
-                        ? "border-buddy-green/30 bg-buddy-green/5" 
-                        : partner.status === "pending"
-                          ? "border-buddy-blue/30 bg-buddy-blue/5"
-                          : "border-buddy-gray-200 bg-buddy-gray-50"
-                    } p-4`}
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-6">
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-xl md:text-2xl font-semibold mb-2">
+              Accountability Partners
+            </h3>
+            <p className="text-gray-600 max-w-3xl">
+              Stay motivated by inviting friends to join your activity.
+              Accountability partners can track each other's progress and help
+              keep everyone on track.
+            </p>
+          </div>
+          <Button
+            onClick={() => setIsInviteModalOpen(true)}
+            className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue hover:from-buddy-purple/90 hover:to-buddy-blue/90"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Invite Partners
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Invitation Methods */}
+          <Card className="border border-white/80 rounded-2xl shadow-sm bg-white/90 backdrop-blur-sm">
+            <div className="p-4 md:p-6">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2 rounded-full bg-gray-100 p-1 mb-6">
+                  <TabsTrigger
+                    value="partners"
+                    className="rounded-full data-[state=active]:bg-buddy-purple data-[state=active]:text-white"
                   >
-                    <div className="flex flex-wrap items-center gap-4">
-                      <Avatar src={partner.avatar} alt={partner.name} size="md" />
-                      
-                      <div className="flex-1 min-w-[150px]">
-                        <div className="flex items-center">
-                          <span className="font-medium">{partner.name}</span>
-                          {partner.status === "active" && (
-                            <Badge className="ml-2 bg-buddy-green/10 text-buddy-green border-buddy-green/20">Active</Badge>
-                          )}
-                          {partner.status === "pending" && (
-                            <Badge className="ml-2 bg-buddy-blue/10 text-buddy-blue border-buddy-blue/20">Pending</Badge>
-                          )}
-                          {partner.status === "inactive" && (
-                            <Badge className="ml-2 bg-buddy-gray-200 text-buddy-gray-600 border-buddy-gray-300">Inactive</Badge>
-                          )}
-                        </div>
-                        
-                        {partner.status !== "pending" && (
-                          <div className="text-sm text-buddy-gray-600 mt-1">
-                            Last check-in: {partner.lastCheckIn || "Never"}
+                    <Users className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Partners</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="requests"
+                    className="rounded-full data-[state=active]:bg-buddy-purple data-[state=active]:text-white"
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Requests</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="partners" className="space-y-4">
+                  {partners.length > 0 ? (
+                    <div className="space-y-4">
+                      {partners.map((partner) => (
+                        <div
+                          key={partner.id}
+                          className={`rounded-2xl border p-4 transition-all duration-200 ${
+                            partner.status === "active"
+                              ? "border-green-200 bg-green-50/50"
+                              : "border-gray-200 bg-gray-50/50"
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-12 h-12">
+                                <AvatarImage
+                                  src={partner.avatar}
+                                  alt={partner.name}
+                                />
+                                <AvatarFallback className="bg-buddy-purple/10 text-buddy-purple">
+                                  {partner.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">
+                                    {partner.name}
+                                  </span>
+                                  {partner.status === "active" && (
+                                    <Badge className="bg-green-100 text-green-700 border-green-200 rounded-full">
+                                      Active
+                                    </Badge>
+                                  )}
+                                  {partner.status === "inactive" && (
+                                    <Badge className="bg-gray-100 text-gray-600 border-gray-200 rounded-full">
+                                      Inactive
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                  {partner.email}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Last check-in:{" "}
+                                  {partner.lastCheckIn || "Never"}
+                                </p>
+                              </div>
+                            </div>
+
+                            {partner.status === "active" && (
+                              <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                  <div className="flex justify-between mb-1">
+                                    <span className="text-sm text-gray-600">
+                                      Progress
+                                    </span>
+                                    <span className="text-sm font-medium">
+                                      {partner.progress}%
+                                    </span>
+                                  </div>
+                                  <Progress
+                                    value={partner.progress}
+                                    className="h-2"
+                                  />
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <div className="p-2 bg-amber-100 text-amber-600 rounded-full">
+                                    <Flame className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {partner.streak} day streak
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {partner.totalCheckIns} total check-ins
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="text-center">
+                                  <p className="text-sm font-medium">
+                                    {partner.activities}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Activities
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {partner.status === "inactive" && (
+                              <div className="text-sm text-gray-500">
+                                Last active:{" "}
+                                {new Date(
+                                  partner.lastCheckIn
+                                ).toLocaleDateString()}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      
-                      {partner.status === "active" && (
-                        <div className="flex-1 min-w-[180px]">
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm text-buddy-gray-600">Progress</span>
-                            <span className="text-sm font-medium">{partner.progress}%</span>
-                          </div>
-                          <Progress value={partner.progress} className="h-2" />
                         </div>
-                      )}
-                      
-                      {partner.status === "active" && (
-                        <div className="flex items-center gap-2">
-                          <div className="p-2 bg-amber-500/10 text-amber-500 rounded-full">
-                            <Flame className="w-4 h-4" />
-                          </div>
-                          <span className="font-medium">{partner.streak} day streak</span>
-                        </div>
-                      )}
-                      
-                      {partner.status === "pending" && (
-                        <div className="text-sm text-buddy-blue">
-                          Invitation sent, waiting for response
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-buddy-gray-50 rounded-lg">
-                <Users className="w-12 h-12 mx-auto text-buddy-gray-400 mb-3" />
-                <p className="text-buddy-gray-700 font-medium mb-2">No partners yet</p>
-                <p className="text-buddy-gray-600 mb-4 max-w-md mx-auto">
-                  Invite friends to join you on this journey. Together, you'll motivate each other to reach your goals.
-                </p>
-                <Button variant="primary" icon={<UserPlus />}>
-                  Invite Partners
-                </Button>
-              </div>
-            )}
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                      <Users className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                      <p className="text-gray-700 font-medium mb-2">
+                        No partners yet
+                      </p>
+                      <p className="text-gray-600 mb-4 max-w-md mx-auto">
+                        Invite friends to join you on this journey. Together,
+                        you'll motivate each other to reach your goals.
+                      </p>
+                      <Button
+                        onClick={() => setIsInviteModalOpen(true)}
+                        className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Invite Partners
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="requests" className="space-y-4">
+                  {invitations.length > 0 ? (
+                    <div className="space-y-4">
+                      {invitations.map((invitation) => (
+                        <div
+                          key={invitation.id}
+                          className="rounded-2xl border border-gray-200 bg-white p-4"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage
+                                  src={invitation.fromUser.avatar}
+                                  alt={invitation.fromUser.name}
+                                />
+                                <AvatarFallback className="bg-buddy-purple/10 text-buddy-purple">
+                                  {invitation.fromUser.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+
+                              <div>
+                                <p className="font-medium">
+                                  {invitation.fromUser.name}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Wants to be your accountability partner
+                                </p>
+                                {invitation.message && (
+                                  <p className="text-sm text-gray-700 mt-1 italic">
+                                    "{invitation.message}"
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 ml-auto">
+                              <Button
+                                onClick={() =>
+                                  handleInvitationResponse(
+                                    invitation.id,
+                                    "accept"
+                                  )
+                                }
+                                className="rounded-full bg-green-600 hover:bg-green-700"
+                                size="sm"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                                Accept
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  handleInvitationResponse(
+                                    invitation.id,
+                                    "decline"
+                                  )
+                                }
+                                variant="outline"
+                                className="rounded-full border-red-200 text-red-600 hover:bg-red-50"
+                                size="sm"
+                              >
+                                <UserX className="w-4 h-4" />
+                                Decline
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                      <Clock className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                      <p className="text-gray-700 font-medium mb-2">
+                        No pending requests
+                      </p>
+                      <p className="text-gray-600">
+                        Partnership requests from other users will appear here
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
           </Card>
         </div>
-        
-        <div className="lg:col-span-4">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Partner Activity</h3>
-            
-            <div className="space-y-5 mb-6">
-              {partners
-                .filter(p => p.status === "active")
-                .slice(0, 4)
-                .map((partner, index) => {
-                  const date = new Date();
-                  date.setHours(date.getHours() - (index * 5));
-                  
-                  return (
-                    <div key={partner.id} className="flex items-start">
-                      <Avatar src={partner.avatar} alt={partner.name} size="sm" className="mr-3" />
-                      <div className="flex-1">
-                        <div className="flex justify-between mb-1">
-                          <span className="font-medium text-sm">{partner.name}</span>
-                          <span className="text-xs text-buddy-gray-500">
-                            {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-xs text-buddy-gray-600">
-                          {["Completed today's check-in", "Reached a 5-day streak!", "Posted a photo update", "Added a comment"][index]}
-                        </p>
-                      </div>
-                    </div>
-                  );
-              })}
-            </div>
-            
-            <Separator className="my-5" />
-            
-            <h4 className="font-medium mb-3">Tips for Success</h4>
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <div className="bg-buddy-purple/10 rounded-full p-1 mr-3 mt-1">
-                  <CheckCircle className="w-4 h-4 text-buddy-purple" />
+
+        {/* Sidebar */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Benefits Card */}
+          <Card className="border border-white/80 rounded-2xl shadow-sm bg-white/90 backdrop-blur-sm">
+            <div className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold mb-4">Why Have Partners?</h3>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-buddy-purple/10 rounded-full">
+                    <Heart className="w-5 h-5 text-buddy-purple" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">Support Each Other</h4>
+                    <p className="text-sm text-gray-600">
+                      Motivation is higher when you have someone to share your
+                      journey with.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-buddy-gray-700">
-                  Set a regular time to check in with your partners
-                </p>
-              </div>
-              
-              <div className="flex items-start">
-                <div className="bg-buddy-purple/10 rounded-full p-1 mr-3 mt-1">
-                  <CheckCircle className="w-4 h-4 text-buddy-purple" />
+
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-buddy-blue/10 rounded-full">
+                    <Shield className="w-5 h-5 text-buddy-blue" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">Stay Accountable</h4>
+                    <p className="text-sm text-gray-600">
+                      You're 65% more likely to complete your goals with an
+                      accountability partner.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-buddy-gray-700">
-                  Offer encouragement when a partner misses a day
-                </p>
-              </div>
-              
-              <div className="flex items-start">
-                <div className="bg-buddy-purple/10 rounded-full p-1 mr-3 mt-1">
-                  <CheckCircle className="w-4 h-4 text-buddy-purple" />
+
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-green-100 rounded-full">
+                    <Award className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">Celebrate Together</h4>
+                    <p className="text-sm text-gray-600">
+                      Share victories and milestones with people who understand
+                      your journey.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-buddy-gray-700">
-                  Celebrate your collective wins, no matter how small
-                </p>
-              </div>
-            </div>
-            
-            <Separator className="my-5" />
-            
-            <div className="p-4 bg-gradient-to-br from-buddy-purple/10 to-buddy-blue/10 rounded-xl border border-buddy-purple/20">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h4 className="font-medium">Group Milestone</h4>
-                  <p className="text-sm text-buddy-gray-600">Combined progress</p>
-                </div>
-                <Award className="w-5 h-5 text-buddy-purple" />
-              </div>
-              
-              <div className="mb-1">
-                <Progress value={64} className="h-2.5" />
-              </div>
-              
-              <div className="flex justify-between text-xs text-buddy-gray-600">
-                <span>64% complete</span>
-                <span>162/250 check-ins</span>
               </div>
             </div>
           </Card>
-          
-          <Card className="p-6 mt-6">
-            <h3 className="text-lg font-semibold mb-3">Top Partners</h3>
-            <p className="text-sm text-buddy-gray-600 mb-5">
-              Based on consistency and check-in streaks
-            </p>
-            
-            <div className="space-y-4">
-              {partners
-                .filter(p => p.status === "active")
-                .sort((a, b) => b.streak - a.streak)
-                .map((partner, index) => (
-                  <div key={partner.id} className="flex items-center">
-                    <div className="w-7 h-7 rounded-full bg-buddy-gray-100 flex items-center justify-center mr-3">
-                      <span className="font-medium text-buddy-gray-700">{index + 1}</span>
+
+          {/* Group Stats */}
+          <Card className="border border-white/80 rounded-2xl shadow-sm bg-white/90 backdrop-blur-sm">
+            <div className="p-4 md:p-6">
+              <h3 className="text-lg font-semibold mb-4">Group Progress</h3>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-gradient-to-br from-buddy-purple/10 to-buddy-blue/10 rounded-xl border border-buddy-purple/20">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-medium">Combined Check-ins</h4>
+                      <p className="text-sm text-gray-600">All partners</p>
                     </div>
-                    
-                    <Avatar src={partner.avatar} alt={partner.name} size="sm" className="mr-3" />
-                    
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{partner.name}</p>
-                      <div className="flex items-center mt-0.5">
-                        <div className="w-20 h-1.5 bg-buddy-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-amber-400 to-amber-500" 
-                            style={{ width: `${Math.min(100, partner.streak * 14)}%` }}
-                          ></div>
-                        </div>
-                        <span className="ml-2 text-xs text-buddy-gray-600">
-                          {partner.streak} day streak
-                        </span>
-                      </div>
-                    </div>
+                    <Award className="w-5 h-5 text-buddy-purple" />
                   </div>
-                ))}
-            </div>
-            
-            <div className="mt-5 pt-5 border-t border-buddy-gray-100">
-              <Button variant="outline" className="w-full" icon={<ArrowRight className="h-4 w-4" />}>
-                View All Partners
-              </Button>
+
+                  <div className="mb-2">
+                    <Progress
+                      value={
+                        partners.length > 0
+                          ? Math.round(
+                              partners.reduce((sum, p) => sum + p.progress, 0) /
+                                partners.length
+                            )
+                          : 0
+                      }
+                      className="h-2.5"
+                    />
+                  </div>
+
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>
+                      {partners.reduce((sum, p) => sum + p.totalCheckIns, 0)}{" "}
+                      check-ins
+                    </span>
+                    <span>
+                      {partners.length > 0
+                        ? Math.round(
+                            partners.reduce((sum, p) => sum + p.progress, 0) /
+                              partners.length
+                          )
+                        : 0}
+                      % complete
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <p className="text-2xl font-bold text-buddy-purple">
+                      {partners.filter((p) => p.status === "active").length}
+                    </p>
+                    <p className="text-xs text-gray-600">Active Partners</p>
+                  </div>
+                  <div className="text-center p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <p className="text-2xl font-bold text-buddy-blue">
+                      {partners.reduce((sum, p) => sum + p.totalCheckIns, 0)}
+                    </p>
+                    <p className="text-xs text-gray-600">Total Check-ins</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </Card>
         </div>
       </div>
+
+      {/* Invite Partners Modal */}
+      <InvitePartnersModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        activityId={activityId}
+        onInviteSent={handleInviteSent}
+      />
     </div>
   );
 };

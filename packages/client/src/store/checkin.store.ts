@@ -5,7 +5,22 @@ import {
   CheckInStats,
   CreateCheckInRequest,
 } from "@/services/api/checkin/checkin-service";
+import {
+  CheckInCommentService,
+  CheckInComment,
+  CreateCheckInCommentRequest,
+  UpdateCheckInCommentRequest,
+} from "@/services/api/checkin/checkin-comment.service";
+import { BadgeService } from "@/services/api/badge/badge-service";
 import { toast } from "@/hooks/use-toast";
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
 
 interface CheckInState {
   // State
@@ -13,6 +28,7 @@ interface CheckInState {
   stats: CheckInStats | null;
   isLoading: boolean;
   error: string | null;
+  comments: Record<string, CheckInComment[]>; // checkInId -> comments
 
   // Actions
   createCheckIn: (
@@ -27,6 +43,18 @@ interface CheckInState {
   setError: (error: string | null) => void;
   hasCheckedInToday: (activityId: string, userId?: string) => boolean;
   refreshActivityData: (activityId: string) => Promise<void>;
+
+  // Comment actions
+  createComment: (
+    data: CreateCheckInCommentRequest
+  ) => Promise<CheckInComment | null>;
+  fetchComments: (checkInId: string) => Promise<void>;
+  updateComment: (
+    commentId: string,
+    data: UpdateCheckInCommentRequest
+  ) => Promise<CheckInComment | null>;
+  deleteComment: (commentId: string) => Promise<void>;
+  getComments: (checkInId: string) => CheckInComment[];
 }
 
 export const useCheckInStore = create<CheckInState>((set, get) => ({
@@ -35,6 +63,7 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
   stats: null,
   isLoading: false,
   error: null,
+  comments: {},
 
   // Create a new check-in
   createCheckIn: async (data: CreateCheckInRequest) => {
@@ -53,6 +82,9 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
       const { fetchCheckInStats } = get();
       await fetchCheckInStats(data.activityId);
 
+      // Note: Badge checking is handled by the backend automatically
+      // The frontend will refresh badges when the component re-renders
+
       toast({
         title: "Check-in Complete! 🎉",
         description: "Your progress has been shared with your buddy community!",
@@ -60,9 +92,10 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
       });
 
       return newCheckIn;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage =
-        error.response?.data?.message || "Failed to create check-in";
+        (error as ApiError).response?.data?.message ||
+        "Failed to create check-in";
       set({ error: errorMessage, isLoading: false });
 
       toast({
@@ -84,9 +117,10 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
       const checkIns = await CheckInService.getCheckInsByActivity(activityId);
       console.log("✅ Check-ins fetched:", checkIns.length, "items");
       set({ checkIns, isLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage =
-        error.response?.data?.message || "Failed to fetch check-ins";
+        (error as ApiError).response?.data?.message ||
+        "Failed to fetch check-ins";
       console.error("❌ Failed to fetch check-ins:", errorMessage);
       set({ error: errorMessage, isLoading: false });
     }
@@ -99,9 +133,10 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
     try {
       const checkIns = await CheckInService.getCheckInsByUser(activityId);
       set({ checkIns, isLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage =
-        error.response?.data?.message || "Failed to fetch user check-ins";
+        (error as ApiError).response?.data?.message ||
+        "Failed to fetch user check-ins";
       set({ error: errorMessage, isLoading: false });
     }
   },
@@ -115,9 +150,10 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
       const stats = await CheckInService.getCheckInStats(activityId);
       console.log("✅ Check-in stats fetched:", stats);
       set({ stats, isLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage =
-        error.response?.data?.message || "Failed to fetch check-in stats";
+        (error as ApiError).response?.data?.message ||
+        "Failed to fetch check-in stats";
       console.error("❌ Failed to fetch check-in stats:", errorMessage);
       set({ error: errorMessage, isLoading: false });
     }
@@ -143,9 +179,9 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
           : "You unliked this check-in.",
         variant: "default",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage =
-        error.response?.data?.message || "Failed to toggle like";
+        (error as ApiError).response?.data?.message || "Failed to toggle like";
       set({ error: errorMessage });
 
       toast({
@@ -171,9 +207,10 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
         description: "Your check-in has been removed.",
         variant: "default",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage =
-        error.response?.data?.message || "Failed to delete check-in";
+        (error as ApiError).response?.data?.message ||
+        "Failed to delete check-in";
       set({ error: errorMessage });
 
       toast({
@@ -227,5 +264,153 @@ export const useCheckInStore = create<CheckInState>((set, get) => ({
     ]);
 
     console.log("✅ Activity data refreshed successfully");
+  },
+
+  // Comment actions
+  createComment: async (data: CreateCheckInCommentRequest) => {
+    try {
+      const response = await CheckInCommentService.createComment(data);
+      if (response.success) {
+        // Add comment to the store
+        set((state) => ({
+          comments: {
+            ...state.comments,
+            [data.checkInId]: [
+              ...(state.comments[data.checkInId] || []),
+              response.data,
+            ],
+          },
+        }));
+
+        toast({
+          title: "Comment added! 💬",
+          description: "Your comment has been posted successfully.",
+          variant: "default",
+        });
+
+        return response.data;
+      }
+      return null;
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as ApiError).response?.data?.message ||
+        "Failed to create comment";
+      set({ error: errorMessage });
+
+      toast({
+        title: "Comment Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      return null;
+    }
+  },
+
+  fetchComments: async (checkInId: string) => {
+    try {
+      const response =
+        await CheckInCommentService.getCommentsByCheckIn(checkInId);
+      if (response.success) {
+        set((state) => ({
+          comments: {
+            ...state.comments,
+            [checkInId]: response.data,
+          },
+        }));
+      }
+    } catch (error: unknown) {
+      console.error("Error fetching comments:", error);
+      set({
+        error:
+          (error as ApiError).response?.data?.message ||
+          "Failed to fetch comments",
+      });
+    }
+  },
+
+  updateComment: async (
+    commentId: string,
+    data: UpdateCheckInCommentRequest
+  ) => {
+    try {
+      const response = await CheckInCommentService.updateComment(
+        commentId,
+        data
+      );
+      if (response.success) {
+        // Update comment in the store
+        set((state) => {
+          const newComments = { ...state.comments };
+          Object.keys(newComments).forEach((checkInId) => {
+            newComments[checkInId] = newComments[checkInId].map((comment) =>
+              comment._id === commentId ? response.data : comment
+            );
+          });
+          return { comments: newComments };
+        });
+
+        toast({
+          title: "Comment updated! ✏️",
+          description: "Your comment has been updated successfully.",
+          variant: "default",
+        });
+
+        return response.data;
+      }
+      return null;
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as ApiError).response?.data?.message ||
+        "Failed to update comment";
+      set({ error: errorMessage });
+
+      toast({
+        title: "Update Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      return null;
+    }
+  },
+
+  deleteComment: async (commentId: string) => {
+    try {
+      await CheckInCommentService.deleteComment(commentId);
+
+      // Remove comment from the store
+      set((state) => {
+        const newComments = { ...state.comments };
+        Object.keys(newComments).forEach((checkInId) => {
+          newComments[checkInId] = newComments[checkInId].filter(
+            (comment) => comment._id !== commentId
+          );
+        });
+        return { comments: newComments };
+      });
+
+      toast({
+        title: "Comment deleted! 🗑️",
+        description: "Your comment has been deleted successfully.",
+        variant: "default",
+      });
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as ApiError).response?.data?.message ||
+        "Failed to delete comment";
+      set({ error: errorMessage });
+
+      toast({
+        title: "Delete Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  },
+
+  getComments: (checkInId: string) => {
+    const { comments } = get();
+    return comments[checkInId] || [];
   },
 }));
