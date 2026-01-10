@@ -17,7 +17,7 @@ export const UploadService = {
 
   getImageUrl: (fileId: string): string => {
     const baseUrl =
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+      import.meta.env.VITE_API_BASE_URL || "";
     // Ensure we don't double the /api path
     const cleanBaseUrl = baseUrl.endsWith("/api")
       ? baseUrl.slice(0, -4)

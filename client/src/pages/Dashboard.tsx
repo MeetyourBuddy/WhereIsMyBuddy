@@ -58,6 +58,8 @@ const Dashboard = () => {
   const [suggestedBuddies, setSuggestedBuddies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  console.log("API URL Dashboard:", import.meta.env.VITE_API_URL);
+
   // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {

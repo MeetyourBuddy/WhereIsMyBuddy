@@ -114,6 +114,8 @@ const ActivityPage = () => {
 
   const { fetchUserBadges } = useBadgeStore();
 
+  console.log("API URL ActivityPage:", import.meta.env.VITE_API_URL);
+
   useEffect(() => {
     if (!activityId) {
       navigate("/activities");
