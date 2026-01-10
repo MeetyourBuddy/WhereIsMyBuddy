@@ -15,7 +15,6 @@
   ],
   "author": "The Buddies Gang",
   "scripts": {
-    "prepare": "husky install"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.4.1",
@@ -23,7 +22,6 @@
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.1",
-    "husky": "^9.1.5",
     "react-router-dom": "^6.26.0",
     "typescript": "~5.3.3"
   },
