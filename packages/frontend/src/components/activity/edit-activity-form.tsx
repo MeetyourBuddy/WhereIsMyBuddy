@@ -45,10 +45,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/common/ui/
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { useActivity } from '@/hooks/use-activity';
-import { IActivity } from '@/types/activity-types';
-import { toast } from '@/lib/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+
 import {
   DurationUnit,
   ActivityType,
@@ -109,7 +107,7 @@ export const EditActivityForm = ({ id }: { id: string }) => {
       description: '',
       proposedDuration: 1,
       durationUnit: DurationUnit.DAYS,
-      maxSize: 1,
+      maxParticipants: 1,
       type: ActivityType.PUBLIC,
       checkinFrequency: 1,
       checkinFrequencyUnit: CheckinFrequency.DAILY,
@@ -141,7 +139,7 @@ export const EditActivityForm = ({ id }: { id: string }) => {
         description: activity.description,
         proposedDuration: activity.proposedDuration,
         durationUnit: activity.durationUnit,
-        maxSize: activity.maxSize,
+        maxParticipants: activity.maxParticipants,
         type: activity.type,
         checkinFrequency: activity.checkinFrequency,
         checkinFrequencyUnit: activity.checkinFrequencyUnit,
@@ -163,7 +161,7 @@ export const EditActivityForm = ({ id }: { id: string }) => {
       }
 
       if (activity.categories?.length) {
-        const newTagOptions = activity.categories.map((category) => ({
+        const newTagOptions = activity.categories.map((category: string) => ({
           label: category,
           value: category
         }));
@@ -582,7 +580,7 @@ export const EditActivityForm = ({ id }: { id: string }) => {
 
           <FormField
             control={form.control}
-            name="maxSize"
+            name="maxParticipants"
             render={({ field }) => (
               <FormItem className="flex gap-4">
                 <FormLabel className="flex w-1/3">

@@ -31,6 +31,7 @@ export interface UserData {
 
 export interface IUserResponse {
   _id: string;
+  id?: string; // Some APIs use 'id' instead of '_id'
   email: string;
   name: string;
   avatar?: string;

@@ -48,7 +48,7 @@ axiosInstance.interceptors.response.use(
 
         const { accessToken, refreshToken: newRefreshToken } =
           refreshResponse.data.data.tokens;
-        
+
         console.log("Token refresh successful, setting new tokens");
         tokenService.setTokens(accessToken, newRefreshToken);
 
@@ -72,14 +72,22 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     const token = tokenService.getAccessToken();
     console.log("Request interceptor - token:", token ? "Found" : "Not found");
-    
+
     if (token) {
       console.log("Setting Authorization header from tokenService");
       config.headers.set("Authorization", `Bearer ${token}`);
     } else {
       console.log("No token available for request");
     }
-    
+
+    // Don't override Content-Type for FormData - let the browser set it with proper boundary
+    if (config.data instanceof FormData) {
+      console.log(
+        "FormData detected, removing Content-Type header to let browser set it"
+      );
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
   (error: AxiosError) => Promise.reject(error)

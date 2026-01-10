@@ -1,24 +1,50 @@
+// export enum InterestCategory {
+//   Technology = 'Technology',
+//   Science = 'Science',
+//   Arts = 'Arts',
+//   Sports = 'Sports',
+//   Music = 'Music',
+//   Travel = 'Travel',
+//   FoodAndCooking = 'Food & Cooking',
+//   Fashion = 'Fashion',
+//   Gaming = 'Gaming',
+//   Books = 'Books',
+//   Movies = 'Movies',
+//   Fitness = 'Fitness',
+//   Photography = 'Photography',
+//   Education = 'Education',
+//   Business = 'Business',
+//   Nature = 'Nature',
+//   Pets = 'Pets',
+//   DIY = 'DIY',
+//   Writing = 'Writing',
+//   Other = 'Other',
+// }
+
 export enum InterestCategory {
   Technology = 'Technology',
   Science = 'Science',
   Arts = 'Arts',
+  Language = 'Language',
+  Meditation = 'Meditation',
+  Cooking = 'Cooking',
+  Finance = 'Finance',
+  Reading = 'Reading',
   Sports = 'Sports',
   Music = 'Music',
   Travel = 'Travel',
-  FoodAndCooking = 'Food & Cooking',
   Fashion = 'Fashion',
   Gaming = 'Gaming',
-  Books = 'Books',
   Movies = 'Movies',
   Fitness = 'Fitness',
   Photography = 'Photography',
   Education = 'Education',
-  Business = 'Business',
   Nature = 'Nature',
   Pets = 'Pets',
   DIY = 'DIY',
   Writing = 'Writing',
   Other = 'Other',
+  General = 'General',
 }
 
 export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
@@ -78,7 +104,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'North America',
     'South America',
   ],
-  [InterestCategory.FoodAndCooking]: [
+  [InterestCategory.Cooking]: [
     'Italian Cuisine',
     'Asian Cuisine',
     'Baking',
@@ -104,7 +130,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Role-Playing Games',
     'Strategy Games',
   ],
-  [InterestCategory.Books]: [
+  [InterestCategory.Reading]: [
     'Fiction',
     'Non-Fiction',
     'Biographies',
@@ -144,7 +170,21 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'Seminars',
     'Webinars',
   ],
-  [InterestCategory.Business]: [
+  [InterestCategory.Language]: [
+    'Spanish',
+    'French',
+    'Mandarin',
+    'Japanese',
+    'German',
+  ],
+  [InterestCategory.Meditation]: [
+    'Mindfulness',
+    'Zen',
+    'Guided Meditation',
+    'Breathwork',
+    'Yoga Nidra',
+  ],
+  [InterestCategory.Finance]: [
     'Entrepreneurship',
     'Marketing',
     'Sales',
@@ -183,6 +223,7 @@ export const CommoditiesByCategory: Record<InterestCategory, string[]> = {
     'General Interest',
     'Other Activities',
   ],
+  [InterestCategory.General]: [],
 };
 
 export type InterestCategoryType = keyof typeof InterestCategory;

@@ -53,8 +53,8 @@ export const activityCategories = [
     ],
   },
   {
-    name: "Art",
-    value: "Art",
+    name: "Arts",
+    value: "Arts",
     label: "Art & Creativity",
     interests: [
       "Painting",
@@ -149,12 +149,12 @@ export const activityCategories = [
 const categoryMapping: Record<string, InterestCategory> = {
   Fitness: InterestCategory.Fitness,
   Technology: InterestCategory.Technology,
-  Reading: InterestCategory.Education,
-  Art: InterestCategory.Arts,
-  Language: InterestCategory.Education,
-  Meditation: InterestCategory.Fitness,
-  Cooking: InterestCategory.FoodAndCooking,
-  Finance: InterestCategory.Business,
+  Reading: InterestCategory.Reading,
+  Arts: InterestCategory.Arts,
+  Language: InterestCategory.Language,
+  Meditation: InterestCategory.Meditation,
+  Cooking: InterestCategory.Cooking,
+  Finance: InterestCategory.Finance,
   Other: InterestCategory.Other,
 };
 
@@ -232,7 +232,7 @@ export const CommoditiesByCategory: Record<
     { label: "North America", value: "North America" },
     { label: "South America", value: "South America" },
   ],
-  "Food & Cooking": [
+  Cooking: [
     { label: "Italian Cuisine", value: "Italian Cuisine" },
     { label: "Asian Cuisine", value: "Asian Cuisine" },
     { label: "Baking", value: "Baking" },
@@ -258,7 +258,7 @@ export const CommoditiesByCategory: Record<
     { label: "Role-Playing Games", value: "Role-Playing Games" },
     { label: "Strategy Games", value: "Strategy Games" },
   ],
-  Books: [
+  Reading: [
     { label: "Fiction", value: "Fiction" },
     { label: "Non-Fiction", value: "Non-Fiction" },
     { label: "Biographies", value: "Biographies" },
@@ -298,7 +298,7 @@ export const CommoditiesByCategory: Record<
     { label: "Seminars", value: "Seminars" },
     { label: "Webinars", value: "Webinars" },
   ],
-  Business: [
+  Finance: [
     { label: "Entrepreneurship", value: "Entrepreneurship" },
     { label: "Marketing", value: "Marketing" },
     { label: "Sales", value: "Sales" },
@@ -337,6 +337,20 @@ export const CommoditiesByCategory: Record<
     { label: "Copywriting", value: "Copywriting" },
     { label: "Blog Writing", value: "Blog Writing" },
     { label: "Freelance Writing", value: "Freelance Writing" },
+  ],
+  Language: [
+    { label: "Spanish", value: "Spanish" },
+    { label: "French", value: "French" },
+    { label: "Mandarin", value: "Mandarin" },
+    { label: "Japanese", value: "Japanese" },
+    { label: "German", value: "German" },
+  ],
+  Meditation: [
+    { label: "Mindfulness", value: "Mindfulness" },
+    { label: "Zen", value: "Zen" },
+    { label: "Guided Meditation", value: "Guided Meditation" },
+    { label: "Breathwork", value: "Breathwork" },
+    { label: "Yoga Nidra", value: "Yoga Nidra" },
   ],
   [InterestCategory.Other]: [
     { label: "Miscellaneous", value: "Miscellaneous" },

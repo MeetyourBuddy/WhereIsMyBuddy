@@ -1,6 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Card } from "@/components/common/Card";
-import Avatar from "@/components/common/Avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,6 +13,23 @@ import {
   Copy,
   Check,
   ExternalLink,
+  QrCode,
+  Link,
+  Heart,
+  Star,
+  Sparkles,
+  Crown,
+  Shield,
+  Zap,
+  Flame,
+  Rocket,
+  Gift,
+  Rainbow,
+  Lightbulb,
+  Target,
+  Compass,
+  Globe,
+  Smartphone,
 } from "lucide-react";
 import {
   Sheet,
@@ -21,6 +38,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import QRCode from "react-qr-code";
 import { InterestCategory } from "@/types/auth-types";
@@ -43,6 +62,20 @@ interface ProfileCardProps {
   showJoinButton?: boolean;
 }
 
+// Array of beautiful header background images
+const HEADER_IMAGES = [
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop&crop=center",
+  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=400&fit=crop&crop=center",
+];
+
 const ProfileCard = ({
   id,
   name,
@@ -59,7 +92,15 @@ const ProfileCard = ({
 }: ProfileCardProps) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [headerImage, setHeaderImage] = useState("");
+  const [activeTab, setActiveTab] = useState("qr");
   const profileUrl = `${window.location.origin}/profile/${id}`;
+
+  // Generate random header image on component mount
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * HEADER_IMAGES.length);
+    setHeaderImage(HEADER_IMAGES[randomIndex]);
+  }, [id]); // Re-randomize when profile ID changes
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(profileUrl).then(() => {
@@ -74,45 +115,68 @@ const ProfileCard = ({
 
   return (
     <div className="animate-fade-in">
-      <Card className="overflow-hidden border border-white/90 shadow-lg rounded-2xl backdrop-blur-md bg-white/90 transition-all duration-300 hover:shadow-xl">
-        {/* Cover Image */}
-        <div className="h-52 bg-gradient-to-r from-pastel-purple to-pastel-blue relative">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGRkZGRkYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRoM3YzaC0zem0tNi0zMWgzdjNoLTN6TTE3IDE3aDN2M2gtM3pNMzYgMTdoM3YzaC0zeiIvPjwvZz48L2c+PC9zdmc+')] opacity-80"></div>
+      <Card className="overflow-hidden border-0 shadow-2xl rounded-3xl backdrop-blur-md bg-white/95 transition-all duration-500 hover:shadow-3xl hover:scale-[1.02] group">
+        {/* Cover Image with Randomized Background */}
+        <div className="relative h-72 overflow-hidden">
+          {headerImage ? (
+            <div
+              className="w-full h-full bg-cover bg-center transform group-hover:scale-110 transition-transform duration-1000 ease-out"
+              style={{ backgroundImage: `url(${headerImage})` }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-buddy-purple via-buddy-blue to-buddy-green flex items-center justify-center relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-buddy-purple/20 via-buddy-blue/20 to-buddy-green/20"></div>
+              <span className="text-8xl animate-bounce relative z-10 filter drop-shadow-lg">
+                👤
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 backdrop-blur-[1px]"></div>
+
+          {/* Floating elements for visual interest */}
+          <div className="absolute top-6 right-6 w-12 h-12 bg-white/10 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-8 left-8 w-6 h-6 bg-white/5 rounded-full animate-bounce"></div>
+          <div className="absolute top-1/2 left-6 w-3 h-3 bg-white/15 rounded-full animate-ping"></div>
+          <div className="absolute top-8 left-8 w-8 h-8 bg-white/5 rounded-full animate-pulse delay-1000"></div>
+          <div className="absolute bottom-6 right-8 w-4 h-4 bg-white/10 rounded-full animate-bounce delay-500"></div>
         </div>
 
-        <div className="relative px-6 pb-6 -mt-16">
-          {/* Profile Avatar */}
-          <div className="flex justify-between items-end mb-4">
-            <Avatar
-              size="xl"
-              status="online"
-              src={image}
-              className="border-4 border-white rounded-full shadow-lg transform hover:scale-105 transition-transform duration-300"
-            />
+        <div className="relative px-6 pb-6 -mt-20">
+          {/* Profile Avatar with Enhanced Design */}
+          <div className="flex justify-between items-end mb-6">
+            <div className="relative">
+              <Avatar className="h-24 w-24 border-4 border-white rounded-full shadow-2xl transform group-hover:scale-110 transition-all duration-500">
+                <AvatarImage
+                  src={image}
+                  alt={name || "User avatar"}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-gradient-to-br from-buddy-purple to-buddy-orange text-white font-semibold text-2xl">
+                  {name ? name.charAt(0).toUpperCase() : "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-r from-buddy-green to-buddy-blue rounded-full border-3 border-white flex items-center justify-center shadow-lg">
+                <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+              </div>
+              {/* Additional decorative elements */}
+              <div className="absolute -top-2 -left-2 w-6 h-6 bg-gradient-to-r from-buddy-purple/20 to-buddy-blue/20 rounded-full animate-pulse"></div>
+              <div className="absolute -top-1 -right-3 w-4 h-4 bg-gradient-to-r from-buddy-green/20 to-buddy-orange/20 rounded-full animate-bounce delay-300"></div>
+            </div>
 
-            <div className="flex space-x-2">
-              {showJoinButton ? (
-                <Button
-                  size="sm"
-                  className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-md hover:shadow-lg transition-all duration-300"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Join Now
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full hover:bg-buddy-purple/10 transition-colors duration-300"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Message
-                </Button>
-              )}
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-2 border-buddy-purple/30 hover:bg-buddy-purple/30 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold shadow-lg hover:shadow-xl"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Message
+              </Button>
 
               <Button
                 size="sm"
-                className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-md hover:shadow-lg transition-all duration-300"
+                className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Add Buddy
@@ -123,155 +187,305 @@ const ProfileCard = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-full hover:bg-buddy-purple/10 transition-colors duration-300"
+                    className="rounded-full bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-md hover:from-white/30 hover:to-white/20 transition-all duration-300 transform hover:scale-110 hover:rotate-12 shadow-lg"
                   >
-                    <Share2 className="w-4 h-4" />
+                    <Share2 className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="border-l border-white/20 backdrop-blur-md bg-white/95">
                   <SheetHeader>
                     <SheetTitle className="text-xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
-                      Share Profile
+                      Share {name}'s Profile
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="py-6 flex flex-col items-center">
-                    <div className="bg-white p-5 rounded-2xl mb-4 relative shadow-md">
-                      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-10">
-                        <div className="text-buddy-purple text-9xl font-bold">
-                          B
+
+                  <Tabs
+                    value={activeTab}
+                    onValueChange={setActiveTab}
+                    className="w-full mt-6"
+                  >
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger
+                        value="qr"
+                        className="flex items-center gap-2 rounded-full"
+                      >
+                        <QrCode className="w-4 h-4" />
+                        QR Code
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="link"
+                        className="flex items-center gap-2 rounded-full"
+                      >
+                        <Link className="w-4 h-4" />
+                        Link
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="qr" className="mt-6">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="bg-white p-6 rounded-2xl mb-4 relative shadow-lg border border-buddy-gray-200 transform hover:scale-105 transition-all duration-300">
+                          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center opacity-5">
+                            <div className="text-buddy-purple text-8xl font-bold">
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                          </div>
+                          <QRCode
+                            size={200}
+                            value={profileUrl}
+                            style={{
+                              height: "auto",
+                              maxWidth: "100%",
+                              width: "100%",
+                            }}
+                          />
+                        </div>
+
+                        <p className="text-sm text-buddy-gray-600 mb-4 text-center">
+                          Scan this QR code to view {name}'s profile
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-3 w-full">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-buddy-purple border-buddy-purple/30 hover:bg-buddy-purple/10 rounded-full transition-all duration-300 transform hover:scale-105"
+                          >
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy Image
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10 rounded-full transition-all duration-300 transform hover:scale-105"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Download QR
+                          </Button>
                         </div>
                       </div>
-                      <QRCode
-                        size={200}
-                        value={profileUrl}
-                        style={{
-                          height: "auto",
-                          maxWidth: "100%",
-                          width: "100%",
-                        }}
-                      />
-                    </div>
 
-                    <p className="text-sm text-buddy-gray-600 mb-6">
-                      Scan this QR code to view {name}'s profile
-                    </p>
+                      <Alert className="bg-amber-50 border-amber-200 mt-4">
+                        <Smartphone className="h-4 w-4 text-amber-600" />
+                        <AlertDescription className="text-amber-800">
+                          <strong>Tip:</strong> Hold your phone camera over the
+                          QR code to instantly open {name}'s profile. Perfect
+                          for sharing in person!
+                        </AlertDescription>
+                      </Alert>
+                    </TabsContent>
 
-                    <div className="flex flex-col w-full space-y-4">
-                      <div className="flex items-center border rounded-lg p-2 bg-buddy-gray-50/80 backdrop-blur-sm">
-                        <input
-                          type="text"
-                          value={profileUrl}
-                          readOnly
-                          className="flex-1 bg-transparent border-none focus:outline-none px-2 py-1 text-sm"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={copyToClipboard}
-                          className="text-buddy-purple"
-                        >
-                          {copied ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
-                        </Button>
+                    <TabsContent value="link" className="mt-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center border rounded-lg p-3 bg-buddy-gray-50/80 backdrop-blur-sm">
+                          <input
+                            type="text"
+                            value={profileUrl}
+                            readOnly
+                            className="flex-1 bg-transparent border-none focus:outline-none px-2 py-1 text-sm"
+                          />
+                          <Button
+                            onClick={copyToClipboard}
+                            variant={copied ? "default" : "outline"}
+                            size="sm"
+                            className={
+                              copied
+                                ? "bg-green-500 hover:bg-green-600 rounded-full transition-all duration-300 transform hover:scale-105"
+                                : "rounded-full transition-all duration-300 transform hover:scale-105"
+                            }
+                          >
+                            {copied ? (
+                              <>
+                                <Check className="w-4 h-4 mr-2" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-4 h-4 mr-2" />
+                                Copy
+                              </>
+                            )}
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-buddy-blue border-buddy-blue/30 hover:bg-buddy-blue/10 rounded-full transition-all duration-300 transform hover:scale-105"
+                            onClick={() => {
+                              window.open(
+                                `mailto:?subject=Check out ${name}'s profile&body=${profileUrl}`,
+                                "_blank"
+                              );
+                            }}
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Email
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-buddy-green border-buddy-green/30 hover:bg-buddy-green/10 rounded-full transition-all duration-300 transform hover:scale-105"
+                            onClick={() => {
+                              if (navigator.share) {
+                                navigator.share({
+                                  title: `Check out ${name}'s profile`,
+                                  text: `View ${name}'s profile on BuddyFinder!`,
+                                  url: profileUrl,
+                                });
+                              } else {
+                                copyToClipboard();
+                              }
+                            }}
+                          >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            Share
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-lg hover:bg-buddy-purple/10 transition-all duration-300"
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy Image
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-lg hover:bg-buddy-blue/10 transition-all duration-300"
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Download QR
-                        </Button>
-                      </div>
-                    </div>
+                      <Alert className="bg-blue-50 border-blue-200 mt-4">
+                        <Globe className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-blue-800">
+                          <strong>Easy sharing:</strong> Copy the link to share
+                          via text, social media, or email. Works on any device!
+                        </AlertDescription>
+                      </Alert>
+                    </TabsContent>
+                  </Tabs>
+
+                  <div className="pt-4 border-t border-buddy-gray-100 mt-6">
+                    <Alert className="bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 border-buddy-purple/20">
+                      <Heart className="h-4 w-4 text-buddy-purple" />
+                      <AlertDescription className="text-buddy-gray-700">
+                        <strong>Connect with {name}:</strong> Share this profile
+                        to help {name} grow their network and find new activity
+                        buddies! 🤝
+                      </AlertDescription>
+                    </Alert>
                   </div>
                 </SheetContent>
               </Sheet>
             </div>
           </div>
 
-          {/* Profile Details */}
+          {/* Profile Details with Enhanced Design */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
-              {name}
-            </h1>
-            <p className="text-buddy-gray-600 text-sm">@{username}</p>
+            <div className="bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-purple/10 shadow-lg hover:shadow-xl transition-all duration-300">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent mb-2">
+                {name}
+              </h1>
+              <p className="text-buddy-gray-600 text-lg font-medium mb-4 flex items-center">
+                <span className="w-2 h-2 bg-gradient-to-r from-buddy-purple to-buddy-blue rounded-full mr-2"></span>
+                @{username}
+              </p>
 
-            <p className="mt-4 text-buddy-gray-700">{bio}</p>
+              <p className="text-buddy-gray-700 text-lg leading-relaxed font-medium mb-6">
+                {bio}
+              </p>
 
-            <div className="flex items-center mt-3 text-buddy-gray-600 text-sm">
-              <MapPin className="w-4 h-4 mr-1 text-buddy-purple/70" />
-              {location || "No location set"}
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center text-buddy-gray-700 group p-2 rounded-xl hover:bg-gradient-to-r hover:from-buddy-purple/5 hover:to-buddy-blue/5 transition-all duration-300">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-buddy-purple/20 to-buddy-blue/20 flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                    <MapPin className="w-4 h-4 text-buddy-purple group-hover:text-buddy-blue transition-colors duration-300" />
+                  </div>
+                  <span className="font-medium group-hover:text-buddy-gray-900 transition-colors duration-300 text-sm">
+                    {location || "No location set"}
+                  </span>
+                </div>
 
-            <div className="flex items-center mt-1 text-buddy-gray-600 text-sm">
-              <Calendar className="w-4 h-4 mr-1 text-buddy-purple/70" />
-              Joined {format(new Date(joinedDate), "MMMM d, yyyy")}
+                <div className="flex items-center text-buddy-gray-700 group p-2 rounded-xl hover:bg-gradient-to-r hover:from-buddy-green/5 hover:to-buddy-blue/5 transition-all duration-300">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-buddy-green/20 to-buddy-blue/20 flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-300">
+                    <Calendar className="w-4 h-4 text-buddy-green group-hover:text-buddy-blue transition-colors duration-300" />
+                  </div>
+                  <span className="font-medium group-hover:text-buddy-gray-900 transition-colors duration-300 text-sm">
+                    Joined {format(new Date(joinedDate), "MMMM d, yyyy")}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-pastel-purple to-pastel-blue/40 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
-              <span className="block text-2xl font-bold text-buddy-purple">
+          {/* Enhanced Stats */}
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="bg-gradient-to-br from-buddy-purple/10 to-buddy-blue/10 rounded-2xl p-6 text-center border border-buddy-purple/20 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] group">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-buddy-purple/20 to-buddy-blue/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Target className="w-8 h-8 text-buddy-purple" />
+              </div>
+              <span className="block text-3xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
                 {activityCount}
               </span>
-              <span className="text-buddy-gray-700 text-sm">Activities</span>
+              <span className="text-buddy-gray-700 text-lg font-semibold">
+                Activities
+              </span>
+              <p className="text-buddy-gray-500 text-sm mt-2">
+                Amazing journey! 🚀
+              </p>
             </div>
 
-            <div className="bg-gradient-to-br from-pastel-blue to-pastel-purple/40 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
-              <span className="block text-2xl font-bold text-buddy-blue">
+            <div className="bg-gradient-to-br from-buddy-green/10 to-buddy-blue/10 rounded-2xl p-6 text-center border border-buddy-green/20 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] group">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-buddy-green/20 to-buddy-blue/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Heart className="w-8 h-8 text-buddy-green" />
+              </div>
+              <span className="block text-3xl font-bold bg-gradient-to-r from-buddy-green to-buddy-blue bg-clip-text text-transparent">
                 {buddyCount}
               </span>
-              <span className="text-buddy-gray-700 text-sm">Buddies</span>
+              <span className="text-buddy-gray-700 text-lg font-semibold">
+                Buddies
+              </span>
+              <p className="text-buddy-gray-500 text-sm mt-2">
+                Great connections! 💜
+              </p>
             </div>
           </div>
 
-          {/* Interests */}
+          {/* Enhanced Interests */}
           <div className="mb-6">
-            <h3 className="font-medium text-buddy-gray-900 mb-3">Interests</h3>
-            <div className="flex flex-wrap gap-2">
-              {interests.map((interest, index) => (
-                <Badge
-                  key={index}
-                  variant="outline"
-                  className="py-1 px-3 rounded-full bg-pastel-purple/30 text-buddy-purple border-buddy-purple/20 hover:bg-pastel-purple/50 transition-colors duration-300"
-                >
-                  {interest}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Achievements */}
-          {achievements.length > 0 && (
-            <div>
-              <h3 className="font-medium text-buddy-gray-900 mb-3">
-                Achievements
+            <div className="bg-gradient-to-r from-buddy-green/5 to-buddy-blue/5 p-6 rounded-2xl border border-buddy-green/10 shadow-lg hover:shadow-xl transition-all duration-300">
+              <h3 className="text-xl font-bold text-buddy-gray-900 mb-4 flex items-center">
+                <span className="w-3 h-3 bg-gradient-to-r from-buddy-green to-buddy-blue rounded-full mr-3 animate-pulse"></span>
+                <Star className="w-5 h-5 text-buddy-green mr-2" />
+                Interests & Passions
               </h3>
               <div className="flex flex-wrap gap-3">
-                {achievements.map((achievement, index) => (
-                  <div
+                {interests.map((interest, index) => (
+                  <Badge
                     key={index}
-                    className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-amber-100/80 rounded-full py-1 px-3 shadow-sm hover:shadow-md transition-all duration-300 transform hover:translate-y-[-2px]"
+                    variant="outline"
+                    className="py-2 px-4 rounded-full bg-gradient-to-r from-buddy-purple/10 to-buddy-blue/10 text-buddy-purple border-2 border-buddy-purple/20 hover:from-buddy-purple/20 hover:to-buddy-blue/20 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold text-sm shadow-md hover:shadow-lg"
                   >
-                    <Award className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm">{achievement.title}</span>
-                  </div>
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    {interest}
+                  </Badge>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Achievements */}
+          {achievements.length > 0 && (
+            <div className="mb-6">
+              <div className="bg-gradient-to-r from-amber-50/50 to-orange-50/50 p-6 rounded-2xl border border-amber-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
+                <h3 className="text-xl font-bold text-buddy-gray-900 mb-4 flex items-center">
+                  <span className="w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full mr-3 animate-pulse"></span>
+                  <Crown className="w-5 h-5 text-amber-600 mr-2" />
+                  Achievements & Badges
+                </h3>
+                <div className="flex flex-wrap gap-4">
+                  {achievements.map((achievement, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 bg-gradient-to-r from-amber-100/80 to-orange-100/80 rounded-xl py-3 px-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:translate-y-[-2px] hover:scale-105 border border-amber-200/50 group"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <Award className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-semibold text-amber-800 text-sm">
+                        {achievement.title}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

@@ -4,3 +4,4 @@ export * from './pagination-query.dto';
 export * from './complete-onboarding.dto';
 export * from './user-response.dto';
 export * from './sanitize-update.dto';
+export * from './user-search.dto';

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Medal,
   CheckCircle,
@@ -11,6 +11,7 @@ import {
   XCircle,
   ChevronUp,
   ChevronDown,
+  Users,
 } from "lucide-react";
 import {
   Table,
@@ -42,6 +43,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { CheckInService } from "@/services/api/activity/reaction.service";
 
 // Mock data for the leaderboard
 const mockLeaderboardData = [
@@ -111,6 +113,7 @@ const mockLeaderboardData = [
 interface ActivityLeaderboardProps {
   activityId: string;
   userRole?: string; // 'admin', 'moderator', or 'member'
+  currentUserId?: string; // Current user's ID to prevent self-actions
 }
 
 type SortField =
@@ -126,22 +129,69 @@ type SortDirection = "asc" | "desc";
 const ActivityLeaderboard = ({
   activityId,
   userRole = "admin",
+  currentUserId,
 }: ActivityLeaderboardProps) => {
-  const [leaderboardData] = useState(mockLeaderboardData);
-  const [actionParticipant, setActionParticipant] = useState<
-    (typeof mockLeaderboardData)[0] | null
-  >(null);
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionParticipant, setActionParticipant] = useState<any>(null);
   const [actionType, setActionType] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
   const [sortField, setSortField] = useState<SortField>("position");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  const canPerformActions = userRole === "admin" || userRole === "moderator";
+  useEffect(() => {
+    const fetchLeaderboardData = async () => {
+      if (!activityId) return;
 
-  const handleAction = (
-    participant: (typeof mockLeaderboardData)[0],
-    action: string
-  ) => {
+      setIsLoading(true);
+      try {
+        const response =
+          await CheckInService.getActivityLeaderboard(activityId);
+        if (response.data?.participants) {
+          // Add position to each participant
+          const participantsWithPosition = response.data.participants.map(
+            (participant, index) => ({
+              ...participant,
+              position: index + 1,
+              image: participant.avatar, // Map avatar to image for compatibility
+            })
+          );
+
+          // Calculate pagination
+          const totalItems = participantsWithPosition.length;
+          const totalPages = Math.ceil(totalItems / itemsPerPage);
+          setTotalPages(totalPages);
+
+          // Get current page data
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const currentPageData = participantsWithPosition.slice(
+            startIndex,
+            endIndex
+          );
+
+          setLeaderboardData(currentPageData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch leaderboard data:", error);
+        // Keep empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeaderboardData();
+  }, [activityId, currentPage]);
+
+  const canPerformActions = userRole === "admin";
+  const canPerformActionOnParticipant = (participant: any) => {
+    return canPerformActions && participant.id !== currentUserId;
+  };
+
+  const handleAction = (participant: any, action: string) => {
     setActionParticipant(participant);
     setActionType(action);
     setDialogOpen(true);
@@ -296,24 +346,57 @@ const ActivityLeaderboard = ({
       .sort((a, b) => a.position - b.position);
   }, [leaderboardData]);
 
+  if (isLoading) {
+    return (
+      <div className="p-3 sm:p-4 md:p-6">
+        <div className="flex items-center justify-center h-40 sm:h-48 md:h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-buddy-purple mx-auto mb-3 sm:mb-4"></div>
+            <p className="text-xs sm:text-sm md:text-base text-buddy-gray-600">
+              Loading leaderboard data...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (leaderboardData.length === 0) {
+    return (
+      <div className="p-3 sm:p-4 md:p-6">
+        <div className="flex items-center justify-center h-40 sm:h-48 md:h-64">
+          <div className="text-center">
+            <Users className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-buddy-gray-400 mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-buddy-gray-800 mb-2">
+              No Participants Yet
+            </h3>
+            <p className="text-xs sm:text-sm md:text-base text-buddy-gray-600">
+              This activity doesn't have any participants yet.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-4 md:p-6 max-w-full overflow-hidden">
       {/* Top 3 Participants Cards */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold text-buddy-gray-800 mb-4">
+      <div className="mb-4 sm:mb-6 md:mb-8">
+        <h3 className="text-base sm:text-lg font-semibold text-buddy-gray-800 mb-3 sm:mb-4">
           Top Participants
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
           {topParticipants.map((participant) => (
             <Card
               key={participant.id}
-              className="p-6 relative overflow-hidden border-buddy-gray-200/50 shadow-sm hover:shadow-md transition-shadow"
+              className="p-3 sm:p-4 md:p-6 relative overflow-hidden border-buddy-gray-200/50 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="absolute top-0 right-0 w-24 h-24">
                 <div
                   className={`
                   absolute transform rotate-45 translate-y-[-50%] translate-x-[25%]
-                  w-full h-6 flex items-center justify-center
+                  w-full h-6 flex items-center justify-center mt-4
                   ${
                     participant.position === 1
                       ? "bg-amber-500"
@@ -358,10 +441,10 @@ const ActivityLeaderboard = ({
                 </h4>
                 {getRoleBadge(participant.role)}
 
-                <div className="grid grid-cols-3 gap-2 w-full mt-4 text-center">
+                <div className="grid grid-cols-3 gap-1 sm:gap-2 w-full mt-2 sm:mt-3 md:mt-4 text-center">
                   <div className="flex flex-col items-center">
                     <span className="text-xs text-buddy-gray-600">Points</span>
-                    <span className="text-buddy-purple font-semibold">
+                    <span className="text-xs sm:text-sm md:text-base text-buddy-purple font-semibold">
                       {participant.points}
                     </span>
                   </div>
@@ -369,13 +452,13 @@ const ActivityLeaderboard = ({
                     <span className="text-xs text-buddy-gray-600">
                       Check-ins
                     </span>
-                    <span className="text-buddy-gray-900 font-medium">
+                    <span className="text-xs sm:text-sm md:text-base text-buddy-gray-900 font-medium">
                       {participant.checkIns}
                     </span>
                   </div>
                   <div className="flex flex-col items-center">
                     <span className="text-xs text-buddy-gray-600">Streak</span>
-                    <span className="text-amber-600 font-medium">
+                    <span className="text-xs sm:text-sm md:text-base text-amber-600 font-medium">
                       {participant.streak}
                     </span>
                   </div>
@@ -387,199 +470,301 @@ const ActivityLeaderboard = ({
       </div>
 
       <Card className="rounded-xl shadow-sm border border-buddy-gray-200/50 overflow-hidden">
-        <div className="p-6 border-b border-buddy-gray-200/50">
-          <h2 className="text-xl font-semibold text-buddy-gray-800">
+        <div className="p-3 sm:p-4 md:p-6 border-b border-buddy-gray-200/50">
+          <h2 className="text-base sm:text-lg md:text-xl font-semibold text-buddy-gray-800">
             Activity Leaderboard
           </h2>
-          <p className="text-buddy-gray-600">
+          <p className="text-xs sm:text-sm md:text-base text-buddy-gray-600">
             See who's leading the way in this activity with the most check-ins
             and points.
           </p>
+          <p className="text-xs text-buddy-gray-500 mt-1 sm:hidden">
+            ← Swipe to see more columns →
+          </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="w-[60px] cursor-pointer"
-                  onClick={() => handleSort("position")}
-                >
-                  <div className="flex items-center">
-                    Rank
-                    {getSortIcon("position")}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer"
-                  onClick={() => handleSort("name")}
-                >
-                  <div className="flex items-center">
-                    Member
-                    {getSortIcon("name")}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer"
-                  onClick={() => handleSort("role")}
-                >
-                  <div className="flex items-center">
-                    Role
-                    {getSortIcon("role")}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer"
-                  onClick={() => handleSort("joinDate")}
-                >
-                  <div className="flex items-center">
-                    Joined
-                    {getSortIcon("joinDate")}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer"
-                  onClick={() => handleSort("checkIns")}
-                >
-                  <div className="flex items-center">
-                    Check-ins
-                    {getSortIcon("checkIns")}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer"
-                  onClick={() => handleSort("streak")}
-                >
-                  <div className="flex items-center">
-                    Streak
-                    {getSortIcon("streak")}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer"
-                  onClick={() => handleSort("points")}
-                >
-                  <div className="flex items-center">
-                    Points
-                    {getSortIcon("points")}
-                  </div>
-                </TableHead>
-                {canPerformActions && <TableHead>Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedData.map((participant) => (
-                <TableRow key={participant.id}>
-                  <TableCell>
-                    <div className="flex justify-center items-center">
-                      {participant.position === 1 ? (
-                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                          <Medal className="h-5 w-5 text-amber-500" />
-                        </div>
-                      ) : participant.position === 2 ? (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                          <Medal className="h-5 w-5 text-gray-500" />
-                        </div>
-                      ) : participant.position === 3 ? (
-                        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
-                          <Medal className="h-5 w-5 text-amber-400" />
-                        </div>
-                      ) : (
-                        <span className="text-buddy-gray-600 font-medium">
-                          {participant.position}
-                        </span>
-                      )}
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <div className="min-w-max">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead
+                    className="w-[50px] sm:w-[60px] cursor-pointer"
+                    onClick={() => handleSort("position")}
+                  >
+                    <div className="flex items-center text-xs sm:text-sm">
+                      Rank
+                      {getSortIcon("position")}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Avatar
-                        src={participant.image}
-                        alt={participant.name}
-                        size="sm"
-                      />
-                      <span className="font-medium">{participant.name}</span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer min-w-[140px]"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center text-xs sm:text-sm">
+                      Member
+                      {getSortIcon("name")}
                     </div>
-                  </TableCell>
-                  <TableCell>{getRoleBadge(participant.role)}</TableCell>
-                  <TableCell className="text-sm text-buddy-gray-600">
-                    {format(participant.joinDate, "MMM d, yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-buddy-green mr-1" />
-                      <span>{participant.checkIns}</span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hidden sm:table-cell min-w-[100px]"
+                    onClick={() => handleSort("role")}
+                  >
+                    <div className="flex items-center text-xs sm:text-sm">
+                      Role
+                      {getSortIcon("role")}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className="bg-amber-100 text-amber-800">
-                      {participant.streak} days
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-semibold text-buddy-purple">
-                      {participant.points}
-                    </span>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hidden md:table-cell min-w-[120px]"
+                    onClick={() => handleSort("joinDate")}
+                  >
+                    <div className="flex items-center text-xs sm:text-sm">
+                      Joined
+                      {getSortIcon("joinDate")}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer min-w-[100px]"
+                    onClick={() => handleSort("checkIns")}
+                  >
+                    <div className="flex items-center text-xs sm:text-sm">
+                      Check-ins
+                      {getSortIcon("checkIns")}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer min-w-[80px]"
+                    onClick={() => handleSort("streak")}
+                  >
+                    <div className="flex items-center text-xs sm:text-sm">
+                      Streak
+                      {getSortIcon("streak")}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer min-w-[80px]"
+                    onClick={() => handleSort("points")}
+                  >
+                    <div className="flex items-center text-xs sm:text-sm">
+                      Points
+                      {getSortIcon("points")}
+                    </div>
+                  </TableHead>
                   {canPerformActions && (
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel>Member Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          {userRole === "admin" && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleAction(participant, "promote-admin")
-                                }
-                              >
-                                <Shield className="h-4 w-4 mr-2 text-buddy-purple" />
-                                <span>Make Admin</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleAction(participant, "promote-moderator")
-                                }
-                              >
-                                <Shield className="h-4 w-4 mr-2 text-buddy-blue" />
-                                <span>Make Moderator</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                            </>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => handleAction(participant, "suspend")}
-                          >
-                            <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                            <span>Suspend Member</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleAction(participant, "ban")}
-                          >
-                            <Ban className="h-4 w-4 mr-2 text-red-500" />
-                            <span>Ban Member</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleAction(participant, "remove")}
-                          >
-                            <UserX className="h-4 w-4 mr-2 text-red-500" />
-                            <span>Remove from Activity</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    <TableHead className="w-[50px]">Actions</TableHead>
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {sortedData.map((participant) => (
+                  <TableRow key={participant.id}>
+                    <TableCell>
+                      <div className="flex justify-center items-center">
+                        {participant.position === 1 ? (
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                            <Medal className="h-3 w-3 sm:h-5 sm:w-5 text-amber-500" />
+                          </div>
+                        ) : participant.position === 2 ? (
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <Medal className="h-3 w-3 sm:h-5 sm:w-5 text-gray-500" />
+                          </div>
+                        ) : participant.position === 3 ? (
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-amber-50 flex items-center justify-center">
+                            <Medal className="h-3 w-3 sm:h-5 sm:w-5 text-amber-400" />
+                          </div>
+                        ) : (
+                          <span className="text-xs sm:text-sm text-buddy-gray-600 font-medium">
+                            {participant.position}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <Avatar
+                          src={participant.image}
+                          alt={participant.name}
+                          size="sm"
+                          className="w-6 h-6 sm:w-8 sm:h-8"
+                        />
+                        <span className="text-xs sm:text-sm font-medium truncate">
+                          {participant.name}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="scale-75 sm:scale-100">
+                        {getRoleBadge(participant.role)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs sm:text-sm text-buddy-gray-600">
+                      {format(participant.joinDate, "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-buddy-green mr-1" />
+                        <span className="text-xs sm:text-sm">
+                          {participant.checkIns}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="bg-amber-100 text-amber-800 text-xs">
+                        {participant.streak}d
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs sm:text-sm font-semibold text-buddy-purple">
+                        {participant.points}
+                      </span>
+                    </TableCell>
+                    {canPerformActionOnParticipant(participant) && (
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="rounded-full w-6 h-6 sm:w-8 sm:h-8"
+                            >
+                              <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>
+                              Member Actions
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {userRole === "admin" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleAction(participant, "promote-admin")
+                                  }
+                                >
+                                  <Shield className="h-4 w-4 mr-2 text-buddy-purple" />
+                                  <span>Make Admin</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleAction(
+                                      participant,
+                                      "promote-moderator"
+                                    )
+                                  }
+                                >
+                                  <Shield className="h-4 w-4 mr-2 text-buddy-blue" />
+                                  <span>Make Moderator</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleAction(participant, "suspend")
+                              }
+                            >
+                              <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+                              <span>Suspend Member</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleAction(participant, "ban")}
+                            >
+                              <Ban className="h-4 w-4 mr-2 text-red-500" />
+                              <span>Ban Member</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleAction(participant, "remove")
+                              }
+                            >
+                              <UserX className="h-4 w-4 mr-2 text-red-500" />
+                              <span>Remove from Activity</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 border-t border-buddy-gray-200 gap-2 sm:gap-3 md:gap-0">
+            <div className="text-xs sm:text-sm text-buddy-gray-600 text-center sm:text-left">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, leaderboardData.length)} of{" "}
+              {leaderboardData.length} participants
+            </div>
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="rounded-full text-xs px-2 sm:px-3"
+              >
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
+              </Button>
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`rounded-full w-6 h-6 sm:w-8 sm:h-8 p-0 text-xs ${
+                        currentPage === pageNum
+                          ? "bg-buddy-purple hover:bg-buddy-purple/90"
+                          : ""
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                {totalPages > 3 && (
+                  <>
+                    <span className="text-buddy-gray-400 text-xs">...</span>
+                    <Button
+                      variant={
+                        currentPage === totalPages ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      className={`rounded-full w-6 h-6 sm:w-8 sm:h-8 p-0 text-xs ${
+                        currentPage === totalPages
+                          ? "bg-buddy-purple hover:bg-buddy-purple/90"
+                          : ""
+                      }`}
+                    >
+                      {totalPages}
+                    </Button>
+                  </>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="rounded-full text-xs px-2 sm:px-3"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
