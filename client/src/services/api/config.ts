@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || '',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://whereismybuddy-1.onrender.com/api',
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
