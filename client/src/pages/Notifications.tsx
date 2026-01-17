@@ -38,8 +38,11 @@ import {
   NotificationData,
 } from "@/services/api/notification.service";
 import { formatDistanceToNow } from "date-fns";
+import { useAuth } from "@/store/auth.store";
+import { AuthWall } from "@/components/auth/AuthWall";
 
 const Notifications: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [filter, setFilter] = useState("all");
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,6 +109,10 @@ const Notifications: React.FC = () => {
 
   // Initial load and filter changes
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
     fetchNotifications(1, true);
   }, [filter]);
 
@@ -542,7 +549,20 @@ const Notifications: React.FC = () => {
 
             {/* Notification List */}
             <div className="md:col-span-3 space-y-4">
-              {isLoading ? (
+              {!isAuthenticated ? (
+                <div className="flex items-center justify-center min-h-[500px]">
+                  <AuthWall
+                    title="Sign in to see your notifications"
+                    description="Stay updated with buddy requests, activity reminders, milestone celebrations, and more."
+                    benefits={[
+                      "Receive real-time updates",
+                      "Manage buddy requests",
+                      "Track activity progress alerts",
+                    ]}
+                    returnToAfterAuth={location.pathname}
+                  />
+                </div>
+              ) : isLoading ? (
                 <Card className="flex flex-col items-center justify-center py-16 rounded-2xl border border-white/80 shadow-lg bg-white/90 backdrop-blur-sm">
                   <Loader2 className="w-8 h-8 animate-spin text-buddy-purple mb-4" />
                   <p className="text-buddy-gray-600">

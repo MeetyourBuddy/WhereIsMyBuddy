@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import QRCode from "react-qr-code";
 import { useAuth } from "@/store/auth.store";
 import { useActivityData } from "@/hooks/useActivityData";
+import { postAuthIntent } from "@/lib/post-auth-intent";
 
 import {
   IActivityResult,
@@ -136,8 +137,13 @@ const ShareableActivityCard = ({
 
   const handleJoinQuit = async () => {
     if (!user) {
-      // Store the current activity URL to redirect back after signup
-      localStorage.setItem("redirectAfterSignup", activityUrl);
+      // Store intent so after auth + onboarding we can auto-join and return.
+      postAuthIntent.set({
+        type: "join-activity",
+        activityId: id,
+        returnTo: `/activities/${id}`,
+      });
+      localStorage.setItem("returnToAfterAuth", `/activities/${id}`);
       toast({
         title: "Sign up to join activities",
         description:

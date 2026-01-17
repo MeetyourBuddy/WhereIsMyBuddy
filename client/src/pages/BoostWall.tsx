@@ -25,6 +25,8 @@ import {
   Award,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/store/auth.store";
+import { AuthWall } from "@/components/auth/AuthWall";
 
 // Boost message type definitions
 interface BoostMessageType {
@@ -483,7 +485,7 @@ const InfoModal = ({ card, isOpen, onClose, isDarkMode }) => {
   );
 };
 
-const CardDeck = ({ category, cards, isDarkMode, categoryIcon }) => {
+const CardDeck = ({ category, cards, isDarkMode, categoryIcon, isGuest }) => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -502,7 +504,7 @@ const CardDeck = ({ category, cards, isDarkMode, categoryIcon }) => {
     setIsModalOpen(true);
   };
 
-  if (!hasCards) {
+  if (isGuest || !hasCards) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
         <div className="relative w-48 h-64">
@@ -527,7 +529,7 @@ const CardDeck = ({ category, cards, isDarkMode, categoryIcon }) => {
                   isDarkMode ? "text-gray-500" : "text-gray-400"
                 }`}
               >
-                No cards collected yet
+                {isGuest ? "Sign in to collect" : "No cards collected yet"}
               </p>
             </div>
           </div>
@@ -677,6 +679,7 @@ const CardDeck = ({ category, cards, isDarkMode, categoryIcon }) => {
 };
 
 const BoostWall = () => {
+  const { isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -860,10 +863,27 @@ const BoostWall = () => {
                 cards={category.cards}
                 isDarkMode={isDarkMode}
                 categoryIcon={category.icon}
+                isGuest={!isAuthenticated}
               />
             </div>
           ))}
         </div>
+
+        {/* Guest CTA */}
+        {!isAuthenticated && (
+          <div className="mt-12 mx-auto">
+            <AuthWall
+              title="Sign in to build your boost collection"
+              description="Send and receive motivational boosts, track your community impact, and collect unique boost cards as you encourage others."
+              benefits={[
+                "Send unlimited motivational boosts",
+                "Collect boost cards as you engage",
+                "Track your community impact",
+              ]}
+              returnToAfterAuth="/boost-wall"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

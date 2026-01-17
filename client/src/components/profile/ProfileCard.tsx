@@ -44,6 +44,9 @@ import { useToast } from "@/hooks/use-toast";
 import QRCode from "react-qr-code";
 import { InterestCategory } from "@/types/auth-types";
 import { format } from "date-fns";
+import { useAuth } from "@/store/auth.store";
+import { postAuthIntent } from "@/lib/post-auth-intent";
+import { useNavigate } from "react-router-dom";
 interface ProfileCardProps {
   id: string;
   name: string;
@@ -91,6 +94,9 @@ const ProfileCard = ({
   showJoinButton = false,
 }: ProfileCardProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const isGuest = !isAuthenticated;
   const [copied, setCopied] = useState(false);
   const [headerImage, setHeaderImage] = useState("");
   const [activeTab, setActiveTab] = useState("qr");
@@ -165,22 +171,63 @@ const ProfileCard = ({
             </div>
 
             <div className="flex space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full border-2 border-buddy-purple/30 hover:bg-buddy-purple/30 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold shadow-lg hover:shadow-xl"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Message
-              </Button>
+              {isGuest ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full border-2 border-buddy-purple/30 hover:bg-buddy-purple/10 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl"
+                    onClick={() => {
+                      postAuthIntent.set({
+                        type: "connect-buddy",
+                        userId: id,
+                        returnTo: `/profile/${id}`,
+                      });
+                      localStorage.setItem("returnToAfterAuth", `/profile/${id}`);
+                      navigate("/signin");
+                    }}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Sign in to message
+                  </Button>
 
-              <Button
-                size="sm"
-                className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Buddy
-              </Button>
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold"
+                    onClick={() => {
+                      postAuthIntent.set({
+                        type: "connect-buddy",
+                        userId: id,
+                        returnTo: `/profile/${id}`,
+                      });
+                      localStorage.setItem("returnToAfterAuth", `/profile/${id}`);
+                      navigate("/signup");
+                    }}
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Sign in to connect
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full border-2 border-buddy-purple/30 hover:bg-buddy-purple/30 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold shadow-lg hover:shadow-xl"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Message
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Add Buddy
+                  </Button>
+                </>
+              )}
 
               <Sheet>
                 <SheetTrigger asChild>

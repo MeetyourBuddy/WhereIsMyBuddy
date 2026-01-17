@@ -226,6 +226,14 @@ export const useAuth = () => {
 
       queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success("Successfully logged in!");
+      // Post-auth redirect support (e.g., join activity after login)
+      const returnTo = localStorage.getItem("returnToAfterAuth");
+      if (returnTo) {
+        localStorage.removeItem("returnToAfterAuth");
+        navigate(returnTo);
+        return;
+      }
+
       navigate("/dashboard");
     },
     onError: (error) => {
@@ -247,6 +255,7 @@ export const useAuth = () => {
       setIsAuthenticated(true);
       queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success("Registration successful!");
+      // Keep returnToAfterAuth set; onboarding will resolve post-auth intents after completion.
       navigate("/onboarding");
     },
     onError: (error) => {

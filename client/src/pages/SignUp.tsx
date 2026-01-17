@@ -56,19 +56,8 @@ const SignUp = () => {
         email: data.email,
         password: data.password,
       });
-
-      // Check if there's a redirect URL stored
-      const redirectUrl = localStorage.getItem("redirectAfterSignup");
-      if (redirectUrl) {
-        localStorage.removeItem("redirectAfterSignup");
-        toast.success(
-          "Account created successfully! Redirecting to activity..."
-        );
-        navigate(redirectUrl);
-      } else {
-        toast.success("Account created successfully!");
-        navigate("/dashboard");
-      }
+      // Navigation is handled centrally in `useAuth()` after successful registration.
+      toast.success("Account created successfully!");
     } catch (error) {
       toast.error("Failed to create account. Please try again.");
       console.error(error);

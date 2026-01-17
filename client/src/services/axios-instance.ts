@@ -32,34 +32,42 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        const refreshToken = tokenService.getRefreshToken();
-        if (!refreshToken) {
-          throw new Error("No refresh token available");
+      const refreshToken = tokenService.getRefreshToken();
+      const accessToken = tokenService.getAccessToken();
+
+      // If user was never authenticated (guest), just reject without redirecting
+      if (!refreshToken && !accessToken) {
+        console.log("Guest user - no auth tokens, allowing 401 to pass through");
+        return Promise.reject(error);
+      }
+
+      // If we had tokens, try to refresh
+      if (refreshToken) {
+        try {
+          console.log("Attempting to refresh token");
+          // Create a new instance for refresh token request to avoid interceptors
+          const refreshResponse = await axios.post<AuthResponse>(
+            `${API_CONFIG.baseURL}/auth/refresh`,
+            { refreshToken },
+            { headers: { "Content-Type": "application/json" } }
+          );
+
+          const { accessToken, refreshToken: newRefreshToken } =
+            refreshResponse.data.data.tokens;
+
+          console.log("Token refresh successful, setting new tokens");
+          tokenService.setTokens(accessToken, newRefreshToken);
+
+          // Update the original request with new token
+          originalRequest.headers.set("Authorization", `Bearer ${accessToken}`);
+          return axiosInstance(originalRequest);
+        } catch (refreshError) {
+          console.error("Token refresh failed:", refreshError);
+          tokenService.clearTokens();
+          // Only redirect if we had a valid session that expired
+          window.location.href = "/signin";
+          return Promise.reject(refreshError);
         }
-
-        console.log("Attempting to refresh token");
-        // Create a new instance for refresh token request to avoid interceptors
-        const refreshResponse = await axios.post<AuthResponse>(
-          `${API_CONFIG.baseURL}/auth/refresh`,
-          { refreshToken },
-          { headers: { "Content-Type": "application/json" } }
-        );
-
-        const { accessToken, refreshToken: newRefreshToken } =
-          refreshResponse.data.data.tokens;
-
-        console.log("Token refresh successful, setting new tokens");
-        tokenService.setTokens(accessToken, newRefreshToken);
-
-        // Update the original request with new token
-        originalRequest.headers.set("Authorization", `Bearer ${accessToken}`);
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
-        tokenService.clearTokens();
-        window.location.href = "/signin";
-        return Promise.reject(refreshError);
       }
     }
 

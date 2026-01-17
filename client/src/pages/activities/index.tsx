@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useActivityData, useUserProgress } from "@/hooks/useActivityData";
 import { useAuth } from "@/store/auth.store";
+import { AuthWall } from "@/components/auth/AuthWall";
 import {
   isActivityCreator,
   isActivityParticipant,
@@ -47,6 +48,7 @@ const Activities = () => {
     verifyUserWithBackend,
     forceReinitialize,
   } = useAuth();
+  const isGuest = !isAuthenticated;
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -550,12 +552,21 @@ const Activities = () => {
                 variant="outline"
                 className="border-buddy-purple text-buddy-purple rounded-full w-full sm:w-auto"
                 icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />}
-                onClick={() => navigate("/activities/create")}
+                onClick={() => {
+                  if (!isGuest) {
+                    navigate("/activities/create");
+                    return;
+                  }
+                  localStorage.setItem("returnToAfterAuth", "/activities/create");
+                  navigate("/signup");
+                }}
               >
                 <span className="hidden sm:inline">
-                  Create Your Own Activity
+                  {isGuest ? "Sign in to Create" : "Create Your Own Activity"}
                 </span>
-                <span className="sm:hidden">Create Activity</span>
+                <span className="sm:hidden">
+                  {isGuest ? "Sign in" : "Create Activity"}
+                </span>
               </Button>
             </div>
             <p className="text-sm sm:text-base text-buddy-gray-600 max-w-3xl">
@@ -747,7 +758,13 @@ const Activities = () => {
           </TabsContent>
 
           <TabsContent value="my" className="space-y-4 sm:space-y-6">
-            {paginatedActivities.length > 0 ? (
+            {isGuest ? (
+              <AuthWall
+                title="Sign in to see your activities"
+                description="Your joined and created activities will appear here once you’re signed in."
+                returnTo="/activities?tab=my"
+              />
+            ) : paginatedActivities.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {paginatedActivities.map((activity) => {

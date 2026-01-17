@@ -23,11 +23,11 @@ import {
   Activity as ActivityIcon,
   Sparkles,
   Compass,
+  Lock,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
 import Container from "@/components/ui/layout/Container";
-import AppLayout from "@/components/layout/AppLayout";
 import ActivityDashboard from "@/components/activities/ActivityDashboard";
 import ActivityLeaderboard from "@/components/activities/ActivityLeaderboard";
 import ActivityGallery from "@/components/activities/ActivityGallery";
@@ -54,6 +54,9 @@ import {
   isActivityCreator,
   isActivityParticipant,
 } from "@/types/activity-types";
+import { AuthWall } from "@/components/auth/AuthWall";
+import { postAuthIntent } from "@/lib/post-auth-intent";
+import { ActivityService } from "@/services/api/activity/activity-service";
 
 const getActivityStatus = (startDate: Date, endDate: Date) => {
   const now = new Date();
@@ -81,7 +84,8 @@ const ActivityPage = () => {
   const { activityId } = useParams<{ activityId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const isGuest = !isAuthenticated;
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -154,10 +158,10 @@ const ActivityPage = () => {
     checkCurrentPeriodStatus();
   }, [activityId, user?._id]);
 
-  // Fetch leaderboard data for accurate stats
+  // Fetch leaderboard data for accurate stats (authenticated only)
   useEffect(() => {
     const fetchLeaderboardData = async () => {
-      if (!activityId) return;
+      if (!activityId || isGuest) return;
 
       try {
         const response =
@@ -190,7 +194,7 @@ const ActivityPage = () => {
     };
 
     fetchLeaderboardData();
-  }, [activityId]);
+  }, [activityId, isGuest]);
 
   // Update activity stats from unified data (fallback)
   useEffect(() => {
@@ -324,6 +328,44 @@ const ActivityPage = () => {
   const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
   const isUserAdmin = user && currentActivity?.admin && userId === adminId;
 
+  const handleGuestJoin = () => {
+    if (!displayData.id) return;
+    postAuthIntent.set({
+      type: "join-activity",
+      activityId: String(displayData.id),
+      returnTo: `/activities/${displayData.id}`,
+    });
+    localStorage.setItem("returnToAfterAuth", `/activities/${displayData.id}`);
+    navigate("/signup");
+  };
+
+  // Auto-join if post-auth intent exists and user is now authenticated + onboarded
+  useEffect(() => {
+    if (!isAuthenticated || !user?.hasCompletedOnboarding || !displayData.id)
+      return;
+
+    const intent = postAuthIntent.get();
+    if (intent?.type !== "join-activity") return;
+    if (String(intent.activityId) !== String(displayData.id)) return;
+    if (isUserParticipant) {
+      postAuthIntent.clear();
+      return;
+    }
+
+    ActivityService.joinActivity(String(displayData.id))
+      .then(() => {
+        postAuthIntent.clear();
+        toast({
+          title: "Joined activity",
+          description: "You’re in! Start your first check-in when ready.",
+        });
+      })
+      .catch(() => {
+        // If join fails, keep intent cleared to avoid looping; user can retry manually.
+        postAuthIntent.clear();
+      });
+  }, [isAuthenticated, user?.hasCompletedOnboarding, displayData.id, isUserParticipant, toast]);
+
   // Handle banner update
   const handleBannerUpdate = async (newBanner: string, bannerFile?: File) => {
     if (!currentActivity || !activityId) return;
@@ -407,9 +449,11 @@ const ActivityPage = () => {
                   <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
                     {displayData.duration}
                   </span>
-                  <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                    {displayData.frequency}
-                  </span>
+                  {!isGuest && (
+                    <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                      {displayData.frequency}
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shadow-lg">
                   {displayData.name}
@@ -419,6 +463,15 @@ const ActivityPage = () => {
                 </p>
               </div>
               <div className="flex flex-row gap-2 mt-4 md:mt-0 z-[10]">
+                {isGuest && (
+                  <Button
+                    onClick={handleGuestJoin}
+                    className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-4 sm:px-6 text-white text-xs sm:text-sm"
+                  >
+                    <Lock className="mr-2 h-4 w-4" />
+                    Sign in to join
+                  </Button>
+                )}
                 {isUserParticipant && (
                   <CheckInDialog
                     activity={currentActivity}
@@ -477,7 +530,7 @@ const ActivityPage = () => {
 
       <div className="px-4 md:px-8 lg:px-12 mx-auto max-w-7xl">
         <div className="mb-8 animate-fade-in">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
             <Card className="p-4 flex items-center bg-gradient-to-br from-buddy-purple/10 to-buddy-purple/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
               <div className="w-10 h-10 rounded-full bg-buddy-purple/20 flex items-center justify-center mr-3">
                 <Users className="w-5 h-5 text-buddy-purple" />
@@ -492,53 +545,61 @@ const ActivityPage = () => {
               </div>
             </Card>
 
-            <Card className="p-4 flex items-center bg-gradient-to-br from-buddy-blue/10 to-buddy-blue/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
-              <div className="w-10 h-10 rounded-full bg-buddy-blue/20 flex items-center justify-center mr-3">
-                <ClipboardCheck className="w-5 h-5 text-buddy-blue" />
+            {isGuest && (
+              <div className="md:col-span-3">
+                <AuthWall
+                  title="Sign in to see progress details"
+                  description="Check-ins, leaderboards, member lists, and partners are private to protect everyone’s goals."
+                  returnTo={`/activities/${displayData.id}`}
+                />
               </div>
-              <div>
-                <p className="text-xs md:text-sm text-buddy-gray-600">
-                  Most Check-ins
-                </p>
-                <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-blue to-buddy-blue-light bg-clip-text text-transparent">
-                  {activityStats.highestCheckIns}
-                  {/* <span className="text-sm text-buddy-gray-500 ml-2">
-                    ({activityStats.highestCheckInsParticipant})
-                  </span> */}
-                </p>
-              </div>
-            </Card>
+            )}
 
-            <Card className="p-4 flex items-center bg-gradient-to-br from-buddy-green/10 to-buddy-green/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
-              <div className="w-10 h-10 rounded-full bg-buddy-green/20 flex items-center justify-center mr-3">
-                <ChartPieIcon className="w-5 h-5 text-buddy-green" />
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-buddy-gray-600">
-                  Avg. Activity Progress
-                </p>
-                <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-green to-buddy-green-light bg-clip-text text-transparent">
-                  {activityStats.averageProgress}%
-                </p>
-              </div>
-            </Card>
+            {!isGuest && (
+              <>
+                <Card className="p-4 flex items-center bg-gradient-to-br from-buddy-blue/10 to-buddy-blue/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
+                  <div className="w-10 h-10 rounded-full bg-buddy-blue/20 flex items-center justify-center mr-3">
+                    <ClipboardCheck className="w-5 h-5 text-buddy-blue" />
+                  </div>
+                  <div>
+                    <p className="text-xs md:text-sm text-buddy-gray-600">
+                      Most Check-ins
+                    </p>
+                    <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-blue to-buddy-blue-light bg-clip-text text-transparent">
+                      {activityStats.highestCheckIns}
+                    </p>
+                  </div>
+                </Card>
 
-            <Card className="p-4 flex items-center bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center mr-3">
-                <Flame className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-xs md:text-sm text-buddy-gray-600">
-                  Longest Streak
-                </p>
-                <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">
-                  {activityStats.longestStreak} days
-                  {/* <span className="text-sm text-buddy-gray-500 ml-2">
-                    ({activityStats.longestStreakParticipant})
-                  </span> */}
-                </p>
-              </div>
-            </Card>
+                <Card className="p-4 flex items-center bg-gradient-to-br from-buddy-green/10 to-buddy-green/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
+                  <div className="w-10 h-10 rounded-full bg-buddy-green/20 flex items-center justify-center mr-3">
+                    <ChartPieIcon className="w-5 h-5 text-buddy-green" />
+                  </div>
+                  <div>
+                    <p className="text-xs md:text-sm text-buddy-gray-600">
+                      Avg. Activity Progress
+                    </p>
+                    <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-green to-buddy-green-light bg-clip-text text-transparent">
+                      {activityStats.averageProgress}%
+                    </p>
+                  </div>
+                </Card>
+
+                <Card className="p-4 flex items-center bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center mr-3">
+                    <Flame className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs md:text-sm text-buddy-gray-600">
+                      Longest Streak
+                    </p>
+                    <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">
+                      {activityStats.longestStreak} days
+                    </p>
+                  </div>
+                </Card>
+              </>
+            )}
           </div>
         </div>
 
@@ -632,18 +693,47 @@ const ActivityPage = () => {
             </TabsList>
 
             <TabsContent value="dashboard" className="p-0 mt-0 animate-fade-in">
-              <ActivityDashboard activity={currentActivity} />
+              {isGuest ? (
+                <div className="p-6 space-y-6">
+                  <div className="rounded-2xl bg-white/90 border border-buddy-gray-200 p-6">
+                    <h2 className="text-xl font-semibold text-buddy-gray-900">
+                      About this activity
+                    </h2>
+                    <p className="mt-2 text-buddy-gray-600 whitespace-pre-line">
+                      {displayData.description}
+                    </p>
+                  </div>
+
+                  <AuthWall
+                    title="Sign in to see private activity details"
+                    description="Check-in frequency, check-ins, members, partners, and leaderboards are available after you sign in."
+                    returnTo={`/activities/${displayData.id}`}
+                  />
+                </div>
+              ) : (
+                <ActivityDashboard activity={currentActivity} />
+              )}
             </TabsContent>
 
             <TabsContent
               value="leaderboard"
               className="p-0 mt-0 animate-fade-in overflow-hidden"
             >
-              <ActivityLeaderboard
-                activityId={displayData.id}
-                userRole={isUserAdmin ? "admin" : "member"}
-                currentUserId={userId}
-              />
+              {isGuest ? (
+                <div className="p-6">
+                  <AuthWall
+                    title="Sign in to view the leaderboard"
+                    description="Leaderboards are private to activity members so progress stays safe and meaningful."
+                    returnTo={`/activities/${displayData.id}`}
+                  />
+                </div>
+              ) : (
+                <ActivityLeaderboard
+                  activityId={displayData.id}
+                  userRole={isUserAdmin ? "admin" : "member"}
+                  currentUserId={userId}
+                />
+              )}
             </TabsContent>
 
             {/* TODO: Re-enable milestones tab content after MVP launch */}
@@ -670,17 +760,52 @@ const ActivityPage = () => {
               </TabsContent> */}
 
             <TabsContent value="checkin" className="p-0 mt-0 animate-fade-in">
-              <ActivityCheckin activityId={displayData.id} />
+              {isGuest ? (
+                <div className="p-6">
+                  <AuthWall
+                    title="Sign in to track check-ins"
+                    description="Check-ins build streaks and milestones. Sign in to start tracking your progress."
+                    returnTo={`/activities/${displayData.id}`}
+                    onAuthNavigate={() =>
+                      postAuthIntent.set({
+                        type: "join-activity",
+                        activityId: String(displayData.id),
+                        returnTo: `/activities/${displayData.id}`,
+                      })
+                    }
+                  />
+                </div>
+              ) : (
+                <ActivityCheckin activityId={displayData.id} />
+              )}
             </TabsContent>
 
             {/* TODO: Add partners tab in v2 */}
             <TabsContent value="partners" className="p-0 mt-0 animate-fade-in">
-              <ActivityPartners activityId={displayData.id} />
+              {isGuest ? (
+                <div className="p-6">
+                  <AuthWall
+                    title="Sign in to see partners"
+                    description="Accountability partners are visible only to members of an activity."
+                    returnTo={`/activities/${displayData.id}`}
+                  />
+                </div>
+              ) : (
+                <ActivityPartners activityId={displayData.id} />
+              )}
             </TabsContent>
 
             <TabsContent value="messages" className="p-0 mt-0 animate-fade-in">
               <div className="p-6">
-                <MessageBoard activityId={displayData.id} />
+                {isGuest ? (
+                  <AuthWall
+                    title="Sign in to join the conversation"
+                    description="Messages are only visible to activity members."
+                    returnTo={`/activities/${displayData.id}`}
+                  />
+                ) : (
+                  <MessageBoard activityId={displayData.id} />
+                )}
               </div>
             </TabsContent>
 

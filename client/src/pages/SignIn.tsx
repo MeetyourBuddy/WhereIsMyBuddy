@@ -51,17 +51,8 @@ const SignIn = () => {
         email: data.email,
         password: data.password,
       });
-
-      // Check if there's a redirect URL stored
-      const redirectUrl = localStorage.getItem("redirectAfterSignup");
-      if (redirectUrl) {
-        localStorage.removeItem("redirectAfterSignup");
-        toast.success("Signed in successfully! Redirecting to activity...");
-        navigate(redirectUrl);
-      } else {
-        toast.success("Signed in successfully!");
-        navigate("/dashboard");
-      }
+      // Navigation is handled centrally in `useAuth()` after successful login.
+      toast.success("Signed in successfully!");
     } catch (error) {
       toast.error("Failed to sign in. Please check your credentials.");
       console.error(error);

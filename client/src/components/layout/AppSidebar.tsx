@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   CheckSquare,
@@ -11,6 +11,7 @@ import {
   User,
   LucideIcon,
   HeartHandshake,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -64,7 +65,9 @@ const navItems: SidebarNavItem[] = [
 
 const AppSidebar = () => {
   const location = useLocation();
-  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuthStore();
+  const isGuest = !isAuthenticated;
 
   // Helper function to check if a route is active (including child routes)
   const isRouteActive = (href: string) => {
@@ -112,10 +115,14 @@ const AppSidebar = () => {
         <ul className="space-y-2">
           {navItems.map((item) => {
             const isActive = isRouteActive(item.href);
+            const isLockedForGuest =
+              isGuest &&
+              ["/buddies", "/notifications", "/settings", "/boost-wall"].includes(item.href);
             return (
               <li key={item.href}>
                 <Link
                   to={item.href}
+                  aria-disabled={isLockedForGuest}
                   className={cn(
                     "flex items-center py-3 rounded-xl",
                     "justify-center group-hover/sidebar:justify-start",
@@ -131,31 +138,52 @@ const AppSidebar = () => {
                       "bg-buddy-purple-dark",
                       "text-white",
                       "shadow-md",
-                    ]
+                    ],
+                    isLockedForGuest && "opacity-70 hover:opacity-100"
                   )}
+                  onClick={() => {
+                    if (isLockedForGuest) {
+                      localStorage.setItem("returnToAfterAuth", item.href);
+                    }
+                  }}
                 >
-                  <item.icon
-                    className={cn(
-                      "w-6 h-6 flex-shrink-0",
-                      "transition-colors duration-200",
-                      isActive ? "text-white" : "text-buddy-gray-300"
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "font-medium whitespace-nowrap",
-                      "w-0 group-hover/sidebar:w-auto overflow-hidden",
-                      "opacity-0 group-hover/sidebar:opacity-100",
-                      "transition-all duration-200 delay-75",
-                      isActive && "font-semibold"
-                    )}
-                  >
-                    {item.title}
-                  </span>
+                  <div className="flex items-center gap-0 group-hover/sidebar:gap-4 flex-shrink-0">
+                    <item.icon
+                      className={cn(
+                        "w-6 h-6 flex-shrink-0",
+                        "transition-colors duration-200",
+                        isActive ? "text-white" : "text-buddy-gray-300"
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "font-medium whitespace-nowrap",
+                        "w-0 group-hover/sidebar:w-auto overflow-hidden",
+                        "opacity-0 group-hover/sidebar:opacity-100",
+                        "transition-all duration-200 delay-75",
+                        isActive && "font-semibold"
+                      )}
+                    >
+                      {item.title}
+                    </span>
+                  </div>
+                  {isLockedForGuest && (
+                    <span
+                      className={cn(
+                        "ml-auto flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0",
+                        "bg-white/15 text-white",
+                        "hidden group-hover/sidebar:flex",
+                        "transition-opacity duration-200 delay-100"
+                      )}
+                    >
+                      <Lock className="h-3 w-3" />
+                      {/* Locked */}
+                    </span>
+                  )}
                   {item.badge && (
                     <div
                       className={cn(
-                        "ml-auto flex h-5 min-w-5 items-center justify-center",
+                        "ml-auto flex h-5 min-w-5 items-center justify-center flex-shrink-0",
                         "rounded-full bg-white text-xs font-semibold text-buddy-purple",
                         "opacity-0 group-hover/sidebar:opacity-100",
                         "transition-opacity duration-200 delay-75"
@@ -198,29 +226,63 @@ const AppSidebar = () => {
           </div>
 
           {/* Profile Button - Hidden when collapsed */}
-          <div
-            className={cn(
-              "w-full",
-              "opacity-0 group-hover/sidebar:opacity-100",
-              "transition-all duration-200 delay-100",
-              "max-h-0 group-hover/sidebar:max-h-9 overflow-hidden"
-            )}
-          >
-            <Link to={`/profile/${user?._id || user?.id}`}>
+          {isAuthenticated ? (
+            <div
+              className={cn(
+                "w-full",
+                "opacity-0 group-hover/sidebar:opacity-100",
+                "transition-all duration-200 delay-100",
+                "max-h-0 group-hover/sidebar:max-h-9 overflow-hidden"
+              )}
+            >
+              <Link to={`/profile/${user?._id || user?.id}`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-full h-8 border-buddy-purple-light/50 text-buddy-gray-500 hover:text-white text-xs",
+                    "hover:bg-buddy-purple-dark hover:border-buddy-purple-light",
+                    "transition-colors duration-200"
+                  )}
+                >
+                  <User className="w-3.5 h-3.5 mr-1.5" />
+                  View Profile
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "w-full",
+                "opacity-0 group-hover/sidebar:opacity-100",
+                "transition-all duration-200 delay-100",
+                "max-h-0 group-hover/sidebar:max-h-20 overflow-hidden",
+                "space-y-2"
+              )}
+            >
+              <Button
+                size="sm"
+                className="w-full h-8 rounded-full bg-white text-buddy-purple hover:bg-white/90"
+                onClick={() => {
+                  localStorage.setItem("returnToAfterAuth", location.pathname);
+                  navigate("/signin");
+                }}
+              >
+                Sign in
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className={cn(
-                  "w-full h-8 border-buddy-purple-light/50 text-buddy-gray-500 hover:text-white text-xs",
-                  "hover:bg-buddy-purple-dark hover:border-buddy-purple-light",
-                  "transition-colors duration-200"
-                )}
+                className="w-full h-8 rounded-full border-white/40 text-buddy-gray-500 hover:text-white hover:bg-white/10"
+                onClick={() => {
+                  localStorage.setItem("returnToAfterAuth", location.pathname);
+                  navigate("/signup");
+                }}
               >
-                <User className="w-3.5 h-3.5 mr-1.5" />
-                View Profile
+                Create account
               </Button>
-            </Link>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </aside>

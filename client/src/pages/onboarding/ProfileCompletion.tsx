@@ -38,6 +38,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useOnboardingStore } from "@/store/onboarding.store";
+import { postAuthIntent } from "@/lib/post-auth-intent";
+import { ActivityService } from "@/services/api/activity/activity-service";
 
 // Keep only the avatar options
 const avatarOptions = [
@@ -96,6 +98,34 @@ const ProfileCompletion = () => {
 
     await completeOnboarding(updatedData);
     toast.success("Profile setup complete! Welcome aboard.");
+
+    // Resolve post-auth intent after onboarding completion
+    const intent = postAuthIntent.get();
+    const returnTo = localStorage.getItem("returnToAfterAuth");
+
+    if (intent?.type === "join-activity") {
+      try {
+        await ActivityService.joinActivity(intent.activityId);
+      } catch {
+        // If join fails (e.g., already joined), still redirect to activity page
+      } finally {
+        postAuthIntent.clear();
+        localStorage.removeItem("returnToAfterAuth");
+        navigate(`/activities/${intent.activityId}`);
+      }
+      return;
+    }
+
+    if (intent?.type === "connect-buddy") {
+      // For now, just redirect back to the profile page. Connection request will be user-driven.
+      postAuthIntent.clear();
+      localStorage.removeItem("returnToAfterAuth");
+      navigate(returnTo || `/profile/${intent.userId}`);
+      return;
+    }
+
+    // Default
+    localStorage.removeItem("returnToAfterAuth");
     navigate("/dashboard");
   };
 

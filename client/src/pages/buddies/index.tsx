@@ -40,6 +40,8 @@ import {
 import EnhancedBuddyCard from "@/components/buddies/EnhancedBuddyCard";
 import { useBuddyConnectionStore } from "@/store/buddy-connection.store";
 import { useAuth } from "@/store/auth.store";
+import { AuthWall } from "@/components/auth/AuthWall";
+import { Users as UsersIcon } from "lucide-react";
 import { UserSearchParams } from "@/services/api/user/user-search.service";
 import { User } from "@/types/auth-types";
 
@@ -62,7 +64,7 @@ const debounce = (func: Function, wait: number) => {
 const Buddies = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const {
     searchResults = [],
     searchQuery = "",
@@ -79,6 +81,8 @@ const Buddies = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20); // 5x4 grid
   const [activeTab, setActiveTab] = useState("all");
+
+  // For guest users, we'll show the page structure but empty content
   const [showFilters, setShowFilters] = useState(true);
   const [sortOption, setSortOption] = useState<string>("default");
 
@@ -741,7 +745,20 @@ const Buddies = () => {
           </TabsList>
 
           <TabsContent value="all" className="space-y-6">
-            {filteredBuddies.length > 0 ? (
+            {!isAuthenticated ? (
+              <div className="flex mx-auto items-center justify-center min-h-[400px]">
+                <AuthWall
+                  title="Sign in to discover buddies"
+                  description="Meet new people, make friends, and build connections with others who share your interests and goals."
+                  benefits={[
+                    "Browse buddies with similar interests",
+                    "Send and receive buddy requests",
+                    "Build your accountability circle",
+                  ]}
+                  returnToAfterAuth={location.pathname + location.search}
+                />
+              </div>
+            ) : filteredBuddies.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {paginatedBuddies.map((buddy, index) => (
@@ -804,7 +821,20 @@ const Buddies = () => {
           </TabsContent>
 
           <TabsContent value="my">
-            {filteredBuddies.length > 0 ? (
+            {!isAuthenticated ? (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <AuthWall
+                  title="Sign in to see your buddies"
+                  description="View and manage your connected buddies, track your accountability partnerships."
+                  benefits={[
+                    "See all your connected buddies",
+                    "Track shared activities",
+                    "Manage buddy connections",
+                  ]}
+                  returnToAfterAuth={location.pathname + location.search}
+                />
+              </div>
+            ) : filteredBuddies.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredBuddies.map((buddy, index) => (
                   <EnhancedBuddyCard
@@ -825,7 +855,20 @@ const Buddies = () => {
           </TabsContent>
 
           <TabsContent value="recommended">
-            {filteredBuddies.length > 0 ? (
+            {!isAuthenticated ? (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <AuthWall
+                  title="Sign in for personalized recommendations"
+                  description="Get matched with buddies who share your interests and goals."
+                  benefits={[
+                    "AI-powered buddy matching",
+                    "Interest-based recommendations",
+                    "Find your perfect accountability partner",
+                  ]}
+                  returnToAfterAuth={location.pathname + location.search}
+                />
+              </div>
+            ) : filteredBuddies.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredBuddies.slice(0, 4).map((buddy, index) => (
                   <EnhancedBuddyCard
@@ -846,7 +889,20 @@ const Buddies = () => {
           </TabsContent>
 
           <TabsContent value="active">
-            {filteredBuddies.length > 0 ? (
+            {!isAuthenticated ? (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <AuthWall
+                  title="Sign in to see active buddies"
+                  description="Discover the most active and engaged members in our community."
+                  benefits={[
+                    "See most active community members",
+                    "Connect with engaged buddies",
+                    "Join an active accountability circle",
+                  ]}
+                  returnToAfterAuth={location.pathname + location.search}
+                />
+              </div>
+            ) : filteredBuddies.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredBuddies.slice(0, 4).map((buddy, index) => (
                   <EnhancedBuddyCard
@@ -867,7 +923,20 @@ const Buddies = () => {
           </TabsContent>
 
           <TabsContent value="nearby">
-            {filteredBuddies.length > 0 ? (
+            {!isAuthenticated ? (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <AuthWall
+                  title="Sign in to find nearby buddies"
+                  description="Connect with buddies in your area for local accountability partnerships."
+                  benefits={[
+                    "Find buddies near you",
+                    "Meet up for activities",
+                    "Build local connections",
+                  ]}
+                  returnToAfterAuth={location.pathname + location.search}
+                />
+              </div>
+            ) : filteredBuddies.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredBuddies.slice(0, 4).map((buddy, index) => (
                   <EnhancedBuddyCard
@@ -888,6 +957,7 @@ const Buddies = () => {
           </TabsContent>
         </Tabs>
 
+{isAuthenticated && (
         <div className="mt-12 bg-gradient-to-r from-[#FFDEE2]/30 to-[#FDE1D3]/30 rounded-2xl p-8">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-2/3 mb-8 md:mb-0 md:pr-8">
@@ -923,6 +993,7 @@ const Buddies = () => {
             </div>
           </div>
         </div>
+        )}
       </Container>
     </div>
   );

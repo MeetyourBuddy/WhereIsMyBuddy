@@ -78,6 +78,7 @@ import {
 } from "@/lib/constants/country-city.constants";
 import { activityCategories } from "@/lib/constants/category-interests.constants";
 import { useAuthStore } from "@/store/auth.store";
+import { AuthWall } from "@/components/auth/AuthWall";
 import {
   settingsService,
   UserSettings,
@@ -105,7 +106,7 @@ for (let i = 0; i < avatarOptions.length; i++) {
 }
 
 const Settings: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -191,7 +192,10 @@ const Settings: React.FC = () => {
   // Fetch user profile and settings data
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -287,6 +291,8 @@ const Settings: React.FC = () => {
 
     fetchUserData();
   }, [user]);
+
+  // For guests, show page structure but lock content
 
   // Handle profile form submission
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -850,8 +856,23 @@ const Settings: React.FC = () => {
 
             {/* Content Area */}
             <div className="lg:col-span-3">
-              {/* Profile Tab */}
-              {activeTab === "profile" && (
+              {!isAuthenticated ? (
+                <div className="flex items-center justify-center min-h-[600px]">
+                  <AuthWall
+                    title="Sign in to manage your settings"
+                    description="Update your profile, privacy, and notification preferences to personalize your Buddy experience."
+                    benefits={[
+                      "Customize your profile",
+                      "Control privacy settings",
+                      "Manage notifications",
+                    ]}
+                    returnToAfterAuth="/settings"
+                  />
+                </div>
+              ) : (
+                <>
+                  {/* Profile Tab */}
+                  {activeTab === "profile" && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -2146,6 +2167,8 @@ const Settings: React.FC = () => {
                     </Card.Content>
                   </Card>
                 </motion.div>
+              )}
+                </>
               )}
             </div>
           </div>
