@@ -55,11 +55,11 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-buddy-gray-100 py-4",
+        "sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-buddy-gray-100 py-2.5",
         className
       )}
     >
-      <Container className="flex justify-between items-center">
+      <Container size="full" className="flex justify-between items-center">
         <div className="flex items-center">
           {isHomePage ? (
             <Link

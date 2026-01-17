@@ -2,7 +2,6 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import Header from "@/components/common/Header";
 import AppSidebar from "./AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppLayoutProps {
@@ -19,16 +18,22 @@ const AppLayout = ({
   const isMobile = useIsMobile();
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen bg-background w-full">
-        {/* Only show AppSidebar on desktop */}
-        {!isMobile && <AppSidebar />}
-        <div className="flex-1 flex flex-col min-w-0">
-          {!hideHeader && <Header isLoggedIn={true} />}
-          <main className={cn("flex-1 min-w-0", className)}>{children}</main>
-        </div>
+    <div className="min-h-screen bg-background">
+      {/* Only show AppSidebar on desktop (sm and above) */}
+      {!isMobile && <AppSidebar />}
+      
+      {/* Main content area with left margin for sidebar */}
+      {/* Uses peer-hover to expand margin when sidebar is hovered */}
+      <div
+        className={cn(
+          "flex flex-col min-h-screen transition-all duration-300 ease-in-out",
+          !isMobile && "ml-[80px] peer-hover/sidebar:ml-64"
+        )}
+      >
+        {!hideHeader && <Header isLoggedIn={true} />}
+        <main className={cn("flex-1", className)}>{children}</main>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 

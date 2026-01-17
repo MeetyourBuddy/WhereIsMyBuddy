@@ -6,106 +6,16 @@ import {
   Users,
   Settings,
   HelpCircle,
-  ChevronLeft,
-  Search,
-  BarChart2,
   Bell,
-  Layout,
   Zap,
   User,
-  Heart,
   LucideIcon,
   HeartHandshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger,
-  SidebarProvider,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { Input } from "@/components/ui/input";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth.store";
-
-// Custom styles for mobile sidebar
-const mobileSidebarStyles = `
-  /* Mobile sidebar container */
-  [data-sidebar="sidebar"][data-mobile="true"] {
-    background-color: rgb(139 92 246) !important; /* buddy-purple */
-    color: white !important;
-  }
-  
-  /* Mobile sidebar content */
-  [data-sidebar="sidebar"][data-mobile="true"] > div {
-    background-color: rgb(139 92 246) !important; /* buddy-purple */
-  }
-  
-  /* Mobile sidebar header */
-  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="header"] {
-    background-color: rgb(139 92 246) !important; /* buddy-purple */
-    color: white !important;
-  }
-  
-  /* Mobile sidebar content area */
-  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="content"] {
-    background-color: rgb(139 92 246) !important; /* buddy-purple */
-    color: white !important;
-  }
-  
-  /* Mobile sidebar footer */
-  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="footer"] {
-    background-color: rgb(139 92 246) !important; /* buddy-purple */
-    color: white !important;
-  }
-  
-  /* Mobile sidebar menu buttons */
-  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="menu-button"] {
-    color: rgb(229 231 235) !important; /* buddy-gray-200 */
-    background-color: transparent !important;
-  }
-  
-  /* Mobile sidebar menu button hover */
-  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="menu-button"]:hover {
-    color: white !important;
-    background-color: rgba(139 92 246, 0.4) !important; /* buddy-purple-dark/40 */
-  }
-  
-  /* Mobile sidebar active menu button */
-  [data-sidebar="sidebar"][data-mobile="true"] [data-sidebar="menu-button"][data-state="active"] {
-    background-color: rgb(139 92 246) !important; /* buddy-purple-dark */
-    color: white !important;
-  }
-  
-  /* Ensure all text is white on mobile */
-  [data-sidebar="sidebar"][data-mobile="true"] p,
-  [data-sidebar="sidebar"][data-mobile="true"] span,
-  [data-sidebar="sidebar"][data-mobile="true"] div {
-    color: white !important;
-  }
-  
-  /* Mobile sidebar links */
-  [data-sidebar="sidebar"][data-mobile="true"] a {
-    color: white !important;
-  }
-  
-  /* Mobile sidebar icons */
-  [data-sidebar="sidebar"][data-mobile="true"] svg {
-    color: white !important;
-  }
-`;
 
 type SidebarNavItem = {
   title: string;
@@ -119,7 +29,6 @@ const navItems: SidebarNavItem[] = [
     title: "Home",
     href: "/dashboard",
     icon: Home,
-    // badge: 10,
   },
   {
     title: "Activities",
@@ -130,18 +39,12 @@ const navItems: SidebarNavItem[] = [
     title: "Buddies",
     href: "/buddies",
     icon: Users,
-    // badge: 2,
   },
   {
     title: "Boost Wall",
     href: "/boost-wall",
     icon: Zap,
   },
-  // {
-  //   title: "Analytics",
-  //   href: "/analytics",
-  //   icon: BarChart2,
-  // },
   {
     title: "Notifications",
     href: "/notifications",
@@ -159,170 +62,168 @@ const navItems: SidebarNavItem[] = [
   },
 ];
 
-const SearchInput = () => {
-  const { state } = useSidebar();
-
-  if (state === "collapsed") {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-buddy-purple/10 text-buddy-gray-500 border-2 border-gray-300">
-            <Search className="h-5 w-5" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="right">Search</TooltipContent>
-      </Tooltip>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-buddy-gray-500" />
-      <Input
-        type="search"
-        placeholder="Search..."
-        className="w-full bg-gray-200 border-none pl-9 text-sm h-9 text-buddy-purple-dark placeholder:text-buddy-gray-400"
-      />
-    </div>
-  );
-};
-
 const AppSidebar = () => {
-  const { state } = useSidebar();
   const location = useLocation();
-
   const { user } = useAuthStore();
 
   // Helper function to check if a route is active (including child routes)
   const isRouteActive = (href: string) => {
     if (href === "/dashboard" && location.pathname === "/") {
-      return true; // Home route special case
+      return true;
     }
     return (
       location.pathname === href || location.pathname.startsWith(href + "/")
     );
   };
 
-  // Inject mobile sidebar styles
-  React.useEffect(() => {
-    const styleId = "mobile-sidebar-styles";
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement("style");
-      style.id = styleId;
-      style.textContent = mobileSidebarStyles;
-      document.head.appendChild(style);
-    }
-  }, []);
-
   return (
-    <Sidebar
+    <aside
       className={cn(
-        "bg-buddy-purple border-none",
-        state === "collapsed" && "sidebar-icon-mode",
-        // Override mobile styling to ensure solid background
-        "[&[data-mobile='true']]:bg-buddy-purple [&[data-mobile='true']]:text-white"
+        "peer/sidebar group/sidebar fixed left-0 top-0 z-50 h-screen",
+        "w-[80px] hover:w-64",
+        "bg-buddy-purple",
+        "transition-all duration-300 ease-in-out",
+        "flex flex-col",
+        "shadow-xl",
+        "overflow-hidden"
       )}
-      variant="sidebar"
-      collapsible="icon"
-      side="left"
     >
-      <SidebarHeader
-        className={cn(
-          "py-4 bg-buddy-purple",
-          state === "expanded" ? "px-3" : "px-2",
-          // Ensure mobile header has proper styling
-          "[&[data-mobile='true']]:bg-buddy-purple [&[data-mobile='true']]:text-white"
-        )}
-      >
-        <div
-          className={cn(
-            "flex items-center",
-            state === "expanded" ? "justify-between" : "justify-center"
-          )}
-        >
-          {/* Always show full logo on mobile, collapsed/expanded on desktop */}
-          <Link to="/" className="flex items-center">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-buddy-blue to-buddy-blue flex items-center justify-center">
-              <HeartHandshake className="w-5 h-5 text-white" />
-            </div>
-            <div
-              className={cn(
-                "flex flex-col ml-2",
-                state === "collapsed" ? "hidden" : "block"
-              )}
-            >
-              <span className="text-2xl font-bold text-white">Buddy</span>
-            </div>
-          </Link>
-          {state === "expanded" && (
-            <SidebarTrigger className="text-white hover:bg-buddy-purple-dark" />
-          )}
-        </div>
-        {state === "collapsed" && (
-          <div className="flex justify-center mt-3">
-            <SidebarTrigger className="text-white hover:bg-buddy-purple-dark" />
+      {/* Logo Section */}
+      <div className="flex items-center h-16 px-4 border-b border-buddy-purple-dark/30">
+        <Link to="/" className="flex items-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-buddy-blue to-buddy-blue-dark flex items-center justify-center flex-shrink-0">
+            <HeartHandshake className="w-6 h-6 text-white" />
           </div>
-        )}
-        <div className="mt-4">{/* <SearchInput /> */}</div>
-      </SidebarHeader>
+          <span
+            className={cn(
+              "ml-3 text-2xl font-bold text-white",
+              "opacity-0 group-hover/sidebar:opacity-100",
+              "transition-opacity duration-200 delay-75",
+              "whitespace-nowrap"
+            )}
+          >
+            Buddy
+          </span>
+        </Link>
+      </div>
 
-      <SidebarContent className="bg-buddy-purple [&[data-mobile='true']]:bg-buddy-purple [&[data-mobile='true']]:text-white">
-        <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={isRouteActive(item.href)}
-                tooltip={item.title}
-                className={cn(
-                  "text-buddy-gray-200 hover:text-white hover:bg-buddy-purple-dark/40",
-                  "transform transition-all duration-200 hover:scale-105",
-                  "min-h-[44px] sm:min-h-[40px]", // Better touch targets on mobile
-                  isRouteActive(item.href) &&
-                    "bg-buddy-purple-dark text-white hover:bg-buddy-purple-dark"
-                )}
-              >
-                <Link to={item.href}>
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.title}</span>
+      {/* Navigation Section */}
+      <nav className="flex-1 py-6 px-3 overflow-y-auto overflow-x-hidden">
+        <ul className="space-y-2">
+          {navItems.map((item) => {
+            const isActive = isRouteActive(item.href);
+            return (
+              <li key={item.href}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "flex items-center py-3 rounded-xl",
+                    "justify-center group-hover/sidebar:justify-start",
+                    "px-0 group-hover/sidebar:px-3",
+                    "gap-0 group-hover/sidebar:gap-4",
+                    "transition-all duration-200",
+                    // Default state
+                    "text-buddy-gray-200",
+                    // Hover state
+                    "hover:bg-buddy-purple-dark/50 hover:text-white",
+                    // Active state
+                    isActive && [
+                      "bg-buddy-purple-dark",
+                      "text-white",
+                      "shadow-md",
+                    ]
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "w-6 h-6 flex-shrink-0",
+                      "transition-colors duration-200",
+                      isActive ? "text-white" : "text-buddy-gray-300"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "font-medium whitespace-nowrap",
+                      "w-0 group-hover/sidebar:w-auto overflow-hidden",
+                      "opacity-0 group-hover/sidebar:opacity-100",
+                      "transition-all duration-200 delay-75",
+                      isActive && "font-semibold"
+                    )}
+                  >
+                    {item.title}
+                  </span>
                   {item.badge && (
-                    <div className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-medium text-buddy-purple">
+                    <div
+                      className={cn(
+                        "ml-auto flex h-5 min-w-5 items-center justify-center",
+                        "rounded-full bg-white text-xs font-semibold text-buddy-purple",
+                        "opacity-0 group-hover/sidebar:opacity-100",
+                        "transition-opacity duration-200 delay-75"
+                      )}
+                    >
                       {item.badge}
                     </div>
                   )}
                 </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarContent>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
 
-      <SidebarFooter className="border-t border-buddy-purple-dark/30 pt-2 bg-buddy-purple [&[data-mobile='true']]:bg-buddy-purple [&[data-mobile='true']]:text-white">
-        <div className={cn("py-2", state === "expanded" ? "px-3" : "px-2")}>
-          <div className="flex items-center">
-            <Avatar className="h-9 w-9 border-2 border-buddy-purple-light">
-              <AvatarImage src={user?.avatar} />
-              <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-            </Avatar>
-            <div
-              className={cn("ml-3", state === "collapsed" ? "hidden" : "block")}
-            >
-              <p className="text-sm font-medium text-white">{user?.name}</p>
-              <p className="text-xs text-buddy-gray-400">Basic Member</p>
-            </div>
-            <Link
-              to={`/profile/${user?._id || user?.id}`}
-              className={cn(
-                "text-buddy-gray-400 hover:text-white",
-                state === "collapsed" ? "ml-auto" : "ml-auto"
-              )}
-            >
-              <User className="h-4 w-4" />
+      {/* User Section - Stacked Vertically */}
+      <div className="border-t border-buddy-purple-dark/30 px-3 py-3 flex-shrink-0">
+        <div className="flex flex-col items-center gap-2">
+          {/* User Avatar - Always visible */}
+          <Avatar className="h-10 w-10 border-2 border-buddy-purple-light flex-shrink-0">
+            <AvatarImage src={user?.avatar} />
+            <AvatarFallback className="bg-buddy-purple-dark text-white text-sm font-semibold">
+              {user?.name?.charAt(0) || "G"}
+            </AvatarFallback>
+          </Avatar>
+
+          {/* User Info - Hidden when collapsed */}
+          <div
+            className={cn(
+              "flex flex-col items-center text-center w-full",
+              "opacity-0 group-hover/sidebar:opacity-100",
+              "transition-all duration-200 delay-75",
+              "max-h-0 group-hover/sidebar:max-h-12 overflow-hidden"
+            )}
+          >
+            <p className="text-sm font-semibold text-white truncate max-w-full leading-tight">
+              {user?.name || "Guest"}
+            </p>
+            <p className="text-xs text-buddy-gray-300 leading-tight">Basic Member</p>
+          </div>
+
+          {/* Profile Button - Hidden when collapsed */}
+          <div
+            className={cn(
+              "w-full",
+              "opacity-0 group-hover/sidebar:opacity-100",
+              "transition-all duration-200 delay-100",
+              "max-h-0 group-hover/sidebar:max-h-9 overflow-hidden"
+            )}
+          >
+            <Link to={`/profile/${user?._id || user?.id}`}>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "w-full h-8 border-buddy-purple-light/50 text-buddy-gray-500 hover:text-white text-xs",
+                  "hover:bg-buddy-purple-dark hover:border-buddy-purple-light",
+                  "transition-colors duration-200"
+                )}
+              >
+                <User className="w-3.5 h-3.5 mr-1.5" />
+                View Profile
+              </Button>
             </Link>
           </div>
         </div>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </aside>
   );
 };
 
