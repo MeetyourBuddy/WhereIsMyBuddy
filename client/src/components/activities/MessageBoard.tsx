@@ -48,9 +48,10 @@ interface Message {
 
 interface MessageBoardProps {
   activityId: string;
+  isActivityEnded?: boolean;
 }
 
-const MessageBoard: React.FC<MessageBoardProps> = ({ activityId }) => {
+const MessageBoard: React.FC<MessageBoardProps> = ({ activityId, isActivityEnded = false }) => {
   const { user } = useAuth();
   const { currentActivity } = useActivityStore();
   const { toast } = useToast();
@@ -744,7 +745,21 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ activityId }) => {
 
       {/* Message Input */}
       <div className="p-6 border-t border-buddy-gray-200 bg-white">
-        {isExpanded ? (
+        {isActivityEnded ? (
+          <div className="flex items-center gap-3 p-4 rounded-2xl border border-buddy-gray-200 bg-buddy-gray-50">
+            <div className="w-10 h-10 bg-buddy-gray-200 rounded-full flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-buddy-gray-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-buddy-gray-600 text-sm font-medium">
+                This activity has ended
+              </p>
+              <p className="text-buddy-gray-500 text-xs">
+                New messages can no longer be posted, but you can still view the conversation history.
+              </p>
+            </div>
+          </div>
+        ) : isExpanded ? (
           <div className="space-y-3">
             <Textarea
               value={newMessage}

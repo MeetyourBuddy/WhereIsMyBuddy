@@ -39,11 +39,12 @@ import {
 
 interface ActivityPartnersProps {
   activityId: string;
+  isActivityEnded?: boolean;
 }
 
 // Remove local interfaces - using imported ones from service
 
-const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
+const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId, isActivityEnded = false }) => {
   const [activeTab, setActiveTab] = useState("partners");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [invitations, setInvitations] = useState<PartnerInvitation[]>([]);
@@ -236,13 +237,19 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
               keep everyone on track.
             </p>
           </div>
-          <Button
-            onClick={() => setIsInviteModalOpen(true)}
-            className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue hover:from-buddy-purple/90 hover:to-buddy-blue/90"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Invite Partners
-          </Button>
+          {isActivityEnded ? (
+            <Badge variant="outline" className="px-4 py-2 bg-buddy-gray-100 text-buddy-gray-600 border-buddy-gray-200">
+              Activity Ended
+            </Badge>
+          ) : (
+            <Button
+              onClick={() => setIsInviteModalOpen(true)}
+              className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue hover:from-buddy-purple/90 hover:to-buddy-blue/90"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Invite Partners
+            </Button>
+          )}
         </div>
       </div>
 
@@ -385,19 +392,23 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId }) => {
                     <div className="text-center py-12 bg-gray-50 rounded-2xl">
                       <Users className="w-12 h-12 mx-auto text-gray-400 mb-3" />
                       <p className="text-gray-700 font-medium mb-2">
-                        No partners yet
+                        {isActivityEnded ? "No partners were added" : "No partners yet"}
                       </p>
                       <p className="text-gray-600 mb-4 max-w-md mx-auto">
-                        Invite friends to join you on this journey. Together,
-                        you'll motivate each other to reach your goals.
+                        {isActivityEnded 
+                          ? "This activity has ended. Partner invitations are no longer available."
+                          : "Invite friends to join you on this journey. Together, you'll motivate each other to reach your goals."
+                        }
                       </p>
-                      <Button
-                        onClick={() => setIsInviteModalOpen(true)}
-                        className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue"
-                      >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Invite Partners
-                      </Button>
+                      {!isActivityEnded && (
+                        <Button
+                          onClick={() => setIsInviteModalOpen(true)}
+                          className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue"
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Invite Partners
+                        </Button>
+                      )}
                     </div>
                   )}
                 </TabsContent>

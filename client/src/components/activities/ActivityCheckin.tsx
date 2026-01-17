@@ -34,9 +34,10 @@ import { format } from "date-fns";
 
 interface ActivityCheckinProps {
   activityId: string;
+  isActivityEnded?: boolean;
 }
 
-const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
+const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivityEnded = false }) => {
   console.log(
     "🎯 ActivityCheckin component rendered with activityId:",
     activityId
@@ -438,7 +439,22 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
                 </div>
               </div>
 
-              {hasMissedCheckIn && (
+              {isActivityEnded ? (
+                <div className="mb-6 p-4 bg-buddy-gray-100 border border-buddy-gray-200 rounded-lg">
+                  <div className="flex items-start">
+                    <Info className="text-buddy-gray-500 w-5 h-5 mr-3 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-buddy-gray-800">
+                        This activity has ended
+                      </h4>
+                      <p className="text-buddy-gray-600 text-sm mt-1">
+                        Great job on completing this activity! Check-ins are no longer available, 
+                        but you can still view your progress and check-in history.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : hasMissedCheckIn && (
                 <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-start">
                     <Info className="text-amber-500 w-5 h-5 mr-3 mt-0.5" />
@@ -488,12 +504,15 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
                 <div className="text-center py-8">
                   <Calendar className="w-12 h-12 text-buddy-gray-300 mx-auto mb-3" />
                   <h3 className="text-base font-medium text-buddy-gray-800 mb-2">
-                    No check-ins yet
+                    {isActivityEnded ? "No check-ins were recorded" : "No check-ins yet"}
                   </h3>
                   <p className="text-buddy-gray-600 mb-4 text-sm">
-                    Be the first to check in and start building your streak!
+                    {isActivityEnded 
+                      ? "This activity ended without any check-ins being recorded."
+                      : "Be the first to check in and start building your streak!"
+                    }
                   </p>
-                  {currentActivity && (
+                  {currentActivity && !isActivityEnded && (
                     <CheckInDialog
                       activity={currentActivity}
                       onCheckInComplete={() => {
@@ -638,7 +657,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
               )}
 
               <div className="pt-2 mb-6">
-                {currentActivity && (
+                {currentActivity && !isActivityEnded ? (
                   <CheckInDialog
                     activity={currentActivity}
                     onCheckInComplete={() => {
@@ -668,7 +687,16 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId }) => {
                           : "Check In Now"}
                     </Button>
                   </CheckInDialog>
-                )}
+                ) : isActivityEnded ? (
+                  <Button
+                    type="button"
+                    disabled
+                    className="w-full py-2 rounded-full shadow-md bg-buddy-gray-300 text-buddy-gray-600 cursor-not-allowed"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Activity Ended
+                  </Button>
+                ) : null}
               </div>
 
               {/* Badges section moved here */}

@@ -784,7 +784,7 @@ const ActivityPage = () => {
                   />
                 </div>
               ) : (
-                <ActivityCheckin activityId={displayData.id} />
+                <ActivityCheckin activityId={displayData.id} isActivityEnded={status === "ended"} />
               )}
             </TabsContent>
 
@@ -799,7 +799,7 @@ const ActivityPage = () => {
                   />
                 </div>
               ) : (
-                <ActivityPartners activityId={displayData.id} />
+                <ActivityPartners activityId={displayData.id} isActivityEnded={status === "ended"} />
               )}
             </TabsContent>
 
@@ -812,7 +812,7 @@ const ActivityPage = () => {
                     returnTo={`/activities/${displayData.id}`}
                   />
                 ) : (
-                  <MessageBoard activityId={displayData.id} />
+                  <MessageBoard activityId={displayData.id} isActivityEnded={status === "ended"} />
                 )}
               </div>
             </TabsContent>
