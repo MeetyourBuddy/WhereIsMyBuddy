@@ -110,7 +110,7 @@ const Index = () => {
       name: "Sarah Parker",
       image:
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-      interests: ["Music", "Art", "Cooking"],
+      interests: ["Music", "Art", "Cooking", "Hiking"],
       activities: 15,
     },
     {
@@ -589,11 +589,11 @@ const Index = () => {
                 whileInView={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="group"
+                className="group h-full"
               >
-                <Card className="p-6 h-full hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border-2 border-transparent hover:border-buddy-purple/20 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-                  <div className="flex flex-col items-center text-center">
-                    <Avatar className="w-28 h-28 mb-6 border-4 border-buddy-purple/20 rounded-full group-hover:border-buddy-purple transition-colors">
+                <Card className="p-6 h-full flex flex-col hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border border-buddy-gray-200/50 hover:border-buddy-purple/40 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+                  <div className="flex flex-col items-center text-center flex-1">
+                    <Avatar className="w-28 h-28 mb-4 border-4 border-buddy-purple/20 rounded-full group-hover:border-buddy-purple transition-colors flex-shrink-0">
                       <AvatarImage
                         src={buddy.image}
                         alt={buddy.name}
@@ -604,23 +604,28 @@ const Index = () => {
                       </AvatarFallback>
                     </Avatar>
 
-                    <h3 className="text-xl font-bold mb-3 text-buddy-gray-900 group-hover:text-buddy-purple transition-colors">
+                    <h3 className="text-xl font-bold mb-3 text-buddy-gray-900 group-hover:text-buddy-purple transition-colors line-clamp-1">
                       {buddy.name}
                     </h3>
 
-                    <div className="flex flex-wrap justify-center gap-2 mb-4">
-                      {buddy.interests.map((interest, i) => (
+                    <div className="flex flex-wrap justify-center gap-2 mb-4 min-h-[3rem] w-full items-center">
+                      {buddy.interests.slice(0, 3).map((interest, i) => (
                         <span
                           key={i}
-                          className="bg-gradient-to-r from-buddy-purple/10 to-buddy-blue/10 text-buddy-purple text-xs px-3 py-1 rounded-full font-medium"
+                          className="bg-buddy-purple/15 text-buddy-purple text-xs px-4 py-1.5 rounded-full font-medium whitespace-nowrap"
                         >
                           {interest}
                         </span>
                       ))}
+                      {buddy.interests.length > 3 && (
+                        <span className="bg-buddy-purple/15 text-buddy-purple text-xs px-4 py-1.5 rounded-full font-medium whitespace-nowrap">
+                          +{buddy.interests.length - 3}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex items-center text-buddy-gray-600 text-sm mb-6">
-                      <Flame className="w-4 h-4 mr-2 text-amber-500" />
+                    <div className="flex items-center justify-center text-buddy-gray-600 text-sm mb-4 flex-shrink-0">
+                      <Flame className="w-4 h-4 mr-2 text-amber-500 flex-shrink-0" />
                       <span className="font-medium">
                         {buddy.activities} Active Challenges
                       </span>
@@ -629,7 +634,7 @@ const Index = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full rounded-full mt-auto group-hover:bg-buddy-purple group-hover:text-white group-hover:border-buddy-purple transition-all duration-300 hover:scale-105"
+                      className="w-full rounded-full mt-auto group-hover:bg-buddy-purple group-hover:text-white group-hover:border-buddy-purple transition-all duration-300 hover:scale-105 flex-shrink-0"
                     >
                       <UserPlus className="w-4 h-4 mr-2" />
                       Connect Now!
