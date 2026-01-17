@@ -195,6 +195,19 @@ const Dashboard = () => {
     return Math.round((activity.checkIns / activity.totalCheckIns) * 100);
   };
 
+  // Helper function to check if an activity has ended
+  const isActivityEnded = (activity) => {
+    if (!activity.endDate) return false;
+    const endDate = new Date(activity.endDate);
+    const now = new Date();
+    return endDate < now;
+  };
+
+  // Filter active activities to only show non-ended ones
+  const trueActiveActivities = activeActivities.filter(
+    (activity) => !isActivityEnded(activity)
+  );
+
   // Main loading state
   if (isLoading) {
     return (
@@ -417,9 +430,9 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </Card>
-              ) : activeActivities.length > 0 ? (
+              ) : trueActiveActivities.length > 0 ? (
                 <div className="grid gap-4">
-                  {activeActivities.map((activity) => {
+                  {trueActiveActivities.map((activity) => {
                     const progress = getActivityProgress(activity);
                     return (
                       <Card
@@ -557,88 +570,119 @@ const Dashboard = () => {
 
               {suggestedActivities.length > 0 ? (
                 <div className="grid gap-4">
-                  {suggestedActivities.map((activity, index) => (
-                    <Card
-                      key={activity._id || activity.id || index}
-                      className="overflow-hidden hover-card rounded-3xl bg-white/90 backdrop-blur-sm border border-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 relative group cursor-pointer"
-                      onClick={() =>
-                        navigate(`/activities/${activity._id || activity.id}`)
-                      }
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="relative w-full z-10 flex flex-col md:flex-row">
-                        <div className="relative max-w-[150px] overflow-hidden h-48 md:h-auto">
-                          <div className="absolute inset-0 bg-gradient-to-br from-buddy-purple/30 to-buddy-blue/30 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          <img
-                            src={
-                              activity.bannerImage ||
-                              activity.image ||
-                              "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                            }
-                            alt={activity.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:bg-gradient-to-r"></div>
-                          <div className="absolute top-3 left-3">
-                            <Badge className="bg-white/90 text-buddy-purple border-0 shadow-sm">
-                              <Star className="w-3 h-3 mr-1" />
-                              Popular
-                            </Badge>
-                          </div>
-                          <div className="absolute bottom-3 left-3 md:hidden">
-                            <span className="bg-white/80 backdrop-blur-sm text-buddy-purple px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
-                              {activity.category}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex-grow p-5">
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold text-lg">
-                                  {activity.title}
-                                </h3>
-                                <span className="hidden md:inline-block bg-buddy-purple/10 text-buddy-purple px-2 py-0.5 rounded-full text-xs font-medium">
-                                  {activity.category}
-                                </span>
-                              </div>
-                              <p className="text-sm text-buddy-gray-500 mb-4 line-clamp-3">
-                                {activity.description}
-                              </p>
+                  {suggestedActivities.map((activity, index) => {
+                    const ended = isActivityEnded(activity);
+                    return (
+                      <Card
+                        key={activity._id || activity.id || index}
+                        className={`overflow-hidden hover-card rounded-3xl bg-white/90 backdrop-blur-sm border border-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 relative group cursor-pointer ${ended ? 'opacity-80' : ''}`}
+                        onClick={() =>
+                          navigate(`/activities/${activity._id || activity.id}`)
+                        }
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="relative w-full z-10 flex flex-col md:flex-row">
+                          <div className="relative max-w-[150px] overflow-hidden h-48 md:h-auto">
+                            <div className="absolute inset-0 bg-gradient-to-br from-buddy-purple/30 to-buddy-blue/30 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <img
+                              src={
+                                activity.bannerImage ||
+                                activity.image ||
+                                "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                              }
+                              alt={activity.title}
+                              className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${ended ? 'grayscale-[30%]' : ''}`}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:bg-gradient-to-r"></div>
+                            <div className="absolute top-3 left-3">
+                              {ended ? (
+                                <Badge className="bg-buddy-gray-100 text-buddy-gray-600 border-0 shadow-sm">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Ended
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-white/90 text-buddy-purple border-0 shadow-sm">
+                                  <Star className="w-3 h-3 mr-1" />
+                                  Popular
+                                </Badge>
+                              )}
                             </div>
-                            <div className="flex-shrink-0 mt-3 md:mt-0 w-full flex justify-between items-center">
-                              <div className="flex flex-wrap items-center text-xs text-buddy-gray-500 gap-2">
-                                <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
-                                  <Clock className="h-3 w-3 mr-1 text-buddy-gray-400" />
-                                  {formatDate(activity.startDate)}
-                                </span>
-                                <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
-                                  <MapPin className="h-3 w-3 mr-1 text-buddy-gray-400" />
-                                  {activity.location || "Virtual"}
-                                </span>
-                                <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
-                                  <Users className="h-3 w-3 mr-1 text-buddy-gray-400" />
-                                  {activity.participants?.length || 0} buddies
-                                </span>
-                              </div>
-                              <Button
-                                className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-6 hover:shadow-lg shadow-md group-hover:scale-105 transition-transform"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(
-                                    `/activities/${activity._id || activity.id}`
-                                  );
-                                }}
-                              >
-                                <Heart className="w-4 h-4 mr-2" />
-                                Join Now
-                              </Button>
+                            <div className="absolute bottom-3 left-3 md:hidden">
+                              <span className="bg-white/80 backdrop-blur-sm text-buddy-purple px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
+                                {activity.category}
+                              </span>
                             </div>
                           </div>
+                          <div className="flex-grow p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="font-semibold text-lg">
+                                    {activity.title}
+                                  </h3>
+                                  <span className="hidden md:inline-block bg-buddy-purple/10 text-buddy-purple px-2 py-0.5 rounded-full text-xs font-medium">
+                                    {activity.category}
+                                  </span>
+                                  {ended && (
+                                    <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 text-xs">
+                                      Completed
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-buddy-gray-500 mb-4 line-clamp-3">
+                                  {activity.description}
+                                </p>
+                              </div>
+                              <div className="flex-shrink-0 mt-3 md:mt-0 w-full flex justify-between items-center">
+                                <div className="flex flex-wrap items-center text-xs text-buddy-gray-500 gap-2">
+                                  <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
+                                    <Clock className="h-3 w-3 mr-1 text-buddy-gray-400" />
+                                    {formatDate(activity.startDate)}
+                                  </span>
+                                  <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
+                                    <MapPin className="h-3 w-3 mr-1 text-buddy-gray-400" />
+                                    {activity.location || "Virtual"}
+                                  </span>
+                                  <span className="bg-buddy-gray-100/70 px-3 py-1 rounded-full flex items-center shadow-sm">
+                                    <Users className="h-3 w-3 mr-1 text-buddy-gray-400" />
+                                    {activity.participants?.length || 0} buddies
+                                  </span>
+                                </div>
+                                {ended ? (
+                                  <Button
+                                    variant="outline"
+                                    className="rounded-full border-buddy-gray-300 text-buddy-gray-600 px-6 hover:bg-buddy-gray-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(
+                                        `/activities/${activity._id || activity.id}`
+                                      );
+                                    }}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    View Results
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-6 hover:shadow-lg shadow-md group-hover:scale-105 transition-transform"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(
+                                        `/activities/${activity._id || activity.id}`
+                                      );
+                                    }}
+                                  >
+                                    <Heart className="w-4 h-4 mr-2" />
+                                    Join Now
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
+                      </Card>
+                    );
+                  })}
                 </div>
               ) : (
                 <Card className="p-10 text-center rounded-2xl bg-white/90 backdrop-blur-sm border border-white shadow-lg">
