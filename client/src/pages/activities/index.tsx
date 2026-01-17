@@ -43,7 +43,22 @@ const Activities = () => {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9); // 3x3 grid
-  const [activeTab, setActiveTab] = useState("all");
+  
+  // Get initial tab from URL parameter, default to "all"
+  const getInitialTab = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get("tab") || "all";
+  };
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+  
+  // Update tab when URL parameter changes
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl && ["all", "my", "popular"].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search]);
 
   const {
     activitiesQuery,

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Container from "@/components/ui/layout/Container";
 import { Button } from "@/components/ui/button";
@@ -17,24 +17,18 @@ import {
   Calendar,
   TrendingUp,
   ArrowRight,
-  Check,
   Heart,
-  Activity,
-  Shield,
-  Star,
-  Zap,
   Compass,
-  Smile,
   HeartHandshake,
-  Sparkles,
-  Link as LinkIcon,
   UserPlus,
   Flame,
   ChevronDown,
   Menu,
+  GoalIcon,
 } from "lucide-react";
 
 const Index = () => {
+  const navigate = useNavigate();
   const featuresRef = useRef<HTMLDivElement>(null);
   const howItWorksRef = useRef<HTMLDivElement>(null);
   const communityRef = useRef<HTMLDivElement>(null);
@@ -130,7 +124,7 @@ const Index = () => {
       description:
         "Build a project every day for 30 days to improve your coding skills",
       image:
-        "https://images.unsplash.com/photo-1486312338219-ce68d2c29597?ixlib=rb-1.2.1&auto=format&fit=crop&w=1352&h=896&q=80",
+        "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1352&h=896&q=80",
     },
     {
       title: "Morning Yoga Club",
@@ -536,7 +530,7 @@ const Index = () => {
                 <div className="absolute bottom-0 right-0 h-32 w-32 bg-gradient-to-tl from-amber-400/10 to-transparent rounded-tl-full opacity-70"></div>
                 <div className="relative z-10">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 mx-auto flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <Sparkles className="w-10 h-10 text-white" />
+                    <GoalIcon className="w-10 h-10 text-white" />
                   </div>
                   <div className="inline-block bg-amber-400 text-white px-3 py-1 rounded-full text-sm font-bold mb-4">
                     Step 3
@@ -692,7 +686,7 @@ const Index = () => {
                 viewport={{ once: true }}
                 className="group"
               >
-                <Card className="h-full overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-2 border-transparent hover:border-buddy-green/20 bg-white/90 backdrop-blur-sm rounded-2xl">
+                <Card className="h-full overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-buddy-gray-200/50 hover:border-buddy-green/40 bg-white/90 backdrop-blur-sm rounded-2xl">
                   <div className="relative h-56 overflow-hidden">
                     <img
                       src={activity.image}
@@ -721,6 +715,7 @@ const Index = () => {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => navigate("/activities?tab=popular")}
                         className="rounded-full group-hover:bg-buddy-green group-hover:text-white group-hover:border-buddy-green transition-all duration-300 hover:scale-105"
                       >
                         Join Now!
