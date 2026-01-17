@@ -380,38 +380,51 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivit
       });
     });
 
-    // Show access denied message for non-participants
-    if (!canAccessCheckIn) {
-      return (
-        <div className="p-4 md:p-6">
-          <Card className="p-8 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 mx-auto mb-4 bg-buddy-gray-100 rounded-full flex items-center justify-center">
-                <Users className="w-8 h-8 text-buddy-gray-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
-                Join Activity to Check In
-              </h3>
-              <p className="text-buddy-gray-600 mb-6">
-                You need to be a participant in this activity to access check-in
-                features and view check-in history.
-              </p>
-              <div className="space-y-3">
-                <p className="text-sm text-buddy-gray-500">
-                  As a participant, you'll be able to:
-                </p>
-                <ul className="text-sm text-buddy-gray-600 space-y-1">
-                  <li>• Check in and track your progress</li>
-                  <li>• View your streak and statistics</li>
-                  <li>• See check-in history and threads</li>
-                  <li>• Earn badges and achievements</li>
-                </ul>
-              </div>
+  // Show access denied message for non-participants
+  if (!canAccessCheckIn) {
+    return (
+      <div className="p-4 md:p-6">
+        <Card className="p-8 text-center">
+          <div className="max-w-md mx-auto">
+            <div className="w-16 h-16 mx-auto mb-4 bg-buddy-gray-100 rounded-full flex items-center justify-center">
+              <Users className="w-8 h-8 text-buddy-gray-400" />
             </div>
-          </Card>
-        </div>
-      );
-    }
+            {isActivityEnded ? (
+              <>
+                <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+                  Activity Ended
+                </h3>
+                <p className="text-buddy-gray-600 mb-6">
+                  This activity has ended. Check-in features are no longer available.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+                  Join Activity to Check In
+                </h3>
+                <p className="text-buddy-gray-600 mb-6">
+                  You need to be a participant in this activity to access check-in
+                  features and view check-in history.
+                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-buddy-gray-500">
+                    As a participant, you'll be able to:
+                  </p>
+                  <ul className="text-sm text-buddy-gray-600 space-y-1">
+                    <li>• Check in and track your progress</li>
+                    <li>• View your streak and statistics</li>
+                    <li>• See check-in history and threads</li>
+                    <li>• Earn badges and achievements</li>
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
     return (
       <div className="p-4 md:p-6">

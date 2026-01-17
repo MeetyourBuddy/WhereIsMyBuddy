@@ -79,7 +79,7 @@ const SignUp = () => {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-buddy-purple/10 to-buddy-blue/10 rounded-full blur-3xl"></div>
       </div>
 
-      <Container size="small" className="max-w-md relative z-10">
+      <Container size="small" className="max-w-lg relative z-10">
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <h1 className="text-4xl font-bold">
@@ -90,17 +90,17 @@ const SignUp = () => {
             </h1>
           </Link>
           <p className="text-buddy-gray-600 mt-3 text-lg">
-            Join thousands of people achieving their goals together! 🌟
+            Join thousands of people achieving their goals together
           </p>
         </div>
 
         <Card className="shadow-2xl border-2 border-white/20 bg-white/95 backdrop-blur-sm rounded-3xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-1">
           <CardHeader className="pb-6">
             <CardTitle className="text-center text-2xl font-bold ">
-              Start Your Journey! 🚀
+              Create Your Account
             </CardTitle>
             <p className="text-center text-buddy-gray-600 mt-2">
-              Create your account and find your perfect accountability buddy
+              Sign up to find your perfect accountability partner
             </p>
           </CardHeader>
           <CardContent>
@@ -115,7 +115,7 @@ const SignUp = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Full Name 👤
+                        Name
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -138,7 +138,7 @@ const SignUp = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Email Address 📧
+                        Email Address
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -161,7 +161,7 @@ const SignUp = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Password 🔒
+                        Password
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -230,7 +230,7 @@ const SignUp = () => {
                   className="w-full rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 h-12 text-lg font-semibold"
                   size="lg"
                 >
-                  Create Account & Start!{" "}
+                  Create Account
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </form>
@@ -264,7 +264,7 @@ const SignUp = () => {
                 to="/signin"
                 className="font-semibold text-buddy-purple hover:text-buddy-purple-dark transition-colors hover:underline"
               >
-                Sign in here! 👋
+                Sign in
               </Link>
             </p>
           </CardFooter>

@@ -7,6 +7,7 @@ import {
   Clock,
   ExternalLink,
 } from "lucide-react";
+import { differenceInDays } from "date-fns";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -29,6 +30,11 @@ interface ActivityDashboardProps {
 const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
   const activityId = activity._id || activity.id;
   const { weeklyQuery, participantsQuery } = useActivityData(activityId);
+  
+  // Check if activity has ended
+  const isActivityEnded = activity.endDate 
+    ? differenceInDays(new Date(activity.endDate), new Date()) < 0 
+    : false;
 
   // Fetch leaderboard data for more accurate statistics
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -379,6 +385,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
               participants={activity.participants || []}
               admin={activity.admin}
               rules={activity.rules || []}
+              isActivityEnded={isActivityEnded}
             />
           )}
         </div>

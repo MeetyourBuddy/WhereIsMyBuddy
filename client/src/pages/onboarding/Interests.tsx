@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Heart, Sparkles, Target, Users } from "lucide-react";
+import { ArrowRight, Sparkles, Target } from "lucide-react";
 
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import { Button } from "@/components/ui/button";
@@ -71,28 +71,11 @@ const InterestSelection = () => {
     <OnboardingLayout
       currentStep={2}
       totalSteps={3}
-      title="What makes you excited? ✨"
-      description="Choose your passions so we can connect you with amazing people who share your interests"
+      title="What are you interested in? ✨"
+      description="Choose your passions so we can connect you with people who share your goals"
       onBack={handleBack}
     >
       <div className="space-y-6">
-        {/* Progress indicator */}
-        <div className="bg-gradient-to-r from-buddy-green/10 to-buddy-blue/10 p-4 rounded-2xl border border-buddy-green/20">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-br from-buddy-green to-buddy-green/80 rounded-full p-2">
-              <Heart className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-buddy-gray-900">
-                Step 2: Your Interests
-              </p>
-              <p className="text-sm text-buddy-gray-600">
-                Help us find your perfect buddy matches
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Interest counter */}
         <div className="bg-gradient-to-r from-buddy-purple/10 to-buddy-orange/10 p-4 rounded-2xl border border-buddy-purple/20">
           <div className="flex items-center justify-between">
@@ -119,7 +102,7 @@ const InterestSelection = () => {
             <div className="mt-3 flex items-center space-x-2 text-buddy-green">
               <Sparkles className="h-4 w-4" />
               <span className="text-sm font-medium">
-                Perfect! You're ready to find amazing buddies!
+                Perfect! You're ready to continue.
               </span>
             </div>
           )}
@@ -171,19 +154,6 @@ const InterestSelection = () => {
                     <span className="font-semibold">Almost there!</span> Select{" "}
                     {3 - selectedInterests.length} more interest
                     {3 - selectedInterests.length > 1 ? "s" : ""} to continue.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {selectedInterests.length >= 3 && (
-              <div className="bg-gradient-to-r from-buddy-green/10 to-buddy-blue/10 p-4 rounded-2xl border border-buddy-green/20">
-                <div className="flex items-center space-x-3">
-                  <Users className="h-5 w-5 text-buddy-green" />
-                  <p className="text-sm text-buddy-gray-700">
-                    <span className="font-semibold">Excellent choices!</span>{" "}
-                    We'll use these to find amazing buddies who share your
-                    passions.
                   </p>
                 </div>
               </div>

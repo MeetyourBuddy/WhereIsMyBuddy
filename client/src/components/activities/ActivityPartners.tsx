@@ -199,24 +199,37 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId, isActiv
             <div className="w-16 h-16 mx-auto mb-4 bg-buddy-gray-100 rounded-full flex items-center justify-center">
               <Users className="w-8 h-8 text-buddy-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
-              Join Activity to Access Partners
-            </h3>
-            <p className="text-buddy-gray-600 mb-6">
-              You need to be a participant in this activity to access
-              partnership features and invite accountability partners.
-            </p>
-            <div className="space-y-3">
-              <p className="text-sm text-buddy-gray-500">
-                As a participant, you'll be able to:
-              </p>
-              <ul className="text-sm text-buddy-gray-600 space-y-1">
-                <li>• Invite friends as accountability partners</li>
-                <li>• View partner progress and statistics</li>
-                <li>• Accept or decline partnership requests</li>
-                <li>• Track group progress together</li>
-              </ul>
-            </div>
+            {isActivityEnded ? (
+              <>
+                <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+                  Activity Ended
+                </h3>
+                <p className="text-buddy-gray-600 mb-6">
+                  This activity has ended. Partner features are no longer available.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold text-buddy-gray-800 mb-2">
+                  Join Activity to Access Partners
+                </h3>
+                <p className="text-buddy-gray-600 mb-6">
+                  You need to be a participant in this activity to access
+                  partnership features and invite accountability partners.
+                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-buddy-gray-500">
+                    As a participant, you'll be able to:
+                  </p>
+                  <ul className="text-sm text-buddy-gray-600 space-y-1">
+                    <li>• Invite friends as accountability partners</li>
+                    <li>• View partner progress and statistics</li>
+                    <li>• Accept or decline partnership requests</li>
+                    <li>• Track group progress together</li>
+                  </ul>
+                </div>
+              </>
+            )}
           </div>
         </Card>
       </div>

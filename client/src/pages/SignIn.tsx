@@ -74,7 +74,7 @@ const SignIn = () => {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-buddy-purple/10 to-buddy-blue/10 rounded-full blur-3xl"></div>
       </div>
 
-      <Container size="small" className="max-w-md relative z-10">
+      <Container size="small" className="max-w-lg relative z-10">
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <h1 className="text-4xl font-bold">
@@ -85,14 +85,14 @@ const SignIn = () => {
             </h1>
           </Link>
           <p className="mt-3 text-lg text-buddy-gray-600">
-            Welcome back! Ready to continue your journey? 🚀
+            Welcome back! Ready to continue your journey?
           </p>
         </div>
 
         <Card className="shadow-2xl border-2 border-white/20 bg-white/95 backdrop-blur-sm rounded-3xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-1">
           <CardHeader className="pb-6">
             <CardTitle className="text-center text-2xl font-bold ">
-              Welcome Back! ✨
+              Welcome Back
             </CardTitle>
             <p className="text-center text-buddy-gray-600 mt-2">
               Let's get you back to achieving your goals
@@ -110,7 +110,7 @@ const SignIn = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Email Address 📧
+                        Email Address
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -133,7 +133,7 @@ const SignIn = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Password 🔒
+                        Password
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -176,7 +176,8 @@ const SignIn = () => {
                   className="w-full rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 h-12 text-lg font-semibold"
                   size="lg"
                 >
-                  Sign In & Continue! <ArrowRight className="ml-2 h-5 w-5" />
+                  Sign In
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </form>
             </Form>
@@ -209,7 +210,7 @@ const SignIn = () => {
                 to="/signup"
                 className="font-semibold text-buddy-purple hover:text-buddy-purple-dark transition-colors hover:underline"
               >
-                Join us today! 🎉
+                Create an account
               </Link>
             </p>
           </CardFooter>

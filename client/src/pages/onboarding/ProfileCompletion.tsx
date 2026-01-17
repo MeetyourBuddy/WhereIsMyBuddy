@@ -5,13 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
   ArrowRight,
-  Upload,
   Check,
-  X,
   UserRound,
-  Sparkles,
   Camera,
-  Palette,
   Star,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -138,28 +134,11 @@ const ProfileCompletion = () => {
     <OnboardingLayout
       currentStep={3}
       totalSteps={3}
-      title="Let's finish your amazing profile! 🎨"
-      description="Add the final touches to make your profile shine and attract awesome buddies"
+      title="Complete your profile 🎨"
+      description="Add a photo and bio to help others get to know you"
       onBack={() => navigate("/onboarding/interests")}
     >
       <div className="space-y-6">
-        {/* Progress indicator */}
-        <div className="bg-gradient-to-r from-buddy-orange/10 to-buddy-purple/10 p-4 rounded-2xl border border-buddy-orange/20">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-br from-buddy-orange to-buddy-orange/80 rounded-full p-2">
-              <Palette className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-buddy-gray-900">
-                Step 3: Profile Completion
-              </p>
-              <p className="text-sm text-buddy-gray-600">
-                Add your personal touch to complete your profile
-              </p>
-            </div>
-          </div>
-        </div>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
@@ -257,7 +236,7 @@ const ProfileCompletion = () => {
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Hi! I'm passionate about exploring new activities and meeting amazing people. I love hiking, photography, and trying new cuisines. Looking forward to creating unforgettable memories with awesome buddies! 🌟"
+                        placeholder="Hi! I'm looking to stay consistent with my goals. I love hiking, reading, and learning new skills. Excited to find accountability partners who share similar interests!"
                         className="min-h-[120px] rounded-2xl border-2 border-buddy-orange/20 focus:border-buddy-orange transition-colors resize-none"
                       />
                     </FormControl>
@@ -268,24 +247,12 @@ const ProfileCompletion = () => {
             </div>
 
             <div className="pt-6 space-y-4">
-              <div className="bg-gradient-to-r from-buddy-green/10 to-buddy-blue/10 p-6 rounded-2xl border border-buddy-green/20">
-                <div className="text-center space-y-3">
-                  <h3 className="font-bold text-lg text-buddy-gray-900">
-                    You're Almost There!
-                  </h3>
-                  <p className="text-sm text-buddy-gray-600">
-                    Your amazing profile is ready to help you find incredible
-                    buddies and create unforgettable experiences!
-                  </p>
-                </div>
-              </div>
-
               <Button
                 type="submit"
                 className="w-full rounded-full bg-gradient-to-r from-buddy-purple to-buddy-orange hover:from-buddy-purple/90 hover:to-buddy-orange/90 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 size="lg"
               >
-                Complete My Profile & Start Exploring!{" "}
+                Complete Profile
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>

@@ -61,9 +61,9 @@ const Index = () => {
   const features = [
     {
       icon: <Users className="w-8 h-8 text-buddy-purple" />,
-      title: "Find Your Perfect Match",
+      title: "Find Your Accountability Partner",
       description:
-        "Connect with amazing people who share your passions and will cheer you on every step of the way! 🎯",
+        "Connect with motivated people who share your goals and will cheer you on every step of the way! 🎯",
     },
     {
       icon: <Calendar className="w-8 h-8 text-buddy-blue" />,
@@ -304,7 +304,7 @@ const Index = () => {
               >
                 Stop going it alone! Join thousands of people who are crushing
                 their goals with the power of accountability. Find your perfect
-                match and turn your dreams into reality together! ✨
+                partner and turn your dreams into reality together! ✨
               </motion.p>
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
@@ -376,7 +376,7 @@ const Index = () => {
 
         <Container>
           <div className="text-center mb-16 relative z-10">
-            <span className="inline-block bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-6 py-2 rounded-full text-sm font-medium mb-6 shadow-lg">
+            <span className="inline-block bg-buddy-purple/10 text-buddy-purple px-6 py-2 rounded-full text-sm font-semibold mb-6">
               Why Choose Buddy?
             </span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-buddy-gray-900">
@@ -449,7 +449,7 @@ const Index = () => {
 
         <Container>
           <div className="text-center mb-16 relative z-10">
-            <span className="inline-block bg-gradient-to-r from-buddy-blue to-buddy-green text-white px-6 py-2 rounded-full text-sm font-medium mb-6 shadow-lg">
+            <span className="inline-block bg-buddy-blue/10 text-buddy-blue px-6 py-2 rounded-full text-sm font-semibold mb-6">
               How It Works
             </span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-buddy-gray-900">
@@ -511,9 +511,9 @@ const Index = () => {
                     Find Your Buddies
                   </h3>
                   <p className="text-buddy-gray-600 text-base leading-relaxed">
-                    Browse our amazing community of like-minded individuals and
-                    connect with those who share your goals and interests. It's
-                    like speed dating, but for accountability! 💫
+                    Browse our supportive community of like-minded individuals and
+                    connect with those who share your goals and interests. Finding
+                    your accountability partner has never been easier! 💫
                   </p>
                 </div>
               </Card>
@@ -562,16 +562,16 @@ const Index = () => {
 
         <Container>
           <div className="text-center mb-16 relative z-10">
-            <span className="inline-block bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-6 py-2 rounded-full text-sm font-medium mb-6 shadow-lg">
+            <span className="inline-block bg-buddy-purple/10 text-buddy-purple px-6 py-2 rounded-full text-sm font-semibold mb-6">
               Community
             </span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-buddy-gray-900">
               Meet Your Future Accountability Partners! 👥
             </h2>
             <p className="text-buddy-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
-              Our community is full of amazing people who are just as excited
-              about their goals as you are! Find your perfect match and start
-              building meaningful connections that will change your life. 🌟
+              Our community is full of motivated people who are just as excited
+              about their goals as you are! Find your perfect accountability partner
+              and start building meaningful connections that will change your life. 🌟
             </p>
           </div>
 
@@ -628,10 +628,11 @@ const Index = () => {
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => navigate("/signup")}
                       className="w-full rounded-full mt-auto group-hover:bg-buddy-purple group-hover:text-white group-hover:border-buddy-purple transition-all duration-300 hover:scale-105 flex-shrink-0"
                     >
                       <UserPlus className="w-4 h-4 mr-2" />
-                      Connect Now!
+                      Connect Now
                     </Button>
                   </div>
                 </Card>
@@ -641,8 +642,11 @@ const Index = () => {
 
           <div className="text-center relative z-10">
             <Link to="/buddies">
-              <Button className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 px-8 py-3 text-lg font-semibold">
-                View All Buddies
+              <Button 
+                variant="outline"
+                className="rounded-full border-2 border-buddy-purple text-buddy-purple hover:bg-buddy-purple hover:text-white transition-all duration-300 px-8 py-3 text-lg font-semibold"
+              >
+                Browse All Buddies
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
@@ -662,7 +666,7 @@ const Index = () => {
 
         <Container>
           <div className="text-center mb-16 relative z-10">
-            <span className="inline-block bg-gradient-to-r from-buddy-green to-buddy-blue text-white px-6 py-2 rounded-full text-sm font-medium mb-6 shadow-lg">
+            <span className="inline-block bg-buddy-green/10 text-buddy-green px-6 py-2 rounded-full text-sm font-semibold mb-6">
               Activities
             </span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-buddy-gray-900">
@@ -671,7 +675,7 @@ const Index = () => {
             <p className="text-buddy-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
               Ready to level up your life? Join thousands of people in exciting
               challenges that will push you to be your best self. From fitness
-              goals to learning new skills - we've got something amazing for
+              goals to learning new skills - we've got something for
               everyone! 🚀
             </p>
           </div>
@@ -714,11 +718,11 @@ const Index = () => {
                       </span>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => navigate("/activities?tab=popular")}
-                        className="rounded-full group-hover:bg-buddy-green group-hover:text-white group-hover:border-buddy-green transition-all duration-300 hover:scale-105"
+                        className="rounded-full text-buddy-green hover:bg-buddy-green/10 font-medium"
                       >
-                        Join Now!
+                        View Details →
                       </Button>
                     </div>
                   </div>
@@ -728,9 +732,12 @@ const Index = () => {
           </div>
 
           <div className="text-center relative z-10">
-                <Link to="/activities">
-              <Button className="rounded-full bg-gradient-to-r from-buddy-green to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 px-8 py-3 text-lg font-semibold">
-                View All Activities
+            <Link to="/activities">
+              <Button 
+                variant="outline"
+                className="rounded-full border-2 border-buddy-green text-buddy-green hover:bg-buddy-green hover:text-white transition-all duration-300 px-8 py-3 text-lg font-semibold"
+              >
+                Explore All Activities
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>

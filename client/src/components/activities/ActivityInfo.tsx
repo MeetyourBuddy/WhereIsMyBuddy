@@ -57,6 +57,7 @@ interface ActivityInfoProps {
     description?: string;
     isDefault: boolean;
   }[];
+  isActivityEnded?: boolean;
 }
 
 const ActivityInfo: React.FC<ActivityInfoProps> = ({
@@ -74,11 +75,15 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
   participants = [],
   admin,
   rules,
+  isActivityEnded = false,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { joinActivityMutation, quitActivityMutation } = useActivityData(id);
   const [isJoining, setIsJoining] = useState(false);
+  
+  // Check if either mutation is pending
+  const isLoading = joinActivityMutation.isPending || quitActivityMutation.isPending;
 
   // Check if user is a participant and creator using helper functions
   // Use both _id and id fields to handle different API responses
@@ -157,6 +162,12 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
                 <Badge className="flex w-full items-center justify-center bg-gradient-to-r from-buddy-purple to-buddy-blue text-white px-4 py-2 text-sm font-medium">
                   <Shield className="w-4 h-4 mr-2" />
                   ACTIVITY CREATOR
+                </Badge>
+              </div>
+            ) : isActivityEnded ? (
+              <div className="w-full flex justify-center">
+                <Badge className="flex w-full items-center justify-center bg-red-100 text-red-700 border border-red-200 px-4 py-2 text-sm font-medium">
+                  Activity Ended
                 </Badge>
               </div>
             ) : (

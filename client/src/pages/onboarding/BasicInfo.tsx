@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowRight, Calendar, MapPin, User, Sparkles } from "lucide-react";
+import { ArrowRight, Calendar, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -97,27 +97,10 @@ const BasicInfo = () => {
     <OnboardingLayout
       currentStep={1}
       totalSteps={3}
-      title="Let's get to know you! 👋"
-      description="Share a few details so we can create the perfect experience for you"
+      title="Tell us about yourself 👋"
+      description="Share a few details so we can personalize your experience"
     >
       <div className="space-y-6">
-        {/* Progress indicator */}
-        <div className="bg-gradient-to-r from-buddy-purple/10 to-buddy-orange/10 p-4 rounded-2xl border border-buddy-purple/20">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-br from-buddy-purple to-buddy-purple/80 rounded-full p-2">
-              <User className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-buddy-gray-900">
-                Step 1: Basic Information
-              </p>
-              <p className="text-sm text-buddy-gray-600">
-                Help us personalize your buddy-finding experience
-              </p>
-            </div>
-          </div>
-        </div>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -192,8 +175,8 @@ const BasicInfo = () => {
                     </SelectContent>
                   </Select>
                   <FormDescription className="text-buddy-gray-600">
-                    💡 Select your city or the one closest to you for better
-                    local matches
+                    💡 Select your city or the one closest to you to find
+                    buddies nearby
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -248,7 +231,7 @@ const BasicInfo = () => {
                     </PopoverContent>
                   </Popover>
                   <FormDescription className="text-buddy-gray-600">
-                    🎈 This helps us find buddies in your age group
+                    🔒 Your birthdate is private — we use it to personalize your experience
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -256,15 +239,6 @@ const BasicInfo = () => {
             />
 
             <div className="pt-6 space-y-4">
-              <div className="bg-gradient-to-r from-buddy-green/10 to-buddy-blue/10 p-4 rounded-2xl border border-buddy-green/20">
-                <div className="flex items-center space-x-3">
-                  <Sparkles className="h-5 w-5 text-buddy-green" />
-                  <p className="text-sm text-buddy-gray-700">
-                    <span className="font-semibold">Great start!</span> This
-                    information helps us find the perfect local buddies for you.
-                  </p>
-                </div>
-              </div>
               <Button
                 type="submit"
                 className="w-full rounded-full bg-gradient-to-r from-buddy-green to-buddy-blue hover:from-buddy-green/90 hover:to-buddy-blue/90 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
