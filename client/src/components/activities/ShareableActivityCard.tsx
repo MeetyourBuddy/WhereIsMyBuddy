@@ -38,8 +38,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import QRCode from "react-qr-code";
-import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
+import { useActivityData } from "@/hooks/useActivityData";
 
 import {
   IActivityResult,
@@ -93,8 +93,7 @@ const ShareableActivityCard = ({
   } = activity;
   const { toast } = useToast();
   const { user } = useAuth();
-  const { joinActivity, quitActivity, isUserParticipant, isLoading } =
-    useActivityStore();
+  const { joinActivityMutation, quitActivityMutation } = useActivityData(id);
 
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
@@ -152,24 +151,15 @@ const ShareableActivityCard = ({
     setIsJoining(true);
     try {
       if (isParticipant) {
-        await quitActivity(id);
-        toast({
-          title: "Left activity",
-          description: "You have successfully left the activity",
-        });
+        await quitActivityMutation.mutateAsync(id);
+        // Toast is handled by the mutation
       } else {
-        await joinActivity(id);
-        toast({
-          title: "Joined activity",
-          description: "You have successfully joined the activity",
-        });
+        await joinActivityMutation.mutateAsync(id);
+        // Toast is handled by the mutation
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update activity participation",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      // Error toast is handled by the mutation, but we can add additional handling here if needed
+      console.error("Activity join/quit error:", error);
     } finally {
       setIsJoining(false);
     }

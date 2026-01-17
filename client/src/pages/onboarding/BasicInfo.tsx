@@ -36,6 +36,7 @@ import {
   countries,
   citiesByCountry,
 } from "@/lib/constants/country-city.constants";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const formSchema = z.object({
   country: z.string().min(1, { message: "Please select your country" }),
@@ -49,6 +50,7 @@ type FormData = z.infer<typeof formSchema>;
 
 const BasicInfo = () => {
   const navigate = useNavigate();
+  useScrollToTopImmediate();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 

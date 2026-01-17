@@ -55,6 +55,7 @@ import {
 } from "@/lib/constants/category-interests.constants";
 import { useActivityStore } from "@/store/activity.store";
 import { ApiResponse } from "@/types";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const STEPS = [
   {
@@ -229,6 +230,8 @@ interface FormChangeEvent {
 const CreateActivity = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  // Scroll to top on mount and when step changes
+  useScrollToTopImmediate([currentStep]);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",

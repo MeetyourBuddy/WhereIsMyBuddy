@@ -727,10 +727,10 @@ const Index = () => {
             ))}
           </div>
 
-          <div className="text-center">
-            <Link to="/activities">
+          <div className="text-center relative z-10">
+                <Link to="/activities">
               <Button className="rounded-full bg-gradient-to-r from-buddy-green to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 px-8 py-3 text-lg font-semibold">
-                Explore All Activities
+                View All Activities
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>

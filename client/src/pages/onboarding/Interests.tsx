@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 // import { interestCategories } from "@/lib/constants/interest-categories.constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { activityCategories } from "@/lib/constants/category-interests.constants";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const InterestSelection = () => {
   const navigate = useNavigate();
+  useScrollToTopImmediate();
   const [selectedInterests, setSelectedInterests] = React.useState<string[]>(
     []
   );

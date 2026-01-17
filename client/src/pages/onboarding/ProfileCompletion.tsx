@@ -55,6 +55,8 @@ for (let i = 0; i < avatarOptions.length; i++) {
   avatarOptions[i].url = `https://picsum.photos/id/${200 + i}/200`;
 }
 
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+
 const formSchema = z.object({
   selectedAvatar: z.string({ required_error: "Please select an avatar" }),
   bio: z.string().optional(),

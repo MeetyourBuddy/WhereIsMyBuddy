@@ -14,9 +14,11 @@ import { toast } from "sonner";
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/common/Card";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const OnboardingWelcome = () => {
   const navigate = useNavigate();
+  useScrollToTopImmediate();
 
   const handleContinue = () => {
     navigate("/onboarding/basic-info");

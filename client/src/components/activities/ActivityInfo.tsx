@@ -22,7 +22,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import Avatar from "@/components/common/Avatar";
@@ -30,6 +29,7 @@ import {
   isActivityCreator,
   isActivityParticipant,
 } from "@/types/activity-types";
+import { useActivityData } from "@/hooks/useActivityData";
 
 interface ActivityInfoProps {
   id?: string;
@@ -77,7 +77,7 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { joinActivity, quitActivity, isLoading } = useActivityStore();
+  const { joinActivityMutation, quitActivityMutation } = useActivityData(id);
   const [isJoining, setIsJoining] = useState(false);
 
   // Check if user is a participant and creator using helper functions
@@ -111,24 +111,15 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
     setIsJoining(true);
     try {
       if (isParticipant) {
-        await quitActivity(id);
-        toast({
-          title: "Left activity",
-          description: "You have successfully left the activity",
-        });
+        await quitActivityMutation.mutateAsync(id);
+        // Toast is handled by the mutation
       } else {
-        await joinActivity(id);
-        toast({
-          title: "Joined activity",
-          description: "You have successfully joined the activity",
-        });
+        await joinActivityMutation.mutateAsync(id);
+        // Toast is handled by the mutation
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update activity participation",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      // Error toast is handled by the mutation, but we can add additional handling here if needed
+      console.error("Activity join/quit error:", error);
     } finally {
       setIsJoining(false);
     }
