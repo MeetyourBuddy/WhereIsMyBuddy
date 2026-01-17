@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
 import Button from "@/components/common/Button";
+import { Button as ShadcnButton } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,7 +29,14 @@ import {
   CalendarDays,
   Clock,
   User as UserIcon,
+  Check,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import EnhancedBuddyCard from "@/components/buddies/EnhancedBuddyCard";
 import { useBuddyConnectionStore } from "@/store/buddy-connection.store";
 import { useAuth } from "@/store/auth.store";
@@ -71,6 +79,18 @@ const Buddies = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20); // 5x4 grid
   const [activeTab, setActiveTab] = useState("all");
+  const [showFilters, setShowFilters] = useState(true);
+  const [sortOption, setSortOption] = useState<string>("default");
+
+  // Sort options for buddies
+  const sortOptions = [
+    { value: "default", label: "Default" },
+    { value: "active", label: "Most Active" },
+    { value: "recent", label: "Recently Joined" },
+    { value: "matches", label: "Most Matches" },
+    { value: "a-z", label: "A-Z" },
+    { value: "z-a", label: "Z-A" },
+  ];
 
   // Load initial data on component mount
   useEffect(() => {
@@ -269,6 +289,53 @@ const Buddies = () => {
         });
       }
 
+      // Apply sorting based on sortOption
+      switch (sortOption) {
+        case "active":
+          // Sort by activity count or hasCompletedOnboarding
+          filtered.sort((a, b) => {
+            const aActive = a.hasCompletedOnboarding ? 1 : 0;
+            const bActive = b.hasCompletedOnboarding ? 1 : 0;
+            return bActive - aActive;
+          });
+          break;
+        case "recent":
+          // Sort by createdAt (most recent first)
+          filtered.sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0);
+            const dateB = new Date(b.createdAt || 0);
+            return dateB.getTime() - dateA.getTime();
+          });
+          break;
+        case "matches":
+          // Sort by number of matching interests with current user
+          if (user?.interestsCategories && user.interestsCategories.length > 0) {
+            filtered.sort((a, b) => {
+              const aMatches = a.interestsCategories?.filter((interest) =>
+                user.interestsCategories?.some(
+                  (userInterest) => userInterest.toString() === interest.toString()
+                )
+              ).length || 0;
+              const bMatches = b.interestsCategories?.filter((interest) =>
+                user.interestsCategories?.some(
+                  (userInterest) => userInterest.toString() === interest.toString()
+                )
+              ).length || 0;
+              return bMatches - aMatches;
+            });
+          }
+          break;
+        case "a-z":
+          filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+          break;
+        case "z-a":
+          filtered.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+          break;
+        default:
+          // Keep default order
+          break;
+      }
+
       console.log("Filtered buddies:", filtered);
       return filtered;
     } catch (error) {
@@ -276,7 +343,7 @@ const Buddies = () => {
       // Return empty array as fallback
       return [];
     }
-  }, [searchResults, activeFilters, activeTab, user]);
+  }, [searchResults, activeFilters, activeTab, user, sortOption]);
 
   // Pagination logic - use backend pagination
   const totalPages = searchMetadata
@@ -568,61 +635,83 @@ const Buddies = () => {
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
-                  className="bg-white rounded-full"
+                  className={`bg-white rounded-full ${showFilters ? "border-buddy-purple text-buddy-purple" : ""}`}
                   icon={<Filter className="w-4 h-4" />}
+                  onClick={() => setShowFilters(!showFilters)}
                 >
                   Filters
                 </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white rounded-full"
-                  icon={<SortAsc className="w-4 h-4" />}
-                >
-                  Sort
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <ShadcnButton
+                      variant="outline"
+                      className="bg-white rounded-full h-auto py-2 px-4"
+                    >
+                      <SortAsc className="w-4 h-4 mr-2" />
+                      Sort
+                    </ShadcnButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    {sortOptions.map((option) => (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => setSortOption(option.value)}
+                        className="flex items-center justify-between cursor-pointer"
+                      >
+                        {option.label}
+                        {sortOption === option.value && (
+                          <Check className="w-4 h-4 text-buddy-purple" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   variant="outline"
                   className="bg-white rounded-full"
                   icon={<MapPin className="w-4 h-4" />}
+                  onClick={() => handleTabChange("nearby")}
                 >
                   Near Me
                 </Button>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 mt-2">
-              {interestCategories.map((interest) => (
-                <Button
-                  key={interest}
-                  variant={
-                    activeFilters.includes(interest) ? "primary" : "outline"
-                  }
-                  size="small"
-                  className={
-                    activeFilters.includes(interest)
-                      ? "bg-buddy-purple text-white rounded-full"
-                      : "bg-white text-buddy-gray-700 rounded-full"
-                  }
-                  onClick={() => toggleFilter(interest)}
-                >
-                  {interest}
-                </Button>
-              ))}
+            {showFilters && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {interestCategories.map((interest) => (
+                  <Button
+                    key={interest}
+                    variant={
+                      activeFilters.includes(interest) ? "primary" : "outline"
+                    }
+                    size="small"
+                    className={
+                      activeFilters.includes(interest)
+                        ? "bg-buddy-purple text-white rounded-full"
+                        : "bg-white text-buddy-gray-700 rounded-full"
+                    }
+                    onClick={() => toggleFilter(interest)}
+                  >
+                    {interest}
+                  </Button>
+                ))}
 
-              {(searchQuery ||
-                (activeFilters.length > 0 &&
-                  !activeFilters.includes("All"))) && (
-                <Button
-                  variant="ghost"
-                  size="small"
-                  className="text-buddy-gray-500 rounded-full"
-                  onClick={clearFilters}
-                  icon={<X className="w-4 h-4" />}
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </div>
+                {(searchQuery ||
+                  (activeFilters.length > 0 &&
+                    !activeFilters.includes("All"))) && (
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    className="text-buddy-gray-500 rounded-full"
+                    onClick={clearFilters}
+                    icon={<X className="w-4 h-4" />}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </Container>
       </div>

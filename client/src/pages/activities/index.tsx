@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
 import Button from "@/components/common/Button";
+import { Button as ShadcnButton } from "@/components/ui/button";
 import ActivityCard from "@/components/dashboard/ActivityCard";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +19,14 @@ import {
   Clock,
   Star,
   Plus,
+  Check,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useActivityData, useUserProgress } from "@/hooks/useActivityData";
 import { useAuth } from "@/store/auth.store";
 import {
@@ -43,6 +51,19 @@ const Activities = () => {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9); // 3x3 grid
+  const [showFilters, setShowFilters] = useState(true);
+  const [sortOption, setSortOption] = useState<string>("default");
+
+  // Sort options for activities
+  const sortOptions = [
+    { value: "default", label: "Default" },
+    { value: "popular", label: "Most Popular" },
+    { value: "newest", label: "Newest First" },
+    { value: "oldest", label: "Oldest First" },
+    { value: "soon", label: "Starting Soon" },
+    { value: "a-z", label: "A-Z" },
+    { value: "z-a", label: "Z-A" },
+  ];
   
   // Get initial tab from URL parameter, default to "all"
   const getInitialTab = () => {
@@ -400,7 +421,7 @@ const Activities = () => {
     }
 
     // Apply search and category filters
-    return filtered.filter((activity) => {
+    filtered = filtered.filter((activity) => {
       const matchesSearch =
         activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         activity.description
@@ -417,12 +438,52 @@ const Activities = () => {
       return matchesSearch && matchesCategory;
     });
 
+    // Apply sorting based on sortOption
+    switch (sortOption) {
+      case "popular":
+        filtered.sort(
+          (a, b) =>
+            (b.participants?.length || 0) - (a.participants?.length || 0)
+        );
+        break;
+      case "newest":
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.startDate);
+          const dateB = new Date(b.createdAt || b.startDate);
+          return dateB.getTime() - dateA.getTime();
+        });
+        break;
+      case "oldest":
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.startDate);
+          const dateB = new Date(b.createdAt || b.startDate);
+          return dateA.getTime() - dateB.getTime();
+        });
+        break;
+      case "soon":
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.startDate);
+          const dateB = new Date(b.startDate);
+          return dateA.getTime() - dateB.getTime();
+        });
+        break;
+      case "a-z":
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "z-a":
+        filtered.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      default:
+        // Keep default order
+        break;
+    }
+
     // Debug final results
     console.log("🎯 Final filtered activities for tab:", activeTab, filtered);
     console.log("📊 Total count:", filtered.length);
 
     return filtered;
-  }, [activitiesFromStore, activeTab, searchQuery, activeFilters, user?._id]);
+  }, [activitiesFromStore, activeTab, searchQuery, activeFilters, user?._id, sortOption]);
 
   // Pagination logic
   const totalPages = Math.ceil(
@@ -518,56 +579,77 @@ const Activities = () => {
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
-                  className="bg-white rounded-full text-xs sm:text-sm px-3 sm:px-4"
+                  className={`bg-white rounded-full text-xs sm:text-sm px-3 sm:px-4 ${showFilters ? "border-buddy-purple text-buddy-purple" : ""}`}
                   icon={<Filter className="w-3 h-3 sm:w-4 sm:h-4" />}
+                  onClick={() => setShowFilters(!showFilters)}
                 >
                   <span className="hidden sm:inline">Filters</span>
                   <span className="sm:hidden">Filter</span>
                 </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white rounded-full text-xs sm:text-sm px-3 sm:px-4"
-                  icon={<SortAsc className="w-3 h-3 sm:w-4 sm:h-4" />}
-                >
-                  Sort
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <ShadcnButton
+                      variant="outline"
+                      className="bg-white rounded-full text-xs sm:text-sm px-3 sm:px-4 h-auto py-2"
+                    >
+                      <SortAsc className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      Sort
+                    </ShadcnButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    {sortOptions.map((option) => (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => setSortOption(option.value)}
+                        className="flex items-center justify-between cursor-pointer"
+                      >
+                        {option.label}
+                        {sortOption === option.value && (
+                          <Check className="w-4 h-4 text-buddy-purple" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={
-                    activeFilters.includes(category) ? "primary" : "outline"
-                  }
-                  size="small"
-                  className={
-                    activeFilters.includes(category)
-                      ? "bg-buddy-purple text-white rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
-                      : "bg-white text-buddy-gray-700 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
-                  }
-                  onClick={() => toggleFilter(category)}
-                >
-                  {category}
-                </Button>
-              ))}
+            {showFilters && (
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
+                {categories.map((category) => (
+                  <Button
+                    key={category}
+                    variant={
+                      activeFilters.includes(category) ? "primary" : "outline"
+                    }
+                    size="small"
+                    className={
+                      activeFilters.includes(category)
+                        ? "bg-buddy-purple text-white rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                        : "bg-white text-buddy-gray-700 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                    }
+                    onClick={() => toggleFilter(category)}
+                  >
+                    {category}
+                  </Button>
+                ))}
 
-              {(searchQuery ||
-                (activeFilters.length > 0 &&
-                  !activeFilters.includes("All"))) && (
-                <Button
-                  variant="ghost"
-                  size="small"
-                  className="text-buddy-gray-500 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
-                  onClick={clearFilters}
-                  icon={<X className="w-3 h-3 sm:w-4 sm:h-4" />}
-                >
-                  <span className="hidden sm:inline">Clear Filters</span>
-                  <span className="sm:hidden">Clear</span>
-                </Button>
-              )}
-            </div>
+                {(searchQuery ||
+                  (activeFilters.length > 0 &&
+                    !activeFilters.includes("All"))) && (
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    className="text-buddy-gray-500 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                    onClick={clearFilters}
+                    icon={<X className="w-3 h-3 sm:w-4 sm:h-4" />}
+                  >
+                    <span className="hidden sm:inline">Clear Filters</span>
+                    <span className="sm:hidden">Clear</span>
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </Container>
       </div>
