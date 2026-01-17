@@ -216,6 +216,39 @@ const ActivityPage = () => {
     }
   }, [statsQuery.data, currentActivity, leaderboardData.length]);
 
+  // Check if current user is a participant using helper function
+  const userId = user?._id || user?.id;
+  const isUserParticipant = currentActivity
+    ? isActivityParticipant(currentActivity, userId)
+    : false;
+
+  // Auto-join if post-auth intent exists and user is now authenticated + onboarded
+  useEffect(() => {
+    if (!isAuthenticated || !user?.hasCompletedOnboarding || !currentActivity?.id)
+      return;
+
+    const intent = postAuthIntent.get();
+    if (intent?.type !== "join-activity") return;
+    if (String(intent.activityId) !== String(currentActivity.id)) return;
+    if (isUserParticipant) {
+      postAuthIntent.clear();
+      return;
+    }
+
+    ActivityService.joinActivity(String(currentActivity.id))
+      .then(() => {
+        postAuthIntent.clear();
+        toast({
+          title: "Joined activity",
+          description: "You're in! Start your first check-in when ready.",
+        });
+      })
+      .catch(() => {
+        // If join fails, keep intent cleared to avoid looping; user can retry manually.
+        postAuthIntent.clear();
+      });
+  }, [isAuthenticated, user?.hasCompletedOnboarding, currentActivity?.id, isUserParticipant, toast]);
+
   // Show loading state while data is being fetched or if we don't have activity data yet
   if (isLoadingActivities || isLoading || !currentActivity) {
     return (
@@ -318,12 +351,6 @@ const ActivityPage = () => {
     currentActivity.endDate ? new Date(currentActivity.endDate) : new Date()
   );
 
-  // Check if current user is a participant using helper function
-  const userId = user?._id || user?.id;
-  const isUserParticipant = currentActivity
-    ? isActivityParticipant(currentActivity, userId)
-    : false;
-
   // Direct admin comparison check - use both _id and id fields
   const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
   const isUserAdmin = user && currentActivity?.admin && userId === adminId;
@@ -338,33 +365,6 @@ const ActivityPage = () => {
     localStorage.setItem("returnToAfterAuth", `/activities/${displayData.id}`);
     navigate("/signup");
   };
-
-  // Auto-join if post-auth intent exists and user is now authenticated + onboarded
-  useEffect(() => {
-    if (!isAuthenticated || !user?.hasCompletedOnboarding || !displayData.id)
-      return;
-
-    const intent = postAuthIntent.get();
-    if (intent?.type !== "join-activity") return;
-    if (String(intent.activityId) !== String(displayData.id)) return;
-    if (isUserParticipant) {
-      postAuthIntent.clear();
-      return;
-    }
-
-    ActivityService.joinActivity(String(displayData.id))
-      .then(() => {
-        postAuthIntent.clear();
-        toast({
-          title: "Joined activity",
-          description: "You’re in! Start your first check-in when ready.",
-        });
-      })
-      .catch(() => {
-        // If join fails, keep intent cleared to avoid looping; user can retry manually.
-        postAuthIntent.clear();
-      });
-  }, [isAuthenticated, user?.hasCompletedOnboarding, displayData.id, isUserParticipant, toast]);
 
   // Handle banner update
   const handleBannerUpdate = async (newBanner: string, bannerFile?: File) => {
@@ -469,10 +469,18 @@ const ActivityPage = () => {
                     className="shadow-lg rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue border-0 px-4 sm:px-6 text-white text-xs sm:text-sm"
                   >
                     <Lock className="mr-2 h-4 w-4" />
-                    Sign in to join
+                    {status === "ended" ? "Sign in to view" : "Sign in to join"}
                   </Button>
                 )}
-                {isUserParticipant && (
+                {isUserParticipant && status === "ended" && (
+                  <Badge
+                    variant="danger"
+                    className="shadow-lg rounded-full px-4 sm:px-6 py-2 text-xs sm:text-sm bg-red-100 text-red-700 border border-red-200"
+                  >
+                    Activity Ended
+                  </Badge>
+                )}
+                {isUserParticipant && status !== "ended" && (
                   <CheckInDialog
                     activity={currentActivity}
                     onCheckInComplete={() => {

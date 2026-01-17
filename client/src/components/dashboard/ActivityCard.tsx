@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { User } from "@/types/auth-types";
 import { IUserResponse } from "@/types/user-types";
-import { formatDate } from "date-fns";
+import { formatDate, differenceInDays } from "date-fns";
 import { useActivityData } from "@/hooks/useActivityData";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
@@ -80,6 +80,9 @@ const ActivityCard = ({
     userId
   );
   const isCreator = isActivityCreator({ admin } as any, userId);
+
+  // Check if activity has ended
+  const isEnded = endDate ? differenceInDays(new Date(endDate), new Date()) < 0 : false;
 
   const handleJoinQuit = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -305,7 +308,14 @@ const ActivityCard = ({
           <div className="flex items-center gap-2">
             {id && (
               <>
-                {isCreator ? (
+                {isEnded ? (
+                  <Badge
+                    variant="destructive"
+                    className="h-9 px-4 rounded-full bg-red-100 text-red-700 border border-red-200 hover:bg-red-100"
+                  >
+                    Ended
+                  </Badge>
+                ) : isCreator ? (
                   <div className="h-9 flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full text-sm font-medium">
                     <Shield className="w-4 h-4" />
                     CREATOR

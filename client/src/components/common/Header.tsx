@@ -126,7 +126,7 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                   className="text-buddy-gray-600 hover:text-buddy-gray-900"
                   aria-label="Search"
                 >
-                  <Search className="w-5 h-5" />
+                  <Search className="w-7 h-7" />
                 </Button>
               </div>
 
@@ -137,7 +137,7 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                   className="text-buddy-gray-600 hover:text-buddy-gray-900 relative"
                   aria-label="Notifications"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-7 h-7" />
                   <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-buddy-purple"></span>
                 </Button>
               </div>
@@ -146,7 +146,7 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <div className="cursor-pointer">
-                      <Avatar size="sm" status="online" />
+                      <Avatar size="md" status="online" />
                     </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent

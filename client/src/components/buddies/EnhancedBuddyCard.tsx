@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/common/Card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   MapPin,
   UserPlus,
@@ -10,13 +15,12 @@ import {
   Check,
   X,
   Clock,
-  Users,
+  Activity,
   Flame,
   Star,
-  Heart,
-  Zap,
+  CheckCircle,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useBuddyConnectionStore } from "@/store/buddy-connection.store";
 import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +56,42 @@ interface EnhancedBuddyCardProps {
   onViewProfile?: (userId: string) => void;
   onSendMessage?: (userId: string) => void;
 }
+
+// Pastel background classes using tailwind config colors
+// These are static strings so Tailwind JIT can detect them at build time
+const PASTEL_BG_CLASSES = [
+  "bg-pastel-pink",
+  "bg-pastel-purple", 
+  "bg-pastel-blue",
+  "bg-pastel-green",
+  "bg-pastel-yellow",
+  "bg-pastel-orange",
+  "bg-pastel-peach",
+  "bg-pastel-gray",
+] as const;
+
+// Helper function to get pastel color class based on user ID
+// Uses a simple hash of the entire userId for better distribution
+const getPastelColorClass = (userId: string) => {
+  // Create a hash from all characters in the userId
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  // Make sure the index is positive
+  const index = Math.abs(hash) % PASTEL_BG_CLASSES.length;
+  return PASTEL_BG_CLASSES[index];
+};
+
+// Helper function to get user's timezone display
+const getTimezoneDisplay = (user: BuddyUser) => {
+  if ("timezone" in user && user.timezone) {
+    return user.timezone;
+  }
+  // Default to UTC if no timezone
+  return "UTC";
+};
 
 const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
   user,
@@ -115,25 +155,35 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
     }
   }, [connectionStatuses, user]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "online":
-        return "bg-green-500";
-      case "away":
-        return "bg-yellow-500";
-      default:
-        return "bg-gray-400";
-    }
+  // Get user profile image
+  const getProfileImage = () => {
+    if ("picture" in user && user.picture) return String(user.picture);
+    if ("profilePicture" in user && user.profilePicture)
+      return String(user.profilePicture);
+    if ("image" in user && user.image) return String(user.image);
+    if ("avatar" in user && user.avatar) return String(user.avatar);
+    return null;
   };
 
-  const getInterestColor = (index: number) => {
-    const colors = [
-      "bg-buddy-purple/10 text-buddy-purple border-buddy-purple/20",
-      "bg-buddy-blue/10 text-buddy-blue border-buddy-blue/20",
-      "bg-buddy-green/10 text-buddy-green border-buddy-green/20",
-      "bg-buddy-orange/10 text-buddy-orange border-buddy-orange/20",
-    ];
-    return colors[index % colors.length];
+  // Get user's first initial
+  const getUserInitial = () => {
+    return user.name ? user.name.charAt(0).toUpperCase() : "U";
+  };
+
+  // Get user ID for color selection
+  const userId = "_id" in user ? user._id : user.id;
+
+  // Check if profile is complete
+  const isProfileComplete =
+    "_id" in user ? user.hasCompletedOnboarding : true;
+
+  // Get activity stats
+  const getActivityStats = () => {
+    // For now, return mock data - can be replaced with real stats later
+    return {
+      active: 0,
+      completed: 0,
+    };
   };
 
   const handleCardClick = () => {
@@ -246,11 +296,11 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
         <Button
           variant="default"
           size="sm"
-          className="rounded-full bg-buddy-purple hover:bg-buddy-purple/90 text-white"
+          className="rounded-full bg-buddy-purple hover:bg-buddy-purple/90 text-white px-4"
           onClick={(e) => e.stopPropagation()}
         >
-          <UserPlus className="w-4 h-4" />
-          <span className="hidden sm:inline ml-1">Add Buddy</span>
+          <UserPlus className="w-4 h-4 mr-1" />
+          Add Buddy
         </Button>
       );
     }
@@ -258,24 +308,26 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
     // Check if this is a received request
     if (currentConnectionStatus === "pending" && currentConnectionId) {
       return (
-        <div className="flex space-x-2 w-1/2 justify-between">
+        <div className="flex gap-2">
           <Button
             variant="default"
             size="sm"
-            className="rounded-full bg-green-500 hover:bg-green-600 text-white w-full"
+            className="rounded-full bg-green-500 hover:bg-green-600 text-white px-3"
             onClick={handleAcceptRequest}
             disabled={isProcessing}
           >
             <Check className="w-4 h-4" />
+            Accept
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="rounded-full border-red-200 text-red-500 hover:bg-red-500 w-full"
+            className="rounded-full border-red-200 text-red-500 hover:bg-red-500 hover:text-white px-3"
             onClick={handleDeclineRequest}
             disabled={isProcessing}
           >
             <X className="w-4 h-4" />
+            Decline
           </Button>
         </div>
       );
@@ -288,11 +340,11 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            className="rounded-full border-buddy-purple/20 text-buddy-purple hover:bg-buddy-purple hover:text-white transition-all"
+            className="rounded-full border-buddy-purple/20 text-buddy-purple hover:bg-buddy-purple hover:text-white transition-all px-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <MessageCircle className="w-4 h-4" />
-            <span className="hidden sm:inline ml-1">Message</span>
+            <MessageCircle className="w-4 h-4 mr-1" />
+            Message
           </Button>
         );
       case "pending":
@@ -300,11 +352,11 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            className="rounded-full border-buddy-orange/20 text-buddy-orange"
+            className="rounded-full border-buddy-orange/20 text-buddy-orange px-4"
             disabled
           >
-            <Clock className="w-4 h-4" />
-            <span className="hidden sm:inline ml-1">Pending</span>
+            <Clock className="w-4 h-4 mr-1" />
+            Pending
           </Button>
         );
       case "declined":
@@ -312,14 +364,12 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
           <Button
             variant="default"
             size="sm"
-            className="rounded-full bg-buddy-purple hover:bg-buddy-purple/90 text-white"
+            className="rounded-full bg-buddy-purple hover:bg-buddy-purple/90 text-white px-4"
             onClick={handleSendRequest}
             disabled={isProcessing || isLoading}
           >
-            <UserPlus className="w-4 h-4" />
-            <span className="hidden sm:inline ml-1">
-              {isProcessing ? "Sending..." : "Add Buddy"}
-            </span>
+            <UserPlus className="w-4 h-4 mr-1" />
+            {isProcessing ? "Sending..." : "Add Buddy"}
           </Button>
         );
       default:
@@ -327,112 +377,112 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
           <Button
             variant="default"
             size="sm"
-            className="rounded-full bg-buddy-purple hover:bg-buddy-purple/90 text-white"
+            className="rounded-full bg-buddy-purple hover:bg-buddy-purple/90 text-white px-4"
             onClick={handleSendRequest}
             disabled={isProcessing || isLoading}
           >
-            <UserPlus className="w-4 h-4" />
-            <span className="hidden sm:inline ml-1">
-              {isProcessing ? "Sending..." : "Add Buddy"}
-            </span>
+            <UserPlus className="w-4 h-4 mr-1" />
+            {isProcessing ? "Sending..." : "Add Buddy"}
           </Button>
         );
     }
   };
 
+  const profileImage = getProfileImage();
+  const activityStats = getActivityStats();
+
   return (
-    <>
+    <TooltipProvider>
       <Card
         hover
-        className="group relative overflow-hidden bg-gradient-to-br from-white to-buddy-gray-50/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer h-80 flex flex-col"
+        className="group relative overflow-hidden bg-white border shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[400px] flex flex-col"
         onClick={handleCardClick}
       >
-        {/* Status indicator */}
-        <div className="absolute top-4 right-4 z-10">
-          <div
-            className={`w-3 h-3 rounded-full ${getStatusColor(
-              ("status" in user ? user.status : "offline") || "offline"
-            )} border-2 border-white shadow-sm`}
-          />
-        </div>
-
-        <Card.Content className="p-6 flex flex-col h-full">
-          {/* Header with avatar and basic info */}
-          <div className="flex items-start gap-4 mb-4">
-            <div className="relative">
-              <Avatar className="h-16 w-16 ring-4 ring-buddy-purple/20 shadow-lg">
-                <AvatarImage
-                  src={
-                    "picture" in user && user.picture
-                      ? String(user.picture)
-                      : "profilePicture" in user && user.profilePicture
-                        ? String(user.profilePicture)
-                        : "image" in user && user.image
-                          ? String(user.image)
-                          : "avatar" in user && user.avatar
-                            ? String(user.avatar)
-                            : undefined
-                  }
-                  alt={user.name || "User avatar"}
-                  className="object-cover"
-                />
-                <AvatarFallback className="bg-buddy-purple text-white font-semibold text-lg">
-                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
-                </AvatarFallback>
-              </Avatar>
-              {/* Activity streak indicator */}
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-buddy-orange rounded-full flex items-center justify-center">
-                <Flame className="w-3 h-3 text-white" />
-              </div>
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-lg text-buddy-gray-900 truncate group-hover:text-buddy-purple transition-colors">
-                {user.name}
-              </h3>
-              {/* Location display */}
-              <div className="flex items-center text-sm text-buddy-gray-500 mt-1">
-                <MapPin className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
-                <span className="truncate">
-                  {"city" in user &&
-                  user.city &&
-                  "country" in user &&
-                  user.country
-                    ? `${user.city}, ${user.country}`
-                    : "location" in user && user.location
-                      ? user.location
-                      : "Location not specified"}
+        {/* Profile Image Section with Padding */}
+        <div className="p-3 pb-0">
+          <div className="relative w-full h-48 overflow-hidden rounded-sm">
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt={user.name || "User"}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className={`w-full h-full flex items-center justify-center ${getPastelColorClass(userId)}`}
+              >
+                <span className="text-7xl font-bold text-white drop-shadow-md">
+                  {getUserInitial()}
                 </span>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Bio */}
-          <div className="mb-4 flex-1">
-            {user.bio ? (
-              <p className="text-sm text-buddy-gray-600 line-clamp-2 leading-relaxed">
-                {user.bio}
-              </p>
-            ) : (
-              <p className="text-sm text-buddy-gray-400 italic">
-                {(() => {
-                  // For real users, show status message
-                  if ("_id" in user) {
-                    return user.hasCompletedOnboarding
-                      ? "Ready to connect and collaborate!"
-                      : "Complete your profile to get started";
-                  }
-                  // For mock data, show default message
-                  return "Looking for accountability partners";
-                })()}
-              </p>
+            {/* Boost Button - Top Right */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="absolute top-3 right-3 w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 hover:shadow-xl transition-transform z-10"
+                  onClick={handleBoostClick}
+                >
+                  <Flame className="w-5 h-5 text-white" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-sm">
+                  <span className="font-semibold">Send a Boost</span>
+                  <br />
+                  Motivate this buddy with an encouraging message
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <Card.Content className="p-4 flex flex-col gap-2 flex-1">
+          {/* Name with Badges */}
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-bold text-2xl text-buddy-gray-900 truncate group-hover:text-buddy-purple transition-colors">
+              {user.name}
+            </h3>
+            {/* {isProfileComplete && (
+              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+            )} */}
+            {isProfileComplete && (
+              <CheckCircle className="w-5 h-5 text-white bg-green-500 rounded-full" />
             )}
           </div>
 
-          {/* Interests */}
-          <div className="flex flex-wrap gap-1.5 mb-4 min-h-[2rem]">
+          {/* Location + Timezone */}
+          <div className="flex items-center gap-2 text-xs text-buddy-gray-500 flex-wrap">
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">
+                {"city" in user && user.city && "country" in user && user.country
+                  ? `${user.city}, ${user.country}`
+                  : "location" in user && user.location
+                    ? user.location
+                    : "Location not set"}
+              </span>
+            </div>
+            <span>•</span>
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3 flex-shrink-0" />
+              <span>{getTimezoneDisplay(user)}</span>
+            </div>
+          </div>
+
+          {/* Bio (2-line truncate) */}
+          <p className="text-sm text-buddy-gray-600 line-clamp-2 leading-snug">
+            {user.bio ||
+              (isProfileComplete
+                ? "Ready to connect and collaborate!"
+                : "Complete profile to get started")}
+          </p>
+
+          {/* Interest Badges (2 + count) */}
+          <div className="flex flex-wrap gap-1 min-h-[24px]">
             {(() => {
-              // Get interests from either interestsCategories (real users) or interests (mock data)
               const interests =
                 "interestsCategories" in user && user.interestsCategories
                   ? user.interestsCategories
@@ -444,101 +494,81 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
                 return (
                   <Badge
                     variant="outline"
-                    className="text-xs py-1 px-2 rounded-full border bg-buddy-gray-100 text-buddy-gray-500 border-buddy-gray-200"
+                    className="text-xs py-0.5 px-2 rounded-full bg-buddy-gray-100 text-buddy-gray-500 border-buddy-gray-200"
                   >
                     No interests yet
                   </Badge>
                 );
               }
 
-              return interests.slice(0, 3).map((interest, index) => (
-                <Badge
-                  key={index}
-                  variant="outline"
-                  className={`text-xs py-1 px-2 rounded-full border ${getInterestColor(
-                    index
-                  )}`}
-                >
-                  {typeof interest === "string"
-                    ? interest
-                    : interest.toString()}
-                </Badge>
-              ));
-            })()}
-            {(() => {
-              const interests =
-                "interestsCategories" in user && user.interestsCategories
-                  ? user.interestsCategories
-                  : "interests" in user && user.interests
-                    ? user.interests
-                    : [];
+              const displayInterests = interests.slice(0, 2);
+              const remainingCount = interests.length - 2;
 
               return (
-                interests.length > 3 && (
-                  <Badge
-                    variant="outline"
-                    className="text-xs py-1 px-2 rounded-full bg-buddy-gray-100 text-buddy-gray-600 border-buddy-gray-200"
-                  >
-                    +{interests.length - 3} more
-                  </Badge>
-                )
+                <>
+                  {displayInterests.map((interest, index) => (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className="text-xs py-0.5 px-2 rounded-full bg-buddy-purple/10 text-buddy-purple border-buddy-purple/20"
+                    >
+                      {typeof interest === "string"
+                        ? interest
+                        : interest.toString()}
+                    </Badge>
+                  ))}
+                  {remainingCount > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs py-0.5 px-2 rounded-full bg-buddy-gray-100 text-buddy-gray-600 border-buddy-gray-200"
+                    >
+                      +{remainingCount}
+                    </Badge>
+                  )}
+                </>
               );
             })()}
           </div>
 
-          {/* Stats */}
-          <div className="flex justify-between text-xs text-buddy-gray-500 mb-5 mt-auto">
-            <div className="flex items-center gap-1">
-              <Users className="w-3 h-3" />
-              <span>
-                {(() => {
-                  // For real users, show connection status or interests count
-                  if ("_id" in user) {
-                    const interestsCount =
-                      user.interestsCategories?.length || 0;
-                    return interestsCount > 0
-                      ? `${interestsCount} interests`
-                      : "New user";
-                  }
-                  // For mock data, show mutual activities
-                  return "interests" in user && user.interests
-                    ? `${user.interests.length} interests`
-                    : "2 mutual activities";
-                })()}
-              </span>
+          {/* Stats + Action Button Row */}
+          <div className="mt-auto pt-2 flex items-center justify-between">
+            {/* Activity Stats - Left Side */}
+            <div className="flex gap-3 text-sm text-buddy-gray-600">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 cursor-help">
+                    <Activity className="w-4 h-4 flex-shrink-0 text-buddy-gray-400" />
+                    <span className="font-medium text-2xl text-buddy-gray-900">{activityStats.active}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">
+                    <span className="font-semibold">Active Activities</span>
+                    <br />
+                    Currently participating in {activityStats.active} ongoing {activityStats.active === 1 ? 'activity' : 'activities'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 cursor-help">
+                    <CheckCircle className="w-4 h-4 flex-shrink-0 text-buddy-gray-400" />
+                    <span className="font-medium text-2xl text-buddy-gray-900">{activityStats.completed}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">
+                    <span className="font-semibold">Completed Activities</span>
+                    <br />
+                    Successfully finished {activityStats.completed} {activityStats.completed === 1 ? 'activity' : 'activities'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
-            <div className="flex items-center gap-1">
-              <Star className="w-3 h-3" />
-              <span>
-                {(() => {
-                  // For real users, show completion status
-                  if ("_id" in user) {
-                    return user.hasCompletedOnboarding
-                      ? "Profile complete"
-                      : "Setup pending";
-                  }
-                  // For mock data, show completed activities
-                  return "completedActivities" in user
-                    ? `${user.completedActivities} completed`
-                    : "24 completed";
-                })()}
-              </span>
-            </div>
-          </div>
 
-          {/* Action buttons */}
-          <div className="flex space-x-1 w-full justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full border-buddy-purple text-buddy-purple hover:bg-gradient-to-r hover:from-yellow-400 hover:to-orange-500 hover:text-white relative overflow-hidden group transition-all duration-300 hover:shadow-xl hover:shadow-yellow-400/30 hover:scale-105"
-              onClick={handleBoostClick}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/60 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-600 ease-out"></div>
-              <Zap className="w-4 h-4 relative z-10" />
-              <span className="hidden sm:inline ml-1 relative z-10">Boost</span>
-            </Button>
-            {getMainActionButton()}
+            {/* Action Button - Right Side */}
+            <div className="flex-shrink-0">{getMainActionButton()}</div>
           </div>
         </Card.Content>
       </Card>
@@ -550,7 +580,7 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
         recipientId={"_id" in user ? user._id : user.id}
         onBoostSent={handleBoostSent}
       />
-    </>
+    </TooltipProvider>
   );
 };
 

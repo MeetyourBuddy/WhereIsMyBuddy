@@ -31,8 +31,9 @@ export class ActivityController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  async findAll(): Promise<Activity[]> {
+  async findAll(
+    @GetOptionalUser('userId') userId?: string,
+  ): Promise<Activity[]> {
     return await this.activityService.findAll();
   }
 

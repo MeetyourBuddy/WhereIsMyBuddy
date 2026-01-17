@@ -760,7 +760,7 @@ const Buddies = () => {
               </div>
             ) : filteredBuddies.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   {paginatedBuddies.map((buddy, index) => (
                     <EnhancedBuddyCard
                       key={buddy._id || buddy.id || `buddy-${index}`}
@@ -835,7 +835,7 @@ const Buddies = () => {
                 />
               </div>
             ) : filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {filteredBuddies.map((buddy, index) => (
                   <EnhancedBuddyCard
                     key={buddy._id || `my-buddy-${index}`}
@@ -869,7 +869,7 @@ const Buddies = () => {
                 />
               </div>
             ) : filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {filteredBuddies.slice(0, 4).map((buddy, index) => (
                   <EnhancedBuddyCard
                     key={buddy._id || `recommended-${index}`}
@@ -903,7 +903,7 @@ const Buddies = () => {
                 />
               </div>
             ) : filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {filteredBuddies.slice(0, 4).map((buddy, index) => (
                   <EnhancedBuddyCard
                     key={buddy._id || `active-${index}`}
@@ -937,7 +937,7 @@ const Buddies = () => {
                 />
               </div>
             ) : filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {filteredBuddies.slice(0, 4).map((buddy, index) => (
                   <EnhancedBuddyCard
                     key={buddy._id || `nearby-${index}`}
