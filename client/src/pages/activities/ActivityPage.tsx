@@ -24,6 +24,7 @@ import {
   Sparkles,
   Compass,
   Lock,
+  Mail,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ import ActivityCheckin from "@/components/activities/ActivityCheckin";
 import ActivityPartners from "@/components/activities/ActivityPartners";
 import MessageBoard from "@/components/activities/MessageBoard";
 import CheckInDialog from "@/components/activities/CheckInDialog";
+import InviteMembersModal from "@/components/activities/members/InviteMembersModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInDays } from "date-fns";
 import { Badge, badgeVariants } from "@/components/ui/badge";
@@ -92,6 +94,7 @@ const ActivityPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isBannerEditModalOpen, setIsBannerEditModalOpen] = useState(false);
+  const [isInviteMembersModalOpen, setIsInviteMembersModalOpen] = useState(false);
   const [hasCheckedInCurrentPeriod, setHasCheckedInCurrentPeriod] =
     useState(false);
   const [isLoadingCheckInStatus, setIsLoadingCheckInStatus] = useState(false);
@@ -356,6 +359,9 @@ const ActivityPage = () => {
   // Direct admin comparison check - use both _id and id fields
   const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
   const isUserAdmin = user && currentActivity?.admin && userId === adminId;
+  
+  // Check if activity is private
+  const isPrivateActivity = currentActivity?.type === "private" || currentActivity?.type === "Private";
 
   const handleGuestJoin = () => {
     if (!displayData.id) return;
@@ -428,6 +434,17 @@ const ActivityPage = () => {
                     title="Edit banner"
                   >
                     <Edit3 className="h-4 w-4" />
+                  </Button>
+                )}
+                {isUserAdmin && isPrivateActivity && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsInviteMembersModalOpen(true)}
+                    className="h-8 w-8 p-0 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 rounded-full"
+                    title="Invite Members"
+                  >
+                    <Mail className="h-4 w-4" />
                   </Button>
                 )}
                 <Button
@@ -848,6 +865,18 @@ const ActivityPage = () => {
         onBannerUpdate={handleBannerUpdate}
         activityId={activityId || ""}
       />
+
+      {/* Invite Members Modal */}
+      {isPrivateActivity && activityId && (
+        <InviteMembersModal
+          isOpen={isInviteMembersModalOpen}
+          onClose={() => setIsInviteMembersModalOpen(false)}
+          activityId={activityId}
+          onInviteSent={() => {
+            refreshActivity(activityId);
+          }}
+        />
+      )}
     </div>
   );
 };

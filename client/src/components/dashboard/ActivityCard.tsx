@@ -63,6 +63,7 @@ interface ActivityCardProps {
     currentStreak?: number;
     lastCheckInDate?: string;
   };
+  hasPendingInvitation?: boolean; // Whether user has a pending invitation to this activity
 }
 
 const ActivityCard = ({
@@ -81,6 +82,7 @@ const ActivityCard = ({
   onClick,
   showProgress = false,
   userProgress,
+  hasPendingInvitation = false,
 }: ActivityCardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -103,8 +105,8 @@ const ActivityCard = ({
   // Check if activity is private
   const isPrivate = type === ActivityType.PRIVATE || type === "private";
 
-  // Check if user can access private activity (admin, participant, or invited)
-  const canAccessPrivate = isPrivate && (isCreator || isParticipant);
+  // Check if user can access private activity (admin, participant, or has pending invitation)
+  const canAccessPrivate = isPrivate && (isCreator || isParticipant || hasPendingInvitation);
 
   const handleJoinQuit = async (e: React.MouseEvent) => {
     e.stopPropagation();

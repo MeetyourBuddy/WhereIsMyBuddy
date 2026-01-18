@@ -37,6 +37,8 @@ import {
 import { CheckInService } from "@/services/api/activity/reaction.service";
 import { tokenService } from "@/services/token/token-service";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import { activityInvitationService } from "@/services/api/activity/activity-invitation.service";
+import { useQuery } from "@tanstack/react-query";
 
 const Activities = () => {
   useScrollToTopImmediate();
@@ -104,6 +106,36 @@ const Activities = () => {
 
   const { progressData: userProgressData, isLoading: isLoadingProgress } =
     useUserProgress(userActivityIds);
+
+  // Fetch user invitations to check access to private activities
+  const { data: userInvitationsData } = useQuery({
+    queryKey: ["activity-invitations", "my"],
+    queryFn: async () => {
+      if (!isAuthenticated) return null;
+      try {
+        const response = await activityInvitationService.getUserInvitations();
+        return response.success ? response.data : [];
+      } catch (error) {
+        console.error("Failed to fetch user invitations:", error);
+        return [];
+      }
+    },
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  // Create a map of activity IDs to invitation status
+  const activityInvitationMap = useMemo(() => {
+    if (!userInvitationsData || !Array.isArray(userInvitationsData)) return new Map();
+    const map = new Map<string, boolean>();
+    userInvitationsData.forEach((invitation: any) => {
+      const activityId = invitation.activityId?._id || invitation.activityId;
+      if (activityId && invitation.status === "pending") {
+        map.set(activityId, true);
+      }
+    });
+    return map;
+  }, [userInvitationsData]);
 
   // Debug effect to monitor activities changes
   useEffect(() => {
@@ -719,25 +751,29 @@ const Activities = () => {
             {paginatedActivities.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {paginatedActivities.map((activity) => (
-                    <ActivityCard
-                      key={activity._id || activity.id}
-                      id={activity._id || activity.id}
-                      title={activity.title}
-                      description={activity.description}
-                      startDate={activity.startDate}
-                      endDate={activity.endDate}
-                      category={activity.category}
-                      bannerImage={activity.bannerImage}
-                      participants={activity.participants || []}
-                      maxParticipants={activity.maxParticipants}
-                      admin={activity.admin}
-                      type={activity.type}
-                      onClick={() =>
-                        navigate(`/activities/${activity._id || activity.id}`)
-                      }
-                    />
-                  ))}
+                  {paginatedActivities.map((activity) => {
+                    const activityId = activity._id || activity.id;
+                    return (
+                      <ActivityCard
+                        key={activityId}
+                        id={activityId}
+                        title={activity.title}
+                        description={activity.description}
+                        startDate={activity.startDate}
+                        endDate={activity.endDate}
+                        category={activity.category}
+                        bannerImage={activity.bannerImage}
+                        participants={activity.participants || []}
+                        maxParticipants={activity.maxParticipants}
+                        admin={activity.admin}
+                        type={activity.type}
+                        hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        onClick={() =>
+                          navigate(`/activities/${activityId}`)
+                        }
+                      />
+                    );
+                  })}
                 </div>
 
                 {totalPages > 1 && (
@@ -795,6 +831,7 @@ const Activities = () => {
                         type={activity.type}
                         showProgress={true}
                         userProgress={progressData}
+                        hasPendingInvitation={activityInvitationMap.get(activityId) || false}
                         onClick={() => navigate(`/activities/${activityId}`)}
                       />
                     );
@@ -842,25 +879,29 @@ const Activities = () => {
             {paginatedActivities.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {paginatedActivities.map((activity) => (
-                    <ActivityCard
-                      key={activity._id || activity.id}
-                      id={activity._id || activity.id}
-                      title={activity.title}
-                      description={activity.description}
-                      startDate={activity.startDate}
-                      endDate={activity.endDate}
-                      category={activity.category}
-                      bannerImage={activity.bannerImage}
-                      participants={activity.participants || []}
-                      maxParticipants={activity.maxParticipants}
-                      admin={activity.admin}
-                      type={activity.type}
-                      onClick={() =>
-                        navigate(`/activities/${activity._id || activity.id}`)
-                      }
-                    />
-                  ))}
+                  {paginatedActivities.map((activity) => {
+                    const activityId = activity._id || activity.id;
+                    return (
+                      <ActivityCard
+                        key={activityId}
+                        id={activityId}
+                        title={activity.title}
+                        description={activity.description}
+                        startDate={activity.startDate}
+                        endDate={activity.endDate}
+                        category={activity.category}
+                        bannerImage={activity.bannerImage}
+                        participants={activity.participants || []}
+                        maxParticipants={activity.maxParticipants}
+                        admin={activity.admin}
+                        type={activity.type}
+                        hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        onClick={() =>
+                          navigate(`/activities/${activityId}`)
+                        }
+                      />
+                    );
+                  })}
                 </div>
 
                 {totalPages > 1 && (
@@ -890,25 +931,29 @@ const Activities = () => {
             {paginatedActivities.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {paginatedActivities.map((activity) => (
-                    <ActivityCard
-                      key={activity._id || activity.id}
-                      id={activity._id || activity.id}
-                      title={activity.title}
-                      description={activity.description}
-                      startDate={activity.startDate}
-                      endDate={activity.endDate}
-                      category={activity.category}
-                      bannerImage={activity.bannerImage}
-                      participants={activity.participants || []}
-                      maxParticipants={activity.maxParticipants}
-                      admin={activity.admin}
-                      type={activity.type}
-                      onClick={() =>
-                        navigate(`/activities/${activity._id || activity.id}`)
-                      }
-                    />
-                  ))}
+                  {paginatedActivities.map((activity) => {
+                    const activityId = activity._id || activity.id;
+                    return (
+                      <ActivityCard
+                        key={activityId}
+                        id={activityId}
+                        title={activity.title}
+                        description={activity.description}
+                        startDate={activity.startDate}
+                        endDate={activity.endDate}
+                        category={activity.category}
+                        bannerImage={activity.bannerImage}
+                        participants={activity.participants || []}
+                        maxParticipants={activity.maxParticipants}
+                        admin={activity.admin}
+                        type={activity.type}
+                        hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        onClick={() =>
+                          navigate(`/activities/${activityId}`)
+                        }
+                      />
+                    );
+                  })}
                 </div>
 
                 {totalPages > 1 && (
@@ -938,25 +983,29 @@ const Activities = () => {
             {paginatedActivities.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {paginatedActivities.map((activity) => (
-                    <ActivityCard
-                      key={activity._id || activity.id}
-                      id={activity._id || activity.id}
-                      title={activity.title}
-                      description={activity.description}
-                      startDate={activity.startDate}
-                      endDate={activity.endDate}
-                      category={activity.category}
-                      bannerImage={activity.bannerImage}
-                      participants={activity.participants || []}
-                      maxParticipants={activity.maxParticipants}
-                      admin={activity.admin}
-                      type={activity.type}
-                      onClick={() =>
-                        navigate(`/activities/${activity._id || activity.id}`)
-                      }
-                    />
-                  ))}
+                  {paginatedActivities.map((activity) => {
+                    const activityId = activity._id || activity.id;
+                    return (
+                      <ActivityCard
+                        key={activityId}
+                        id={activityId}
+                        title={activity.title}
+                        description={activity.description}
+                        startDate={activity.startDate}
+                        endDate={activity.endDate}
+                        category={activity.category}
+                        bannerImage={activity.bannerImage}
+                        participants={activity.participants || []}
+                        maxParticipants={activity.maxParticipants}
+                        admin={activity.admin}
+                        type={activity.type}
+                        hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        onClick={() =>
+                          navigate(`/activities/${activityId}`)
+                        }
+                      />
+                    );
+                  })}
                 </div>
 
                 {totalPages > 1 && (

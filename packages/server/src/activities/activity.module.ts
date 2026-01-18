@@ -54,11 +54,21 @@ import {
   PartnerInvitationSchema,
 } from './schemas/partner-invitation.schema';
 import {
+  ActivityInvitation,
+  ActivityInvitationSchema,
+} from './schemas/activity-invitation.schema';
+import {
   BuddyConnection,
   BuddyConnectionSchema,
 } from '../users/schemas/buddy-connection.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { UsersModule } from '../users/users.module';
+import {
+  ActivityInvitationController,
+  ActivityInvitationUserController,
+  ActivityInvitePublicController,
+} from './activity-invitation.controller';
+import { ActivityInvitationService } from './activity-invitation.service';
 
 @Module({
   imports: [
@@ -75,6 +85,7 @@ import { UsersModule } from '../users/users.module';
       { name: ActivityMessage.name, schema: ActivityMessageSchema },
       { name: Partner.name, schema: PartnerSchema },
       { name: PartnerInvitation.name, schema: PartnerInvitationSchema },
+      { name: ActivityInvitation.name, schema: ActivityInvitationSchema },
       { name: BuddyConnection.name, schema: BuddyConnectionSchema },
       { name: User.name, schema: UserSchema },
     ]),
@@ -84,6 +95,9 @@ import { UsersModule } from '../users/users.module';
     // More specific routes first
     PartnerController,
     PartnerInvitationController,
+    ActivityInvitationController,
+    ActivityInvitationUserController,
+    ActivityInvitePublicController,
     ActivityMessageController,
     // General routes last
     ActivityController,
@@ -106,6 +120,7 @@ import { UsersModule } from '../users/users.module';
     ExportService,
     ActivityMessageService,
     PartnerService,
+    ActivityInvitationService,
     // NotificationService, // Removed - using NotificationManagerService instead
     NotificationManagerService,
   ],
@@ -119,6 +134,7 @@ import { UsersModule } from '../users/users.module';
     ExportService,
     ActivityMessageService,
     PartnerService,
+    ActivityInvitationService,
     // NotificationService, // Removed - using NotificationManagerService instead
     NotificationManagerService,
   ],

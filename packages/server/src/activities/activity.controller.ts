@@ -7,8 +7,10 @@ import {
   Body,
   Param,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ActivityService } from './activity.service';
+import { ActivityInvitationService } from './activity-invitation.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
@@ -16,10 +18,17 @@ import { Activity } from './schemas/activity.schema';
 import { GetUser } from '@/users/decorators/get-user.decorator';
 import { GetOptionalUser } from '@/users/decorators/get-optional-user.decorator';
 import { ActivityResponseDto } from './dto/activity-response.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from '../users/schemas/user.schema';
 
 @Controller('activities')
 export class ActivityController {
-  constructor(private readonly activityService: ActivityService) {}
+  constructor(
+    private readonly activityService: ActivityService,
+    private readonly activityInvitationService: ActivityInvitationService,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -132,6 +141,38 @@ export class ActivityController {
     @Param('id') id: string,
     @GetUser('userId') userId: string,
   ): Promise<ActivityResponseDto> {
+    // Check if activity is private and user has invitation
+    const activity = await this.activityService.findOne(id, userId);
+    if (activity.type === 'private') {
+      const adminId = activity.admin?._id || activity.admin?.id;
+      const isAdmin = adminId?.toString() === userId;
+      
+      if (!isAdmin) {
+        // Check if user has a pending invitation by userId
+        let invitation = await this.activityInvitationService.checkInvitation(
+          id,
+          userId,
+        );
+        
+        // If no invitation by userId, try checking by email
+        if (!invitation) {
+          const user = await this.userModel.findById(userId).exec();
+          if (user?.email) {
+            invitation = await this.activityInvitationService.checkInvitation(
+              id,
+              user.email,
+            );
+          }
+        }
+        
+        if (!invitation) {
+          throw new ForbiddenException(
+            'This is a private activity. You need an invitation to join.',
+          );
+        }
+      }
+    }
+    
     return await this.activityService.joinActivity(id, userId);
   }
 
