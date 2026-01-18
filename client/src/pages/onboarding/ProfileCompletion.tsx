@@ -84,10 +84,35 @@ const ProfileCompletion = () => {
       return;
     }
 
+    const basicInfo = JSON.parse(userBasicInfo);
+    
+    // Convert dateOfBirth to ISO string format
+    // When stored in localStorage with JSON.stringify, Date objects become ISO strings
+    // When parsed back, they're strings, so we need to ensure it's in the correct format
+    let dateOfBirthString: string;
+    if (basicInfo.dateOfBirth instanceof Date) {
+      dateOfBirthString = basicInfo.dateOfBirth.toISOString();
+    } else if (typeof basicInfo.dateOfBirth === 'string') {
+      // If it's already a string, validate it's a valid date and use it
+      const date = new Date(basicInfo.dateOfBirth);
+      if (!isNaN(date.getTime())) {
+        dateOfBirthString = date.toISOString();
+      } else {
+        dateOfBirthString = basicInfo.dateOfBirth; // Fallback to original string
+      }
+    } else {
+      // If it's in another format, try to convert it
+      dateOfBirthString = new Date(basicInfo.dateOfBirth).toISOString();
+    }
+
     const updatedData = {
-      interestsCategories: JSON.parse(userInterests),
-      interestsCommodities: JSON.parse(userCategories),
-      ...JSON.parse(userBasicInfo),
+      // userCategories contains the category names (e.g., "Fitness", "Personal Growth")
+      interestsCategories: JSON.parse(userCategories),
+      // userInterests contains the actual interests (e.g., "Running", "Yoga")
+      interestsCommodities: JSON.parse(userInterests),
+      country: basicInfo.country,
+      city: basicInfo.city,
+      dateOfBirth: dateOfBirthString,
       avatar: selectedAvatar,
       bio: data.bio,
     };
@@ -134,8 +159,8 @@ const ProfileCompletion = () => {
     <OnboardingLayout
       currentStep={3}
       totalSteps={3}
-      title="Complete your profile 🎨"
-      description="Add a photo and bio to help others get to know you"
+      title="Complete your profile"
+      description="Add a profile picture and bio to help others discover you"
       onBack={() => navigate("/onboarding/interests")}
     >
       <div className="space-y-6">
@@ -149,12 +174,8 @@ const ProfileCompletion = () => {
                   <FormItem>
                     <FormLabel className="text-buddy-gray-900 font-semibold flex items-center space-x-2">
                       <Camera className="h-4 w-4 text-buddy-purple" />
-                      <span>Choose your perfect avatar</span>
+                      <span>Profile Picture</span>
                     </FormLabel>
-                    <FormDescription className="text-buddy-gray-600">
-                      🎭 Pick an avatar that represents your personality and
-                      style
-                    </FormDescription>
                     <div className="flex flex-col items-center space-y-6">
                       <div className="relative">
                         <Avatar className="w-32 h-32 ring-4 ring-buddy-purple/20 shadow-lg">
@@ -227,16 +248,12 @@ const ProfileCompletion = () => {
                   <FormItem>
                     <FormLabel className="text-buddy-gray-900 font-semibold flex items-center space-x-2">
                       <Star className="h-4 w-4 text-buddy-orange" />
-                      <span>Tell your story (Optional)</span>
+                      <span>Bio (Optional)</span>
                     </FormLabel>
-                    <FormDescription className="text-buddy-gray-600">
-                      ✨ Share what makes you unique and what activities you
-                      love
-                    </FormDescription>
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Hi! I'm looking to stay consistent with my goals. I love hiking, reading, and learning new skills. Excited to find accountability partners who share similar interests!"
+                        placeholder="Briefly describe your goals and what you're looking for in an accountability partner"
                         className="min-h-[120px] rounded-2xl border-2 border-buddy-orange/20 focus:border-buddy-orange transition-colors resize-none"
                       />
                     </FormControl>

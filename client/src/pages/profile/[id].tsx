@@ -77,7 +77,7 @@ const ProfilePage = () => {
           profileUser.city && profileUser.country
             ? `${profileUser.city}, ${profileUser.country}`
             : profileUser.city || "Location not specified",
-        interests: profileUser.interestsCategories || [],
+        interests: profileUser.interestsCommodities || [],
         joinedDate: profileUser.createdAt || new Date().toISOString(),
         activityCount: 0, // TODO: Get from user stats
         buddyCount: 0, // TODO: Get from user stats

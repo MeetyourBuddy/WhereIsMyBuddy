@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowRight, Calendar, MapPin } from "lucide-react";
+import { ArrowRight, Calendar, MapPin, Info } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -97,8 +97,8 @@ const BasicInfo = () => {
     <OnboardingLayout
       currentStep={1}
       totalSteps={3}
-      title="Tell us about yourself 👋"
-      description="Share a few details so we can personalize your experience"
+      title="Tell us about yourself"
+      description="We'll use this to personalize your experience and connect you with partners in your timezone"
     >
       <div className="space-y-6">
         <Form {...form}>
@@ -110,7 +110,7 @@ const BasicInfo = () => {
                 <FormItem>
                   <FormLabel className="text-buddy-gray-900 font-semibold flex items-center space-x-2">
                     <MapPin className="h-4 w-4 text-buddy-purple" />
-                    <span>Where are you from?</span>
+                    <span>Country</span>
                   </FormLabel>
                   <Select
                     onValueChange={(value) => {
@@ -123,7 +123,7 @@ const BasicInfo = () => {
                   >
                     <FormControl>
                       <SelectTrigger className="w-full rounded-full border-2 border-buddy-purple/20 focus:border-buddy-purple transition-colors py-6">
-                        <SelectValue placeholder="🌍 Select your country" />
+                        <SelectValue placeholder="Select your country" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="rounded-2xl border-2 border-buddy-purple/20">
@@ -159,7 +159,7 @@ const BasicInfo = () => {
                   >
                     <FormControl>
                       <SelectTrigger className="w-full rounded-full border-2 border-buddy-green/20 focus:border-buddy-green transition-colors py-6">
-                        <SelectValue placeholder="🏙️ Select your city" />
+                        <SelectValue placeholder="Select your city" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="rounded-2xl border-2 border-buddy-green/20">
@@ -174,9 +174,9 @@ const BasicInfo = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription className="text-buddy-gray-600">
-                    💡 Select your city or the one closest to you to find
-                    buddies nearby
+                  <FormDescription className="text-buddy-gray-400 italic text-sm flex items-start space-x-2">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Choose the city closest to you in the same timezone. This helps us connect you with partners in similar time zones.</span>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -190,7 +190,7 @@ const BasicInfo = () => {
                 <FormItem className="flex flex-col">
                   <FormLabel className="text-buddy-gray-900 font-semibold flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-buddy-orange" />
-                    <span>When's your special day?</span>
+                    <span>Date of Birth</span>
                   </FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -204,10 +204,10 @@ const BasicInfo = () => {
                         >
                           {field.value ? (
                             <span className="text-buddy-gray-900">
-                              🎂 {format(field.value, "PPP")}
+                              {format(field.value, "PPP")}
                             </span>
                           ) : (
-                            <span>🎂 Select your birth date</span>
+                            <span>Select your birth date</span>
                           )}
                           <Calendar className="h-5 w-5 text-buddy-orange" />
                         </Button>
@@ -230,8 +230,9 @@ const BasicInfo = () => {
                       />
                     </PopoverContent>
                   </Popover>
-                  <FormDescription className="text-buddy-gray-600">
-                    🔒 Your birthdate is private — we use it to personalize your experience
+                  <FormDescription className="text-buddy-gray-400 italic text-sm flex items-start space-x-2">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Used for age verification. Your exact age is never displayed publicly.</span>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -244,7 +245,7 @@ const BasicInfo = () => {
                 className="w-full rounded-full bg-gradient-to-r from-buddy-green to-buddy-blue hover:from-buddy-green/90 hover:to-buddy-blue/90 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 size="lg"
               >
-                Continue to Interests <ArrowRight className="ml-2 h-5 w-5" />
+                Continue <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </form>

@@ -42,7 +42,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import QRCode from "react-qr-code";
-import { InterestCategory } from "@/types/auth-types";
 import { format } from "date-fns";
 import { useAuth } from "@/store/auth.store";
 import { postAuthIntent } from "@/lib/post-auth-intent";
@@ -54,7 +53,7 @@ interface ProfileCardProps {
   bio: string;
   image?: string;
   location?: string;
-  interests: InterestCategory[];
+  interests: string[]; // interestsCommodities - actual interests like "Running", "Yoga"
   joinedDate: string;
   activityCount: number;
   buddyCount: number;

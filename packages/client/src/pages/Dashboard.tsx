@@ -439,9 +439,9 @@ const Dashboard = () => {
                     <div className="w-20 h-20 bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                       <Activity className="h-10 w-10 text-buddy-purple" />
                     </div>
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-buddy-orange/20 rounded-full flex items-center justify-center">
+                    {/* <div className="absolute -top-2 -right-2 w-6 h-6 bg-buddy-orange/20 rounded-full flex items-center justify-center">
                       <Sparkles className="h-3 w-3 text-buddy-orange" />
-                    </div>
+                    </div> */}
                   </div>
                   <h3 className="text-2xl font-bold text-buddy-gray-800 mb-3">
                     Ready to get started?
@@ -967,7 +967,7 @@ const Dashboard = () => {
                     size="small"
                     className="bg-white text-buddy-purple hover:bg-white/90 rounded-full shadow-md hover:shadow-lg w-full"
                   >
-                    <Sparkles className="w-4 h-4 mr-2" />
+                    {/* <Sparkles className="w-4 h-4 mr-2" /> */}
                     Upgrade Now
                   </Button>
                 </div>

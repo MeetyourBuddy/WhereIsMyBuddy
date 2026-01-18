@@ -115,6 +115,8 @@ const Settings: React.FC = () => {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isAddInterestOpen, setIsAddInterestOpen] = useState(false);
   const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
+  const [isRequestDataModalOpen, setIsRequestDataModalOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [newInterest, setNewInterest] = useState("");
   const [newPassword, setNewPassword] = useState({
     current: "",
@@ -304,7 +306,6 @@ const Settings: React.FC = () => {
       const updateData: UpdateProfileData = {
         name: profile.name,
         bio: profile.bio,
-        phoneNumber: profile.phone,
         avatar: currentAvatar,
         country: (selectedCountry as any) || undefined,
         city: profile.city,
@@ -777,22 +778,6 @@ const Settings: React.FC = () => {
                     </button>
                     <button
                       className={`flex items-center justify-between px-3 md:px-4 py-2 md:py-3 text-left rounded-full mx-1 md:mx-2 my-1 transition-all duration-200 ${
-                        activeTab === "preferences"
-                          ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
-                          : "text-buddy-gray-700 hover:bg-buddy-gray-50 hover:shadow-sm"
-                      }`}
-                      onClick={() => setActiveTab("preferences")}
-                    >
-                      <div className="flex items-center">
-                        <SettingsIcon className="w-4 h-4 mr-2 md:mr-3" />
-                        <span className="font-medium text-sm md:text-base">
-                          Preferences
-                        </span>
-                      </div>
-                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
-                    </button>
-                    <button
-                      className={`flex items-center justify-between px-3 md:px-4 py-2 md:py-3 text-left rounded-full mx-1 md:mx-2 my-1 transition-all duration-200 ${
                         activeTab === "notifications"
                           ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
                           : "text-buddy-gray-700 hover:bg-buddy-gray-50 hover:shadow-sm"
@@ -803,22 +788,6 @@ const Settings: React.FC = () => {
                         <Bell className="w-4 h-4 mr-2 md:mr-3" />
                         <span className="font-medium text-sm md:text-base">
                           Notifications
-                        </span>
-                      </div>
-                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
-                    </button>
-                    <button
-                      className={`flex items-center justify-between px-3 md:px-4 py-2 md:py-3 text-left rounded-full mx-1 md:mx-2 my-1 transition-all duration-200 ${
-                        activeTab === "privacy"
-                          ? "bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-lg"
-                          : "text-buddy-gray-700 hover:bg-buddy-gray-50 hover:shadow-sm"
-                      }`}
-                      onClick={() => setActiveTab("privacy")}
-                    >
-                      <div className="flex items-center">
-                        <Shield className="w-4 h-4 mr-2 md:mr-3" />
-                        <span className="font-medium text-sm md:text-base">
-                          Privacy
                         </span>
                       </div>
                       <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
@@ -921,7 +890,7 @@ const Settings: React.FC = () => {
                             </h3>
                             <div className="flex items-center justify-center md:justify-start space-x-2 mt-1">
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-buddy-purple/10 to-buddy-blue/10 text-buddy-purple border border-buddy-purple/20">
-                                <Sparkles className="h-3 w-3 mr-1" />
+                                {/* <Sparkles className="h-3 w-3 mr-1" /> */}
                                 Basic Member
                               </span>
                               <span className="text-xs text-buddy-gray-500">
@@ -1038,26 +1007,6 @@ const Settings: React.FC = () => {
                                 })
                               }
                               className="rounded-full border-2 border-buddy-blue/20 focus:border-buddy-blue transition-colors"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="phone"
-                              className="flex items-center space-x-2"
-                            >
-                              <Phone className="h-4 w-4 text-buddy-green" />
-                              <span>Phone Number</span>
-                            </Label>
-                            <Input
-                              id="phone"
-                              value={profile.phone}
-                              onChange={(e) =>
-                                setProfile({
-                                  ...profile,
-                                  phone: e.target.value,
-                                })
-                              }
-                              className="rounded-full border-2 border-buddy-green/20 focus:border-buddy-green transition-colors"
                             />
                           </div>
                           <div className="space-y-2">
@@ -1305,116 +1254,6 @@ const Settings: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
-                          <h3 className="font-medium text-sm md:text-base">
-                            Password
-                          </h3>
-                          <div className="flex items-center justify-between p-3 md:p-4 bg-buddy-gray-50 rounded-lg">
-                            <div className="flex items-center">
-                              <Lock className="h-4 w-4 md:h-5 md:w-5 text-buddy-gray-500 mr-2" />
-                              <span className="text-sm md:text-base">
-                                Password
-                              </span>
-                            </div>
-                            <Dialog
-                              open={isChangePasswordOpen}
-                              onOpenChange={setIsChangePasswordOpen}
-                            >
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="rounded-full text-xs md:text-sm"
-                                >
-                                  Change Password
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="sm:max-w-md">
-                                <DialogHeader>
-                                  <DialogTitle>Change Password</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div>
-                                    <Label htmlFor="current-password">
-                                      Current Password
-                                    </Label>
-                                    <Input
-                                      id="current-password"
-                                      type="password"
-                                      value={newPassword.current}
-                                      onChange={(e) =>
-                                        setNewPassword({
-                                          ...newPassword,
-                                          current: e.target.value,
-                                        })
-                                      }
-                                      placeholder="Enter current password"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor="new-password">
-                                      New Password
-                                    </Label>
-                                    <Input
-                                      id="new-password"
-                                      type="password"
-                                      value={newPassword.new}
-                                      onChange={(e) =>
-                                        setNewPassword({
-                                          ...newPassword,
-                                          new: e.target.value,
-                                        })
-                                      }
-                                      placeholder="Enter new password"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor="confirm-password">
-                                      Confirm New Password
-                                    </Label>
-                                    <Input
-                                      id="confirm-password"
-                                      type="password"
-                                      value={newPassword.confirm}
-                                      onChange={(e) =>
-                                        setNewPassword({
-                                          ...newPassword,
-                                          confirm: e.target.value,
-                                        })
-                                      }
-                                      placeholder="Confirm new password"
-                                    />
-                                  </div>
-                                  <div className="flex justify-end space-x-2">
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        setNewPassword({
-                                          current: "",
-                                          new: "",
-                                          confirm: "",
-                                        });
-                                        setIsChangePasswordOpen(false);
-                                      }}
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      onClick={handlePasswordChange}
-                                      disabled={
-                                        !newPassword.current ||
-                                        !newPassword.new ||
-                                        !newPassword.confirm
-                                      }
-                                    >
-                                      Change Password
-                                    </Button>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                        </div>
 
                         <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                           <Button
@@ -1999,9 +1838,28 @@ const Settings: React.FC = () => {
                                   Basic (Free)
                                 </h3>
                               </div>
-                              <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 text-xs md:text-sm">
-                                Upgrade Now
-                              </Button>
+                              <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
+                                <DialogTrigger asChild>
+                                  <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 text-xs md:text-sm">
+                                    Upgrade Now
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle>Feature Coming Soon</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="py-4">
+                                    <p className="text-buddy-gray-600">
+                                      The subscription upgrade feature is currently under development. We'll notify you when it's available!
+                                    </p>
+                                  </div>
+                                  <div className="flex justify-end">
+                                    <Button onClick={() => setIsUpgradeModalOpen(false)} className="rounded-full">
+                                      Close
+                                    </Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
                             </div>
                             <p className="text-xs md:text-sm text-buddy-gray-600 mb-4">
                               You're currently on the Basic plan. Upgrade to
@@ -2102,10 +1960,99 @@ const Settings: React.FC = () => {
                                   variant="outline"
                                   size="sm"
                                   className="rounded-full text-xs md:text-sm"
+                                  onClick={() => setIsChangePasswordOpen(true)}
                                 >
                                   Change Password
                                 </Button>
                               </div>
+                              {isChangePasswordOpen && (
+                                <div className="mt-4 p-4 bg-white rounded-lg border border-buddy-gray-200">
+                                  <h4 className="font-semibold mb-4">Change Password</h4>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="current-password">
+                                        Current Password
+                                      </Label>
+                                      <Input
+                                        id="current-password"
+                                        type="password"
+                                        value={newPassword.current}
+                                        onChange={(e) =>
+                                          setNewPassword({
+                                            ...newPassword,
+                                            current: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Enter current password"
+                                        className="mt-1"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="new-password">
+                                        New Password
+                                      </Label>
+                                      <Input
+                                        id="new-password"
+                                        type="password"
+                                        value={newPassword.new}
+                                        onChange={(e) =>
+                                          setNewPassword({
+                                            ...newPassword,
+                                            new: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Enter new password"
+                                        className="mt-1"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="confirm-password">
+                                        Confirm New Password
+                                      </Label>
+                                      <Input
+                                        id="confirm-password"
+                                        type="password"
+                                        value={newPassword.confirm}
+                                        onChange={(e) =>
+                                          setNewPassword({
+                                            ...newPassword,
+                                            confirm: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Confirm new password"
+                                        className="mt-1"
+                                      />
+                                    </div>
+                                    <div className="flex justify-end space-x-2 pt-2">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                          setNewPassword({
+                                            current: "",
+                                            new: "",
+                                            confirm: "",
+                                          });
+                                          setIsChangePasswordOpen(false);
+                                        }}
+                                        className="rounded-full"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        onClick={handlePasswordChange}
+                                        disabled={
+                                          !newPassword.current ||
+                                          !newPassword.new ||
+                                          !newPassword.confirm
+                                        }
+                                        className="rounded-full"
+                                      >
+                                        Change Password
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2127,13 +2074,32 @@ const Settings: React.FC = () => {
                                     Get a copy of your personal data
                                   </p>
                                 </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="rounded-full text-xs md:text-sm"
-                                >
-                                  Request Data
-                                </Button>
+                                <Dialog open={isRequestDataModalOpen} onOpenChange={setIsRequestDataModalOpen}>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="rounded-full text-xs md:text-sm"
+                                    >
+                                      Request Data
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                      <DialogTitle>Feature Coming Soon</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="py-4">
+                                      <p className="text-buddy-gray-600">
+                                        The data request feature is currently under development. We'll notify you when it's available!
+                                      </p>
+                                    </div>
+                                    <div className="flex justify-end">
+                                      <Button onClick={() => setIsRequestDataModalOpen(false)} className="rounded-full">
+                                        Close
+                                      </Button>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                             </div>
                             <div className="p-3 md:p-4 bg-red-50 rounded-lg border border-red-200">

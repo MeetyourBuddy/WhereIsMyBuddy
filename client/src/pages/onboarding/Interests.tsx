@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Sparkles, Target } from "lucide-react";
+import { ArrowRight, Target } from "lucide-react";
 
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import { Button } from "@/components/ui/button";
@@ -71,8 +71,8 @@ const InterestSelection = () => {
     <OnboardingLayout
       currentStep={2}
       totalSteps={3}
-      title="What are you interested in? ✨"
-      description="Choose your passions so we can connect you with people who share your goals"
+      title="What are you interested in?"
+      description="Choose at least 3 interests to help us connect you with partners who share similar goals"
       onBack={handleBack}
     >
       <div className="space-y-6">
@@ -100,9 +100,8 @@ const InterestSelection = () => {
           </div>
           {selectedInterests.length >= 3 && (
             <div className="mt-3 flex items-center space-x-2 text-buddy-green">
-              <Sparkles className="h-4 w-4" />
               <span className="text-sm font-medium">
-                Perfect! You're ready to continue.
+                🎯 Great! You're ready to continue.
               </span>
             </div>
           )}
@@ -151,8 +150,7 @@ const InterestSelection = () => {
                 <div className="flex items-center space-x-3">
                   <Target className="h-5 w-5 text-buddy-orange" />
                   <p className="text-sm text-buddy-gray-700">
-                    <span className="font-semibold">Almost there!</span> Select{" "}
-                    {3 - selectedInterests.length} more interest
+                    Select {3 - selectedInterests.length} more interest
                     {3 - selectedInterests.length > 1 ? "s" : ""} to continue.
                   </p>
                 </div>
@@ -165,7 +163,7 @@ const InterestSelection = () => {
               className="w-full rounded-full bg-gradient-to-r from-buddy-blue to-buddy-purple hover:from-buddy-blue/90 hover:to-buddy-purple/90 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               size="lg"
             >
-              Continue to Profile <ArrowRight className="ml-2 h-5 w-5" />
+              Continue <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         </form>

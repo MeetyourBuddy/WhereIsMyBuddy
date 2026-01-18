@@ -254,10 +254,10 @@ const Dashboard = () => {
                 </div>
                 {isAuthenticated && (
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-buddy-gray-500 text-sm bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-white">
+                    {/* <div className="flex items-center gap-1 text-buddy-gray-500 text-sm bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-white">
                       <Bell className="h-4 w-4 text-buddy-purple" />
                       <span>3 new</span>
-                    </div>
+                    </div> */}
                     <div className="flex items-center gap-1 text-buddy-gray-500 text-sm bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-white">
                       <Bell className="h-4 w-4 text-buddy-purple" />
                       <span>3 new</span>
@@ -495,9 +495,9 @@ const Dashboard = () => {
                     <div className="w-20 h-20 bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                       <Activity className="h-10 w-10 text-buddy-purple" />
                     </div>
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-buddy-orange/20 rounded-full flex items-center justify-center">
+                    {/* <div className="absolute -top-2 -right-2 w-6 h-6 bg-buddy-orange/20 rounded-full flex items-center justify-center">
                       <Sparkles className="h-3 w-3 text-buddy-orange" />
-                    </div>
+                    </div> */}
                   </div>
                   <h3 className="text-2xl font-bold text-buddy-gray-800 mb-3">
                     Ready to get started?
@@ -1057,7 +1057,7 @@ const Dashboard = () => {
                       size="small"
                       className="bg-white text-buddy-purple hover:bg-white/90 rounded-full shadow-md hover:shadow-lg w-full"
                     >
-                      <Sparkles className="w-4 h-4 mr-2" />
+                      {/* <Sparkles className="w-4 h-4 mr-2" /> */}
                       Upgrade Now
                     </Button>
                   </div>
