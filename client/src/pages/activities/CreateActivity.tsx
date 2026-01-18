@@ -216,7 +216,8 @@ interface FormData {
   useBannerUpload: boolean;
   bannerImageFile: File | null;
   allowedCheckInTypes: CheckInTypeConfig[];
-  inviteEmails: string;
+  inviteEmails: string[];
+  inviteEmailInput: string;
   maxParticipants: number;
 }
 
@@ -265,7 +266,8 @@ const CreateActivity = () => {
         description: "Photo check-in",
       },
     ],
-    inviteEmails: "",
+    inviteEmails: [],
+    inviteEmailInput: "",
     maxParticipants: 1,
   });
 
@@ -459,7 +461,7 @@ const CreateActivity = () => {
         description: formData.description,
         category: mapToBackendCategory(formData.category),
         type: formData.visibility as ActivityType,
-        proposedDuration: parseInt(formData.duration),
+        proposedDuration: parseInt(formData.duration.replace(/\D/g, '') || '1'),
         goals: formData.goals,
         rules: formData.rules.map((rule) => ({
           title: rule.title,
@@ -472,6 +474,7 @@ const CreateActivity = () => {
         allowedCheckInTypes: formData.allowedCheckInTypes,
         bannerImage: formData.bannerImage,
         maxParticipants: Number(formData.maxParticipants),
+        inviteEmails: formData.inviteEmails,
       };
 
       console.log("Creating activity with data:", activityData);
@@ -650,6 +653,46 @@ const CreateActivity = () => {
         title: "",
         description: "",
       },
+    }));
+  };
+
+  // Email validation helper
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Add invite email handler
+  const handleAddInviteEmail = () => {
+    const email = formData.inviteEmailInput.trim();
+    
+    if (!email) {
+      toast.error("Please enter an email address");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (formData.inviteEmails.includes(email)) {
+      toast.error("This email is already in the list");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      inviteEmails: [...prev.inviteEmails, email],
+      inviteEmailInput: "",
+    }));
+  };
+
+  // Remove invite email handler
+  const handleRemoveInviteEmail = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      inviteEmails: prev.inviteEmails.filter((_, i) => i !== index),
     }));
   };
 
@@ -1104,8 +1147,9 @@ const CreateActivity = () => {
                       desc: "Once a month",
                     },
                   ].map((option) => (
-                    <div
+                    <label
                       key={option.value}
+                      htmlFor={`frequency-${option.value}`}
                       className={cn(
                         "flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer",
                         formData.frequency === option.value
@@ -1119,17 +1163,14 @@ const CreateActivity = () => {
                         className="text-buddy-purple border-2 border-buddy-purple/30 data-[state=checked]:bg-buddy-purple data-[state=checked]:border-buddy-purple"
                       />
                       <div className="flex-1">
-                        <Label
-                          htmlFor={`frequency-${option.value}`}
-                          className="cursor-pointer font-semibold text-buddy-gray-800 text-base"
-                        >
+                        <div className="font-semibold text-buddy-gray-800 text-base">
                           {option.label}
-                        </Label>
+                        </div>
                         <p className="text-sm text-buddy-gray-500 mt-1">
                           {option.desc}
                         </p>
                       </div>
-                    </div>
+                    </label>
                   ))}
                 </RadioGroup>
               </div>
@@ -1160,10 +1201,11 @@ const CreateActivity = () => {
                       "saturday",
                       "sunday",
                     ].map((day) => (
-                      <div
+                      <label
                         key={day}
+                        htmlFor={`day-${day}`}
                         className={cn(
-                          "flex items-center space-x-3 p-3 rounded-2xl border-2 transition-all duration-300 hover:shadow-md",
+                          "flex items-center space-x-3 p-3 rounded-2xl border-2 transition-all duration-300 hover:shadow-md cursor-pointer",
                           formData.daysOfWeek.includes(day)
                             ? "bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 border-buddy-purple"
                             : "bg-white/70 border-buddy-gray-200/50 hover:border-buddy-purple/50"
@@ -1175,13 +1217,10 @@ const CreateActivity = () => {
                           onCheckedChange={() => toggleDayOfWeek(day)}
                           className="text-buddy-purple border-2 border-buddy-purple/30 data-[state=checked]:bg-buddy-purple data-[state=checked]:border-buddy-purple"
                         />
-                        <Label
-                          htmlFor={`day-${day}`}
-                          className="capitalize cursor-pointer w-full font-medium text-buddy-gray-700"
-                        >
+                        <span className="capitalize w-full font-medium text-buddy-gray-700">
                           {day}
-                        </Label>
-                      </div>
+                        </span>
+                      </label>
                     ))}
                   </div>
                 </motion.div>
@@ -1205,10 +1244,11 @@ const CreateActivity = () => {
                   </div>
                   <div className="grid grid-cols-7 gap-2 p-6 bg-gradient-to-br from-buddy-purple/5 to-buddy-blue/5 rounded-2xl border border-buddy-purple/20">
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((date) => (
-                      <div
+                      <label
                         key={date}
+                        htmlFor={`date-${date}`}
                         className={cn(
-                          "flex items-center justify-center p-3 rounded-2xl transition-all duration-300 hover:shadow-md",
+                          "flex items-center justify-center p-3 rounded-2xl transition-all duration-300 hover:shadow-md cursor-pointer",
                           formData.checkinDatesOfMonth.includes(date)
                             ? "bg-gradient-to-br from-buddy-purple to-buddy-blue text-white shadow-lg"
                             : "bg-white/70 hover:bg-white/90 border border-buddy-gray-200/50 hover:border-buddy-purple/50"
@@ -1232,13 +1272,10 @@ const CreateActivity = () => {
                           }}
                           className="hidden"
                         />
-                        <Label
-                          htmlFor={`date-${date}`}
-                          className="cursor-pointer w-full text-center font-medium"
-                        >
+                        <span className="w-full text-center font-medium">
                           {date}
-                        </Label>
-                      </div>
+                        </span>
+                      </label>
                     ))}
                   </div>
                 </motion.div>
@@ -1282,7 +1319,8 @@ const CreateActivity = () => {
                   }
                   className="space-y-4"
                 >
-                  <div
+                  <label
+                    htmlFor="visibility-public"
                     className={cn(
                       "flex items-start space-x-4 p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer",
                       formData.visibility === "public"
@@ -1296,20 +1334,18 @@ const CreateActivity = () => {
                       className="mt-1 text-buddy-green border-2 border-buddy-green/30 data-[state=checked]:bg-buddy-green data-[state=checked]:border-buddy-green"
                     />
                     <div className="flex-1">
-                      <Label
-                        htmlFor="visibility-public"
-                        className="cursor-pointer font-semibold text-buddy-gray-800 text-base mb-2 block"
-                      >
+                      <div className="font-semibold text-buddy-gray-800 text-base mb-2">
                         Public Activity
-                      </Label>
+                      </div>
                       <p className="text-buddy-gray-600 leading-relaxed">
                         Anyone can discover and request to join this activity.
                         Great for building a community and finding new
                         participants
                       </p>
                     </div>
-                  </div>
-                  <div
+                  </label>
+                  <label
+                    htmlFor="visibility-private"
                     className={cn(
                       "flex items-start space-x-4 p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer",
                       formData.visibility === "private"
@@ -1323,19 +1359,16 @@ const CreateActivity = () => {
                       className="mt-1 text-buddy-purple border-2 border-buddy-purple/30 data-[state=checked]:bg-buddy-purple data-[state=checked]:border-buddy-purple"
                     />
                     <div className="flex-1">
-                      <Label
-                        htmlFor="visibility-private"
-                        className="cursor-pointer font-semibold text-buddy-gray-800 text-base mb-2 block"
-                      >
+                      <div className="font-semibold text-buddy-gray-800 text-base mb-2">
                         Private Activity
-                      </Label>
+                      </div>
                       <p className="text-buddy-gray-600 leading-relaxed">
                         Only people you invite will be able to join this
                         activity. Perfect for close-knit groups and personal
                         projects
                       </p>
                     </div>
-                  </div>
+                  </label>
                 </RadioGroup>
               </div>
 
@@ -1355,22 +1388,61 @@ const CreateActivity = () => {
                     </Label>
                     <p className="text-sm text-buddy-gray-500 mt-1 mb-2">
                       Want to invite specific people right away? Enter their
-                      email addresses below
+                      email addresses below. These emails will be saved and used to send invitations.
                     </p>
-                    <Textarea
-                      id="invite-emails"
-                      placeholder="Enter email addresses separated by commas (e.g., john@example.com, jane@example.com)"
-                      value={formData.inviteEmails}
-                      onChange={(e) =>
-                        handleChange({
-                          target: {
-                            name: "inviteEmails",
-                            value: e.target.value,
-                          },
-                        })
-                      }
-                      className="min-h-32 rounded-2xl border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 text-base"
-                    />
+                    <div className="flex gap-3">
+                      <Input
+                        id="invite-emails"
+                        type="email"
+                        placeholder="Enter email address (e.g., john@example.com)"
+                        value={formData.inviteEmailInput}
+                        onChange={(e) =>
+                          handleChange({
+                            target: {
+                              name: "inviteEmailInput",
+                              value: e.target.value,
+                            },
+                          })
+                        }
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddInviteEmail();
+                          }
+                        }}
+                        className="flex-1 rounded-full border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 h-12 text-base"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddInviteEmail}
+                        disabled={!formData.inviteEmailInput.trim() || !isValidEmail(formData.inviteEmailInput.trim())}
+                        className="rounded-full bg-gradient-to-r from-buddy-green to-buddy-purple text-white hover:shadow-lg transition-all duration-300 hover:scale-105 h-12 px-6"
+                      >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add
+                      </Button>
+                    </div>
+                    {formData.inviteEmails.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold mb-2 text-buddy-gray-700">
+                          Invited Emails ({formData.inviteEmails.length})
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                          {formData.inviteEmails.map((email, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2 bg-gradient-to-r from-buddy-purple/10 to-buddy-blue/10 text-buddy-purple px-4 py-2 rounded-full border border-buddy-purple/20 hover:shadow-md transition-all duration-300"
+                            >
+                              <span className="font-medium text-sm">{email}</span>
+                              <X
+                                className="h-4 w-4 cursor-pointer hover:text-red-500 transition-colors"
+                                onClick={() => handleRemoveInviteEmail(index)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <p className="text-sm text-buddy-gray-500 mt-2">
                       💡 You can also invite people after creating the activity
                     </p>
@@ -1548,10 +1620,11 @@ const CreateActivity = () => {
 
                 <div className="space-y-4">
                   {defaultGoals.map((goal) => (
-                    <div
+                    <label
                       key={goal}
+                      htmlFor={`goal-${goal}`}
                       className={cn(
-                        "flex items-start space-x-4 p-4 rounded-2xl border-2 transition-all duration-300 hover:shadow-md",
+                        "flex items-start space-x-4 p-4 rounded-2xl border-2 transition-all duration-300 hover:shadow-md cursor-pointer",
                         formData.goals.includes(goal)
                           ? "bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 border-buddy-purple"
                           : "bg-white/70 border-buddy-gray-200/50 hover:border-buddy-purple/50 hover:bg-white/90"
@@ -1563,13 +1636,10 @@ const CreateActivity = () => {
                         onCheckedChange={() => toggleGoal(goal)}
                         className="mt-1 text-buddy-purple border-2 border-buddy-purple/30 data-[state=checked]:bg-buddy-purple data-[state=checked]:border-buddy-purple"
                       />
-                      <Label
-                        htmlFor={`goal-${goal}`}
-                        className="cursor-pointer font-medium text-buddy-gray-700 leading-relaxed"
-                      >
+                      <span className="font-medium text-buddy-gray-700 leading-relaxed flex-1">
                         {goal}
-                      </Label>
-                    </div>
+                      </span>
+                    </label>
                   ))}
                 </div>
               </div>

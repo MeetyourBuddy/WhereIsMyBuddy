@@ -13,6 +13,9 @@ import {
   Shield,
   Flame,
   CheckCircle,
+  Lock,
+  LockIcon,
+  LockKeyhole,
 } from "lucide-react";
 import { User } from "@/types/auth-types";
 import { IUserResponse } from "@/types/user-types";
@@ -25,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   isActivityCreator,
   isActivityParticipant,
+  ActivityType,
 } from "@/types/activity-types";
 
 interface ActivityCardProps {
@@ -39,6 +43,7 @@ interface ActivityCardProps {
   participants: IUserResponse[];
   maxParticipants: number;
   admin?: IUserResponse;
+  type?: ActivityType | string;
   onClick?: () => void;
   // Progress tracking props (optional)
   showProgress?: boolean;
@@ -63,6 +68,7 @@ const ActivityCard = ({
   participants,
   maxParticipants,
   admin,
+  type,
   onClick,
   showProgress = false,
   userProgress,
@@ -84,6 +90,12 @@ const ActivityCard = ({
   // Check if activity has ended
   const isEnded = endDate ? differenceInDays(new Date(endDate), new Date()) < 0 : false;
 
+  // Check if activity is private
+  const isPrivate = type === ActivityType.PRIVATE || type === "private";
+
+  // Check if user can access private activity (admin, participant, or invited)
+  const canAccessPrivate = isPrivate && (isCreator || isParticipant);
+
   const handleJoinQuit = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
@@ -101,6 +113,16 @@ const ActivityCard = ({
         title: "Error",
         description: "Activity ID is missing",
         variant: "destructive",
+      });
+      return;
+    }
+
+    // Prevent joining private activities if user doesn't have access
+    if (isPrivate && !canAccessPrivate) {
+      toast({
+        title: "Private Activity",
+        description: "This activity is private. Only invited members can join it.",
+        variant: "default",
       });
       return;
     }
@@ -186,15 +208,32 @@ const ActivityCard = ({
     }
   };
 
+  // Handle card click - disable for private activities unless user has access
+  const handleCardClick = () => {
+    if (isPrivate && !canAccessPrivate) {
+      toast({
+        title: "Private Activity",
+        description: "This activity is private. Only invited members can view it.",
+        variant: "default",
+      });
+      return;
+    }
+    onClick && onClick();
+  };
+
   return (
     <Card
-      hover
-      className="transition-all duration-300 cursor-pointer overflow-hidden"
-      onClick={onClick}
+      hover={!isPrivate || canAccessPrivate}
+      className={`transition-all duration-300 overflow-hidden ${
+        isPrivate && !canAccessPrivate
+          ? "cursor-not-allowed opacity-75"
+          : "cursor-pointer"
+      }`}
+      onClick={handleCardClick}
     >
-      <Card.Content className="p-0">
+      <Card.Content className="p-0 flex flex-col h-full">
         {/* Activity Image */}
-        <div className="relative h-40 overflow-hidden">
+        <div className="relative h-40 overflow-hidden flex-shrink-0">
           {bannerImage ? (
             <div
               className="w-full h-full bg-cover bg-center"
@@ -206,10 +245,10 @@ const ActivityCard = ({
             </div>
           )}
           <div className="absolute top-0 left-0 right-0 h-full bg-gradient-to-b from-black/0 via-black/0 to-black/30"></div>
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-3 left-3 flex flex-col gap-2">
             {category && (
               <span
-                className={`px-3 py-1 backdrop-blur-sm rounded-full text-xs font-medium flex items-center ${getCategoryColor(category)}`}
+                className={`px-3 py-1 backdrop-blur-sm rounded-full text-xs font-medium flex items-center text-white ${getCategoryColor(category)}`}
               >
                 <span className="mr-1">{getCategoryIcon(category)}</span>
                 {category}
@@ -223,10 +262,13 @@ const ActivityCard = ({
           </div>
         </div>
 
-        <div className="p-6 pb-4">
-          <h3 className="text-xl font-semibold mb-2 text-buddy-gray-900">
-            {title}
-          </h3>
+        <div className="p-6 pb-4 flex-1 flex flex-col">
+          <div className="flex items-center mb-2">
+            <h3 className="text-xl font-semibold text-buddy-gray-900">
+              {title}
+            </h3>
+            {isPrivate && <LockKeyhole className="w-5 h-5 ml-2 text-buddy-gray-600" />}
+          </div>
           <p className="text-buddy-gray-600 text-sm mb-4 line-clamp-2">
             {description}
           </p>
@@ -269,7 +311,7 @@ const ActivityCard = ({
             </div>
           )}
 
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2 mt-auto">
             {/* <div className="flex items-center text-buddy-gray-700 text-sm">
               <MapPin className="w-4 h-4 mr-2 text-buddy-gray-500" />
               <span>{location}</span>
@@ -293,7 +335,7 @@ const ActivityCard = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-4 border-t border-buddy-gray-100">
+        <div className="flex items-center justify-between p-4 border-t border-buddy-gray-100 flex-shrink-0">
           <div className="flex items-center">
             <Avatar isGroup groupImages={participantImages} size="sm" />
             <span className="ml-3 text-sm font-medium text-buddy-gray-600">
@@ -320,6 +362,14 @@ const ActivityCard = ({
                     <Shield className="w-4 h-4" />
                     CREATOR
                   </div>
+                ) : isPrivate && !canAccessPrivate ? (
+                  <Badge
+                    variant="secondary"
+                    className="h-9 px-4 rounded-full bg-buddy-gray-200 text-buddy-gray-700 border border-buddy-gray-300 hover:bg-buddy-gray-200 cursor-not-allowed"
+                  >
+                    <Lock className="w-4 h-4 mr-1" />
+                    Private
+                  </Badge>
                 ) : (
                   <Button
                     variant="default"
@@ -357,8 +407,9 @@ const ActivityCard = ({
               className="text-buddy-gray-500 rounded-full border hover:border-buddy-gray-400 hover:text-buddy-gray-900 hover:bg-buddy-gray-100"
               onClick={(e) => {
                 e.stopPropagation();
-                onClick && onClick();
+                handleCardClick();
               }}
+              disabled={isPrivate && !canAccessPrivate}
             >
               <ChevronRight className="w-5 h-5" />
             </Button>

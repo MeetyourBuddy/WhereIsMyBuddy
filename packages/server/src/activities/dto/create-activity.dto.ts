@@ -10,6 +10,7 @@ import {
   Min,
   ArrayMinSize,
   IsNotEmpty,
+  IsEmail,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
@@ -133,4 +134,9 @@ export class CreateActivityDto {
 
   @IsNumber()
   maxParticipants: number;
+
+  @IsArray()
+  @IsEmail({}, { each: true })
+  @IsOptional()
+  inviteEmails?: string[];
 }

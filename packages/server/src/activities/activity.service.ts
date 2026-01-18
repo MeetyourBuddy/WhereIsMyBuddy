@@ -48,10 +48,10 @@ export class ActivityService {
 
   async findAll(): Promise<Activity[]> {
     try {
+      // Return both public and private activities
+      // Frontend will handle visibility and join restrictions for private activities
       const activities = await this.activityModel
-        .find({
-          $or: [{ type: 'public' }],
-        })
+        .find({})
         .populate({
           path: 'admin',
           model: 'User',
@@ -99,24 +99,62 @@ export class ActivityService {
         throw new NotFoundException('Activity not found');
       }
 
-      // For guest users (no userId), only allow access to public activities
-      if (!userId) {
-        if (activity.type !== 'public') {
-          throw new NotFoundException('Activity not found or unauthorized');
+      // Allow all users (guests and authenticated) to view activities
+      // Frontend will handle restrictions on joining/interacting with private activities
+      // For authenticated users, check ownership and participation for access control
+      // Handle both ObjectId and populated admin/participants
+      const getAdminId = (admin: any): string | null => {
+        if (!admin) return null;
+        // If admin is an ObjectId directly
+        if (admin instanceof Types.ObjectId) {
+          return admin.toString();
         }
-        return activity;
-      }
+        // If admin is a populated object with _id
+        if (admin._id) {
+          return admin._id instanceof Types.ObjectId
+            ? admin._id.toString()
+            : admin._id.toString();
+        }
+        // If admin is a string
+        if (typeof admin === 'string') {
+          return admin;
+        }
+        return null;
+      };
 
-      // For authenticated users, check ownership and participation
-      const isOwner = activity.admin?._id?.toString() === userId.toString();
-      const isParticipant = activity.participants?.some(
-        (p) => p._id?.toString() === userId.toString(),
-      );
+      const getParticipantId = (participant: any): string | null => {
+        if (!participant) return null;
+        // If participant is an ObjectId directly
+        if (participant instanceof Types.ObjectId) {
+          return participant.toString();
+        }
+        // If participant is a populated object with _id
+        if (participant._id) {
+          return participant._id instanceof Types.ObjectId
+            ? participant._id.toString()
+            : participant._id.toString();
+        }
+        // If participant is a string
+        if (typeof participant === 'string') {
+          return participant;
+        }
+        return null;
+      };
 
-      const canAccess = activity.type === 'public' || isOwner || isParticipant;
+      // Allow all users to view activities (guests and authenticated)
+      // Frontend will handle restrictions on joining/interacting with private activities
+      // For authenticated users, we still check ownership/participation for potential future use
+      if (userId) {
+        const adminId = getAdminId(activity.admin);
+        const isOwner = adminId === userId.toString();
 
-      if (!canAccess) {
-        throw new NotFoundException('Activity not found or unauthorized');
+        const isParticipant = activity.participants?.some((p) => {
+          const participantId = getParticipantId(p);
+          return participantId === userId.toString();
+        });
+
+        // Note: We allow viewing regardless of ownership/participation
+        // Frontend will handle UI restrictions for private activities
       }
 
       return activity;

@@ -404,13 +404,16 @@ const Activities = () => {
         break;
 
       case "soon":
-        // Show activities starting within the next 7 days
+        // Show activities starting in the future within 7 days from current date
         const now = new Date();
+        now.setHours(0, 0, 0, 0); // Set to start of today for accurate comparison
         const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         filtered = filtered
           .filter((activity) => {
             const startDate = new Date(activity.startDate);
-            return startDate >= now && startDate <= nextWeek;
+            startDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+            // Only show activities that start in the future (after today) and within 7 days
+            return startDate > now && startDate <= nextWeek;
           })
           .sort((a, b) => {
             const dateA = new Date(a.startDate);
@@ -729,6 +732,7 @@ const Activities = () => {
                       participants={activity.participants || []}
                       maxParticipants={activity.maxParticipants}
                       admin={activity.admin}
+                      type={activity.type}
                       onClick={() =>
                         navigate(`/activities/${activity._id || activity.id}`)
                       }
@@ -788,6 +792,7 @@ const Activities = () => {
                         participants={activity.participants || []}
                         maxParticipants={activity.maxParticipants}
                         admin={activity.admin}
+                        type={activity.type}
                         showProgress={true}
                         userProgress={progressData}
                         onClick={() => navigate(`/activities/${activityId}`)}
@@ -850,6 +855,7 @@ const Activities = () => {
                       participants={activity.participants || []}
                       maxParticipants={activity.maxParticipants}
                       admin={activity.admin}
+                      type={activity.type}
                       onClick={() =>
                         navigate(`/activities/${activity._id || activity.id}`)
                       }
@@ -897,6 +903,7 @@ const Activities = () => {
                       participants={activity.participants || []}
                       maxParticipants={activity.maxParticipants}
                       admin={activity.admin}
+                      type={activity.type}
                       onClick={() =>
                         navigate(`/activities/${activity._id || activity.id}`)
                       }
@@ -944,6 +951,7 @@ const Activities = () => {
                       participants={activity.participants || []}
                       maxParticipants={activity.maxParticipants}
                       admin={activity.admin}
+                      type={activity.type}
                       onClick={() =>
                         navigate(`/activities/${activity._id || activity.id}`)
                       }
