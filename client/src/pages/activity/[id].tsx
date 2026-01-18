@@ -8,8 +8,10 @@ import { useActivityStore } from "@/store/activity.store";
 import { useAuth } from "@/store/auth.store";
 import { CheckInService } from "@/services/api/activity/reaction.service";
 import { isActivityParticipant } from "@/types/activity-types";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const ActivityPage = () => {
+  useScrollToTopImmediate();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();

@@ -36,8 +36,10 @@ import {
 } from "@/types/activity-types";
 import { CheckInService } from "@/services/api/activity/reaction.service";
 import { tokenService } from "@/services/token/token-service";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const Activities = () => {
+  useScrollToTopImmediate();
   const location = useLocation();
   const navigate = useNavigate();
   const {

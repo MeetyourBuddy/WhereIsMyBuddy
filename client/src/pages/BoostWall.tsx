@@ -27,6 +27,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/store/auth.store";
 import { AuthWall } from "@/components/auth/AuthWall";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 // Boost message type definitions
 interface BoostMessageType {
@@ -679,6 +680,7 @@ const CardDeck = ({ category, cards, isDarkMode, categoryIcon, isGuest }) => {
 };
 
 const BoostWall = () => {
+  useScrollToTopImmediate();
   const { isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

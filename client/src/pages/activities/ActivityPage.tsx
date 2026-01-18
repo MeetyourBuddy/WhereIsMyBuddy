@@ -48,6 +48,7 @@ import BannerEditModal from "@/components/activities/BannerEditModal";
 import { useActivityData } from "@/hooks/useActivityData";
 import { useBadgeStore } from "@/store/badge.store";
 import { useAuth } from "@/store/auth.store";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 import { CheckInService } from "@/services/api/activity/reaction.service";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -81,6 +82,7 @@ const formatFrequency = (frequency: number, unit: string) => {
 };
 
 const ActivityPage = () => {
+  useScrollToTopImmediate();
   const { activityId } = useParams<{ activityId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();

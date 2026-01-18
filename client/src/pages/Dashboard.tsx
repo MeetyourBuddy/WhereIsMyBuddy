@@ -40,8 +40,10 @@ import { useToast } from "@/hooks/use-toast";
 import { ActivityService } from "@/services/api/activity/activity-service";
 import { BuddyConnectionService } from "@/services/api/buddy/buddy-connection.service";
 import { CheckInService } from "@/services/api/activity/reaction.service";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const Dashboard = () => {
+  useScrollToTopImmediate();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();

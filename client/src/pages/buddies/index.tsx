@@ -44,6 +44,7 @@ import { AuthWall } from "@/components/auth/AuthWall";
 import { Users as UsersIcon } from "lucide-react";
 import { UserSearchParams } from "@/services/api/user/user-search.service";
 import { User } from "@/types/auth-types";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 // Type for buddy data from backend
 type BuddyUser = User;
@@ -62,6 +63,7 @@ const debounce = (func: Function, wait: number) => {
 };
 
 const Buddies = () => {
+  useScrollToTopImmediate();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();

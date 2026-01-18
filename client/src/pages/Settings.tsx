@@ -79,6 +79,7 @@ import {
 import { activityCategories } from "@/lib/constants/category-interests.constants";
 import { useAuthStore } from "@/store/auth.store";
 import { AuthWall } from "@/components/auth/AuthWall";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 import {
   settingsService,
   UserSettings,
@@ -106,6 +107,7 @@ for (let i = 0; i < avatarOptions.length; i++) {
 }
 
 const Settings: React.FC = () => {
+  useScrollToTopImmediate();
   const { user, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(true);

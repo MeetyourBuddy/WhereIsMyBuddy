@@ -40,8 +40,10 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/store/auth.store";
 import { AuthWall } from "@/components/auth/AuthWall";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const Notifications: React.FC = () => {
+  useScrollToTopImmediate();
   const { isAuthenticated } = useAuth();
   const [filter, setFilter] = useState("all");
   const [notifications, setNotifications] = useState<NotificationData[]>([]);

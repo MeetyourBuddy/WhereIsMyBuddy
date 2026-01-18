@@ -7,8 +7,10 @@ import { ArrowLeft } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { userService } from "@/services/api/user/user-service";
 import { User } from "@/types/auth-types";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const ProfilePage = () => {
+  useScrollToTopImmediate();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();

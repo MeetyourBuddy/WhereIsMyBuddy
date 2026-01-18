@@ -26,8 +26,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "@/hooks/use-toast";
+import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 
 const Support: React.FC = () => {
+  useScrollToTopImmediate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactForm, setContactForm] = useState({
