@@ -63,6 +63,14 @@ const Dashboard = () => {
 
   console.log("API URL Dashboard:", import.meta.env.VITE_API_URL);
 
+  // Helper function to check if an activity has ended
+  const isActivityEnded = (activity) => {
+    if (!activity.endDate) return false;
+    const endDate = new Date(activity.endDate);
+    const now = new Date();
+    return endDate < now;
+  };
+
   // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -78,8 +86,12 @@ const Dashboard = () => {
         const activitiesResponse = await ActivityService.getActivities();
         const allActivities = activitiesResponse.data || [];
 
-        // Fetch suggested activities (first 3)
-        setSuggestedActivities(allActivities.slice(0, 3));
+        // Filter suggested activities: only active or about to start, never ended
+        // Limit to maximum 3 activities
+        const filteredSuggested = allActivities
+          .filter((activity) => !isActivityEnded(activity))
+          .slice(0, 3);
+        setSuggestedActivities(filteredSuggested);
 
         // Fetch user's active activities (joined activities)
         const activeActivitiesData = allActivities.filter((activity) =>
@@ -204,18 +216,11 @@ const Dashboard = () => {
     return Math.round((activity.checkIns / activity.totalCheckIns) * 100);
   };
 
-  // Helper function to check if an activity has ended
-  const isActivityEnded = (activity) => {
-    if (!activity.endDate) return false;
-    const endDate = new Date(activity.endDate);
-    const now = new Date();
-    return endDate < now;
-  };
-
   // Filter active activities to only show non-ended ones
-  const trueActiveActivities = activeActivities.filter(
-    (activity) => !isActivityEnded(activity)
-  );
+  // Limit to maximum 2 activities
+  const trueActiveActivities = activeActivities
+    .filter((activity) => !isActivityEnded(activity))
+    .slice(0, 2);
 
   // Main loading state
   if (isLoading) {
