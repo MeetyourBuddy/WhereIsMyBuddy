@@ -16,7 +16,16 @@ import {
   Lock,
   LockIcon,
   LockKeyhole,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { User } from "@/types/auth-types";
 import { IUserResponse } from "@/types/user-types";
 import { formatDate, differenceInDays } from "date-fns";
@@ -77,6 +86,7 @@ const ActivityCard = ({
   const { user } = useAuth();
   const { joinActivityMutation, quitActivityMutation } = useActivityData();
   const [isJoining, setIsJoining] = useState(false);
+  const [showQuitModal, setShowQuitModal] = useState(false);
 
   // Check if user is a participant and creator using helper functions
   // Use both _id and id fields to handle different API responses
@@ -127,17 +137,41 @@ const ActivityCard = ({
       return;
     }
 
+    // If user is a participant, show confirmation modal
+    if (isParticipant) {
+      setShowQuitModal(true);
+      return;
+    }
+
+    // Otherwise, join the activity
     setIsJoining(true);
     try {
-      if (isParticipant) {
-        await quitActivityMutation.mutateAsync(id);
-      } else {
-        await joinActivityMutation.mutateAsync(id);
-      }
+      await joinActivityMutation.mutateAsync(id);
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to update activity participation",
+        description: error.message || "Failed to join activity",
+        variant: "destructive",
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleConfirmQuit = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (!id) return;
+
+    setIsJoining(true);
+    setShowQuitModal(false);
+    try {
+      await quitActivityMutation.mutateAsync(id);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to quit activity",
         variant: "destructive",
       });
     } finally {
@@ -416,6 +450,52 @@ const ActivityCard = ({
           </div>
         </div>
       </Card.Content>
+
+      {/* Quit Activity Confirmation Modal */}
+      <Dialog open={showQuitModal} onOpenChange={setShowQuitModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Quit Activity
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Are you sure you want to quit this activity?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-buddy-gray-700">
+              If you quit this activity, <strong>all your progress will be lost</strong>, including:
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-buddy-gray-600 list-disc list-inside">
+              <li>All check-ins you've completed</li>
+              <li>Your current streak</li>
+              <li>Your progress percentage</li>
+              <li>All activity statistics</li>
+            </ul>
+            <p className="mt-4 text-sm font-medium text-buddy-gray-800">
+              This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowQuitModal(false)}
+              disabled={isJoining}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmQuit}
+              disabled={isJoining}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isJoining ? "Leaving..." : "Yes, Quit Activity"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
