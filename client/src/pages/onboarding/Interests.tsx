@@ -186,8 +186,8 @@ const InterestSelection = () => {
             <Button
               type="button"
               onClick={handleSkip}
-              variant="ghost"
-              className="w-full text-buddy-gray-500 hover:text-buddy-gray-700"
+              variant="outline"
+              className="w-full text-buddy-gray-500 hover:text-buddy-gray-700 rounded-full hover:bg-buddy-gray-100"
             >
               Skip for now
             </Button>

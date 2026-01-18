@@ -316,6 +316,36 @@ const Settings: React.FC = () => {
       const response = await settingsService.updateProfile(updateData);
 
       if (response.success) {
+        // Fetch updated user data to get complete profile
+        // The updateProfile response might not include all user fields
+        try {
+          const updatedUserResponse = await settingsService.getProfileWithSettings();
+          if (updatedUserResponse.success && updatedUserResponse.data?.profile) {
+            const updatedUser = updatedUserResponse.data.profile;
+            // Update the user in auth store with the updated profile data
+            useAuthStore.getState().setUser(updatedUser);
+          } else {
+            // Fallback: merge response data with current user
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser && response.data) {
+              useAuthStore.getState().setUser({
+                ...currentUser,
+                ...response.data,
+                name: response.data.name || currentUser.name,
+                bio: response.data.bio !== undefined ? response.data.bio : currentUser.bio,
+                avatar: response.data.avatar || currentUser.avatar,
+                country: response.data.country || currentUser.country,
+                city: response.data.city || currentUser.city,
+                interestsCategories: response.data.interestsCategories || currentUser.interestsCategories,
+                interestsCommodities: response.data.interestsCommodities || currentUser.interestsCommodities,
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch updated user data:", error);
+          // Still show success toast even if we couldn't update the store
+        }
+        
         toast({
           title: "Profile updated",
           description: "Your profile has been successfully updated",
