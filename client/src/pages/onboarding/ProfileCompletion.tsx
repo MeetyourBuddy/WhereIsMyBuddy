@@ -65,7 +65,7 @@ type FormData = z.infer<typeof formSchema>;
 const ProfileCompletion = () => {
   const navigate = useNavigate();
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
-  const { completeOnboarding } = useOnboardingStore();
+  const { completeOnboarding, skipOnboarding } = useOnboardingStore();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -153,6 +153,43 @@ const ProfileCompletion = () => {
   const handleSelectAvatar = (avatarId: string, avatarUrl: string) => {
     setSelectedAvatar(avatarUrl);
     form.setValue("selectedAvatar", avatarId);
+  };
+
+  const handleSkip = async () => {
+    // Save current form data if any
+    const formData = form.getValues();
+    if (selectedAvatar) {
+      // Save avatar to localStorage temporarily (though it won't be used in skip)
+      // The skip function will handle saving whatever is in localStorage
+    }
+
+    try {
+      await skipOnboarding();
+      toast.success("You can complete your profile later from Settings");
+      
+      // Handle post-auth intent if exists
+      const intent = postAuthIntent.get();
+      const returnTo = localStorage.getItem("returnToAfterAuth");
+      
+      if (intent?.type === "join-activity") {
+        postAuthIntent.clear();
+        localStorage.removeItem("returnToAfterAuth");
+        navigate(`/activities/${intent.activityId}`);
+        return;
+      }
+
+      if (intent?.type === "connect-buddy") {
+        postAuthIntent.clear();
+        localStorage.removeItem("returnToAfterAuth");
+        navigate(returnTo || `/profile/${intent.userId}`);
+        return;
+      }
+
+      localStorage.removeItem("returnToAfterAuth");
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error("Failed to skip onboarding. Please try again.");
+    }
   };
 
   return (
@@ -271,6 +308,14 @@ const ProfileCompletion = () => {
               >
                 Complete Profile
                 <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSkip}
+                variant="ghost"
+                className="w-full text-buddy-gray-500 hover:text-buddy-gray-700"
+              >
+                Skip for now
               </Button>
             </div>
           </form>

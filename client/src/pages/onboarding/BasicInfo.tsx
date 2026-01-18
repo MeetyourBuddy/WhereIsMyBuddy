@@ -37,6 +37,7 @@ import {
   citiesByCountry,
 } from "@/lib/constants/country-city.constants";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import { useOnboardingStore } from "@/store/onboarding.store";
 
 const formSchema = z.object({
   country: z.string().min(1, { message: "Please select your country" }),
@@ -51,6 +52,7 @@ type FormData = z.infer<typeof formSchema>;
 const BasicInfo = () => {
   const navigate = useNavigate();
   useScrollToTopImmediate();
+  const { skipOnboarding } = useOnboardingStore();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 
@@ -91,6 +93,28 @@ const BasicInfo = () => {
 
     toast.success("Basic information saved!");
     navigate("/onboarding/interests");
+  };
+
+  const handleSkip = async () => {
+    // Save current form data if any fields are filled
+    const formData = form.getValues();
+    if (formData.country || formData.city || formData.dateOfBirth) {
+      const timezoneInfo = {
+        country: formData.country || "",
+        city: formData.city || "",
+        estimatedTimezone: "UTC",
+      };
+      localStorage.setItem("userTimezone", JSON.stringify(timezoneInfo));
+      localStorage.setItem("userBasicInfo", JSON.stringify(formData));
+    }
+
+    try {
+      await skipOnboarding();
+      toast.success("You can complete your profile later from Settings");
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error("Failed to skip onboarding. Please try again.");
+    }
   };
 
   return (
@@ -246,6 +270,14 @@ const BasicInfo = () => {
                 size="lg"
               >
                 Continue <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSkip}
+                variant="ghost"
+                className="w-full text-buddy-gray-500 hover:text-buddy-gray-700"
+              >
+                Skip for now
               </Button>
             </div>
           </form>

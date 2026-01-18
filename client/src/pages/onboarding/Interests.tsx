@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { activityCategories } from "@/lib/constants/category-interests.constants";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import { useOnboardingStore } from "@/store/onboarding.store";
 
 const InterestSelection = () => {
   const navigate = useNavigate();
   useScrollToTopImmediate();
+  const { skipOnboarding } = useOnboardingStore();
   const [selectedInterests, setSelectedInterests] = React.useState<string[]>(
     []
   );
@@ -65,6 +67,22 @@ const InterestSelection = () => {
 
   const handleBack = () => {
     navigate("/onboarding");
+  };
+
+  const handleSkip = async () => {
+    // Save current selections if any
+    if (selectedInterests.length > 0) {
+      localStorage.setItem("userInterests", JSON.stringify(selectedInterests));
+      localStorage.setItem("userCategories", JSON.stringify(categories));
+    }
+
+    try {
+      await skipOnboarding();
+      toast.success("You can complete your profile later from Settings");
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error("Failed to skip onboarding. Please try again.");
+    }
   };
 
   return (
@@ -164,6 +182,14 @@ const InterestSelection = () => {
               size="lg"
             >
               Continue <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSkip}
+              variant="ghost"
+              className="w-full text-buddy-gray-500 hover:text-buddy-gray-700"
+            >
+              Skip for now
             </Button>
           </div>
         </form>

@@ -164,17 +164,24 @@ const Dashboard = () => {
   }, [user, toast]);
 
   // Helper function to calculate profile completion
+  // This calculates based on actual profile fields, not onboarding status
   const calculateProfileCompletion = (userData) => {
     if (!userData) return 0;
 
-    const fields = ["name", "email", "bio", "location", "interests", "avatar"];
-    const completedFields = fields.filter((field) => {
-      if (field === "interests")
-        return userData[field] && userData[field].length > 0;
-      return userData[field] && userData[field].trim() !== "";
-    });
+    // Check actual profile fields
+    const checks = {
+      name: userData.name && userData.name.trim() !== "",
+      email: userData.email && userData.email.trim() !== "",
+      bio: userData.bio && userData.bio.trim() !== "",
+      location: userData.city && userData.country, // Both city and country needed
+      interests: userData.interestsCommodities && userData.interestsCommodities.length > 0,
+      avatar: userData.avatar && userData.avatar.trim() !== "",
+    };
 
-    return Math.round((completedFields.length / fields.length) * 100);
+    const completedCount = Object.values(checks).filter(Boolean).length;
+    const totalFields = Object.keys(checks).length;
+
+    return Math.round((completedCount / totalFields) * 100);
   };
 
   // Helper functions for data formatting
@@ -331,7 +338,7 @@ const Dashboard = () => {
               </div>
 
               {/* Profile Completion Card / Guest Empty State */}
-              {isAuthenticated && (
+              {isAuthenticated && userStats.profileCompletion < 100 && (
                 <Card className="p-6 animate-fade-in hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-pastel-purple/20 border border-white shadow-xl rounded-3xl overflow-hidden relative">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-buddy-purple/5 rounded-full -translate-y-1/3 translate-x-1/3"></div>
                   <div className="absolute bottom-0 left-0 w-64 h-64 bg-buddy-blue/5 rounded-full translate-y-1/3 -translate-x-1/3"></div>

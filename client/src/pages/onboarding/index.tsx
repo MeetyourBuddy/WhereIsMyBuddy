@@ -11,13 +11,25 @@ import { toast } from "sonner";
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import { Button } from "@/components/ui/button";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import { useOnboardingStore } from "@/store/onboarding.store";
 
 const OnboardingWelcome = () => {
   const navigate = useNavigate();
   useScrollToTopImmediate();
+  const { skipOnboarding } = useOnboardingStore();
 
   const handleContinue = () => {
     navigate("/onboarding/basic-info");
+  };
+
+  const handleSkip = async () => {
+    try {
+      await skipOnboarding();
+      toast.success("You can complete your profile later from Settings");
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error("Failed to skip onboarding. Please try again.");
+    }
   };
 
   return (
@@ -90,6 +102,13 @@ const OnboardingWelcome = () => {
             size="lg"
           >
             Let's Get Started <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+          <Button
+            onClick={handleSkip}
+            variant="ghost"
+            className="w-full text-buddy-gray-500 hover:text-buddy-gray-700"
+          >
+            Skip for now
           </Button>
         </div>
       </div>
