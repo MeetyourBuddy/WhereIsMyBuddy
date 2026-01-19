@@ -48,6 +48,8 @@ import { Users as UsersIcon } from "lucide-react";
 import { UserSearchParams } from "@/services/api/user/user-search.service";
 import { User } from "@/types/auth-types";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import { BuddyConnectionService } from "@/services/api/buddy/buddy-connection.service";
+import { ActivityService } from "@/services/api/activity/activity-service";
 
 // Type for buddy data from backend
 type BuddyUser = User;
@@ -85,7 +87,24 @@ const Buddies = () => {
   const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20); // 5x4 grid
-  const [activeTab, setActiveTab] = useState("all");
+  // Get initial tab from URL parameter, default to "all"
+  const getInitialTab = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get("tab") || "all";
+  };
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+  const [myBuddies, setMyBuddies] = useState<any[]>([]);
+  const [isLoadingMyBuddies, setIsLoadingMyBuddies] = useState(false);
+  const [buddyActivityStats, setBuddyActivityStats] = useState<Record<string, { active: number; completed: number }>>({});
+
+  // Update tab when URL parameter changes
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl && ["all", "my", "recommended", "active", "nearby"].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search]);
 
   // For guest users, we'll show the page structure but empty content
   const [showFilters, setShowFilters] = useState(true);
@@ -101,19 +120,143 @@ const Buddies = () => {
     { value: "z-a", label: "Z-A" },
   ];
 
-  // Load initial data on component mount
+  // Fetch my buddies when on "my" tab
+  useEffect(() => {
+    const fetchMyBuddies = async () => {
+      if (!isAuthenticated || !user?._id || activeTab !== "my") {
+        setMyBuddies([]);
+        return;
+      }
+
+      try {
+        setIsLoadingMyBuddies(true);
+        const connections = await BuddyConnectionService.getBuddyConnections("accepted");
+        
+        // Transform connections to get the buddy user
+        const buddyUsers = connections.map((connection) => {
+          const isRequester = connection.requester.id === user._id;
+          const buddy = isRequester ? connection.recipient : connection.requester;
+          
+          return {
+            ...buddy,
+            _id: buddy.id,
+            id: buddy.id,
+            connectionId: connection.id,
+            connectionStatus: "accepted",
+          };
+        });
+        
+        setMyBuddies(buddyUsers);
+      } catch (error) {
+        console.error("Failed to fetch my buddies:", error);
+        setMyBuddies([]);
+      } finally {
+        setIsLoadingMyBuddies(false);
+      }
+    };
+
+    fetchMyBuddies();
+  }, [isAuthenticated, user?._id, activeTab]);
+
+  // Fetch activity stats for all buddies (for Most Active tab)
+  useEffect(() => {
+    const fetchAllBuddyActivityStats = async () => {
+      if (activeTab !== "active" || !isAuthenticated || searchResults.length === 0) {
+        return;
+      }
+
+      try {
+        const statsMap: Record<string, { active: number; completed: number }> = {};
+        
+        // Fetch all activities
+        const activitiesResponse = await ActivityService.getActivities();
+        const allActivities = activitiesResponse.data || [];
+        
+        const now = new Date();
+        
+        // Calculate stats for each buddy
+        for (const buddy of searchResults) {
+          const buddyId = buddy._id || buddy.id;
+          if (!buddyId) continue;
+          
+          let activeCount = 0;
+          let completedCount = 0;
+          
+          allActivities.forEach((activity: any) => {
+            const isParticipant = activity.participants?.some(
+              (p: any) => (p._id || p.id || p) === buddyId
+            );
+            
+            if (isParticipant) {
+              const endDate = activity.endDate ? new Date(activity.endDate) : null;
+              if (endDate && endDate < now) {
+                completedCount++;
+              } else {
+                activeCount++;
+              }
+            }
+          });
+          
+          statsMap[buddyId] = { active: activeCount, completed: completedCount };
+        }
+        
+        setBuddyActivityStats(statsMap);
+      } catch (error) {
+        console.error("Failed to fetch buddy activity stats:", error);
+      }
+    };
+
+    fetchAllBuddyActivityStats();
+  }, [activeTab, searchResults, isAuthenticated]);
+
+  // Load initial data on component mount based on active tab
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!isAuthenticated) return;
+      
       try {
-        console.log("Loading initial data...");
         if (searchUsers) {
-          const result = await searchUsers({
-            limit: itemsPerPage,
-            offset: 0,
-          });
-          console.log("Initial data load result:", result);
-        } else {
-          console.log("searchUsers function not available");
+          switch (activeTab) {
+            case "all":
+              await searchUsers({
+                limit: itemsPerPage,
+                offset: 0,
+              });
+              break;
+            case "recommended":
+              // Load all users, filtering will be done in filteredBuddies
+              await searchUsers({
+                limit: 100, // Get more users for better matching
+                offset: 0,
+              });
+              break;
+            case "active":
+              // Load all users, sorting will be done by activity stats
+              await searchUsers({
+                limit: 100, // Get more users for better stats
+                offset: 0,
+              });
+              break;
+            case "nearby":
+              // Load users by location
+              if (user?.country || user?.city) {
+                await searchUsers({
+                  country: user?.country ? user.country.toString() : undefined,
+                  city: user?.city ? user.city.toString() : undefined,
+                  limit: itemsPerPage,
+                  offset: 0,
+                });
+              } else {
+                await searchUsers({
+                  limit: itemsPerPage,
+                  offset: 0,
+                });
+              }
+              break;
+            case "my":
+              // My buddies are loaded via separate useEffect
+              break;
+          }
         }
       } catch (error) {
         console.error("Initial data load error:", error);
@@ -121,64 +264,34 @@ const Buddies = () => {
     };
 
     loadInitialData();
-  }, [searchUsers, itemsPerPage]);
+  }, [isAuthenticated, activeTab]); // Only reload when tab changes
 
   // Debug effect to monitor searchResults changes
   useEffect(() => {
     console.log("searchResults changed:", searchResults);
     console.log("searchResults length:", searchResults.length);
-    console.log("isLoadingSearch:", isLoadingSearch);
-  }, [searchResults, isLoadingSearch]);
+  }, [searchResults]);
 
-  // Test direct API call
-  useEffect(() => {
-    const testDirectAPI = async () => {
-      try {
-        console.log("Testing direct API call...");
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api"}/users?limit=10&offset=0`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        const data = await response.json();
-        console.log("Direct API response:", data);
-      } catch (error) {
-        console.error("Direct API error:", error);
-      }
-    };
-
-    testDirectAPI();
-  }, []);
-
-  // Enhanced search handler with debounce
+  // Handle search input with debouncing
   const handleSearch = useCallback(
     debounce(async (query: string, filters: UserSearchParams) => {
       try {
         if (searchUsers) {
-          // Convert active filters to interests array
-          const interests = activeFilters.filter((filter) => filter !== "All");
-
-          await searchUsers({
-            search: query,
-            interests: interests.length > 0 ? interests : undefined,
+          const searchParams: UserSearchParams = {
+            search: query.trim() || undefined,
             ...filters,
             limit: itemsPerPage,
-            offset: (currentPage - 1) * itemsPerPage,
-          });
+            offset: 0,
+          };
+          await searchUsers(searchParams);
         }
       } catch (error) {
         console.error("Search error:", error);
-        // Don't throw the error, just log it to prevent white screen
       }
-    }, 300),
-    [searchUsers, currentPage, itemsPerPage, activeFilters]
+    }, 500),
+    [searchUsers, itemsPerPage]
   );
 
-  // Handle search input changes
   const handleSearchInputChange = (value: string) => {
     try {
       if (setSearchQuery) {
@@ -223,58 +336,61 @@ const Buddies = () => {
   // Use real search results from backend with tab-specific filtering
   const filteredBuddies = useMemo(() => {
     try {
-      // Debug logging
-      console.log("Search results:", searchResults);
-      console.log("Search results length:", searchResults.length);
-      console.log("Active filters:", activeFilters);
-      console.log("Active tab:", activeTab);
+      // For "My Buddies" tab, return the fetched connections
+      if (activeTab === "my") {
+        return myBuddies;
+      }
 
-      // Filter search results based on active filters and tab
+      // For other tabs, filter search results
       if (searchResults.length === 0) {
-        console.log("No search results, returning empty array");
         return [];
       }
 
+      // Filter out current user for all tabs
       let filtered = searchResults.filter((buddy) => {
-        // Apply tab-specific filtering first
-        switch (activeTab) {
-          case "my":
-            // For "My Buddies", show no users for now since we don't have buddy connections yet
-            // In a real app, this would check actual buddy connections from the database
-            return false; // No buddies connected yet
+        // Exclude current user
+        if (buddy._id === user?._id || buddy.id === user?._id) {
+          return false;
+        }
 
+        // Apply tab-specific filtering
+        switch (activeTab) {
           case "recommended":
-            // For "Recommended", show users with similar interests
+            // For "Recommended", match based on interestsCommodities
             if (
-              user?.interestsCategories &&
-              user.interestsCategories.length > 0
+              user?.interestsCommodities &&
+              user.interestsCommodities.length > 0
             ) {
-              return (
-                buddy.interestsCategories &&
-                buddy.interestsCategories.length > 0 &&
-                buddy.interestsCategories.some((interest) =>
-                  user.interestsCategories!.some(
-                    (userInterest) =>
-                      userInterest.toString() === interest.toString()
-                  )
-                )
+              const userInterests = new Set(
+                user.interestsCommodities.map((i) => i.toString().toLowerCase())
+              );
+              const buddyInterests = buddy.interestsCommodities || [];
+              
+              // Check if there's at least one matching interest
+              return buddyInterests.some((interest) =>
+                userInterests.has(interest.toString().toLowerCase())
               );
             }
             return false; // Show no recommendations if user has no interests
 
           case "active":
-            // For "Most Active", show users who have completed onboarding
-            // In a real app, this would sort by activity metrics
+            // For "Most Active", show all users who completed onboarding (will be sorted by activity stats)
             return buddy.hasCompletedOnboarding === true;
 
           case "nearby":
-            // For "Nearby", show users from same country/city
-            if (user?.country || user?.city) {
+            // For "Nearby", show users from same country AND city (if both available)
+            if (user?.country && user?.city) {
               return (
-                (user.country &&
-                  buddy.country &&
-                  buddy.country.toString() === user.country.toString()) ||
-                (user.city && buddy.city === user.city)
+                buddy.country &&
+                buddy.city &&
+                buddy.country.toString().toLowerCase() === user.country.toString().toLowerCase() &&
+                buddy.city.toString().toLowerCase() === user.city.toString().toLowerCase()
+              );
+            } else if (user?.country) {
+              // If only country is available, match by country
+              return (
+                buddy.country &&
+                buddy.country.toString().toLowerCase() === user.country.toString().toLowerCase()
               );
             }
             return false; // Show no nearby users if no location data
@@ -286,8 +402,8 @@ const Buddies = () => {
         }
       });
 
-      // Apply interest filters if any are selected
-      if (activeFilters.length > 0 && !activeFilters.includes("All")) {
+      // Apply interest filters if any are selected (for All Buddies tab)
+      if (activeTab === "all" && activeFilters.length > 0 && !activeFilters.includes("All")) {
         filtered = filtered.filter((buddy) => {
           const matchesInterest =
             buddy.interestsCategories &&
@@ -298,434 +414,306 @@ const Buddies = () => {
         });
       }
 
-      // Apply sorting based on sortOption
-      switch (sortOption) {
+      // Apply sorting based on tab and sortOption
+      switch (activeTab) {
         case "active":
-          // Sort by activity count or hasCompletedOnboarding
+          // Sort by total activity stats (active + completed)
           filtered.sort((a, b) => {
-            const aActive = a.hasCompletedOnboarding ? 1 : 0;
-            const bActive = b.hasCompletedOnboarding ? 1 : 0;
-            return bActive - aActive;
+            const aId = a._id || a.id;
+            const bId = b._id || b.id;
+            const aStats = buddyActivityStats[aId] || { active: 0, completed: 0 };
+            const bStats = buddyActivityStats[bId] || { active: 0, completed: 0 };
+            const aTotal = aStats.active + aStats.completed;
+            const bTotal = bStats.active + bStats.completed;
+            return bTotal - aTotal; // Sort descending
           });
           break;
-        case "recent":
-          // Sort by createdAt (most recent first)
-          filtered.sort((a, b) => {
-            const dateA = new Date(a.createdAt || 0);
-            const dateB = new Date(b.createdAt || 0);
-            return dateB.getTime() - dateA.getTime();
-          });
-          break;
-        case "matches":
-          // Sort by number of matching interests with current user
-          if (user?.interestsCategories && user.interestsCategories.length > 0) {
+        case "recommended":
+          // Sort by number of matching interests (most matches first)
+          if (user?.interestsCommodities && user.interestsCommodities.length > 0) {
+            const userInterests = new Set(
+              user.interestsCommodities.map((i) => i.toString().toLowerCase())
+            );
             filtered.sort((a, b) => {
-              const aMatches = a.interestsCategories?.filter((interest) =>
-                user.interestsCategories?.some(
-                  (userInterest) => userInterest.toString() === interest.toString()
-                )
-              ).length || 0;
-              const bMatches = b.interestsCategories?.filter((interest) =>
-                user.interestsCategories?.some(
-                  (userInterest) => userInterest.toString() === interest.toString()
-                )
-              ).length || 0;
+              const aInterests = a.interestsCommodities || [];
+              const bInterests = b.interestsCommodities || [];
+              const aMatches = aInterests.filter((i) =>
+                userInterests.has(i.toString().toLowerCase())
+              ).length;
+              const bMatches = bInterests.filter((i) =>
+                userInterests.has(i.toString().toLowerCase())
+              ).length;
               return bMatches - aMatches;
             });
           }
           break;
-        case "a-z":
-          filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-          break;
-        case "z-a":
-          filtered.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
-          break;
         default:
-          // Keep default order
+          // Apply general sorting for other tabs
+          switch (sortOption) {
+            case "active":
+              filtered.sort((a, b) => {
+                const aId = a._id || a.id;
+                const bId = b._id || b.id;
+                const aStats = buddyActivityStats[aId] || { active: 0, completed: 0 };
+                const bStats = buddyActivityStats[bId] || { active: 0, completed: 0 };
+                const aTotal = aStats.active + aStats.completed;
+                const bTotal = bStats.active + bStats.completed;
+                return bTotal - aTotal;
+              });
+              break;
+            case "recent":
+              filtered.sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0);
+                const dateB = new Date(b.createdAt || 0);
+                return dateB.getTime() - dateA.getTime();
+              });
+              break;
+            case "matches":
+              if (user?.interestsCommodities && user.interestsCommodities.length > 0) {
+                const userInterests = new Set(
+                  user.interestsCommodities.map((i) => i.toString().toLowerCase())
+                );
+                filtered.sort((a, b) => {
+                  const aInterests = a.interestsCommodities || [];
+                  const bInterests = b.interestsCommodities || [];
+                  const aMatches = aInterests.filter((i) =>
+                    userInterests.has(i.toString().toLowerCase())
+                  ).length;
+                  const bMatches = bInterests.filter((i) =>
+                    userInterests.has(i.toString().toLowerCase())
+                  ).length;
+                  return bMatches - aMatches;
+                });
+              }
+              break;
+            case "a-z":
+              filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+              break;
+            case "z-a":
+              filtered.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+              break;
+          }
           break;
       }
 
-      console.log("Filtered buddies:", filtered);
       return filtered;
     } catch (error) {
       console.error("Filter error:", error);
-      // Return empty array as fallback
       return [];
     }
-  }, [searchResults, activeFilters, activeTab, user, sortOption]);
+  }, [searchResults, activeFilters, activeTab, user, sortOption, myBuddies, buddyActivityStats]);
 
-  // Pagination logic - use backend pagination
-  const totalPages = searchMetadata
-    ? Math.ceil(searchMetadata.total / itemsPerPage)
-    : 1;
-  const paginatedBuddies = filteredBuddies || [];
+  // Pagination logic
+  const totalPages = useMemo(() => {
+    if (activeTab === "my") {
+      return Math.ceil(myBuddies.length / itemsPerPage);
+    }
+    return searchMetadata
+      ? Math.ceil(searchMetadata.total / itemsPerPage)
+      : Math.ceil(filteredBuddies.length / itemsPerPage);
+  }, [activeTab, myBuddies.length, searchMetadata, filteredBuddies.length, itemsPerPage]);
+
+  const paginatedBuddies = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredBuddies.slice(startIndex, endIndex);
+  }, [filteredBuddies, currentPage, itemsPerPage]);
 
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, activeFilters, activeTab]);
 
-  // Tab-specific loading functions
-  const loadMyBuddies = async () => {
-    try {
-      // For now, we'll load all users and filter in the frontend
-      // In a real app, this would fetch actual buddy connections from a separate endpoint
-      if (searchUsers) {
-        await searchUsers({
-          limit: itemsPerPage,
-          offset: 0,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading my buddies:", error);
-    }
-  };
-
-  const loadRecommendedUsers = async () => {
-    try {
-      // For now, get users with similar interests
-      // In a real app, this would use a recommendation algorithm
-      if (searchUsers) {
-        const currentUserInterests = user?.interestsCategories || [];
-        await searchUsers({
-          interests:
-            currentUserInterests.length > 0
-              ? currentUserInterests.map((i) => i.toString())
-              : undefined,
-          limit: itemsPerPage,
-          offset: 0,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading recommended users:", error);
-    }
-  };
-
-  const loadMostActiveUsers = async () => {
-    try {
-      // For now, get users who have completed onboarding (more likely to be active)
-      // In a real app, this would sort by activity metrics
-      if (searchUsers) {
-        await searchUsers({
-          limit: itemsPerPage,
-          offset: 0,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading most active users:", error);
-    }
-  };
-
-  const loadNearbyUsers = async () => {
-    try {
-      // For now, get users from the same country/city
-      // In a real app, this would use geolocation and distance calculations
-      if (searchUsers) {
-        await searchUsers({
-          country: user?.country ? user.country.toString() : undefined,
-          city: user?.city,
-          limit: itemsPerPage,
-          offset: 0,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading nearby users:", error);
-    }
-  };
-
   // Handle tab change
   const handleTabChange = (tabValue: string) => {
     setActiveTab(tabValue);
     setCurrentPage(1);
 
+    // Update URL with tab parameter
+    const searchParams = new URLSearchParams(location.search);
+    searchParams.set("tab", tabValue);
+    navigate(`${location.pathname}?${searchParams.toString()}`, { replace: true });
+
     // Load data based on tab
     if (searchUsers) {
       switch (tabValue) {
         case "all":
+          // Load all users
           searchUsers({
             limit: itemsPerPage,
             offset: 0,
           });
           break;
         case "my":
-          loadMyBuddies();
+          // My buddies are loaded via useEffect when activeTab === "my"
           break;
         case "recommended":
-          loadRecommendedUsers();
+          // Load all users, filtering will be done in filteredBuddies
+          searchUsers({
+            limit: 100, // Get more users for better matching
+            offset: 0,
+          });
           break;
         case "active":
-          loadMostActiveUsers();
+          // Load all users, sorting will be done by activity stats
+          searchUsers({
+            limit: 100, // Get more users for better stats
+            offset: 0,
+          });
           break;
         case "nearby":
-          loadNearbyUsers();
+          // Load users by location
+          if (user?.country || user?.city) {
+            searchUsers({
+              country: user?.country ? user.country.toString() : undefined,
+              city: user?.city ? user.city.toString() : undefined,
+              limit: itemsPerPage,
+              offset: 0,
+            });
+          } else {
+            searchUsers({
+              limit: itemsPerPage,
+              offset: 0,
+            });
+          }
           break;
       }
     }
   };
 
-  // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Trigger search with new page
-    if (searchQuery.trim()) {
-      handleSearch(searchQuery, searchFilters);
-    } else {
-      // Load users for new page
-      if (searchUsers) {
-        const interests = activeFilters.filter((f) => f !== "All");
-        searchUsers({
-          interests: interests.length > 0 ? interests : undefined,
-          limit: itemsPerPage,
-          offset: (page - 1) * itemsPerPage,
-        });
-      }
-    }
-  };
-
-  const toggleFilter = (filter: string) => {
-    try {
-      if (filter === "All") {
-        setActiveFilters(["All"]);
-        // Trigger search with no interest filters
-        if (searchQuery.trim()) {
-          handleSearch(searchQuery, searchFilters);
-        } else {
-          // Load all users if no search query
-          if (searchUsers) {
-            searchUsers({
-              limit: itemsPerPage,
-              offset: (currentPage - 1) * itemsPerPage,
-            });
-          }
-        }
-        return;
-      }
-
-      let newFilters = [...activeFilters];
-
-      newFilters = newFilters.filter((f) => f !== "All");
-
-      if (newFilters.includes(filter)) {
-        newFilters = newFilters.filter((f) => f !== filter);
-      } else {
-        newFilters.push(filter);
-      }
-
-      if (newFilters.length === 0) {
-        newFilters = ["All"];
-      }
-
-      setActiveFilters(newFilters);
-
-      // Trigger search with new filters
-      if (searchQuery.trim()) {
-        handleSearch(searchQuery, searchFilters);
-      } else {
-        // Load users with interest filters
-        if (searchUsers) {
-          const interests = newFilters.filter((f) => f !== "All");
-          searchUsers({
-            interests: interests.length > 0 ? interests : undefined,
-            limit: itemsPerPage,
-            offset: (currentPage - 1) * itemsPerPage,
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Filter toggle error:", error);
-      // Fallback to "All" filter
-      setActiveFilters(["All"]);
-    }
+    // For backend pagination, we might need to fetch more data
+    // For now, we'll use frontend pagination
   };
 
   const clearFilters = () => {
-    try {
-      setActiveFilters(["All"]);
-      setActiveTab("all");
-      if (setSearchQuery) {
-        setSearchQuery("");
-      }
-      if (clearSearch) {
-        clearSearch();
-      }
-      // Load all users after clearing filters
-      if (searchUsers) {
-        searchUsers({
-          limit: itemsPerPage,
-          offset: 0,
-        });
-      }
-    } catch (error) {
-      console.error("Clear filters error:", error);
-      // Fallback to basic state reset
-      setActiveFilters(["All"]);
-      setActiveTab("all");
-      if (setSearchQuery) {
-        setSearchQuery("");
-      }
+    setActiveFilters(["All"]);
+    setCurrentPage(1);
+    if (setSearchQuery) {
+      setSearchQuery("");
+    }
+    if (clearSearch) {
+      clearSearch();
+    }
+    setActiveTab("all");
+    if (searchUsers) {
+      searchUsers({
+        limit: itemsPerPage,
+        offset: 0,
+      });
     }
   };
 
-  // Reusable empty state component
-  const EmptyState = ({
-    title,
-    description,
-    buttonText,
-    onButtonClick,
-  }: {
-    title: string;
-    description: string;
-    buttonText: string;
-    onButtonClick: () => void;
-  }) => (
-    <Card className="p-8 text-center">
-      <div className="flex flex-col items-center">
-        <div className="w-16 h-16 bg-buddy-gray-200 rounded-full flex items-center justify-center mb-4">
-          <Search className="w-8 h-8 text-buddy-gray-400" />
+  const EmptyState = ({ title, description, buttonText, onButtonClick }: any) => (
+    <Card className="p-10 text-center rounded-2xl bg-white/90 backdrop-blur-sm border border-white shadow-lg">
+      <div className="relative mb-6">
+        <div className="w-16 h-16 bg-gradient-to-br from-buddy-blue/20 to-buddy-purple/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <UsersIcon className="h-8 w-8 text-buddy-blue" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-buddy-gray-600 mb-6">{description}</p>
-        <Button onClick={onButtonClick} className="rounded-full">
+      </div>
+      <h3 className="text-xl font-bold text-buddy-gray-800 mb-3">{title}</h3>
+      <p className="text-buddy-gray-500 mb-6 max-w-sm mx-auto">{description}</p>
+      {buttonText && onButtonClick && (
+        <Button
+          onClick={onButtonClick}
+          className="bg-gradient-to-r from-buddy-blue to-buddy-purple text-white rounded-full px-6 py-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+          size="small"
+        >
           {buttonText}
         </Button>
-      </div>
+      )}
     </Card>
   );
 
-  // Show loading state
-  if (isLoadingSearch) {
-    return (
-      <div className="min-h-screen bg-buddy-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-buddy-purple border-t-transparent" />
-          <p className="text-buddy-gray-600">Searching for buddies...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Safety check to prevent crashes
-  if (!filteredBuddies || !Array.isArray(filteredBuddies)) {
-    console.error("filteredBuddies is not an array:", filteredBuddies);
-    return (
-      <div className="min-h-screen bg-buddy-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-buddy-gray-600">Loading buddies...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-buddy-gray-100">
-      <div className="pt-4 sm:pt-6 md:pt-8 pb-8 sm:pb-10 md:pb-12 bg-gradient-to-b from-[#E5DEFF] to-buddy-gray-100">
-        <Container>
-          <div className="flex flex-col space-y-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-buddy-gray-900">
-              Find Buddies
-            </h1>
-            <p className="text-buddy-gray-600 max-w-3xl">
-              Connect with like-minded individuals who share your interests and
-              goals. Find accountability partners to help you stay on track.
-            </p>
+    <div className="py-8 min-h-screen bg-gradient-to-br from-pastel-purple/30 via-white to-pastel-blue/40">
+      <Container className="py-4 sm:py-6 md:py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent mb-2">
+            Find Your Buddy
+          </h1>
+          <p className="text-buddy-gray-600 text-lg">
+            Connect with amazing people who share your interests and goals
+          </p>
+        </div>
 
-            <div className="flex flex-col md:flex-row gap-4 mt-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-buddy-gray-400" />
-                <Input
-                  type="search"
-                  placeholder="Search buddies by name, interests, or location..."
-                  className="pl-10 bg-white rounded-full"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchInputChange(e.target.value)}
-                />
-              </div>
-
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  className={`bg-white rounded-full ${showFilters ? "border-buddy-purple text-buddy-purple" : ""}`}
-                  icon={<Filter className="w-4 h-4" />}
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  Filters
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <ShadcnButton
-                      variant="outline"
-                      className="bg-white rounded-full h-auto py-2 px-4"
-                    >
-                      <SortAsc className="w-4 h-4 mr-2" />
-                      Sort
-                    </ShadcnButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    {sortOptions.map((option) => (
-                      <DropdownMenuItem
-                        key={option.value}
-                        onClick={() => setSortOption(option.value)}
-                        className="flex items-center justify-between cursor-pointer"
-                      >
-                        {option.label}
-                        {sortOption === option.value && (
-                          <Check className="w-4 h-4 text-buddy-purple" />
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button
-                  variant="outline"
-                  className="bg-white rounded-full"
-                  icon={<MapPin className="w-4 h-4" />}
-                  onClick={() => handleTabChange("nearby")}
-                >
-                  Near Me
-                </Button>
-              </div>
-            </div>
-
-            {showFilters && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {interestCategories.map((interest) => (
-                  <Button
-                    key={interest}
-                    variant={
-                      activeFilters.includes(interest) ? "primary" : "outline"
-                    }
-                    size="small"
-                    className={
-                      activeFilters.includes(interest)
-                        ? "bg-buddy-purple text-white rounded-full"
-                        : "bg-white text-buddy-gray-700 rounded-full"
-                    }
-                    onClick={() => toggleFilter(interest)}
-                  >
-                    {interest}
-                  </Button>
-                ))}
-
-                {(searchQuery ||
-                  (activeFilters.length > 0 &&
-                    !activeFilters.includes("All"))) && (
-                  <Button
-                    variant="ghost"
-                    size="small"
-                    className="text-buddy-gray-500 rounded-full"
-                    onClick={clearFilters}
-                    icon={<X className="w-4 h-4" />}
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
-            )}
+        {/* Search and Filters */}
+        <div className="mb-6 flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-buddy-gray-400 w-5 h-5" />
+            <Input
+              type="text"
+              placeholder="Search buddies by name, interests, or location..."
+              value={searchQuery}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
+              className="pl-10 rounded-full border-buddy-gray-200 focus:border-buddy-purple focus:ring-buddy-purple/20"
+            />
           </div>
-        </Container>
-      </div>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <ShadcnButton
+                  variant="outline"
+                  className="rounded-full border-buddy-gray-200 hover:bg-buddy-gray-50"
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  Sort
+                </ShadcnButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="rounded-xl">
+                {sortOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setSortOption(option.value)}
+                    className={sortOption === option.value ? "bg-buddy-purple/10" : ""}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <ShadcnButton
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="rounded-full border-buddy-gray-200 hover:bg-buddy-gray-50"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+            </ShadcnButton>
+          </div>
+        </div>
 
-      <Container className="py-8">
+        {/* Interest Filters */}
+        {showFilters && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {interestCategories.map((category) => (
+              <Button
+                key={category}
+                variant={activeFilters.includes(category) ? "primary" : "outline"}
+                size="small"
+                onClick={() => {
+                  if (category === "All") {
+                    setActiveFilters(["All"]);
+                  } else {
+                    setActiveFilters((prev) => {
+                      const filtered = prev.filter((f) => f !== "All");
+                      if (prev.includes(category)) {
+                        return filtered.filter((f) => f !== category);
+                      } else {
+                        return [...filtered, category];
+                      }
+                    });
+                  }
+                }}
+                className="rounded-full"
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+        )}
+
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
@@ -808,7 +796,7 @@ const Buddies = () => {
                       currentPage={currentPage}
                       totalPages={totalPages}
                       onPageChange={handlePageChange}
-                      totalItems={searchMetadata?.total || 0}
+                      totalItems={searchMetadata?.total || filteredBuddies.length}
                       itemsPerPage={itemsPerPage}
                     />
                   </div>
@@ -816,37 +804,9 @@ const Buddies = () => {
               </>
             ) : (
               <EmptyState
-                title={(() => {
-                  switch (activeTab) {
-                    case "my":
-                      return "No buddies yet";
-                    case "recommended":
-                      return "No recommendations";
-                    case "active":
-                      return "No active users";
-                    case "nearby":
-                      return "No nearby users";
-                    default:
-                      return "No buddies found";
-                  }
-                })()}
-                description={(() => {
-                  switch (activeTab) {
-                    case "my":
-                      return "You haven't connected with any buddies yet. Start by exploring the All Buddies tab!";
-                    case "recommended":
-                      return "Complete your profile with interests to get personalized recommendations.";
-                    case "active":
-                      return "No active users found. Try the All Buddies tab to see everyone.";
-                    case "nearby":
-                      return "No users found in your area. Try the All Buddies tab to see everyone.";
-                    default:
-                      return "We couldn't find any buddies matching your search criteria.";
-                  }
-                })()}
-                buttonText={
-                  activeTab === "all" ? "Clear Filters" : "View All Buddies"
-                }
+                title="No buddies found"
+                description="We couldn't find any buddies matching your search criteria."
+                buttonText="Clear Filters"
                 onButtonClick={clearFilters}
               />
             )}
@@ -866,22 +826,44 @@ const Buddies = () => {
                   returnToAfterAuth={location.pathname + location.search}
                 />
               </div>
-            ) : filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {filteredBuddies.map((buddy, index) => (
-                  <EnhancedBuddyCard
-                    key={buddy._id || `my-buddy-${index}`}
-                    user={buddy}
-                    isRealUser={true}
-                  />
-                ))}
+            ) : isLoadingMyBuddies ? (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <div className="w-16 h-16 border-4 border-buddy-purple/20 border-t-buddy-purple rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-buddy-gray-600">Loading your buddies...</p>
+                </div>
               </div>
+            ) : filteredBuddies.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  {paginatedBuddies.map((buddy: any, index) => (
+                    <EnhancedBuddyCard
+                      key={buddy._id || buddy.id || `my-buddy-${index}`}
+                      user={buddy}
+                      isRealUser={true}
+                      connectionStatus="accepted"
+                      connectionId={buddy.connectionId}
+                    />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                      totalItems={filteredBuddies.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyState
                 title="No buddies yet"
                 description="You haven't connected with any buddies yet. Start by exploring the All Buddies tab!"
                 buttonText="View All Buddies"
-                onButtonClick={() => setActiveTab("all")}
+                onButtonClick={() => handleTabChange("all")}
               />
             )}
           </TabsContent>
@@ -901,21 +883,34 @@ const Buddies = () => {
                 />
               </div>
             ) : filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {filteredBuddies.slice(0, 4).map((buddy, index) => (
-                  <EnhancedBuddyCard
-                    key={buddy._id || `recommended-${index}`}
-                    user={buddy}
-                    isRealUser={true}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  {paginatedBuddies.map((buddy, index) => (
+                    <EnhancedBuddyCard
+                      key={buddy._id || buddy.id || `recommended-${index}`}
+                      user={buddy}
+                      isRealUser={true}
+                    />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                      totalItems={searchMetadata?.total || filteredBuddies.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyState
                 title="No recommendations"
                 description="Complete your profile with interests to get personalized recommendations."
                 buttonText="View All Buddies"
-                onButtonClick={() => setActiveTab("all")}
+                onButtonClick={() => handleTabChange("all")}
               />
             )}
           </TabsContent>
@@ -935,21 +930,34 @@ const Buddies = () => {
                 />
               </div>
             ) : filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {filteredBuddies.slice(0, 4).map((buddy, index) => (
-                  <EnhancedBuddyCard
-                    key={buddy._id || `active-${index}`}
-                    user={buddy}
-                    isRealUser={true}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  {paginatedBuddies.map((buddy, index) => (
+                    <EnhancedBuddyCard
+                      key={buddy._id || buddy.id || `active-${index}`}
+                      user={buddy}
+                      isRealUser={true}
+                    />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                      totalItems={searchMetadata?.total || filteredBuddies.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyState
                 title="No active users"
                 description="No active users found. Try the All Buddies tab to see everyone."
                 buttonText="View All Buddies"
-                onButtonClick={() => setActiveTab("all")}
+                onButtonClick={() => handleTabChange("all")}
               />
             )}
           </TabsContent>
@@ -969,21 +977,34 @@ const Buddies = () => {
                 />
               </div>
             ) : filteredBuddies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {filteredBuddies.slice(0, 4).map((buddy, index) => (
-                  <EnhancedBuddyCard
-                    key={buddy._id || `nearby-${index}`}
-                    user={buddy}
-                    isRealUser={true}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  {paginatedBuddies.map((buddy, index) => (
+                    <EnhancedBuddyCard
+                      key={buddy._id || buddy.id || `nearby-${index}`}
+                      user={buddy}
+                      isRealUser={true}
+                    />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                      totalItems={searchMetadata?.total || filteredBuddies.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyState
                 title="No nearby users"
                 description="No users found in your area. Try the All Buddies tab to see everyone."
                 buttonText="View All Buddies"
-                onButtonClick={() => setActiveTab("all")}
+                onButtonClick={() => handleTabChange("all")}
               />
             )}
           </TabsContent>
@@ -998,34 +1019,25 @@ const Buddies = () => {
               </h3>
               <p className="text-buddy-gray-700 mb-6">
                 Complete your profile to improve your visibility and help others
-                with similar interests discover you.
+                discover you. Add your interests, location, and a bio to get
+                more buddy requests!
               </p>
               <Button
-                className="bg-buddy-purple text-white rounded-full"
-                icon={<Star className="w-5 h-5" />}
+                onClick={() => navigate("/settings")}
+                className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                size="small"
               >
-                Complete Your Profile
+                Complete Profile
               </Button>
             </div>
             <div className="md:w-1/3 flex justify-center">
-              <div className="relative w-48 h-48 bg-white rounded-full flex items-center justify-center shadow-lg">
-                <div className="w-36 h-36 bg-buddy-purple-light/20 rounded-full flex items-center justify-center">
-                  <Heart className="w-16 h-16 text-buddy-purple-light" />
-                </div>
-                <div className="absolute w-12 h-12 bg-buddy-blue-light rounded-full -top-2 right-5 flex items-center justify-center">
-                  <Star className="w-7 h-7 text-white" />
-                </div>
-                <div className="absolute w-10 h-10 bg-buddy-green-light rounded-full bottom-4 -right-2 flex items-center justify-center">
-                  <Flame className="w-6 h-6 text-buddy-green-dark" />
-                </div>
-                <div className="absolute w-14 h-14 bg-buddy-orange-light rounded-full bottom-0 left-5 flex items-center justify-center">
-                  <UserIcon className="w-8 h-8 text-buddy-orange-dark" />
-                </div>
+              <div className="w-48 h-48 bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 rounded-full flex items-center justify-center shadow-lg">
+                <Users className="w-24 h-24 text-buddy-purple/50" />
               </div>
             </div>
           </div>
         </div>
-        )}
+      )}
       </Container>
     </div>
   );

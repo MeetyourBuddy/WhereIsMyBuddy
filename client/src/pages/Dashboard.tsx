@@ -104,10 +104,99 @@ const Dashboard = () => {
         // Fetch buddy connections
         const connections =
           await BuddyConnectionService.getBuddyConnections("accepted");
-        setConnectedBuddies(connections);
+        
+        // Transform connections to get the buddy user (either requester or recipient)
+        // Sort by acceptedAt or createdAt (most recent first) and limit to 5
+        const buddyUsers = connections
+          .map((connection) => {
+            // Determine if current user is requester or recipient
+            const isRequester = connection.requester.id === user._id;
+            const buddy = isRequester ? connection.recipient : connection.requester;
+            
+            return {
+              ...buddy,
+              _id: buddy.id,
+              id: buddy.id,
+              acceptedAt: connection.acceptedAt || connection.createdAt,
+              connectionId: connection.id,
+            };
+          })
+          .sort((a, b) => {
+            // Sort by acceptedAt/createdAt (most recent first)
+            const dateA = new Date(a.acceptedAt || 0).getTime();
+            const dateB = new Date(b.acceptedAt || 0).getTime();
+            return dateB - dateA;
+          })
+          .slice(0, 5); // Limit to 5 most recent
+        
+        setConnectedBuddies(buddyUsers);
 
-        // For now, use empty array for suggested buddies (would need a separate endpoint)
-        setSuggestedBuddies([]);
+        // Fetch all users to find perfect matches
+        // Filter out existing buddies and calculate interest match
+        try {
+          const { UserSearchService } = await import("@/services/api/user/user-search.service");
+          const allUsersResponse = await UserSearchService.searchUsers({
+            limit: 100, // Get a good sample
+            offset: 0,
+          });
+          
+          const allUsers = allUsersResponse.data?.data || [];
+          
+          // Get IDs of existing buddies
+          const buddyIds = new Set(
+            connections.map((conn) => {
+              const isRequester = conn.requester.id === user._id;
+              return isRequester ? conn.recipient.id : conn.requester.id;
+            })
+          );
+          
+          // Filter out current user and existing buddies
+          const potentialMatches = allUsers.filter(
+            (u) => u._id !== user._id && !buddyIds.has(u._id || u.id)
+          );
+          
+          // Calculate interest match percentage for each user
+          const userInterests = user.interestsCommodities || [];
+          const matchesWithScores = potentialMatches
+            .map((match) => {
+              const matchInterests = match.interestsCommodities || [];
+              
+              // Calculate match percentage based on common interests
+              let matchCount = 0;
+              if (userInterests.length > 0 && matchInterests.length > 0) {
+                const userInterestSet = new Set(
+                  userInterests.map((i) => i.toString().toLowerCase())
+                );
+                matchCount = matchInterests.filter((i) =>
+                  userInterestSet.has(i.toString().toLowerCase())
+                ).length;
+                
+                // Calculate percentage: common interests / max interests
+                const maxInterests = Math.max(userInterests.length, matchInterests.length);
+                const matchPercentage = Math.round((matchCount / maxInterests) * 100);
+                
+                return {
+                  ...match,
+                  matchPercentage,
+                  commonInterests: matchCount,
+                };
+              }
+              
+              return {
+                ...match,
+                matchPercentage: 0,
+                commonInterests: 0,
+              };
+            })
+            .filter((match) => match.matchPercentage > 0) // Only show users with some match
+            .sort((a, b) => b.matchPercentage - a.matchPercentage) // Sort by match percentage
+            .slice(0, 5); // Limit to 5 best matches
+          
+          setSuggestedBuddies(matchesWithScores);
+        } catch (error) {
+          console.error("Failed to fetch perfect matches:", error);
+          setSuggestedBuddies([]);
+        }
 
         // Get user's progress across all activities to calculate overall streak
         let overallStreak = 0;
@@ -760,7 +849,7 @@ const Dashboard = () => {
                   <Button
                     variant="ghost"
                     size="small"
-                    onClick={() => navigate("/buddies")}
+                    onClick={() => navigate("/buddies?tab=my")}
                     className="hover:bg-buddy-purple/5 text-buddy-purple rounded-full"
                   >
                     View All
@@ -774,7 +863,7 @@ const Dashboard = () => {
                         key={buddy._id || buddy.id}
                         className="p-3 hover-card rounded-xl bg-white/90 backdrop-blur-sm border border-buddy-purple/20 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer group"
                         onClick={() =>
-                          navigate(`/profile/${buddy._id || buddy.id}`)
+                          navigate(`/profile/${buddy.id || buddy._id}`)
                         }
                       >
                         <div className="flex items-center gap-3">
