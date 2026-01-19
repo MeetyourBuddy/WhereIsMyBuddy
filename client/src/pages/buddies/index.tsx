@@ -30,6 +30,9 @@ import {
   Clock,
   User as UserIcon,
   Check,
+  UserCheck,
+  Sparkles,
+  Activity,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -728,22 +731,49 @@ const Buddies = () => {
           onValueChange={handleTabChange}
           className="w-full mb-8"
         >
-          <TabsList className="mb-6 bg-buddy-gray-200/50">
-            <TabsTrigger value="all" className="rounded-full">
-              All Buddies
-            </TabsTrigger>
-            <TabsTrigger value="my" className="rounded-full">
-              My Buddies
-            </TabsTrigger>
-            <TabsTrigger value="recommended" className="rounded-full">
-              Recommended
-            </TabsTrigger>
-            <TabsTrigger value="active" className="rounded-full">
-              Most Active
-            </TabsTrigger>
-            <TabsTrigger value="nearby" className="rounded-full">
-              Nearby
-            </TabsTrigger>
+          <TabsList className="rounded-full mb-6 bg-buddy-gray-200/50 w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
+            <div className="flex w-full gap-1 sm:gap-2">
+              <TabsTrigger
+                value="all"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="All Buddies"
+              >
+                <Users className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">All Buddies</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="my"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="My Buddies"
+              >
+                <UserCheck className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">My Buddies</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="recommended"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="Recommended"
+              >
+                <Sparkles className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">Recommended</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="active"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="Most Active"
+              >
+                <Activity className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">Most Active</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="nearby"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="Nearby"
+              >
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">Nearby</span>
+              </TabsTrigger>
+            </div>
           </TabsList>
 
           <TabsContent value="all" className="space-y-6">

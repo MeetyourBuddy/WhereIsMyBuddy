@@ -20,6 +20,10 @@ import {
   Star,
   Plus,
   Check,
+  Grid3x3,
+  User,
+  Sparkles,
+  CalendarClock,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -708,41 +712,47 @@ const Activities = () => {
           onValueChange={handleTabChange}
           className="w-full mb-6 sm:mb-8"
         >
-          <TabsList className="mb-4 sm:mb-6 bg-buddy-gray-200/50">
-            <div className="flex min-w-max">
+          <TabsList className="mb-4 sm:mb-6 bg-buddy-gray-200/50 w-full overflow-x-auto scrollbar-hide -mx-1 px-1 rounded-full">
+            <div className="flex w-full gap-1 sm:gap-2">
               <TabsTrigger
                 value="all"
-                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="All Activities"
               >
-                <span className="hidden sm:inline">All Activities</span>
-                <span className="sm:hidden">All</span>
+                <Grid3x3 className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">All Activities</span>
               </TabsTrigger>
               <TabsTrigger
                 value="my"
-                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="My Activities"
               >
-                <span className="hidden sm:inline">My Activities</span>
-                <span className="sm:hidden">My</span>
+                <User className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">My Activities</span>
               </TabsTrigger>
               <TabsTrigger
                 value="popular"
-                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="Popular"
               >
-                Popular
+                <Star className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">Popular</span>
               </TabsTrigger>
               <TabsTrigger
                 value="new"
-                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="Newly Added"
               >
-                <span className="hidden sm:inline">Newly Added</span>
-                <span className="sm:hidden">New</span>
+                <Sparkles className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">Newly Added</span>
               </TabsTrigger>
               <TabsTrigger
                 value="soon"
-                className="rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
+                className="flex-1 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-2 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0"
+                title="Starting Soon"
               >
-                <span className="hidden sm:inline">Starting Soon</span>
-                <span className="sm:hidden">Soon</span>
+                <CalendarClock className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden md:inline whitespace-nowrap">Starting Soon</span>
               </TabsTrigger>
             </div>
           </TabsList>

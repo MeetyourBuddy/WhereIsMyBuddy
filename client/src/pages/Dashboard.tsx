@@ -257,7 +257,7 @@ const Dashboard = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-3xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent mb-1">
-                      Hey {isAuthenticated ? (user?.name || "there") : "Buddy"}!
+                      Hey, {isAuthenticated ? (user?.name || "there") : "Buddy"}!
                     </h2>
                     <h2 className="text-3xl">👋</h2>
                   </div>
