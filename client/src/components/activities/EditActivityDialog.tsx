@@ -267,7 +267,7 @@ const EditActivityDialog = ({
             Edit Your Activity
           </DialogTitle>
           <DialogDescription className="text-center text-buddy-gray-600">
-            Make updates to your activity and keep your buddies engaged! 🚀
+            Make updates to your activity and keep your buddies engaged!
           </DialogDescription>
         </DialogHeader>
 
@@ -293,7 +293,7 @@ const EditActivityDialog = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-buddy-gray-700 font-medium">
-                      Activity Name 📝
+                      Activity Name
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -313,7 +313,7 @@ const EditActivityDialog = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-buddy-gray-700 font-medium">
-                      Description 📖
+                      Description
                     </FormLabel>
                     <FormControl>
                       <Textarea
@@ -335,7 +335,7 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Category 🏷️
+                        Category
                       </FormLabel>
                       <Select
                         onValueChange={field.onChange}
@@ -368,7 +368,7 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Activity Type 🌐
+                        Activity Type
                       </FormLabel>
                       <Select
                         onValueChange={field.onChange}
@@ -399,7 +399,7 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Maximum Participants 👥
+                        Maximum Participants
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -434,7 +434,7 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Duration 📅
+                        Duration
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -455,7 +455,7 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Check-in Frequency 🔄
+                        Check-in Frequency
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -476,7 +476,7 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Frequency Unit ⏰
+                        Frequency Unit
                       </FormLabel>
                       <Select
                         onValueChange={field.onChange}
@@ -506,7 +506,7 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Start Date 📅
+                        Start Date
                       </FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -551,7 +551,7 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        End Date 📅
+                        End Date
                       </FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -773,7 +773,7 @@ const EditActivityDialog = ({
                   htmlFor="custom-goal"
                   className="text-buddy-gray-700 font-medium text-base"
                 >
-                  Add Custom Goal 🎯
+                  Add Custom Goal
                 </Label>
                 <div className="flex gap-3 mt-2">
                   <Input
@@ -809,7 +809,7 @@ const EditActivityDialog = ({
                   transition={{ duration: 0.3, delay: 0.1 }}
                 >
                   <Label className="text-buddy-gray-700 font-semibold mb-4 block text-lg">
-                    Selected Goals ✨
+                    Selected Goals
                   </Label>
                   <div className="space-y-3">
                     {goals.map((goal, index) => (
@@ -854,7 +854,7 @@ const EditActivityDialog = ({
                   type="submit"
                   className="flex-1 rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 h-12 text-base font-semibold"
                 >
-                  Save Changes ✨
+                  Save Changes
                 </Button>
               </div>
             </DialogFooter>
