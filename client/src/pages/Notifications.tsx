@@ -267,7 +267,9 @@ const Notifications: React.FC = () => {
         }
       } else if (action === "view") {
         // Navigate to the relevant page based on notification type
-        if (notification.type === "activity_invite" && notification.activity?.id) {
+        if (notification.type === "boost") {
+          navigate("/boost-wall");
+        } else if (notification.type === "activity_invite" && notification.activity?.id) {
           navigate(`/activities/${notification.activity.id}`);
         } else if (notification.activity?.id) {
           navigate(`/activities/${notification.activity.id}`);
@@ -384,6 +386,10 @@ const Notifications: React.FC = () => {
       case "activity_reminder":
       case "activity_created":
         return <Calendar className="h-6 w-6" />;
+      case "activity_invite":
+        return <Mail className="h-6 w-6" />;
+      case "boost":
+        return <Zap className="h-6 w-6" />;
       case "system_welcome":
         return <HeartHandshake className="h-6 w-6" />;
       default:
@@ -398,6 +404,8 @@ const Notifications: React.FC = () => {
         return "bg-gradient-to-br from-buddy-purple to-buddy-blue text-white";
       case "activity_invite":
         return "bg-gradient-to-br from-indigo-500 to-indigo-400 text-white";
+      case "boost":
+        return "bg-gradient-to-br from-yellow-500 to-orange-400 text-white";
       case "milestone_achieved":
       case "streak_milestone":
         return "bg-gradient-to-br from-amber-500 to-amber-400 text-white";
@@ -423,6 +431,7 @@ const Notifications: React.FC = () => {
       case "activity_created":
       case "milestone_achieved":
       case "streak_milestone":
+      case "boost":
         return ["view"];
       default:
         return [];

@@ -10,9 +10,10 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
 import { BoostService } from './boost.service';
 import { SendBoostDto } from './dto/send-boost.dto';
+import { SendBoostBatchDto } from './dto/send-boost-batch.dto';
 
 @Controller('boost')
 @UseGuards(JwtAuthGuard)
@@ -21,7 +22,28 @@ export class BoostController {
 
   @Post('send')
   async sendBoost(@Request() req, @Body() sendBoostDto: SendBoostDto) {
-    return this.boostService.sendBoost(req.user.userId, sendBoostDto);
+    const result = await this.boostService.sendBoost(req.user.userId, sendBoostDto);
+    return {
+      success: true,
+      data: result,
+      message: 'Boost sent successfully',
+    };
+  }
+
+  @Post('send-batch')
+  async sendBoostBatch(
+    @Request() req,
+    @Body() batchDto: SendBoostBatchDto,
+  ) {
+    const result = await this.boostService.sendBoostBatch(
+      req.user.userId,
+      batchDto.boosts,
+    );
+    return {
+      success: true,
+      data: result,
+      message: `Successfully sent ${result.successful} boost(s). ${result.failed > 0 ? `${result.failed} boost(s) failed due to limit.` : ''}`,
+    };
   }
 
   @Get('received')

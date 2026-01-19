@@ -183,9 +183,10 @@ const BoostModal: React.FC<BoostModalProps> = ({
   const loadBoostStats = async () => {
     try {
       const stats = await boostService.getBoostStats();
+      console.log("Boost stats received:", stats); // Debug log
       setBoostStats({
-        dailyLimit: stats.dailyLimit,
-        dailyUsed: stats.dailyUsed,
+        dailyLimit: Number(stats?.dailyLimit) || 3,
+        dailyUsed: Number(stats?.dailyUsed) || 0,
       });
     } catch (error) {
       console.error("Failed to load boost stats:", error);
@@ -219,27 +220,37 @@ const BoostModal: React.FC<BoostModalProps> = ({
 
     setIsSending(true);
     try {
-      // Send all selected messages
-      const promises = selectedMessages.map((messageId) =>
-        boostService.sendBoost({
-          recipientId,
-          messageId,
-        })
-      );
+      // Send all selected messages using batch endpoint
+      const boostRequests = selectedMessages.map((messageId) => ({
+        recipientId,
+        messageId,
+      }));
 
-      await Promise.all(promises);
+      const result = await boostService.sendBoostBatch(boostRequests);
 
-      toast({
-        title: "Boosts sent! 🚀",
-        description: `${selectedMessages.length} boost${selectedMessages.length > 1 ? "s" : ""} sent to ${recipientName}.`,
-      });
+      if (result.successful > 0) {
+        toast({
+          title: "Boosts sent! 🚀",
+          description: `${result.successful} boost${result.successful > 1 ? "s" : ""} sent to ${recipientName}.${result.failed > 0 ? ` ${result.failed} boost${result.failed > 1 ? "s" : ""} failed due to daily limit.` : ""}`,
+        });
+      }
 
-      onBoostSent();
-      onClose();
-      setSelectedMessages([]);
+      if (result.failed > 0 && result.successful === 0) {
+        toast({
+          title: "Failed to send boosts",
+          description: result.errors[0]?.error || "Daily boost limit reached.",
+          variant: "destructive",
+        });
+      }
 
-      // Refresh boost stats
-      await loadBoostStats();
+      if (result.successful > 0) {
+        onBoostSent();
+        onClose();
+        setSelectedMessages([]);
+
+        // Refresh boost stats
+        await loadBoostStats();
+      }
     } catch (error: any) {
       toast({
         title: "Failed to send boosts",

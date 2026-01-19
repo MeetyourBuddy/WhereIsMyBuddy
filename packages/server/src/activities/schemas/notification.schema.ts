@@ -16,6 +16,7 @@ export enum NotificationType {
   GOAL_REMINDER = 'goal_reminder',
   SYSTEM_WELCOME = 'system_welcome',
   ACTIVITY_CREATED = 'activity_created',
+  BOOST = 'boost',
 }
 
 export enum NotificationPriority {

@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -12,6 +14,28 @@ import {
 import { BoostStats, BoostStatsDocument } from './schemas/boost-stats.schema';
 import { BoostBadge, BoostBadgeDocument } from './schemas/boost-badge.schema';
 import { SendBoostDto } from './dto/send-boost.dto';
+import { NotificationManagerService } from '../activities/services/notification-manager.service';
+import { NotificationType } from '../activities/schemas/notification.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
+
+// Boost message text mapping
+const BOOST_MESSAGE_TEXTS: Record<string, string> = {
+  'energy-1': "You're crushing it! 🔥",
+  'energy-2': 'Keep that energy up! ⚡',
+  'energy-3': "You inspire me every day! ✨",
+  'strength-1': "You're stronger than you know! 💪",
+  'strength-2': 'Every step counts! Keep going! 🚀',
+  'strength-3': 'Your dedication is incredible! 🎯',
+  'celebration-1': 'Amazing progress! 🎉',
+  'celebration-2': "You're doing fantastic! 🏆",
+  'celebration-3': "So proud of your journey! 👏",
+  'support-1': "We're in this together! 🤝",
+  'support-2': "You've got a whole team behind you! 💫",
+  'support-3': 'Your journey motivates us all! 🌟',
+  'focus-1': "Stay focused, you're doing incredible! 🎯",
+  'focus-2': 'Your goals are within reach! 🏁',
+  'focus-3': 'Keep pushing toward your dreams! ✨',
+};
 
 @Injectable()
 export class BoostService {
@@ -22,6 +46,10 @@ export class BoostService {
     private boostStatsModel: Model<BoostStatsDocument>,
     @InjectModel(BoostBadge.name)
     private boostBadgeModel: Model<BoostBadgeDocument>,
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
+    @Inject(forwardRef(() => NotificationManagerService))
+    private notificationManagerService: NotificationManagerService,
   ) {}
 
   // Send a boost message
@@ -78,11 +106,78 @@ export class BoostService {
     // Update recipient stats
     await this.updateBoostStats(recipientId, 'received');
 
+    // Create notification for recipient
+    try {
+      const sender = await this.userModel.findById(senderId).exec();
+      const boostMessageText = BOOST_MESSAGE_TEXTS[messageId] || 'sent you a boost!';
+      
+      await this.notificationManagerService.createNotification({
+        recipientId: recipientId,
+        senderId: senderId,
+        type: NotificationType.BOOST,
+        title: 'You received a boost! ⚡',
+        message: `${sender?.name || 'Someone'} ${boostMessageText}`,
+        activityId: activityId,
+        metadata: {
+          boostId: savedBoost._id.toString(),
+          messageId: messageId,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to create boost notification:', error);
+      // Don't fail the boost if notification fails
+    }
+
     // Check for badge achievements
     await this.checkBadgeAchievements(senderId);
     await this.checkBadgeAchievements(recipientId);
 
     return savedBoost;
+  }
+
+  // Send multiple boost messages with proper limit checking
+  async sendBoostBatch(
+    senderId: string,
+    sendBoostDtos: SendBoostDto[],
+  ): Promise<{
+    successful: number;
+    failed: number;
+    boosts: BoostMessage[];
+    errors: Array<{ messageId: string; error: string }>;
+  }> {
+    const results = {
+      successful: 0,
+      failed: 0,
+      boosts: [] as BoostMessage[],
+      errors: [] as Array<{ messageId: string; error: string }>,
+    };
+
+    for (const sendBoostDto of sendBoostDtos) {
+      try {
+        // Check limit before each boost
+        const senderStats = await this.getOrCreateBoostStats(senderId);
+        if (senderStats.dailyUsed >= senderStats.dailyLimit) {
+          results.failed++;
+          results.errors.push({
+            messageId: sendBoostDto.messageId,
+            error: 'Daily boost limit reached',
+          });
+          continue;
+        }
+
+        const boost = await this.sendBoost(senderId, sendBoostDto);
+        results.boosts.push(boost);
+        results.successful++;
+      } catch (error: any) {
+        results.failed++;
+        results.errors.push({
+          messageId: sendBoostDto.messageId,
+          error: error.message || 'Failed to send boost',
+        });
+      }
+    }
+
+    return results;
   }
 
   // Get boost messages received by a user

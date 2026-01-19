@@ -23,11 +23,14 @@ import {
   MessageCircle,
   TrendingUp,
   Award,
+  Loader2,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/store/auth.store";
 import { AuthWall } from "@/components/auth/AuthWall";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import { boostService } from "@/services/boost.service";
 
 // Boost message type definitions
 interface BoostMessageType {
@@ -228,58 +231,143 @@ const MOCK_USERS: User[] = [
   { id: "6", name: "Lisa Thompson", avatar: "LT" },
 ];
 
-// Mock user card data - Energy & Motivation: 1 card, Celebration & Achievement: 3 cards, rest: 0 cards
-const MOCK_USER_CARDS: UserCardData[] = [
-  // Energy & Motivation - 1 card
-  {
-    cardId: "energy-1",
-    interactions: [
-      { user: MOCK_USERS[0], sentCount: 2, receivedCount: 3 },
-      { user: MOCK_USERS[1], sentCount: 1, receivedCount: 2 },
-      { user: MOCK_USERS[2], sentCount: 0, receivedCount: 1 },
-    ],
-    totalSent: 3,
-    totalReceived: 6,
-  },
-  // Celebration & Achievement - 3 cards
-  {
-    cardId: "celebration-1",
-    interactions: [
-      { user: MOCK_USERS[0], sentCount: 1, receivedCount: 2 },
-      { user: MOCK_USERS[3], sentCount: 2, receivedCount: 1 },
-      { user: MOCK_USERS[4], sentCount: 0, receivedCount: 3 },
-    ],
-    totalSent: 3,
-    totalReceived: 6,
-  },
-  {
-    cardId: "celebration-2",
-    interactions: [
-      { user: MOCK_USERS[1], sentCount: 3, receivedCount: 1 },
-      { user: MOCK_USERS[2], sentCount: 1, receivedCount: 2 },
-      { user: MOCK_USERS[5], sentCount: 0, receivedCount: 4 },
-    ],
-    totalSent: 4,
-    totalReceived: 7,
-  },
-  {
-    cardId: "celebration-3",
-    interactions: [
-      { user: MOCK_USERS[3], sentCount: 2, receivedCount: 3 },
-      { user: MOCK_USERS[4], sentCount: 1, receivedCount: 1 },
-      { user: MOCK_USERS[0], sentCount: 0, receivedCount: 2 },
-    ],
-    totalSent: 3,
-    totalReceived: 6,
-  },
-];
+// Helper function to process boost data into card data
+const processBoostData = (
+  receivedBoosts: any[],
+  sentBoosts: any[]
+): UserCardData[] => {
+  const cardDataMap: Record<string, {
+    sent: Map<string, number>; // userId -> count
+    received: Map<string, number>; // userId -> count
+    totalSent: number;
+    totalReceived: number;
+  }> = {};
+
+  // Process received boosts
+  receivedBoosts.forEach((boost) => {
+    const messageId = boost.messageId;
+    if (!messageId) {
+      console.warn("Received boost missing messageId:", boost);
+      return;
+    }
+
+    if (!cardDataMap[messageId]) {
+      cardDataMap[messageId] = {
+        sent: new Map(),
+        received: new Map(),
+        totalSent: 0,
+        totalReceived: 0,
+      };
+    }
+
+    // Extract senderId - handle both populated object and string/ObjectId
+    let senderId: string | null = null;
+    if (boost.senderId) {
+      if (typeof boost.senderId === 'object' && boost.senderId._id) {
+        senderId = boost.senderId._id.toString();
+      } else if (typeof boost.senderId === 'object' && boost.senderId.id) {
+        senderId = boost.senderId.id.toString();
+      } else if (typeof boost.senderId === 'string') {
+        senderId = boost.senderId;
+      } else {
+        senderId = String(boost.senderId);
+      }
+    }
+
+    if (senderId) {
+      const currentCount = cardDataMap[messageId].received.get(senderId) || 0;
+      cardDataMap[messageId].received.set(senderId, currentCount + 1);
+      cardDataMap[messageId].totalReceived++;
+    }
+  });
+
+  // Process sent boosts
+  sentBoosts.forEach((boost) => {
+    const messageId = boost.messageId;
+    if (!messageId) {
+      console.warn("Sent boost missing messageId:", boost);
+      return;
+    }
+
+    if (!cardDataMap[messageId]) {
+      cardDataMap[messageId] = {
+        sent: new Map(),
+        received: new Map(),
+        totalSent: 0,
+        totalReceived: 0,
+      };
+    }
+
+    // Extract recipientId - handle both populated object and string/ObjectId
+    let recipientId: string | null = null;
+    if (boost.recipientId) {
+      if (typeof boost.recipientId === 'object' && boost.recipientId._id) {
+        recipientId = boost.recipientId._id.toString();
+      } else if (typeof boost.recipientId === 'object' && boost.recipientId.id) {
+        recipientId = boost.recipientId.id.toString();
+      } else if (typeof boost.recipientId === 'string') {
+        recipientId = boost.recipientId;
+      } else {
+        recipientId = String(boost.recipientId);
+      }
+    }
+
+    if (recipientId) {
+      const currentCount = cardDataMap[messageId].sent.get(recipientId) || 0;
+      cardDataMap[messageId].sent.set(recipientId, currentCount + 1);
+      cardDataMap[messageId].totalSent++;
+    }
+  });
+
+  // Convert to UserCardData format
+  const userCards: UserCardData[] = Object.entries(cardDataMap).map(([cardId, data]) => {
+    // Combine all unique user IDs from sent and received
+    const allUserIds = new Set([
+      ...Array.from(data.sent.keys()),
+      ...Array.from(data.received.keys()),
+    ]);
+
+    const interactions: CardInteraction[] = Array.from(allUserIds).map((userId) => {
+      // Get user info from boosts
+      const sentBoost = sentBoosts.find(
+        (b) => (b.recipientId?._id || b.recipientId?.id || b.recipientId) === userId
+      );
+      const receivedBoost = receivedBoosts.find(
+        (b) => (b.senderId?._id || b.senderId?.id || b.senderId) === userId
+      );
+
+      const user = sentBoost?.recipientId || receivedBoost?.senderId || {
+        id: userId,
+        name: "Unknown User",
+      };
+
+      return {
+        user: {
+          id: user._id || user.id || userId,
+          name: user.name || "Unknown User",
+          avatar: user.avatar,
+        },
+        sentCount: data.sent.get(userId) || 0,
+        receivedCount: data.received.get(userId) || 0,
+      };
+    });
+
+    return {
+      cardId,
+      interactions,
+      totalSent: data.totalSent,
+      totalReceived: data.totalReceived,
+    };
+  });
+
+  return userCards;
+};
 
 // Info Modal Component
-const InfoModal = ({ card, isOpen, onClose, isDarkMode }) => {
+const InfoModal = ({ card, isOpen, onClose, isDarkMode, userCardData }) => {
   console.log("InfoModal render:", { isOpen, card: card?.id });
   if (!isOpen || !card) return null;
 
-  const userCardData = MOCK_USER_CARDS.find((data) => data.cardId === card.id);
   const interactions = userCardData?.interactions || [];
 
   return (
@@ -405,9 +493,15 @@ const InfoModal = ({ card, isOpen, onClose, isDarkMode }) => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center font-bold text-white text-sm shadow-lg">
-                          {interaction.user.avatar}
-                        </div>
+                        <Avatar className="w-12 h-12 border-2 border-white shadow-lg">
+                          <AvatarImage 
+                            src={interaction.user.avatar} 
+                            alt={interaction.user.name || "User"} 
+                          />
+                          <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white font-bold text-sm">
+                            {interaction.user.name?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <div
                             className={`font-semibold ${
@@ -486,13 +580,13 @@ const InfoModal = ({ card, isOpen, onClose, isDarkMode }) => {
   );
 };
 
-const CardDeck = ({ category, cards, isDarkMode, categoryIcon, isGuest }) => {
+const CardDeck = ({ category, cards, isDarkMode, categoryIcon, isGuest, userCardsData }) => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const getUserCards = () => {
-    const userCardIds = MOCK_USER_CARDS.map((data) => data.cardId);
+    const userCardIds = userCardsData.map((data) => data.cardId);
     return cards.filter((card) => userCardIds.includes(card.id));
   };
 
@@ -544,7 +638,7 @@ const CardDeck = ({ category, cards, isDarkMode, categoryIcon, isGuest }) => {
       <div className="flex justify-center items-center min-h-[300px]">
         <div className="relative w-48 h-64">
           {userCards.slice(0, 3).map((card, index) => {
-            const userCardData = MOCK_USER_CARDS.find(
+            const userCardData = userCardsData.find(
               (data) => data.cardId === card.id
             );
             const totalCards = Math.min(userCards.length, 3);
@@ -674,6 +768,7 @@ const CardDeck = ({ category, cards, isDarkMode, categoryIcon, isGuest }) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         isDarkMode={isDarkMode}
+        userCardData={userCardsData.find((data) => data.cardId === selectedCard?.id)}
       />
     </>
   );
@@ -681,17 +776,54 @@ const CardDeck = ({ category, cards, isDarkMode, categoryIcon, isGuest }) => {
 
 const BoostWall = () => {
   useScrollToTopImmediate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userCardsData, setUserCardsData] = useState<UserCardData[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simulate loading
+  // Fetch user's boost data
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchBoostData = async () => {
+      if (!isAuthenticated || !user?._id) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch all received and sent boosts (with high limit to get all)
+        const [receivedResponse, sentResponse] = await Promise.all([
+          boostService.getReceivedBoosts(1, 1000),
+          boostService.getSentBoosts(1, 1000),
+        ]);
+
+        console.log("Received boosts response:", receivedResponse);
+        console.log("Sent boosts response:", sentResponse);
+
+        const receivedBoosts = receivedResponse?.boosts || [];
+        const sentBoosts = sentResponse?.boosts || [];
+
+        console.log("Received boosts:", receivedBoosts);
+        console.log("Sent boosts:", sentBoosts);
+
+        // Process the data into card format
+        const processedCards = processBoostData(receivedBoosts, sentBoosts);
+        console.log("Processed cards:", processedCards);
+        setUserCardsData(processedCards);
+      } catch (err: any) {
+        console.error("Failed to fetch boost data:", err);
+        setError(err.message || "Failed to load boost data");
+        setUserCardsData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBoostData();
+  }, [isAuthenticated, user?._id]);
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -756,6 +888,33 @@ const BoostWall = () => {
   ];
 
   if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pastel-purple/30 via-white to-pastel-blue/40 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-buddy-purple mx-auto mb-4" />
+          <p className="text-buddy-gray-600">Loading your boost collection...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pastel-purple/30 via-white to-pastel-blue/40 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-buddy-purple text-white rounded-full"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return (
       <div
         className={`min-h-screen flex items-center justify-center transition-colors duration-500 ${
@@ -866,6 +1025,7 @@ const BoostWall = () => {
                 isDarkMode={isDarkMode}
                 categoryIcon={category.icon}
                 isGuest={!isAuthenticated}
+                userCardsData={userCardsData}
               />
             </div>
           ))}

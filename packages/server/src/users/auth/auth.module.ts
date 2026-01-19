@@ -39,6 +39,6 @@ import { GoogleStrategy } from './strategies/google.strategy';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy, GoogleStrategy],
-  exports: [AuthService],
+  exports: [AuthService, PassportModule],
 })
 export class AuthModule {}

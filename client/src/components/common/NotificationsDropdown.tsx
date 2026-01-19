@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCircle, XCircle, Eye, Loader2, Mail } from "lucide-react";
+import { Bell, CheckCircle, XCircle, Eye, Loader2, Mail, Zap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -132,17 +132,23 @@ const NotificationsDropdown: React.FC = () => {
     }
   };
 
-  const handleNotificationClick = (notification: NotificationData) => {
-    handleMarkAsRead(notification.id);
+  const handleNotificationClick = async (notification: NotificationData) => {
+    await handleMarkAsRead(notification.id);
+    setIsOpen(false); // Close dropdown before navigating
 
     // Navigate based on notification type
-    if (notification.type === "activity_invite" && notification.activity?.id) {
+    if (notification.type === "boost") {
+      navigate("/boost-wall");
+    } else if (notification.type === "activity_invite" && notification.activity?.id) {
       navigate(`/activities/${notification.activity.id}`);
     } else if (notification.type === "buddy_request") {
-      // Already handled by accept/decline buttons
-      return;
+      // Already handled by accept/decline buttons, but navigate to notifications page
+      navigate("/notifications");
     } else if (notification.activity?.id) {
       navigate(`/activities/${notification.activity.id}`);
+    } else {
+      // Default: navigate to notifications page for any other notification type
+      navigate("/notifications");
     }
   };
 

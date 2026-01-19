@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosInstance from "./axios-instance";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
@@ -66,70 +66,99 @@ export interface BoostLeaderboard {
 }
 
 class BoostService {
-  private getAuthHeaders() {
-    const token = localStorage.getItem("accessToken");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
+  async sendBoost(data: SendBoostRequest): Promise<BoostMessage> {
+    const response = await axiosInstance.post(`${API_BASE_URL}/boost/send`, data);
+    return response.data.data || response.data;
   }
 
-  async sendBoost(data: SendBoostRequest): Promise<BoostMessage> {
-    const response = await axios.post(`${API_BASE_URL}/boost/send`, data, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+  async sendBoostBatch(
+    data: SendBoostRequest[]
+  ): Promise<{
+    successful: number;
+    failed: number;
+    boosts: BoostMessage[];
+    errors: Array<{ messageId: string; error: string }>;
+  }> {
+    const response = await axiosInstance.post(`${API_BASE_URL}/boost/send-batch`, { boosts: data });
+    return response.data.data || response.data;
   }
 
   async getReceivedBoosts(
     page: number = 1,
     limit: number = 10
   ): Promise<BoostResponse> {
-    const response = await axios.get(
-      `${API_BASE_URL}/boost/received?page=${page}&limit=${limit}`,
-      { headers: this.getAuthHeaders() }
+    const response = await axiosInstance.get(
+      `${API_BASE_URL}/boost/received?page=${page}&limit=${limit}`
     );
-    return response.data;
+    // Handle wrapped response from TransformInterceptor
+    const data = response.data?.data || response.data;
+    return {
+      boosts: data?.boosts || [],
+      total: data?.total || 0,
+      page: data?.page || page,
+      totalPages: data?.totalPages || 0,
+    };
   }
 
   async getSentBoosts(
     page: number = 1,
     limit: number = 10
   ): Promise<BoostResponse> {
-    const response = await axios.get(
-      `${API_BASE_URL}/boost/sent?page=${page}&limit=${limit}`,
-      { headers: this.getAuthHeaders() }
+    const response = await axiosInstance.get(
+      `${API_BASE_URL}/boost/sent?page=${page}&limit=${limit}`
     );
-    return response.data;
+    // Handle wrapped response from TransformInterceptor
+    const data = response.data?.data || response.data;
+    return {
+      boosts: data?.boosts || [],
+      total: data?.total || 0,
+      page: data?.page || page,
+      totalPages: data?.totalPages || 0,
+    };
   }
 
   async getBoostStats(): Promise<BoostStats> {
-    const response = await axios.get(`${API_BASE_URL}/boost/stats`, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    const response = await axiosInstance.get(`${API_BASE_URL}/boost/stats`);
+    // Handle both wrapped and direct responses
+    const data = response.data?.data || response.data;
+    
+    // Ensure numeric values are properly converted (handle NaN cases)
+    const dailyLimit = Number(data?.dailyLimit);
+    const dailyUsed = Number(data?.dailyUsed);
+    const totalSent = Number(data?.totalSent);
+    const totalReceived = Number(data?.totalReceived);
+    const currentStreak = Number(data?.currentStreak);
+    const longestStreak = Number(data?.longestStreak);
+    
+    return {
+      _id: data?._id || '',
+      userId: data?.userId || '',
+      dailyLimit: isNaN(dailyLimit) ? 3 : dailyLimit,
+      dailyUsed: isNaN(dailyUsed) ? 0 : dailyUsed,
+      totalSent: isNaN(totalSent) ? 0 : totalSent,
+      totalReceived: isNaN(totalReceived) ? 0 : totalReceived,
+      currentStreak: isNaN(currentStreak) ? 0 : currentStreak,
+      longestStreak: isNaN(longestStreak) ? 0 : longestStreak,
+      lastResetDate: data?.lastResetDate || new Date().toISOString(),
+    };
   }
 
   async getBoostBadges(): Promise<BoostBadge[]> {
-    const response = await axios.get(`${API_BASE_URL}/boost/badges`, {
-      headers: this.getAuthHeaders(),
-    });
+    const response = await axiosInstance.get(`${API_BASE_URL}/boost/badges`);
     return response.data;
   }
 
   async getBoostLeaderboard(limit: number = 10): Promise<BoostLeaderboard> {
-    const response = await axios.get(
-      `${API_BASE_URL}/boost/leaderboard?limit=${limit}`,
-      { headers: this.getAuthHeaders() }
+    const response = await axiosInstance.get(
+      `${API_BASE_URL}/boost/leaderboard?limit=${limit}`
     );
     return response.data;
   }
 
   async markBoostAsRead(boostId: string): Promise<void> {
-    await axios.post(
+    await axiosInstance.post(
       `${API_BASE_URL}/boost/mark-read/${boostId}`,
-      {},
-      { headers: this.getAuthHeaders() }
+      {}
     );
   }
 }

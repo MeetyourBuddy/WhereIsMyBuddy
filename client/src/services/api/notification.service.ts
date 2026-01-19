@@ -15,7 +15,8 @@ export interface NotificationData {
     | "activity_reminder"
     | "goal_reminder"
     | "system_welcome"
-    | "activity_created";
+    | "activity_created"
+    | "boost";
   title: string;
   message: string;
   priority: "low" | "medium" | "high";
