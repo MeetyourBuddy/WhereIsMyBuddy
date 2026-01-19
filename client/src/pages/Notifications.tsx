@@ -41,10 +41,14 @@ import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/store/auth.store";
 import { AuthWall } from "@/components/auth/AuthWall";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import { useBuddyConnectionStore } from "@/store/buddy-connection.store";
+import { useNavigate } from "react-router-dom";
 
 const Notifications: React.FC = () => {
   useScrollToTopImmediate();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const { respondToBuddyRequest } = useBuddyConnectionStore();
   const [filter, setFilter] = useState("all");
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -179,25 +183,104 @@ const Notifications: React.FC = () => {
     }
   };
 
-  const handleAction = async (id: string, action: string) => {
-    // Handle action based on type
-    if (action === "accept") {
-      toast({
-        title: "Buddy request accepted",
-        description: "You are now connected with a new buddy",
-      });
-    } else if (action === "decline") {
-      toast({
-        title: "Buddy request declined",
-        description: "The buddy request has been declined",
-      });
-    } else if (action === "view") {
-      // Navigate to the relevant page
-      console.log("View action for notification", id);
-    }
+  const handleAction = async (notification: NotificationData, action: string) => {
+    try {
+      if (action === "accept") {
+        // Handle buddy request acceptance
+        if (notification.type === "buddy_request") {
+          const connectionId = notification.metadata?.buddyConnectionId as string;
+          if (!connectionId) {
+            toast({
+              title: "Error",
+              description: "Connection ID not found",
+              variant: "destructive",
+            });
+            return;
+          }
 
-    // Mark as read after action
-    await handleMarkAsRead(id);
+          await respondToBuddyRequest(connectionId, { status: "accepted" });
+          await handleMarkAsRead(notification.id);
+          await fetchNotifications(1, true); // Refresh notifications
+
+          toast({
+            title: "Buddy request accepted",
+            description: "You are now connected with a new buddy",
+          });
+        } 
+        // Handle activity invitation acceptance
+        else if (notification.type === "activity_invite") {
+          const invitationId = notification.metadata?.invitationId as string;
+          if (invitationId) {
+            // Import activity invitation service
+            const { activityInvitationService } = await import("@/services/api/activity/activity-invitation.service");
+            await activityInvitationService.acceptInvitation(invitationId);
+            await handleMarkAsRead(notification.id);
+            await fetchNotifications(1, true);
+            
+            toast({
+              title: "Activity invitation accepted",
+              description: "You can now join the activity",
+            });
+            
+            // Navigate to activity page
+            if (notification.activity?.id) {
+              navigate(`/activities/${notification.activity.id}`);
+            }
+          }
+        }
+      } else if (action === "decline") {
+        // Handle buddy request decline
+        if (notification.type === "buddy_request") {
+          const connectionId = notification.metadata?.buddyConnectionId as string;
+          if (!connectionId) {
+            toast({
+              title: "Error",
+              description: "Connection ID not found",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          await respondToBuddyRequest(connectionId, { status: "declined" });
+          await handleMarkAsRead(notification.id);
+          await fetchNotifications(1, true); // Refresh notifications
+
+          toast({
+            title: "Buddy request declined",
+            description: "The buddy request has been declined",
+          });
+        }
+        // Handle activity invitation decline
+        else if (notification.type === "activity_invite") {
+          const invitationId = notification.metadata?.invitationId as string;
+          if (invitationId) {
+            const { activityInvitationService } = await import("@/services/api/activity/activity-invitation.service");
+            await activityInvitationService.declineInvitation(invitationId);
+            await handleMarkAsRead(notification.id);
+            await fetchNotifications(1, true);
+            
+            toast({
+              title: "Activity invitation declined",
+              description: "The invitation has been declined",
+            });
+          }
+        }
+      } else if (action === "view") {
+        // Navigate to the relevant page based on notification type
+        if (notification.type === "activity_invite" && notification.activity?.id) {
+          navigate(`/activities/${notification.activity.id}`);
+        } else if (notification.activity?.id) {
+          navigate(`/activities/${notification.activity.id}`);
+        }
+        await handleMarkAsRead(notification.id);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Action failed",
+        description: error?.response?.data?.message || "Please try again",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredNotifications = notifications;
@@ -313,6 +396,8 @@ const Notifications: React.FC = () => {
       case "buddy_request":
       case "buddy_accepted":
         return "bg-gradient-to-br from-buddy-purple to-buddy-blue text-white";
+      case "activity_invite":
+        return "bg-gradient-to-br from-indigo-500 to-indigo-400 text-white";
       case "milestone_achieved":
       case "streak_milestone":
         return "bg-gradient-to-br from-amber-500 to-amber-400 text-white";
@@ -561,7 +646,7 @@ const Notifications: React.FC = () => {
                       "Manage buddy requests",
                       "Track activity progress alerts",
                     ]}
-                    returnToAfterAuth={location.pathname}
+                    returnToAfterAuth={window.location.pathname}
                   />
                 </div>
               ) : isLoading ? (
@@ -683,9 +768,10 @@ const Notifications: React.FC = () => {
                                   <Button
                                     size="sm"
                                     className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 px-6"
-                                    onClick={() =>
-                                      handleAction(notification.id, "accept")
-                                    }
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAction(notification, "accept");
+                                    }}
                                   >
                                     <CheckCircle className="w-4 h-4 mr-2" />
                                     Accept
@@ -698,9 +784,10 @@ const Notifications: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     className="rounded-full border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-300 px-6"
-                                    onClick={() =>
-                                      handleAction(notification.id, "decline")
-                                    }
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAction(notification, "decline");
+                                    }}
                                   >
                                     <XCircle className="w-4 h-4 mr-2" />
                                     Decline
@@ -713,9 +800,10 @@ const Notifications: React.FC = () => {
                                     variant="ghost"
                                     size="sm"
                                     className="rounded-full text-buddy-purple hover:bg-buddy-purple/10 transition-all duration-300 px-6"
-                                    onClick={() =>
-                                      handleAction(notification.id, "view")
-                                    }
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAction(notification, "view");
+                                    }}
                                   >
                                     <Eye className="w-4 h-4 mr-2" />
                                     View Details

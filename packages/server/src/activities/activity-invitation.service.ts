@@ -4,6 +4,8 @@ import {
   BadRequestException,
   ForbiddenException,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -15,6 +17,8 @@ import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { CreateActivityInvitationDto } from './dto/create-activity-invitation.dto';
 import * as crypto from 'crypto';
+import { NotificationManagerService } from './services/notification-manager.service';
+import { NotificationType } from './schemas/notification.schema';
 
 @Injectable()
 export class ActivityInvitationService {
@@ -25,6 +29,8 @@ export class ActivityInvitationService {
     private activityModel: Model<ActivityDocument>,
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
+    @Inject(forwardRef(() => NotificationManagerService))
+    private readonly notificationManagerService: NotificationManagerService,
   ) {}
 
   // Create activity invitation (only creator can invite)
@@ -217,7 +223,31 @@ export class ActivityInvitationService {
       expiresAt,
     });
 
-    return invitation.save();
+    const savedInvitation = await invitation.save();
+
+    // Create notification if target user exists
+    if (finalToUserId) {
+      try {
+        const fromUser = await this.userModel.findById(fromUserId).exec();
+        await this.notificationManagerService.createNotification({
+          recipientId: finalToUserId.toString(),
+          senderId: fromUserId,
+          type: NotificationType.ACTIVITY_INVITE,
+          title: `You're invited to ${activity.title}!`,
+          message: message || `${fromUser?.name || 'Someone'} has invited you to join their activity: "${activity.title}".`,
+          activityId: activityId,
+          metadata: {
+            invitationId: savedInvitation._id.toString(),
+            invitationToken: savedInvitation.invitationToken,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to create activity invitation notification:', error);
+        // Don't fail the invitation if notification fails
+      }
+    }
+
+    return savedInvitation;
   }
 
   // Get all invitations for an activity (admin only)

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
@@ -23,6 +23,7 @@ import { AuthService } from './auth/auth.service';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './auth/strategies/refresh-token.strategy';
 import { GoogleStrategy } from './auth/strategies/google.strategy';
+import { ActivityModule } from '../activities/activity.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { GoogleStrategy } from './auth/strategies/google.strategy';
       }),
       inject: [ConfigService],
     }),
+    forwardRef(() => ActivityModule), // Import ActivityModule to access NotificationManagerService
   ],
   controllers: [UsersController, AuthController, BuddyConnectionController],
   providers: [

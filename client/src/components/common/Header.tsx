@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/store/auth.store";
+import NotificationsDropdown from "./NotificationsDropdown";
 
 interface HeaderProps {
   isLoggedIn?: boolean;
@@ -123,24 +124,14 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-buddy-gray-600 hover:text-buddy-gray-900"
+                  className="text-buddy-gray-600 hover:text-buddy-gray-900 p-3"
                   aria-label="Search"
                 >
-                  <Search className="w-7 h-7" />
+                  <Search className="w-5 h-5" />
                 </Button>
               </div>
 
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-buddy-gray-600 hover:text-buddy-gray-900 relative"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-7 h-7" />
-                  <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-buddy-purple"></span>
-                </Button>
-              </div>
+              <NotificationsDropdown />
 
               <div className="flex items-center">
                 <DropdownMenu>

@@ -3,6 +3,8 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -19,6 +21,7 @@ import {
   BuddyStatsDto,
   MutualConnectionDto,
 } from '../dto/buddy-connection.dto';
+import { NotificationManagerService } from '../../activities/services/notification-manager.service';
 
 @Injectable()
 export class BuddyConnectionService {
@@ -27,6 +30,8 @@ export class BuddyConnectionService {
     private buddyConnectionModel: Model<BuddyConnectionDocument>,
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
+    @Inject(forwardRef(() => NotificationManagerService))
+    private notificationManagerService: NotificationManagerService,
   ) {}
 
   async sendBuddyRequest(
@@ -78,6 +83,19 @@ export class BuddyConnectionService {
     });
 
     const savedRequest = await buddyRequest.save();
+
+    // Create notification for recipient
+    try {
+      await this.notificationManagerService.createBuddyRequestNotification(
+        recipientId,
+        requesterId,
+        savedRequest._id.toString(),
+      );
+    } catch (error) {
+      // Log error but don't fail the request
+      console.error('Failed to create buddy request notification:', error);
+    }
+
     return this.formatBuddyConnectionResponse(savedRequest);
   }
 
@@ -111,6 +129,25 @@ export class BuddyConnectionService {
     }
 
     const updatedConnection = await connection.save();
+
+    // Create notification for requester based on response
+    try {
+      if (updateDto.status === ConnectionStatus.ACCEPTED) {
+        await this.notificationManagerService.createBuddyAcceptedNotification(
+          connection.requester.toString(),
+          recipientId,
+        );
+      } else if (updateDto.status === ConnectionStatus.DECLINED) {
+        await this.notificationManagerService.createBuddyDeclinedNotification(
+          connection.requester.toString(),
+          recipientId,
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail the response
+      console.error('Failed to create buddy response notification:', error);
+    }
+
     return this.formatBuddyConnectionResponse(updatedConnection);
   }
 

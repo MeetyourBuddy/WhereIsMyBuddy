@@ -89,7 +89,7 @@ import { ActivityInvitationService } from './activity-invitation.service';
       { name: BuddyConnection.name, schema: BuddyConnectionSchema },
       { name: User.name, schema: UserSchema },
     ]),
-    UsersModule,
+    forwardRef(() => UsersModule), // Use forwardRef to handle circular dependency
   ],
   controllers: [
     // More specific routes first

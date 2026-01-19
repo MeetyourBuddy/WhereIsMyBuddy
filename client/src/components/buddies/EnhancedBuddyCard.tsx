@@ -19,6 +19,8 @@ import {
   Flame,
   Star,
   CheckCircle,
+  UserMinus,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBuddyConnectionStore } from "@/store/buddy-connection.store";
@@ -26,6 +28,7 @@ import { useAuth } from "@/store/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/types/auth-types";
 import BoostModal from "./BoostModal";
+import { ActivityService } from "@/services/api/activity/activity-service";
 
 // Mock buddy type for fallback data
 interface MockBuddy {
@@ -110,6 +113,11 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
     checkConnectionStatus,
     sendBuddyRequest,
     respondToBuddyRequest,
+    removeBuddyConnection,
+    pendingRequests,
+    receivedRequests,
+    fetchPendingRequests,
+    fetchReceivedRequests,
     isLoading,
   } = useBuddyConnectionStore();
 
@@ -130,8 +138,11 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
   );
   const [isProcessing, setIsProcessing] = useState(false);
   const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
+  const [activityStats, setActivityStats] = useState({ active: 0, completed: 0 });
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isRequester, setIsRequester] = useState<boolean | null>(null); // null = unknown, true = current user sent request, false = current user received request
 
-  // Check connection status when component mounts (only for real users)
+  // Check connection status and determine if user is requester or recipient
   useEffect(() => {
     if (
       isRealUser &&
@@ -141,8 +152,11 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
       currentUser._id !== user._id
     ) {
       checkConnectionStatus(user._id);
+      // Fetch pending and received requests to determine role
+      fetchPendingRequests();
+      fetchReceivedRequests();
     }
-  }, [isRealUser, currentUser?._id, user, checkConnectionStatus]);
+  }, [isRealUser, currentUser?._id, user, checkConnectionStatus, fetchPendingRequests, fetchReceivedRequests]);
 
   // Update local state when connection status changes
   useEffect(() => {
@@ -154,6 +168,44 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
       }
     }
   }, [connectionStatuses, user]);
+
+  // Determine if current user is the requester or recipient
+  useEffect(() => {
+    if (!currentUser?._id || !("_id" in user) || !user._id) {
+      setIsRequester(null);
+      return;
+    }
+
+    // Check if current user sent the request (is in pendingRequests)
+    const sentRequest = pendingRequests.find(
+      (req) => req.recipient.id === user._id && req.status === "pending"
+    );
+    if (sentRequest) {
+      setIsRequester(true);
+      return;
+    }
+
+    // Check if current user received the request (is in receivedRequests)
+    const receivedRequest = receivedRequests.find(
+      (req) => req.requester.id === user._id && req.status === "pending"
+    );
+    if (receivedRequest) {
+      setIsRequester(false);
+      return;
+    }
+
+    // For accepted connections, check both arrays
+    const acceptedConnection = [...pendingRequests, ...receivedRequests].find(
+      (conn) =>
+        (conn.requester.id === currentUser._id && conn.recipient.id === user._id) ||
+        (conn.requester.id === user._id && conn.recipient.id === currentUser._id)
+    );
+    if (acceptedConnection && acceptedConnection.status === "accepted") {
+      setIsRequester(acceptedConnection.requester.id === currentUser._id);
+    } else {
+      setIsRequester(null);
+    }
+  }, [pendingRequests, receivedRequests, currentUser?._id, user]);
 
   // Get user profile image
   const getProfileImage = () => {
@@ -177,14 +229,50 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
   const isProfileComplete =
     "_id" in user ? user.hasCompletedOnboarding : true;
 
-  // Get activity stats
-  const getActivityStats = () => {
-    // For now, return mock data - can be replaced with real stats later
-    return {
-      active: 0,
-      completed: 0,
+  // Fetch activity stats for the buddy
+  useEffect(() => {
+    const fetchActivityStats = async () => {
+      if (!isRealUser || !("_id" in user) || !user._id) {
+        setActivityStats({ active: 0, completed: 0 });
+        return;
+      }
+
+      setIsLoadingStats(true);
+      try {
+        // Fetch all activities and filter by user participation
+        const response = await ActivityService.getActivities();
+        const allActivities = response.data || [];
+        
+        const now = new Date();
+        let activeCount = 0;
+        let completedCount = 0;
+
+        allActivities.forEach((activity: any) => {
+          const isParticipant = activity.participants?.some(
+            (p: any) => (p._id || p.id || p) === user._id
+          );
+          
+          if (isParticipant) {
+            const endDate = activity.endDate ? new Date(activity.endDate) : null;
+            if (endDate && endDate < now) {
+              completedCount++;
+            } else {
+              activeCount++;
+            }
+          }
+        });
+
+        setActivityStats({ active: activeCount, completed: completedCount });
+      } catch (error) {
+        console.error("Failed to fetch activity stats:", error);
+        setActivityStats({ active: 0, completed: 0 });
+      } finally {
+        setIsLoadingStats(false);
+      }
     };
-  };
+
+    fetchActivityStats();
+  }, [isRealUser, user]);
 
   const handleCardClick = () => {
     const userId = "_id" in user ? user._id : user.id;
@@ -217,14 +305,18 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
         recipientId: user._id,
         message: `Hi ${user.name}! I'd like to connect with you on BuddyFinder.`,
       });
+      // Refresh connection status after sending request
+      if ("_id" in user) {
+        await checkConnectionStatus(user._id);
+      }
       toast({
         title: "Buddy request sent!",
         description: `Your request has been sent to ${user.name}.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Failed to send request",
-        description: "Please try again later.",
+        description: error?.response?.data?.message || "Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -239,14 +331,18 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
     setIsProcessing(true);
     try {
       await respondToBuddyRequest(currentConnectionId, { status: "accepted" });
+      // Refresh connection status after accepting
+      if ("_id" in user) {
+        await checkConnectionStatus(user._id);
+      }
       toast({
         title: "Request accepted!",
         description: `You're now connected with ${user.name}.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Failed to accept request",
-        description: "Please try again later.",
+        description: error?.response?.data?.message || "Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -261,14 +357,18 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
     setIsProcessing(true);
     try {
       await respondToBuddyRequest(currentConnectionId, { status: "declined" });
+      // Refresh connection status after declining
+      if ("_id" in user) {
+        await checkConnectionStatus(user._id);
+      }
       toast({
         title: "Request declined",
         description: `You've declined ${user.name}'s request.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Failed to decline request",
-        description: "Please try again later.",
+        description: error?.response?.data?.message || "Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -283,6 +383,34 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
 
   const handleBoostSent = () => {
     console.log(`Boost sent to ${user.name}`);
+  };
+
+  const handleUnlinkBuddy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentConnectionId) return;
+
+    setIsProcessing(true);
+    try {
+      await removeBuddyConnection(currentConnectionId);
+      // Refresh connection status after unlinking
+      if ("_id" in user) {
+        await checkConnectionStatus(user._id);
+        await fetchPendingRequests();
+        await fetchReceivedRequests();
+      }
+      toast({
+        title: "Buddy unlinked",
+        description: `You've unlinked ${user.name}.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to unlink buddy",
+        description: error?.response?.data?.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const getMainActionButton = () => {
@@ -305,60 +433,94 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
       );
     }
 
-    // Check if this is a received request
-    if (currentConnectionStatus === "pending" && currentConnectionId) {
-      return (
-        <div className="flex gap-2">
-          <Button
-            variant="default"
-            size="sm"
-            className="rounded-full bg-green-500 hover:bg-green-600 text-white px-3"
-            onClick={handleAcceptRequest}
-            disabled={isProcessing}
-          >
-            <Check className="w-4 h-4" />
-            Accept
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full border-red-200 text-red-500 hover:bg-red-500 hover:text-white px-3"
-            onClick={handleDeclineRequest}
-            disabled={isProcessing}
-          >
-            <X className="w-4 h-4" />
-            Decline
-          </Button>
-        </div>
-      );
-    }
-
     // Handle different connection statuses
     switch (currentConnectionStatus) {
       case "accepted":
+        // When accepted, show message and unlink options
         return (
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full border-buddy-purple/20 text-buddy-purple hover:bg-buddy-purple hover:text-white transition-all px-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MessageCircle className="w-4 h-4 mr-1" />
-            Message
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full border-buddy-purple/20 text-buddy-purple hover:bg-buddy-purple hover:text-white transition-all px-3"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onSendMessage) {
+                  onSendMessage(user._id);
+                }
+              }}
+            >
+              <MessageCircle className="w-4 h-4" />
+              Chat
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full border-red-200 text-red-500 hover:bg-red-50 hover:border-red-400 px-3"
+              onClick={handleUnlinkBuddy}
+              disabled={isProcessing}
+              title="Unlink buddy"
+            >
+              <UserMinus className="w-4 h-4" />
+              Unlink
+            </Button>
+          </div>
         );
       case "pending":
-        return (
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full border-buddy-orange/20 text-buddy-orange px-4"
-            disabled
-          >
-            <Clock className="w-4 h-4 mr-1" />
-            Pending
-          </Button>
-        );
+        // Show different UI based on whether user sent or received the request
+        if (isRequester === true) {
+          // Current user sent the request - show pending status
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full border-buddy-orange/20 text-buddy-orange px-4"
+              disabled
+            >
+              <Clock className="w-4 h-4 mr-1" />
+              Pending
+            </Button>
+          );
+        } else if (isRequester === false) {
+          // Current user received the request - show accept/decline buttons
+          return (
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                className="rounded-full bg-green-500 hover:bg-green-600 text-white px-3"
+                onClick={handleAcceptRequest}
+                disabled={isProcessing}
+              >
+                <Check className="w-4 h-4" />
+                Accept
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-red-200 text-red-500 hover:bg-red-500 hover:text-white px-3"
+                onClick={handleDeclineRequest}
+                disabled={isProcessing}
+              >
+                <X className="w-4 h-4" />
+                Decline
+              </Button>
+            </div>
+          );
+        } else {
+          // Unknown state - show pending
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full border-buddy-orange/20 text-buddy-orange px-4"
+              disabled
+            >
+              <Clock className="w-4 h-4 mr-1" />
+              Pending
+            </Button>
+          );
+        }
       case "declined":
         return (
           <Button
@@ -389,7 +551,6 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
   };
 
   const profileImage = getProfileImage();
-  const activityStats = getActivityStats();
 
   return (
     <TooltipProvider>
@@ -398,6 +559,15 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
         className="group relative overflow-hidden bg-white border shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer min-h-[400px] flex flex-col"
         onClick={handleCardClick}
       >
+        {/* Buddies Badge - Show when connection is accepted */}
+        {currentConnectionStatus === "accepted" && (
+          <Badge
+            className="absolute top-6 left-5 z-10 bg-gradient-to-r from-buddy-purple to-buddy-blue text-white border-0 shadow-lg flex items-center gap-1"
+          >
+            <Users className="w-3 h-3" />
+            Buddies
+          </Badge>
+        )}
         {/* Profile Image Section with Padding */}
         <div className="p-3 pb-0">
           <div className="relative w-full h-48 overflow-hidden rounded-sm">

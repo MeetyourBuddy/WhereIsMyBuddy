@@ -7,6 +7,7 @@ export interface NotificationData {
     | "buddy_accepted"
     | "buddy_declined"
     | "activity_invite"
+    | "activity_invitation"
     | "activity_comment"
     | "checkin_comment"
     | "milestone_achieved"

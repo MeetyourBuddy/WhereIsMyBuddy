@@ -218,6 +218,24 @@ export class NotificationManagerService {
     });
   }
 
+  async createBuddyDeclinedNotification(
+    recipientId: string,
+    senderId: string,
+  ): Promise<NotificationResponse> {
+    const sender = await this.userModel.findById(senderId);
+    if (!sender) throw new Error('Sender not found');
+
+    return this.createNotification({
+      recipientId,
+      senderId,
+      type: NotificationType.BUDDY_DECLINED,
+      title: 'Buddy Request Declined',
+      message: `${sender.name} declined your buddy request`,
+      priority: NotificationPriority.LOW,
+      metadata: { senderName: sender.name },
+    });
+  }
+
   async createActivityCommentNotification(
     recipientId: string,
     senderId: string,
