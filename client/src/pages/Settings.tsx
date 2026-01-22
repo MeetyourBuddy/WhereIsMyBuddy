@@ -1180,8 +1180,8 @@ const Settings: React.FC = () => {
                                   + Add Interest
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="sm:max-w-2xl max-h-[80vh]">
-                                <DialogHeader>
+                              <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+                                <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
                                   <DialogTitle>
                                     Select Your Interests
                                   </DialogTitle>
@@ -1190,7 +1190,9 @@ const Settings: React.FC = () => {
                                     find better buddy matches
                                   </p>
                                 </DialogHeader>
-                                <div className="space-y-4">
+                                
+                                {/* Scrollable Content */}
+                                <div className="flex-1 overflow-y-auto px-6 space-y-4">
                                   {/* Interest Counter */}
                                   <div className="bg-gradient-to-r from-buddy-purple/10 to-buddy-orange/10 p-4 rounded-2xl border border-buddy-purple/20">
                                     <div className="flex items-center justify-between">
@@ -1209,77 +1211,75 @@ const Settings: React.FC = () => {
                                   </div>
 
                                   {/* Interest Categories */}
-                                  <ScrollArea className="h-[400px] w-full">
-                                    <div className="space-y-6 pr-4">
-                                      {activityCategories.map((category) => (
-                                        <div
-                                          key={category.value}
-                                          className="space-y-4"
-                                        >
-                                          <div className="flex items-center space-x-3">
-                                            <div className="w-2 h-2 bg-gradient-to-r from-buddy-purple to-buddy-orange rounded-full"></div>
-                                            <h6 className="font-bold text-lg text-buddy-gray-900">
-                                              {category.label}
-                                            </h6>
-                                          </div>
-                                          <div className="flex flex-wrap gap-3">
-                                            {category.interests.map(
-                                              (interest) => {
-                                                const isSelected =
-                                                  selectedInterests.includes(
-                                                    interest
-                                                  );
-                                                return (
-                                                  <button
-                                                    key={interest}
-                                                    type="button"
-                                                    className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 hover:scale-105 ${
-                                                      isSelected
-                                                        ? "bg-gradient-to-r from-buddy-purple to-buddy-orange text-white shadow-lg"
-                                                        : "bg-buddy-gray-100 text-buddy-gray-700 hover:bg-buddy-gray-200 border-2 border-transparent hover:border-buddy-purple/20"
-                                                    }`}
-                                                    onClick={() =>
-                                                      toggleInterest(
-                                                        interest,
-                                                        category.value
-                                                      )
-                                                    }
-                                                  >
-                                                    {interest}
-                                                  </button>
-                                                );
-                                              }
-                                            )}
-                                          </div>
+                                  <div className="space-y-6 pb-4">
+                                    {activityCategories.map((category) => (
+                                      <div
+                                        key={category.value}
+                                        className="space-y-4"
+                                      >
+                                        <div className="flex items-center space-x-3">
+                                          <div className="w-2 h-2 bg-gradient-to-r from-buddy-purple to-buddy-orange rounded-full"></div>
+                                          <h6 className="font-bold text-lg text-buddy-gray-900">
+                                            {category.label}
+                                          </h6>
                                         </div>
-                                      ))}
-                                    </div>
-                                  </ScrollArea>
-
-                                  {/* Action Buttons */}
-                                  <div className="flex justify-end space-x-2 pt-4 border-t border-buddy-gray-200">
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        setSelectedInterests([]);
-                                        setSelectedCategories([]);
-                                        setIsAddInterestOpen(false);
-                                      }}
-                                      className="rounded-full"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      onClick={handleAddSelectedInterests}
-                                      disabled={selectedInterests.length === 0}
-                                      className="rounded-full"
-                                    >
-                                      Add {selectedInterests.length} Interest
-                                      {selectedInterests.length !== 1
-                                        ? "s"
-                                        : ""}
-                                    </Button>
+                                        <div className="flex flex-wrap gap-3">
+                                          {category.interests.map(
+                                            (interest) => {
+                                              const isSelected =
+                                                selectedInterests.includes(
+                                                  interest
+                                                );
+                                              return (
+                                                <button
+                                                  key={interest}
+                                                  type="button"
+                                                  className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 hover:scale-105 ${
+                                                    isSelected
+                                                      ? "bg-gradient-to-r from-buddy-purple to-buddy-orange text-white shadow-lg"
+                                                      : "bg-buddy-gray-100 text-buddy-gray-700 hover:bg-buddy-gray-200 border-2 border-transparent hover:border-buddy-purple/20"
+                                                  }`}
+                                                  onClick={() =>
+                                                    toggleInterest(
+                                                      interest,
+                                                      category.value
+                                                    )
+                                                  }
+                                                >
+                                                  {interest}
+                                                </button>
+                                              );
+                                            }
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
+                                </div>
+
+                                {/* Fixed Footer */}
+                                <div className="flex justify-end space-x-2 pt-4 pb-6 px-6 border-t border-buddy-gray-200 flex-shrink-0">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedInterests([]);
+                                      setSelectedCategories([]);
+                                      setIsAddInterestOpen(false);
+                                    }}
+                                    className="rounded-full"
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    onClick={handleAddSelectedInterests}
+                                    disabled={selectedInterests.length === 0}
+                                    className="rounded-full"
+                                  >
+                                    Add {selectedInterests.length} Interest
+                                    {selectedInterests.length !== 1
+                                      ? "s"
+                                      : ""}
+                                  </Button>
                                 </div>
                               </DialogContent>
                             </Dialog>
