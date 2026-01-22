@@ -396,9 +396,9 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl bg-white rounded-2xl border shadow-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] bg-white rounded-2xl border shadow-2xl p-0 flex flex-col">
         {/* Motivational Header */}
-        <div className="bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden flex-shrink-0">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
 
@@ -453,7 +453,8 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
           </DialogHeader>
         </div>
 
-        <div className="p-6">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6">
           {/* Motivational Message */}
           <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
             <div className="flex items-center space-x-2 mb-2">
@@ -597,7 +598,8 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="p-6 pt-0 bg-buddy-gray-50">
+        {/* Fixed Footer */}
+        <DialogFooter className="p-6 pt-0 bg-buddy-gray-50 flex-shrink-0">
           <div className="flex w-full space-x-3">
             <Button
               variant="outline"

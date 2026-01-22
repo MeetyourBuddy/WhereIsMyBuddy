@@ -261,8 +261,8 @@ const EditActivityDialog = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white/95 to-buddy-purple/5 backdrop-blur-sm border-2 border-white/20">
-        <DialogHeader className="pb-6">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] bg-gradient-to-br from-white/95 to-buddy-purple/5 backdrop-blur-sm border-2 border-white/20 flex flex-col p-0">
+        <DialogHeader className="pb-6 px-6 pt-6 flex-shrink-0">
           <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
             Edit Your Activity
           </DialogTitle>
@@ -271,11 +271,13 @@ const EditActivityDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-8 py-4"
-          >
+        {/* Scrollable Form Content */}
+        <div className="flex-1 overflow-y-auto px-6">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-8 py-4"
+            >
             {/* Basic Information Section */}
             <div className="space-y-6 p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-buddy-purple/20">
               <div className="flex items-center gap-3 mb-4">
@@ -839,27 +841,30 @@ const EditActivityDialog = ({
                 </motion.div>
               )}
             </div>
+            </form>
+          </Form>
+        </div>
 
-            <DialogFooter className="pt-8 border-t border-buddy-gray-200/50">
-              <div className="flex gap-4 w-full">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 rounded-full border-2 border-buddy-gray-300 text-buddy-gray-700 hover:bg-buddy-gray-50 hover:border-buddy-gray-400 transition-all duration-300 h-12 text-base font-medium"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 h-12 text-base font-semibold"
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </DialogFooter>
-          </form>
-        </Form>
+        {/* Fixed Footer */}
+        <DialogFooter className="pt-8 border-t border-buddy-gray-200/50 px-6 pb-6 flex-shrink-0">
+          <div className="flex gap-4 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="flex-1 rounded-full border-2 border-buddy-gray-300 text-buddy-gray-700 hover:bg-buddy-gray-50 hover:border-buddy-gray-400 transition-all duration-300 h-12 text-base font-medium"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={form.handleSubmit(onSubmit)}
+              className="flex-1 rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 h-12 text-base font-semibold"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

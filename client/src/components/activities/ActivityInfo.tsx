@@ -12,6 +12,8 @@ import {
   UserMinus,
   Users,
   Target,
+  FileText,
+  CheckCircle2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -291,7 +293,7 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
         {/* Rules */}
         <div>
           <h4 className="text-xs font-medium text-buddy-gray-500 mb-2 flex items-center">
-            <Shield className="h-4 w-4 text-buddy-orange mr-1" />
+            <FileText className="h-4 w-4 text-buddy-purple mr-1" />
             Rules & Guidelines
           </h4>
           <Accordion type="multiple" className="w-full">
@@ -303,15 +305,15 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
               >
                 <AccordionTrigger className="py-2 text-sm hover:no-underline">
                   <div className="flex items-start text-left">
-                    <AlertTriangle
-                      className={`h-3 w-3 mt-1 mr-2 ${rule.isDefault ? "text-buddy-orange" : "text-buddy-purple"}`}
+                    <CheckCircle2
+                      className={`h-3 w-3 mt-1 mr-2 ${rule.isDefault ? "text-buddy-gray-500" : "text-buddy-purple"}`}
                     />
                     <span className="text-sm text-buddy-gray-700 font-medium">
                       {rule.title}
                       {rule.isDefault && (
                         <Badge
                           variant="outline"
-                          className="ml-2 text-xs bg-buddy-orange/10 text-buddy-orange border-buddy-orange/20"
+                          className="ml-2 text-xs bg-buddy-gray-100 text-buddy-gray-700 border-buddy-gray-200"
                         >
                           Default
                         </Badge>

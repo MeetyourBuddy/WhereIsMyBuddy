@@ -43,6 +43,7 @@ import { tokenService } from "@/services/token/token-service";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 import { activityInvitationService } from "@/services/api/activity/activity-invitation.service";
 import { useQuery } from "@tanstack/react-query";
+import { differenceInDays } from "date-fns";
 
 const Activities = () => {
   useScrollToTopImmediate();
@@ -421,9 +422,16 @@ const Activities = () => {
         break;
 
       case "popular":
-        // Sort by participant count (most popular first)
+        // Sort by participant count (most popular first), exclude ended activities
         filtered = filtered
-          .filter((activity) => (activity.participants?.length || 0) > 0)
+          .filter((activity) => {
+            // Check if activity has ended
+            const isEnded = activity.endDate 
+              ? differenceInDays(new Date(activity.endDate), new Date()) < 0
+              : false;
+            // Only show non-ended activities with participants
+            return !isEnded && (activity.participants?.length || 0) > 0;
+          })
           .sort(
             (a, b) =>
               (b.participants?.length || 0) - (a.participants?.length || 0)
@@ -431,12 +439,21 @@ const Activities = () => {
         break;
 
       case "new":
-        // Sort by creation date (newest first)
-        filtered = filtered.sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.startDate);
-          const dateB = new Date(b.createdAt || b.startDate);
-          return dateB.getTime() - dateA.getTime();
-        });
+        // Sort by creation date (newest first), exclude ended activities
+        filtered = filtered
+          .filter((activity) => {
+            // Check if activity has ended
+            const isEnded = activity.endDate 
+              ? differenceInDays(new Date(activity.endDate), new Date()) < 0
+              : false;
+            // Only show non-ended activities
+            return !isEnded;
+          })
+          .sort((a, b) => {
+            const dateA = new Date(a.createdAt || a.startDate);
+            const dateB = new Date(b.createdAt || b.startDate);
+            return dateB.getTime() - dateA.getTime();
+          });
         break;
 
       case "soon":
