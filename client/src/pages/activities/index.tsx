@@ -24,6 +24,8 @@ import {
   User,
   Sparkles,
   CalendarClock,
+  LockKeyhole,
+  Globe,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -63,7 +65,14 @@ const Activities = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9); // 3x3 grid
   const [showFilters, setShowFilters] = useState(true);
-  const [sortOption, setSortOption] = useState<string>("default");
+  const [sortOption, setSortOption] = useState<string>("newest");
+
+  // Status filter: Active / Ended (default: show active only)
+  const [includeActive, setIncludeActive] = useState(true);
+  const [includeEnded, setIncludeEnded] = useState(false);
+  // Visibility filter: Public / Private (default: show public only)
+  const [includePublic, setIncludePublic] = useState(true);
+  const [includePrivate, setIncludePrivate] = useState(false);
 
   // Sort options for activities
   const sortOptions = [
@@ -498,6 +507,32 @@ const Activities = () => {
       return matchesSearch && matchesCategory;
     });
 
+    // Apply status filter (Active / Ended)
+    const filterByStatus = includeActive !== includeEnded;
+    if (filterByStatus) {
+      filtered = filtered.filter((activity) => {
+        const isEnded = activity.endDate
+          ? differenceInDays(new Date(activity.endDate), new Date()) < 0
+          : false;
+        if (includeActive && !includeEnded) return !isEnded;
+        if (!includeActive && includeEnded) return isEnded;
+        return true;
+      });
+    }
+
+    // Apply visibility filter (Public / Private)
+    const filterByVisibility = includePublic !== includePrivate;
+    if (filterByVisibility) {
+      filtered = filtered.filter((activity) => {
+        const type = (activity.type ?? "").toString().toLowerCase();
+        const isPublic = type === "public";
+        const isPrivate = type === "private";
+        if (includePublic && !includePrivate) return isPublic;
+        if (!includePublic && includePrivate) return isPrivate;
+        return true;
+      });
+    }
+
     // Apply sorting based on sortOption
     switch (sortOption) {
       case "popular":
@@ -534,7 +569,12 @@ const Activities = () => {
         filtered.sort((a, b) => b.title.localeCompare(a.title));
         break;
       default:
-        // Keep default order
+        // Default: newest first (same as "newest")
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.startDate);
+          const dateB = new Date(b.createdAt || b.startDate);
+          return dateB.getTime() - dateA.getTime();
+        });
         break;
     }
 
@@ -543,7 +583,7 @@ const Activities = () => {
     console.log("📊 Total count:", filtered.length);
 
     return filtered;
-  }, [activitiesFromStore, activeTab, searchQuery, activeFilters, user?._id, sortOption]);
+  }, [activitiesFromStore, activeTab, searchQuery, activeFilters, user?._id, sortOption, includeActive, includeEnded, includePublic, includePrivate]);
 
   // Pagination logic
   const totalPages = Math.ceil(
@@ -559,7 +599,7 @@ const Activities = () => {
   // Reset to first page when filters or tab change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, activeFilters, activeTab]);
+  }, [searchQuery, activeFilters, activeTab, includeActive, includeEnded, includePublic, includePrivate]);
 
   // Tab change handler
   const handleTabChange = (value: string) => {
@@ -595,6 +635,10 @@ const Activities = () => {
     setActiveFilters(["All"]);
     setSearchQuery("");
     setActiveTab("all");
+    setIncludeActive(true);
+    setIncludeEnded(false);
+    setIncludePublic(true);
+    setIncludePrivate(false);
   };
 
   return (
@@ -684,28 +728,91 @@ const Activities = () => {
             </div>
 
             {showFilters && (
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
-                {categories.map((category) => (
+              <div className="flex flex-col gap-2 mt-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  <span className="text-xs text-buddy-gray-500 font-medium self-center mr-1">Status:</span>
                   <Button
-                    key={category}
-                    variant={
-                      activeFilters.includes(category) ? "primary" : "outline"
-                    }
+                    variant={includeActive ? "primary" : "outline"}
                     size="small"
                     className={
-                      activeFilters.includes(category)
+                      includeActive
                         ? "bg-buddy-purple text-white rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                         : "bg-white text-buddy-gray-700 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
                     }
-                    onClick={() => toggleFilter(category)}
+                    onClick={() => setIncludeActive(!includeActive)}
                   >
-                    {category}
+                    <CalendarClock className="w-3 h-3 mr-1.5" />
+                    Active
                   </Button>
-                ))}
+                  <Button
+                    variant={includeEnded ? "primary" : "outline"}
+                    size="small"
+                    className={
+                      includeEnded
+                        ? "bg-buddy-purple text-white rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                        : "bg-white text-buddy-gray-700 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                    }
+                    onClick={() => setIncludeEnded(!includeEnded)}
+                  >
+                    <Clock className="w-3 h-3 mr-1.5" />
+                    Ended
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  <span className="text-xs text-buddy-gray-500 font-medium self-center mr-1">Visibility:</span>
+                  <Button
+                    variant={includePublic ? "primary" : "outline"}
+                    size="small"
+                    className={
+                      includePublic
+                        ? "bg-buddy-purple text-white rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                        : "bg-white text-buddy-gray-700 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                    }
+                    onClick={() => setIncludePublic(!includePublic)}
+                  >
+                    <Globe className="w-3 h-3 mr-1.5" />
+                    Public
+                  </Button>
+                  <Button
+                    variant={includePrivate ? "primary" : "outline"}
+                    size="small"
+                    className={
+                      includePrivate
+                        ? "bg-buddy-purple text-white rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                        : "bg-white text-buddy-gray-700 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                    }
+                    onClick={() => setIncludePrivate(!includePrivate)}
+                  >
+                    <LockKeyhole className="w-3 h-3 mr-1.5" />
+                    Private
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {categories.map((category) => (
+                    <Button
+                      key={category}
+                      variant={
+                        activeFilters.includes(category) ? "primary" : "outline"
+                      }
+                      size="small"
+                      className={
+                        activeFilters.includes(category)
+                          ? "bg-buddy-purple text-white rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                          : "bg-white text-buddy-gray-700 rounded-full text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+                      }
+                      onClick={() => toggleFilter(category)}
+                    >
+                      {category}
+                    </Button>
+                  ))}
 
                 {(searchQuery ||
                   (activeFilters.length > 0 &&
-                    !activeFilters.includes("All"))) && (
+                    !activeFilters.includes("All")) ||
+                  !includeActive ||
+                  includeEnded ||
+                  !includePublic ||
+                  includePrivate) && (
                   <Button
                     variant="ghost"
                     size="small"
@@ -717,6 +824,7 @@ const Activities = () => {
                     <span className="sm:hidden">Clear</span>
                   </Button>
                 )}
+                </div>
               </div>
             )}
           </div>

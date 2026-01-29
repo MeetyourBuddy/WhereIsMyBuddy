@@ -305,14 +305,28 @@ const Settings: React.FC = () => {
     try {
       setIsSaving(true);
 
+      // Ensure country is a string (backend expects string; avoid sending object)
+      const countryValue =
+        typeof selectedCountry === "string"
+          ? selectedCountry
+          : selectedCountry != null &&
+              typeof selectedCountry === "object" &&
+              "id" in selectedCountry
+            ? (selectedCountry as { id: string }).id
+            : undefined;
+
       const updateData: UpdateProfileData = {
-        name: profile.name,
-        bio: profile.bio,
-        avatar: currentAvatar,
-        country: (selectedCountry as any) || undefined,
-        city: profile.city,
-        interestsCategories: profile.interestsCategories as any,
-        interestsCommodities: profile.interests,
+        name: profile.name?.trim() || undefined,
+        bio: profile.bio?.trim() || undefined,
+        avatar: currentAvatar?.trim() || undefined,
+        country: countryValue,
+        city: profile.city?.trim() || undefined,
+        interestsCategories: Array.isArray(profile.interestsCategories)
+          ? profile.interestsCategories.map((c) => (typeof c === "string" ? c : String(c)))
+          : undefined,
+        interestsCommodities: Array.isArray(profile.interests)
+          ? profile.interests.filter((i): i is string => typeof i === "string")
+          : undefined,
       };
 
       const response = await settingsService.updateProfile(updateData);
@@ -353,11 +367,17 @@ const Settings: React.FC = () => {
           description: "Your profile has been successfully updated",
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to update profile:", error);
+      const message =
+        error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : null;
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description:
+          message || "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {

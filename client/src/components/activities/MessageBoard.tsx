@@ -309,21 +309,33 @@ const MessageBoard: React.FC<MessageBoardProps> = ({ activityId, isActivityEnded
         }
       );
 
+      // Support both populated userId object and plain id string from API
+      const userIdRes =
+        apiMessage.userId && typeof apiMessage.userId === "object"
+          ? (apiMessage.userId as { _id?: string; id?: string; name?: string; avatar?: string })
+          : null;
+      const resolvedUserId =
+        userIdRes?._id ?? userIdRes?.id ?? (typeof apiMessage.userId === "string" ? apiMessage.userId : currentUserId);
+      const resolvedUserName = userIdRes?.name ?? user?.name ?? "You";
+      const resolvedUserAvatar = userIdRes?.avatar ?? user?.avatar;
+
       // Replace optimistic message with real API response
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
           msg.id === tempId
             ? {
-                id: apiMessage._id,
-                userId: apiMessage.userId._id,
-                userName: apiMessage.userId.name,
-                userAvatar: apiMessage.userId.avatar,
-                content: apiMessage.content,
-                timestamp: new Date(apiMessage.createdAt),
-                likes: apiMessage.likes,
-                liked: apiMessage.likedBy.includes(currentUserId),
-                isPinned: apiMessage.isPinned,
-                tags: apiMessage.tags,
+                id: apiMessage._id ?? tempId,
+                userId: resolvedUserId,
+                userName: resolvedUserName,
+                userAvatar: resolvedUserAvatar,
+                content: apiMessage.content ?? messageContent,
+                timestamp: new Date(apiMessage.createdAt ?? Date.now()),
+                likes: apiMessage.likes ?? 0,
+                liked: Array.isArray(apiMessage.likedBy)
+                  ? apiMessage.likedBy.includes(currentUserId)
+                  : false,
+                isPinned: apiMessage.isPinned ?? false,
+                tags: apiMessage.tags ?? [],
                 isAdmin: isUserAdmin,
               }
             : msg

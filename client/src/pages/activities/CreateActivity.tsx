@@ -60,6 +60,8 @@ import {
 import { useActivityStore } from "@/store/activity.store";
 import { ApiResponse } from "@/types";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import { useQueryClient } from "@tanstack/react-query";
+import { activityQueryKeys } from "@/hooks/useActivityData";
 
 const STEPS = [
   {
@@ -234,6 +236,7 @@ interface FormChangeEvent {
 
 const CreateActivity = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0);
   // Scroll to top on mount and when step changes
   useScrollToTopImmediate([currentStep]);
@@ -490,6 +493,8 @@ const CreateActivity = () => {
       console.log("Activity created in the client:", activity);
 
       if (activity.success) {
+        // Invalidate activities list so Dashboard and Activities page refetch
+        await queryClient.invalidateQueries({ queryKey: activityQueryKeys.lists() });
         toast.success("Activity created successfully");
         navigate(`/activities/${activity.data._id}`);
       }

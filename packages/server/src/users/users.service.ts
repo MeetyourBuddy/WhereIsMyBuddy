@@ -50,6 +50,7 @@ export class UsersService {
     const users = await this.userModel
       .find(searchQuery)
       .select('-password -refreshToken -email')
+      .sort({ createdAt: -1 }) // Newest users first by default
       .skip(offset)
       .limit(limit)
       .exec();

@@ -266,12 +266,6 @@ const Buddies = () => {
     loadInitialData();
   }, [isAuthenticated, activeTab]); // Only reload when tab changes
 
-  // Debug effect to monitor searchResults changes
-  useEffect(() => {
-    console.log("searchResults changed:", searchResults);
-    console.log("searchResults length:", searchResults.length);
-  }, [searchResults]);
-
   // Handle search input with debouncing
   const handleSearch = useCallback(
     debounce(async (query: string, filters: UserSearchParams) => {
@@ -513,11 +507,15 @@ const Buddies = () => {
       : Math.ceil(filteredBuddies.length / itemsPerPage);
   }, [activeTab, myBuddies.length, searchMetadata, filteredBuddies.length, itemsPerPage]);
 
+  // For "all" tab we use backend pagination: searchResults is already the current page
   const paginatedBuddies = useMemo(() => {
+    if (activeTab === "all") {
+      return filteredBuddies; // No slice; API returns one page
+    }
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredBuddies.slice(startIndex, endIndex);
-  }, [filteredBuddies, currentPage, itemsPerPage]);
+  }, [activeTab, filteredBuddies, currentPage, itemsPerPage]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -581,10 +579,17 @@ const Buddies = () => {
     }
   };
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = async (page: number) => {
     setCurrentPage(page);
-    // For backend pagination, we might need to fetch more data
-    // For now, we'll use frontend pagination
+    // For "all" tab, fetch the requested page from the API
+    if (activeTab === "all" && searchUsers) {
+      await searchUsers({
+        limit: itemsPerPage,
+        offset: (page - 1) * itemsPerPage,
+        search: searchQuery?.trim() || undefined,
+        ...searchFilters,
+      });
+    }
   };
 
   const clearFilters = () => {

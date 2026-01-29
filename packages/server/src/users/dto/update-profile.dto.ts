@@ -2,7 +2,6 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsOptional,
   IsString,
-  IsUrl,
   IsArray,
   ValidateIf,
   MaxLength,
@@ -25,10 +24,10 @@ export class UpdateProfileDto {
   @IsString()
   phoneNumber?: string;
 
-  @ApiPropertyOptional({ description: 'User avatar URL' })
+  @ApiPropertyOptional({ description: 'User avatar URL or data URL' })
   @IsOptional()
-  @ValidateIf((o, value) => value !== '')
-  @IsUrl()
+  @ValidateIf((o, value) => value !== '' && value != null)
+  @IsString()
   avatar?: string;
 
   @ApiPropertyOptional({ description: 'User country' })

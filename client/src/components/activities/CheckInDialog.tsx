@@ -46,6 +46,8 @@ import { UploadService } from "@/services/api/upload/upload-service";
 import { CheckInService } from "@/services/api/activity/reaction.service";
 import { ActivityService } from "@/services/api/activity/activity-service";
 import { useAuthStore } from "@/store/auth.store";
+import { useQueryClient } from "@tanstack/react-query";
+import { activityQueryKeys } from "@/hooks/useActivityData";
 
 interface CheckInDialogProps {
   children: React.ReactNode;
@@ -77,6 +79,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
     useCheckInStore();
   const { fetchUserBadges } = useBadgeStore();
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [overallStreak, setOverallStreak] = useState(0);
 
   // Fetch user progress when dialog opens
@@ -232,6 +235,17 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
       return;
     }
 
+    // Ensure we have the correct activity ID for this dialog (data integrity)
+    const activityId = activity?._id ?? activity?.id;
+    if (!activityId) {
+      toast({
+        title: "Error",
+        description: "Activity not found. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -346,9 +360,9 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         }
       }
 
-      // Prepare check-in data
+      // Prepare check-in data (use activityId from above to avoid wrong activity)
       const checkInData = {
-        activityId: activity._id,
+        activityId,
         type: (selectedFile ? "image" : "text") as "image" | "text", // Set type based on whether image is provided
         content: message, // Always use the text message
         imageUrl: imageUrl,
@@ -384,13 +398,22 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         setUploadedImageUrl(null);
         setOpen(false);
 
-        // Refresh stats and badges
-        await fetchCheckInStats(activity._id);
-        await fetchUserBadges(activity._id);
+        // Refresh stats and badges (use same activityId as check-in)
+        await fetchCheckInStats(activityId);
+        await fetchUserBadges(activityId);
+
+        // Invalidate React Query so activity page / dashboard refetch stats & progress
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: activityQueryKeys.stats(activityId) }),
+          queryClient.invalidateQueries({ queryKey: activityQueryKeys.progress(activityId) }),
+          queryClient.invalidateQueries({ queryKey: activityQueryKeys.detail(activityId) }),
+          queryClient.invalidateQueries({ queryKey: activityQueryKeys.participants(activityId) }),
+          queryClient.invalidateQueries({ queryKey: activityQueryKeys.lists() }),
+        ]);
 
         // Refetch user progress so "Your Progress" updates immediately
         try {
-          const response = await CheckInService.getUserProgress(activity._id);
+          const response = await CheckInService.getUserProgress(activityId);
           setUserProgress(response.data);
         } catch {
           // Non-blocking; progress will update on next open
