@@ -72,7 +72,6 @@ export class ActivityController {
     participants: Array<{
       id: string;
       name: string;
-      email: string;
       avatar?: string;
       checkIns: number;
       streak: number;
