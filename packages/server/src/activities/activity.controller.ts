@@ -58,6 +58,8 @@ export class ActivityController {
   @UseGuards(JwtAuthGuard)
   async getActivityStatistics(@Param('id') id: string): Promise<{
     longestStreak: number;
+    longestStreakParticipantId: string | null;
+    longestStreakParticipantName: string | null;
     highestCheckIns: number;
     averageProgress: number;
     totalParticipants: number;

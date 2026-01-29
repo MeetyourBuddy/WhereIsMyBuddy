@@ -41,6 +41,12 @@ import { ActivityService } from "@/services/api/activity/activity-service";
 import { BuddyConnectionService } from "@/services/api/buddy/buddy-connection.service";
 import { CheckInService } from "@/services/api/activity/reaction.service";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Dashboard = () => {
   useScrollToTopImmediate();
@@ -53,6 +59,7 @@ const Dashboard = () => {
     activeGoals: 0,
     buddies: 0,
     streak: 0,
+    longestStreakActivityTitle: "",
     profileCompletion: 0,
   });
   const [activeActivities, setActiveActivities] = useState([]);
@@ -212,6 +219,7 @@ const Dashboard = () => {
 
         // Get user's progress across all activities to calculate overall streak and progress %
         let overallStreak = 0;
+        let longestStreakActivityTitle = "";
         if (activeActivitiesData.length === 0) {
           setUserProgressByActivity({});
         } else {
@@ -228,25 +236,42 @@ const Dashboard = () => {
             // Store per-activity progress so "Your Progress" uses real check-in data
             setUserProgressByActivity(userProgressData || {});
 
-            // Calculate overall streak - find the maximum streak across all activities
-            const streaks = Object.values(userProgressData).map(
-              (progress) => progress.currentStreak || 0
-            );
-            overallStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
+            // Longest streak = max of each activity's longest streak (ever) for the current user
+            const entries = Object.entries(userProgressData);
+            if (entries.length > 0) {
+              let maxStreak = 0;
+              let activityIdWithMax = null;
+              for (const [activityId, progress] of entries) {
+                const streak =
+                  progress?.longestStreak ?? progress?.currentStreak ?? 0;
+                if (streak > maxStreak) {
+                  maxStreak = streak;
+                  activityIdWithMax = activityId;
+                }
+              }
+              overallStreak = maxStreak;
+              if (activityIdWithMax && activeActivitiesData.length > 0) {
+                const activity = activeActivitiesData.find(
+                  (a) => (a._id || a.id) === activityIdWithMax
+                );
+                longestStreakActivityTitle = activity?.title ?? "";
+              }
+            }
 
             console.log("🎯 Dashboard streak calculation:", {
               activityIds,
               userProgressResponse,
               userProgressData,
-              streaks,
+              longestStreakActivityTitle,
               overallStreak,
               user: user?.name || user?._id,
               detailedStreaks: Object.entries(userProgressData).map(
                 ([activityId, progress]) => ({
                   activityId,
-                  currentStreak: progress.currentStreak,
-                  completedCheckIns: progress.completedCheckIns,
-                  totalAvailableCheckIns: progress.totalAvailableCheckIns,
+                  currentStreak: progress?.currentStreak,
+                  longestStreak: progress?.longestStreak,
+                  completedCheckIns: progress?.completedCheckIns,
+                  totalAvailableCheckIns: progress?.totalAvailableCheckIns,
                 })
               ),
             });
@@ -265,6 +290,7 @@ const Dashboard = () => {
           activeGoals: activeActivitiesData.length,
           buddies: connections.length,
           streak: overallStreak,
+          longestStreakActivityTitle: longestStreakActivityTitle ?? "",
           profileCompletion: calculateProfileCompletion(user),
         });
       } catch (error) {
@@ -435,25 +461,45 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </Card>
-                <Card className="p-4 bg-gradient-to-br from-buddy-orange/10 to-buddy-orange/5 border border-buddy-orange/20 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-buddy-orange/20 rounded-full flex items-center justify-center">
-                      <Flame className="h-5 w-5 text-buddy-orange" />
-                    </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <div>
-                      <p className="text-sm text-buddy-gray-600">Longest Streak</p>
-                      <p className="text-xl font-bold text-buddy-orange">
-                        {isLoading ? (
-                          <div className="flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-buddy-orange/30 border-t-buddy-orange"></div>
+                      <Card className="p-4 bg-gradient-to-br from-buddy-orange/10 to-buddy-orange/5 border border-buddy-orange/20 rounded-2xl cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-buddy-orange/20 rounded-full flex items-center justify-center">
+                            <Flame className="h-5 w-5 text-buddy-orange" />
                           </div>
-                        ) : (
-                          `${userStats.streak} days`
-                        )}
-                      </p>
+                          <div>
+                            <p className="text-sm text-buddy-gray-600">Longest Streak</p>
+                            <p className="text-xl font-bold text-buddy-orange">
+                              {isLoading ? (
+                                <div className="flex items-center justify-center">
+                                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-buddy-orange/30 border-t-buddy-orange"></div>
+                                </div>
+                              ) : (
+                                `${userStats.streak} days`
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
                     </div>
-                  </div>
-                </Card>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-center">
+                    {userStats.streak > 0 ? (
+                      <>
+                        Congratulations on your <strong>{userStats.streak}-day</strong> longest streak!
+                        {userStats.longestStreakActivityTitle ? (
+                          <> You achieved this in <strong>{userStats.longestStreakActivityTitle}</strong>.</>
+                        ) : (
+                          " Keep checking in!"
+                        )}
+                      </>
+                    ) : (
+                      "This shows your longest streak across all your activities. Keep checking in!"
+                    )}
+                  </TooltipContent>
+                </Tooltip>
               </div>
 
               {/* Profile Completion Card / Guest Empty State */}

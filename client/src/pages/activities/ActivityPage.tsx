@@ -44,6 +44,12 @@ import InviteMembersModal from "@/components/activities/members/InviteMembersMod
 import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInDays } from "date-fns";
 import { Badge, badgeVariants } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { VariantProps } from "class-variance-authority";
 import EditActivityDialog from "@/components/activities/EditActivityDialog";
 import ShareActivityModal from "@/components/activities/ShareActivityModal";
@@ -173,7 +179,7 @@ const ActivityPage = () => {
     checkCurrentPeriodStatus();
   }, [activityId, user?._id, refreshDependency]);
 
-  // Fetch leaderboard data for accurate stats (authenticated only)
+  // Fetch leaderboard data for highest check-ins (authenticated only)
   useEffect(() => {
     const fetchLeaderboardData = async () => {
       if (!activityId || isGuest) return;
@@ -184,12 +190,7 @@ const ActivityPage = () => {
         if (response.data?.participants) {
           setLeaderboardData(response.data.participants);
 
-          // Calculate accurate stats from leaderboard data
           const participants = response.data.participants;
-          const longestStreakParticipant = participants.reduce(
-            (max, p) => (p.streak > max.streak ? p : max),
-            participants[0] || { streak: 0, name: "" }
-          );
           const highestCheckInsParticipant = participants.reduce(
             (max, p) => (p.checkIns > max.checkIns ? p : max),
             participants[0] || { checkIns: 0, name: "" }
@@ -197,9 +198,7 @@ const ActivityPage = () => {
 
           setActivityStats((prev) => ({
             ...prev,
-            longestStreak: longestStreakParticipant.streak || 0,
             highestCheckIns: highestCheckInsParticipant.checkIns || 0,
-            longestStreakParticipant: longestStreakParticipant.name || "",
             highestCheckInsParticipant: highestCheckInsParticipant.name || "",
           }));
         }
@@ -211,17 +210,26 @@ const ActivityPage = () => {
     fetchLeaderboardData();
   }, [activityId, isGuest, refreshDependency]);
 
-  // Update activity stats from unified data (fallback)
+  // Longest streak comes from stats API (participant with longest streak ever; tie-breaker: first to achieve)
   useEffect(() => {
-    if (statsQuery.data && leaderboardData.length === 0) {
+    const stats = statsQuery.data as
+      | {
+          longestStreak?: number;
+          longestStreakParticipantName?: string | null;
+          highestCheckIns?: number;
+          averageProgress?: number;
+        }
+      | undefined;
+    if (stats) {
       setActivityStats((prev) => ({
         ...prev,
-        longestStreak: statsQuery.data.longestStreak,
-        highestCheckIns: statsQuery.data.highestCheckIns,
-        averageProgress: statsQuery.data.averageProgress,
+        longestStreak: stats.longestStreak ?? prev.longestStreak,
+        longestStreakParticipant:
+          stats.longestStreakParticipantName ?? prev.longestStreakParticipant,
+        highestCheckIns: stats.highestCheckIns ?? prev.highestCheckIns,
+        averageProgress: stats.averageProgress ?? prev.averageProgress,
       }));
-    } else if (currentActivity && leaderboardData.length === 0) {
-      // Fallback to basic stats from activity data
+    } else if (currentActivity && !statsQuery.data) {
       setActivityStats((prev) => ({
         ...prev,
         longestStreak: currentActivity.streakCount || 0,
@@ -229,7 +237,7 @@ const ActivityPage = () => {
         averageProgress: currentActivity.progress || 0,
       }));
     }
-  }, [statsQuery.data, currentActivity, leaderboardData.length]);
+  }, [statsQuery.data, currentActivity]);
 
   // Check if current user is a participant using helper function
   const userId = user?._id || user?.id;
@@ -600,19 +608,44 @@ const ActivityPage = () => {
 
             {!isGuest && (
               <>
-                <Card className="p-4 flex items-center bg-gradient-to-br from-buddy-blue/10 to-buddy-blue/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
-                  <div className="w-10 h-10 rounded-full bg-buddy-blue/20 flex items-center justify-center mr-3">
-                    <ClipboardCheck className="w-5 h-5 text-buddy-blue" />
-                  </div>
-                  <div>
-                    <p className="text-xs md:text-sm text-buddy-gray-600">
-                      Most Check-ins
-                    </p>
-                    <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-blue to-buddy-blue-light bg-clip-text text-transparent">
-                      {activityStats.highestCheckIns}
-                    </p>
-                  </div>
-                </Card>
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-default outline-none">
+                        <Card className="p-4 flex items-center bg-gradient-to-br from-buddy-blue/10 to-buddy-blue/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
+                          <div className="w-10 h-10 rounded-full bg-buddy-blue/20 flex items-center justify-center mr-3">
+                            <ClipboardCheck className="w-5 h-5 text-buddy-blue" />
+                          </div>
+                          <div>
+                            <p className="text-xs md:text-sm text-buddy-gray-600">
+                              Most Check-ins
+                            </p>
+                            <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-buddy-blue to-buddy-blue-light bg-clip-text text-transparent">
+                              {activityStats.highestCheckIns}
+                            </p>
+                          </div>
+                        </Card>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs z-[100]">
+                      {activityStats.highestCheckIns > 0 &&
+                      activityStats.highestCheckInsParticipant ? (
+                        <p className="text-sm">
+                          <span className="font-semibold">
+                            {activityStats.highestCheckInsParticipant}
+                          </span>{" "}
+                          has the most check-ins with{" "}
+                          {activityStats.highestCheckIns} total. Great
+                          consistency!
+                        </p>
+                      ) : (
+                        <p className="text-sm">
+                          Most check-ins among participants in this activity.
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
                 <Card className="p-4 flex items-center bg-gradient-to-br from-buddy-green/10 to-buddy-green/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
                   <div className="w-10 h-10 rounded-full bg-buddy-green/20 flex items-center justify-center mr-3">
@@ -628,19 +661,43 @@ const ActivityPage = () => {
                   </div>
                 </Card>
 
-                <Card className="p-4 flex items-center bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center mr-3">
-                    <Flame className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs md:text-sm text-buddy-gray-600">
-                      Longest Streak
-                    </p>
-                    <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">
-                      {activityStats.longestStreak} days
-                    </p>
-                  </div>
-                </Card>
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-default outline-none">
+                        <Card className="p-4 flex items-center bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-2xl border border-white/80 hover:shadow-md transition-all duration-300">
+                          <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center mr-3">
+                            <Flame className="w-5 h-5 text-amber-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs md:text-sm text-buddy-gray-600">
+                              Longest Streak
+                            </p>
+                            <p className="text-lg md:text-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-400 bg-clip-text text-transparent">
+                              {activityStats.longestStreak} days
+                            </p>
+                          </div>
+                        </Card>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs z-[100]">
+                      {activityStats.longestStreak > 0 &&
+                      activityStats.longestStreakParticipant ? (
+                        <p className="text-sm">
+                          <span className="font-semibold">
+                            {activityStats.longestStreakParticipant}
+                          </span>{" "}
+                          holds the longest streak—{activityStats.longestStreak}{" "}
+                          consecutive periods. Keep it up!
+                        </p>
+                      ) : (
+                        <p className="text-sm">
+                          Longest streak among participants in this activity.
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </>
             )}
           </div>

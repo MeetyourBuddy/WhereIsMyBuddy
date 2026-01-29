@@ -303,18 +303,23 @@ export class ActivityService {
 
   async getActivityStatistics(activityId: string): Promise<{
     longestStreak: number;
+    longestStreakParticipantId: string | null;
+    longestStreakParticipantName: string | null;
     highestCheckIns: number;
     averageProgress: number;
     totalParticipants: number;
     totalCheckIns: number;
   }> {
     try {
-      const activity = await this.activityModel.findById(activityId).exec();
+      const activity = await this.activityModel
+        .findById(activityId)
+        .populate('participants', 'name')
+        .exec();
       if (!activity) {
         throw new NotFoundException('Activity not found');
       }
 
-      // Get all participants
+      // Get all participants (populated for name)
       const participants = activity.participants || [];
       const totalParticipants = participants.length;
 
@@ -328,14 +333,18 @@ export class ActivityService {
 
       // Calculate statistics for each participant
       let longestStreak = 0;
+      let longestStreakParticipantId: string | null = null;
+      let longestStreakParticipantName: string | null = null;
+      let longestStreakEndDate: Date | null = null;
       let highestCheckIns = 0;
       let totalProgress = 0;
       let participantCount = 0;
 
       for (const participant of participants) {
-        const participantId = participant._id || participant;
+        const participantId = (participant._id || participant).toString();
+        const participantName = (participant as any).name || 'Unknown';
         const participantCheckIns = checkIns.filter(
-          (ci) => ci.user._id.toString() === participantId.toString(),
+          (ci) => ci.user._id.toString() === participantId,
         );
 
         const participantCheckInCount = participantCheckIns.length;
@@ -354,12 +363,24 @@ export class ActivityService {
         totalProgress += progress;
         participantCount++;
 
-        // Use schedule-aware streak (same as leaderboard / check-in tab)
-        const participantLongest = this.checkInService.getLongestStreak(
-          activity,
-          participantCheckIns,
-        );
-        longestStreak = Math.max(longestStreak, participantLongest);
+        // Longest streak with end date for tie-breaker (first to achieve = earliest endDate)
+        const { count, endDate } =
+          this.checkInService.getLongestStreakWithEndDate(
+            activity,
+            participantCheckIns,
+          );
+        const isBetter =
+          count > longestStreak ||
+          (count === longestStreak &&
+            endDate != null &&
+            (longestStreakEndDate == null ||
+              endDate.getTime() < longestStreakEndDate.getTime()));
+        if (isBetter && count > 0) {
+          longestStreak = count;
+          longestStreakParticipantId = participantId;
+          longestStreakParticipantName = participantName;
+          longestStreakEndDate = endDate;
+        }
       }
 
       const averageProgress =
@@ -367,6 +388,8 @@ export class ActivityService {
 
       return {
         longestStreak,
+        longestStreakParticipantId,
+        longestStreakParticipantName,
         highestCheckIns,
         averageProgress,
         totalParticipants,

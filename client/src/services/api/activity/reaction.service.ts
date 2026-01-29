@@ -61,6 +61,7 @@ export const CheckInService = {
           completedCheckIns: number;
           totalAvailableCheckIns: number;
           currentStreak?: number;
+          longestStreak?: number;
           lastCheckInDate?: string;
         }
       >
@@ -69,6 +70,8 @@ export const CheckInService = {
   getActivityStatistics: (activityId: string) =>
     apiMethods.get<{
       longestStreak: number;
+      longestStreakParticipantId?: string | null;
+      longestStreakParticipantName?: string | null;
       highestCheckIns: number;
       averageProgress: number;
       totalParticipants: number;

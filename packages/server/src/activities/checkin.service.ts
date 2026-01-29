@@ -707,6 +707,7 @@ export class CheckInService {
 
       // Calculate current streak (schedule-aware: only counts consecutive periods with a check-in)
       const currentStreak = this.calculateUserStreak(activity, activityCheckIns);
+      const longestStreak = this.getLongestStreak(activity, activityCheckIns);
 
       // Get last check-in date
       const lastCheckInDate =
@@ -719,6 +720,7 @@ export class CheckInService {
         completedCheckIns,
         totalAvailableCheckIns,
         currentStreak,
+        longestStreak,
         lastCheckInDate,
       };
     }
@@ -740,6 +742,16 @@ export class CheckInService {
    */
   getLongestStreak(activity: any, checkIns: any[]): number {
     return this.calculateLongestStreak(activity, checkIns);
+  }
+
+  /**
+   * Longest streak with end date of that run (for tie-breaker: first to achieve = earliest endDate).
+   */
+  getLongestStreakWithEndDate(
+    activity: any,
+    checkIns: any[],
+  ): { count: number; endDate: Date | null } {
+    return this.calculateLongestStreakWithEndDate(activity, checkIns);
   }
 
   /**
@@ -853,6 +865,74 @@ export class CheckInService {
       }
     }
     return maxRun;
+  }
+
+  /**
+   * Longest streak with end date (start of last period in the run) for tie-breaker.
+   */
+  private calculateLongestStreakWithEndDate(
+    activity: any,
+    checkIns: any[],
+  ): { count: number; endDate: Date | null } {
+    if (!activity || checkIns.length === 0)
+      return { count: 0, endDate: null };
+
+    const activityStart = new Date(activity.startDate);
+    const endDate = activity.endDate
+      ? new Date(activity.endDate)
+      : new Date(
+          activityStart.getTime() +
+            (activity.proposedDuration || 1) * 30 * 24 * 60 * 60 * 1000,
+        );
+
+    const periodsWithCheckIn = new Set<number>();
+    for (const checkIn of checkIns) {
+      const checkInDate = new Date(checkIn.checkInDate ?? checkIn.scheduledDate);
+      if (checkInDate < activityStart || checkInDate > endDate) continue;
+      const period = this.calculateCheckInPeriod(activity, checkInDate);
+      periodsWithCheckIn.add(period.start.getTime());
+    }
+
+    const sortedStarts = Array.from(periodsWithCheckIn).sort((a, b) => a - b);
+    if (sortedStarts.length === 0) return { count: 0, endDate: null };
+
+    const { checkinFrequency, checkinFrequencyUnit } = activity;
+    let periodDurationMs: number;
+    switch (checkinFrequencyUnit) {
+      case 'daily':
+        periodDurationMs = 24 * 60 * 60 * 1000;
+        break;
+      case 'weekly':
+        periodDurationMs = 7 * 24 * 60 * 60 * 1000;
+        break;
+      case 'monthly':
+        periodDurationMs = 30 * 24 * 60 * 60 * 1000;
+        break;
+      default:
+        periodDurationMs = 24 * 60 * 60 * 1000;
+    }
+    const periodLengthMs = periodDurationMs * (checkinFrequency || 1);
+
+    let maxRun = 1;
+    let run = 1;
+    let maxRunEndTimestamp: number | null = sortedStarts[0];
+
+    for (let i = 1; i < sortedStarts.length; i++) {
+      if (sortedStarts[i] - sortedStarts[i - 1] === periodLengthMs) {
+        run++;
+        if (run > maxRun) {
+          maxRun = run;
+          maxRunEndTimestamp = sortedStarts[i];
+        }
+      } else {
+        run = 1;
+      }
+    }
+
+    return {
+      count: maxRun,
+      endDate: maxRunEndTimestamp != null ? new Date(maxRunEndTimestamp) : null,
+    };
   }
 
   private calculateTotalAvailableCheckIns(activity: any): number {
