@@ -155,7 +155,9 @@ const InviteBySearch: React.FC<InviteBySearchProps> = ({
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <p className="text-sm text-gray-600">
+                          {user.bio ? `${user.bio.slice(0, 60)}${user.bio.length > 60 ? "…" : ""}` : "Activity buddy"}
+                        </p>
                       </div>
                     </div>
 

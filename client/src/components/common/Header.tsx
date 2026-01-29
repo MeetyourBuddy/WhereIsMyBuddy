@@ -104,6 +104,11 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                 icon={<Calendar className="w-4 h-4" />}
               />
               <NavLink
+                to="/activities?tab=my"
+                label="My Activities"
+                icon={<Calendar className="w-4 h-4" />}
+              />
+              <NavLink
                 to="/buddies"
                 label="Buddies"
                 icon={<User className="w-4 h-4" />}
@@ -246,6 +251,15 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                 >
                   <Calendar className="w-5 h-5" />
                   <span className="font-medium">Activities</span>
+                </Link>
+
+                <Link
+                  to="/activities?tab=my"
+                  className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
+                  onClick={toggleMenu}
+                >
+                  <Calendar className="w-5 h-5" />
+                  <span className="font-medium">My Activities</span>
                 </Link>
 
                 <Link

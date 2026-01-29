@@ -127,7 +127,25 @@ const ReactionButton: React.FC<ReactionButtonProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* Horizontal emoji reaction buttons - only show when clicked */}
+      {/* Reaction summary: always visible when there are reactions */}
+      {totalReactions > 0 && (
+        <div className="flex items-center gap-1.5 text-xs text-buddy-gray-600">
+          {primaryReaction && (
+            <span title={`${primaryReaction.count} ${reactionConfig[primaryReaction.type].label}`}>
+              {reactionConfig[primaryReaction.type].emoji} {primaryReaction.count}
+            </span>
+          )}
+          {primaryReaction && totalReactions > primaryReaction.count && (
+            <span className="text-buddy-gray-400">·</span>
+          )}
+          {totalReactions > 0 && (
+            <span>
+              {totalReactions} reaction{totalReactions !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+      )}
+      {/* Horizontal emoji reaction buttons - show when clicked */}
       {showReactions && (
         <div className="flex items-center gap-1 bg-white rounded-full p-2 shadow-lg border border-buddy-gray-200 animate-fade-in">
           {Object.entries(reactionConfig).map(([type, config]) => {

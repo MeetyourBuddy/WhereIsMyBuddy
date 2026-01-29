@@ -433,10 +433,10 @@ const ProfileCard = ({
               <h1 className="text-3xl font-bold bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent mb-2">
                 {name}
               </h1>
-              <p className="text-buddy-gray-600 text-lg font-medium mb-4 flex items-center">
+              {/* <p className="text-buddy-gray-600 text-lg font-medium mb-4 flex items-center">
                 <span className="w-2 h-2 bg-gradient-to-r from-buddy-purple to-buddy-blue rounded-full mr-2"></span>
                 @{username}
-              </p>
+              </p> */}
 
               <p className="text-buddy-gray-700 text-lg leading-relaxed font-medium mb-6">
                 {bio}

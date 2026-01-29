@@ -49,7 +49,7 @@ export class UsersService {
 
     const users = await this.userModel
       .find(searchQuery)
-      .select('-password -refreshToken')
+      .select('-password -refreshToken -email')
       .skip(offset)
       .limit(limit)
       .exec();
@@ -86,7 +86,7 @@ export class UsersService {
 
     const user = await this.userModel
       .findById(objectId)
-      .select('-password -refreshToken');
+      .select('-password -refreshToken -email');
 
     if (!user) {
       throw new NotFoundException('User not found');

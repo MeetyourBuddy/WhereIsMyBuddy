@@ -136,12 +136,6 @@ const InvitationList: React.FC<InvitationListProps> = ({
                     {getStatusBadge(invitation.status)}
                   </div>
                   
-                  {invitation.toUser && (
-                    <p className="text-sm text-gray-500 mb-1">
-                      {invitation.toUser.email}
-                    </p>
-                  )}
-
                   {invitation.message && (
                     <p className="text-sm text-gray-600 mt-2 italic">
                       "{invitation.message}"

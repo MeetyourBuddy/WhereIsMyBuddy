@@ -49,6 +49,7 @@ import {
   IActivity,
   ActivityType,
   CheckInType,
+  DayOfWeek,
 } from "@/types/activity-types";
 import { InterestCategory } from "@/types/interest-categories.enum";
 import {
@@ -58,8 +59,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { activityCategories } from "@/lib/constants/category-interests.constants";
+import {
+  activityCategories,
+  mapToBackendCategory,
+} from "@/lib/constants/category-interests.constants";
 import { useActivityStore } from "@/store/activity.store";
+import { useQueryClient } from "@tanstack/react-query";
+import { activityQueryKeys } from "@/hooks/useActivityData";
 import { motion } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -79,9 +85,9 @@ const formSchema = z.object({
   proposedDuration: z.coerce
     .number()
     .min(1, { message: "Duration must be at least 1" }),
-  checkinFrequency: z.coerce
-    .number()
-    .min(1, { message: "Frequency must be at least 1" }),
+  durationUnit: z.enum(["days", "weeks", "months"], {
+    required_error: "Please select a duration unit",
+  }),
   checkinFrequencyUnit: z.enum(["daily", "weekly", "monthly"], {
     required_error: "Please select a frequency unit",
   }),
@@ -97,6 +103,15 @@ type FormValues = z.infer<typeof formSchema>;
 interface EditActivityDialogProps {
   children: React.ReactNode;
   activity: IActivityResult;
+}
+
+/** Normalize visibility/type to backend enum values ("public" | "private"). */
+function normalizeVisibilityType(
+  value: string | undefined | null
+): ActivityType {
+  const lower = (value ?? "").toString().toLowerCase();
+  if (lower === "private") return ActivityType.PRIVATE;
+  return ActivityType.PUBLIC;
 }
 
 const defaultGoals = [
@@ -121,12 +136,45 @@ const EditActivityDialog = ({
   const [newRule, setNewRule] = useState("");
   const [goals, setGoals] = useState<string[]>(activity.goals || []);
   const [newGoal, setNewGoal] = useState("");
+  const [checkinDays, setCheckinDays] = useState<DayOfWeek[]>(
+    (activity.checkinDays as DayOfWeek[]) || []
+  );
+  const [checkinDatesOfMonth, setCheckinDatesOfMonth] = useState<number[]>(
+    activity.checkinDatesOfMonth || []
+  );
+  const [durationUnit, setDurationUnit] = useState<"days" | "weeks" | "months">("months");
   const { updateActivity } = useActivityStore();
+  const queryClient = useQueryClient();
 
-  const calculateEndDate = (startDate: Date, duration: number) => {
+  // Calculate end date based on duration and unit
+  const calculateEndDate = (startDate: Date, duration: number, unit: "days" | "weeks" | "months") => {
     const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + duration);
+    switch (unit) {
+      case "days":
+        endDate.setDate(endDate.getDate() + duration);
+        break;
+      case "weeks":
+        endDate.setDate(endDate.getDate() + duration * 7);
+        break;
+      case "months":
+        endDate.setMonth(endDate.getMonth() + duration);
+        break;
+    }
     return endDate;
+  };
+
+  // Calculate check-in frequency based on frequency unit and selections
+  const calculateCheckInFrequency = (): number => {
+    switch (checkinFrequencyUnit) {
+      case "daily":
+        return 1; // Daily check-ins
+      case "weekly":
+        return checkinDays.length || 1; // Number of days selected
+      case "monthly":
+        return checkinDatesOfMonth.length || 1; // Number of dates selected
+      default:
+        return 1;
+    }
   };
 
   const form = useForm<FormValues>({
@@ -135,37 +183,181 @@ const EditActivityDialog = ({
       title: activity.title,
       description: activity.description,
       category: activity.category as InterestCategory,
-      type: activity.type as ActivityType,
+      type: normalizeVisibilityType(activity.type),
       proposedDuration: activity.proposedDuration,
-      checkinFrequency: activity.checkinFrequency,
+      durationUnit: "months", // Default to months (backend stores in months)
       checkinFrequencyUnit: activity.checkinFrequencyUnit,
       maxParticipants: activity.maxParticipants,
       startDate: new Date(activity.startDate),
       endDate: calculateEndDate(
         new Date(activity.startDate),
-        activity.proposedDuration
+        activity.proposedDuration,
+        "months"
       ),
     },
   });
 
-  // Watch for changes in startDate and proposedDuration to update endDate
+  // Reset form when dialog opens so visibility/type and other fields match current activity
+  React.useEffect(() => {
+    if (open) {
+      form.reset({
+        title: activity.title,
+        description: activity.description,
+        category: activity.category as InterestCategory,
+        type: normalizeVisibilityType(activity.type),
+        proposedDuration: activity.proposedDuration,
+        durationUnit: "months", // Backend stores in months
+        checkinFrequencyUnit: activity.checkinFrequencyUnit,
+        maxParticipants: activity.maxParticipants,
+        startDate: new Date(activity.startDate),
+        endDate: calculateEndDate(
+          new Date(activity.startDate),
+          activity.proposedDuration,
+          "months"
+        ),
+      });
+      // Reset schedule fields
+      setCheckinDays((activity.checkinDays as DayOfWeek[]) || []);
+      setCheckinDatesOfMonth(activity.checkinDatesOfMonth || []);
+      setDurationUnit("months");
+    }
+  }, [open, activity._id]);
+
+  // Watch for changes in startDate, proposedDuration, and durationUnit to update endDate
   const startDate = form.watch("startDate");
   const proposedDuration = form.watch("proposedDuration");
+  const checkinFrequencyUnit = form.watch("checkinFrequencyUnit");
+  const formDurationUnit = form.watch("durationUnit");
 
   React.useEffect(() => {
-    if (startDate && proposedDuration) {
-      form.setValue("endDate", calculateEndDate(startDate, proposedDuration));
+    if (startDate && proposedDuration && (formDurationUnit || durationUnit)) {
+      const unit = formDurationUnit || durationUnit;
+      form.setValue("endDate", calculateEndDate(startDate, proposedDuration, unit));
     }
-  }, [startDate, proposedDuration, form]);
+  }, [startDate, proposedDuration, formDurationUnit, durationUnit, form]);
+
+  // Update duration unit state when form value changes
+  React.useEffect(() => {
+    if (formDurationUnit) {
+      setDurationUnit(formDurationUnit);
+    }
+  }, [formDurationUnit]);
+
+  // Reset schedule fields when frequency unit changes
+  React.useEffect(() => {
+    if (checkinFrequencyUnit === "daily") {
+      setCheckinDays([]);
+      setCheckinDatesOfMonth([]);
+    } else if (checkinFrequencyUnit === "weekly") {
+      setCheckinDatesOfMonth([]);
+    } else if (checkinFrequencyUnit === "monthly") {
+      setCheckinDays([]);
+    }
+  }, [checkinFrequencyUnit]);
+
+  const toggleDayOfWeek = (day: DayOfWeek) => {
+    setCheckinDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
+  const toggleDateOfMonth = (date: number) => {
+    setCheckinDatesOfMonth((prev) =>
+      prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
+    );
+  };
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const { endDate, ...dataWithoutEndDate } = data;
+      // Exclude endDate and durationUnit from the payload (not in backend DTO)
+      const { endDate, durationUnit: _, ...dataWithoutEndDateAndDurationUnit } = data;
+      
+      // Convert duration to months for backend (backend stores duration in months)
+      const convertDurationToMonths = (duration: number, unit: "days" | "weeks" | "months"): number => {
+        switch (unit) {
+          case "days":
+            return Math.round((duration / 30) * 100) / 100; // Convert days to months (approximate)
+          case "weeks":
+            return Math.round((duration / 4.33) * 100) / 100; // Convert weeks to months (approximate)
+          case "months":
+            return duration;
+          default:
+            return duration;
+        }
+      };
+
+      // Build check-in config based on frequency unit (matching CreateActivity logic)
+      const getCheckinConfig = () => {
+        const calculatedFrequency = calculateCheckInFrequency();
+        const baseConfig: any = {
+          checkinFrequency: calculatedFrequency,
+          checkinFrequencyUnit: data.checkinFrequencyUnit as CheckinFrequencyUnit,
+        };
+
+        switch (data.checkinFrequencyUnit) {
+          case "daily":
+            // For daily, don't include checkinDays or checkinDatesOfMonth (omit them entirely)
+            return baseConfig;
+          case "weekly":
+            // For weekly, include checkinDays and set frequency to number of days
+            if (checkinDays.length === 0) {
+              toast.error("Please select at least one day for weekly check-ins");
+              return null;
+            }
+            return {
+              ...baseConfig,
+              checkinFrequency: checkinDays.length,
+              checkinDays: checkinDays,
+              // Don't include checkinDatesOfMonth for weekly
+            };
+          case "monthly":
+            // For monthly, include checkinDatesOfMonth and set frequency to number of dates
+            if (checkinDatesOfMonth.length === 0) {
+              toast.error("Please select at least one date for monthly check-ins");
+              return null;
+            }
+            return {
+              ...baseConfig,
+              checkinFrequency: checkinDatesOfMonth.length,
+              checkinDatesOfMonth: checkinDatesOfMonth,
+              // Don't include checkinDays for monthly
+            };
+          default:
+            return baseConfig;
+        }
+      };
+
+      const checkinConfig = getCheckinConfig();
+      if (!checkinConfig) {
+        return; // Validation failed
+      }
+
+      // Convert duration to months for backend
+      const durationInMonths = convertDurationToMonths(data.proposedDuration, durationUnit);
+
+      // Build the payload - only include fields that are in the backend DTO
+      // Normalize type/visibility to backend enum values ("public" | "private")
+      const visibilityType = normalizeVisibilityType(data.type);
+
+      // Category: use same mapping as Create so backend enum validation passes
+      const categoryValue = mapToBackendCategory(data.category);
+
+      // Rules: send same shape as Create (no _id) so Mongoose accepts on save
+      const rulesPayload = rules.map((rule) => ({
+        title: rule.title,
+        description: rule.description || "",
+        isDefault: rule.isDefault,
+      }));
+
       const updatedActivityData: Partial<IActivity> = {
-        ...dataWithoutEndDate,
-        startDate: data.startDate.toISOString(),
-        checkinFrequencyUnit: data.checkinFrequencyUnit as CheckinFrequencyUnit,
-        type: data.type as ActivityType,
+        title: data.title,
+        description: data.description,
+        category: categoryValue,
+        type: visibilityType,
+        proposedDuration: durationInMonths, // Backend expects months
+        maxParticipants: data.maxParticipants,
+        startDate: data.startDate.toISOString(), // Send as ISO string, backend will transform to Date
+        ...checkinConfig,
         goals,
         allowedCheckInTypes: [
           {
@@ -180,31 +372,30 @@ const EditActivityDialog = ({
           },
         ],
         tags,
-        rules: rules.map((rule) => ({
-          _id: rule._id,
-          title: rule.title,
-          description: rule.description || "",
-          isDefault: rule.isDefault,
-        })),
+        rules: rulesPayload,
       };
 
       console.log("Updated activity data:", updatedActivityData);
 
-      const updatedActivity = await updateActivity(
+      const response = await updateActivity(
         activity._id,
         updatedActivityData
       );
 
-      console.log("Updated activity:", updatedActivity);
+      console.log("Updated activity response:", response);
 
-      if (updatedActivity.success) {
-        // Show success message
+      if (response?.success !== false && response?.data) {
         toast.success("Activity updated successfully!");
-
-        // Close the dialog
         setOpen(false);
+        // Invalidate React Query so activity list and detail pages reflect the update
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: activityQueryKeys.lists() }),
+          queryClient.invalidateQueries({
+            queryKey: activityQueryKeys.detail(activity._id),
+          }),
+        ]);
       } else {
-        toast.error("Failed to update activity");
+        toast.error(response?.message ?? "Failed to update activity");
       }
     } catch (error) {
       console.error("Error updating activity:", error);
@@ -370,15 +561,15 @@ const EditActivityDialog = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Activity Type
+                        Visibility
                       </FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value ?? normalizeVisibilityType(activity.type)}
                       >
                         <FormControl>
                           <SelectTrigger className="rounded-full border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 h-12">
-                            <SelectValue placeholder="Select activity type" />
+                            <SelectValue placeholder="Select visibility" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-white/95 backdrop-blur-sm border border-buddy-purple/20">
@@ -429,77 +620,229 @@ const EditActivityDialog = ({
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField
-                  control={form.control}
-                  name="proposedDuration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-buddy-gray-700 font-medium">
-                        Duration
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          className="rounded-full border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 h-12 text-base"
-                          placeholder="Duration in months"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-buddy-gray-700 font-medium">
+                    Duration
+                  </Label>
+                  <div className="flex gap-3">
+                    <FormField
+                      control={form.control}
+                      name="proposedDuration"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              className="rounded-full border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 h-12 text-base"
+                              placeholder="Duration"
+                              min={1}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="durationUnit"
+                      render={({ field }) => (
+                        <FormItem className="w-32">
+                          <FormControl>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                setDurationUnit(value as "days" | "weeks" | "months");
+                              }}
+                              value={field.value ?? durationUnit}
+                            >
+                              <SelectTrigger className="rounded-full border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 h-12">
+                                <SelectValue placeholder="Unit" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white/95 backdrop-blur-sm border border-buddy-purple/20">
+                                <SelectItem value="days">Days</SelectItem>
+                                <SelectItem value="weeks">Weeks</SelectItem>
+                                <SelectItem value="months">Months</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="checkinFrequency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-buddy-gray-700 font-medium">
-                        Check-in Frequency
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          className="rounded-full border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 h-12 text-base"
-                          placeholder="Frequency number"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="checkinFrequencyUnit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-buddy-gray-700 font-medium">
-                        Frequency Unit
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                <div className="space-y-2">
+                  <Label className="text-buddy-gray-700 font-medium">
+                    Check-in Frequency Unit
+                  </Label>
+                  <FormField
+                    control={form.control}
+                    name="checkinFrequencyUnit"
+                    render={({ field }) => (
+                      <FormItem>
                         <FormControl>
-                          <SelectTrigger className="rounded-full border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 h-12">
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value ?? activity.checkinFrequencyUnit}
+                          >
+                            <SelectTrigger className="rounded-full border-2 border-buddy-gray-200/70 focus:border-buddy-purple/50 focus:ring-buddy-purple/30 h-12">
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white/95 backdrop-blur-sm border border-buddy-purple/20">
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </FormControl>
-                        <SelectContent className="bg-white/95 backdrop-blur-sm border border-buddy-purple/20">
-                          <SelectItem value="daily">Daily</SelectItem>
-                          <SelectItem value="weekly">Weekly</SelectItem>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
+
+              {/* Display calculated check-in frequency */}
+              {(() => {
+                const calculatedFreq = calculateCheckInFrequency();
+                return (
+                  <div className="p-4 bg-gradient-to-br from-buddy-purple/5 to-buddy-blue/5 rounded-2xl border border-buddy-purple/20">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-buddy-gray-700 font-medium">
+                        Check-in Frequency (Calculated)
+                      </Label>
+                      <div className="text-lg font-semibold text-buddy-purple">
+                        {calculatedFreq} check-in{calculatedFreq !== 1 ? "s" : ""} per{" "}
+                        {checkinFrequencyUnit === "daily"
+                          ? "day"
+                          : checkinFrequencyUnit === "weekly"
+                            ? "week"
+                            : "month"}
+                      </div>
+                    </div>
+                    <p className="text-sm text-buddy-gray-500 mt-2">
+                      {checkinFrequencyUnit === "daily" && "Daily check-ins are enabled"}
+                      {checkinFrequencyUnit === "weekly" &&
+                        (checkinDays.length > 0 ? (
+                          `Check-ins on: ${checkinDays.map((d) => d.charAt(0).toUpperCase() + d.slice(1)).join(", ")}`
+                        ) : (
+                          "Please select at least one day"
+                        ))}
+                      {checkinFrequencyUnit === "monthly" &&
+                        (checkinDatesOfMonth.length > 0 ? (
+                          `Check-ins on day${checkinDatesOfMonth.length > 1 ? "s" : ""}: ${checkinDatesOfMonth.sort((a, b) => a - b).join(", ")}`
+                        ) : (
+                          "Please select at least one date"
+                        ))}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Weekly: Days of Week Selection */}
+              {checkinFrequencyUnit === "weekly" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <Label className="text-buddy-gray-700 font-semibold text-base mb-2 block">
+                      Days of the Week <span className="text-red-500">*</span>
+                    </Label>
+                    <p className="text-sm text-buddy-gray-500 mb-3">
+                      Which days should participants check in? Select all that apply
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      DayOfWeek.MONDAY,
+                      DayOfWeek.TUESDAY,
+                      DayOfWeek.WEDNESDAY,
+                      DayOfWeek.THURSDAY,
+                      DayOfWeek.FRIDAY,
+                      DayOfWeek.SATURDAY,
+                      DayOfWeek.SUNDAY,
+                    ].map((day) => (
+                      <label
+                        key={day}
+                        htmlFor={`edit-day-${day}`}
+                        className={cn(
+                          "flex items-center space-x-3 p-3 rounded-2xl border-2 transition-all duration-300 hover:shadow-md cursor-pointer",
+                          checkinDays.includes(day)
+                            ? "bg-gradient-to-br from-buddy-purple/20 to-buddy-blue/20 border-buddy-purple"
+                            : "bg-white/70 border-buddy-gray-200/50 hover:border-buddy-purple/50"
+                        )}
+                      >
+                        <Checkbox
+                          id={`edit-day-${day}`}
+                          checked={checkinDays.includes(day)}
+                          onCheckedChange={() => toggleDayOfWeek(day)}
+                          className="text-buddy-purple border-2 border-buddy-purple/30 data-[state=checked]:bg-buddy-purple data-[state=checked]:border-buddy-purple"
+                        />
+                        <span className="capitalize w-full font-medium text-buddy-gray-700">
+                          {day}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Monthly: Dates of Month Selection */}
+              {checkinFrequencyUnit === "monthly" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <Label className="text-buddy-gray-700 font-semibold text-base mb-2 block">
+                      Check-in Dates <span className="text-red-500">*</span>
+                    </Label>
+                    <p className="text-sm text-buddy-gray-500 mb-3">
+                      Which dates of the month should participants check in? Select all that apply
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-7 gap-2 p-6 bg-gradient-to-br from-buddy-purple/5 to-buddy-blue/5 rounded-2xl border border-buddy-purple/20">
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((date) => (
+                      <label
+                        key={date}
+                        htmlFor={`edit-date-${date}`}
+                        className={cn(
+                          "flex items-center justify-center p-3 rounded-2xl transition-all duration-300 hover:shadow-md cursor-pointer",
+                          checkinDatesOfMonth.includes(date)
+                            ? "bg-gradient-to-br from-buddy-purple to-buddy-blue text-white shadow-lg"
+                            : "bg-white/70 hover:bg-white/90 border border-buddy-gray-200/50 hover:border-buddy-purple/50"
+                        )}
+                      >
+                        <Checkbox
+                          id={`edit-date-${date}`}
+                          checked={checkinDatesOfMonth.includes(date)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setCheckinDatesOfMonth([...checkinDatesOfMonth, date]);
+                            } else {
+                              setCheckinDatesOfMonth(
+                                checkinDatesOfMonth.filter((d) => d !== date)
+                              );
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <span className="w-full text-center font-medium">
+                          {date}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField

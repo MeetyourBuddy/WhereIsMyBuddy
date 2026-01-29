@@ -45,6 +45,8 @@ interface CheckInCardProps {
   isCheckedIn?: boolean;
   activity: IActivityResult;
   checkIns: any[]; // Real check-in data from backend
+  /** Called after a successful check-in so the parent can revalidate activity data */
+  onCheckInComplete?: () => void;
 }
 
 // Motivational images array - 31 images for each day of the month
@@ -102,6 +104,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
   isCheckedIn = false,
   activity,
   checkIns,
+  onCheckInComplete,
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -248,7 +251,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
           </button>
 
           {!isCheckedIn && canAccessCheckIn && (
-            <CheckInDialog activity={activity}>
+            <CheckInDialog activity={activity} onCheckInComplete={onCheckInComplete}>
               <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                 <Zap className="w-4 h-4 mr-2" />
                 Check In Now
@@ -297,7 +300,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
 
             {!isCheckedIn && canAccessCheckIn && (
               <div className="mt-4 flex justify-center">
-                <CheckInDialog activity={activity}>
+                <CheckInDialog activity={activity} onCheckInComplete={onCheckInComplete}>
                   <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                     <Zap className="w-4 h-4 mr-2" />
                     Add Your Check-in

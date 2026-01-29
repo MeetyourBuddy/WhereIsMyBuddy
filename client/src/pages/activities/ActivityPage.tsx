@@ -24,6 +24,7 @@ import {
   Sparkles,
   Compass,
   Lock,
+  LockKeyhole,
   Mail,
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
@@ -106,6 +107,7 @@ const ActivityPage = () => {
     highestCheckInsParticipant: "",
   });
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const [refreshDependency, setRefreshDependency] = useState(0);
   const isMobile = useIsMobile();
 
   const {
@@ -143,6 +145,14 @@ const ActivityPage = () => {
     loadUserBadges();
   }, [activityId, navigate, fetchUserBadges]);
 
+  // Revalidate all activity data after check-in (queries + leaderboard + period status)
+  const handleCheckInSuccess = React.useCallback(() => {
+    if (!activityId) return;
+    setHasCheckedInCurrentPeriod(true);
+    setRefreshDependency((r) => r + 1);
+    refreshActivity(activityId);
+  }, [activityId, refreshActivity]);
+
   // Check if user has checked in for current period
   useEffect(() => {
     const checkCurrentPeriodStatus = async () => {
@@ -161,7 +171,7 @@ const ActivityPage = () => {
     };
 
     checkCurrentPeriodStatus();
-  }, [activityId, user?._id]);
+  }, [activityId, user?._id, refreshDependency]);
 
   // Fetch leaderboard data for accurate stats (authenticated only)
   useEffect(() => {
@@ -199,7 +209,7 @@ const ActivityPage = () => {
     };
 
     fetchLeaderboardData();
-  }, [activityId, isGuest]);
+  }, [activityId, isGuest, refreshDependency]);
 
   // Update activity stats from unified data (fallback)
   useEffect(() => {
@@ -360,8 +370,9 @@ const ActivityPage = () => {
   const adminId = currentActivity?.admin?._id || currentActivity?.admin?.id;
   const isUserAdmin = user && currentActivity?.admin && userId === adminId;
   
-  // Check if activity is private
-  const isPrivateActivity = currentActivity?.type === "private" || currentActivity?.type === "Private";
+  // Check if activity is private (normalize for API/display variants)
+  const isPrivateActivity =
+    String(currentActivity?.type ?? "").toLowerCase() === "private";
 
   const handleGuestJoin = () => {
     if (!displayData.id) return;
@@ -473,6 +484,15 @@ const ActivityPage = () => {
                       {displayData.frequency}
                     </span>
                   )}
+                  {isPrivateActivity && (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 text-xs font-medium bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/20"
+                    >
+                      <LockKeyhole className="w-3.5 h-3.5" />
+                      Private
+                    </Badge>
+                  )}
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold mb-2 text-shadow-lg">
                   {displayData.name}
@@ -502,11 +522,7 @@ const ActivityPage = () => {
                 {isUserParticipant && status !== "ended" && (
                   <CheckInDialog
                     activity={currentActivity}
-                    onCheckInComplete={() => {
-                      console.log("Check-in completed");
-                      // Refresh check-in status after successful check-in
-                      setHasCheckedInCurrentPeriod(true);
-                    }}
+                    onCheckInComplete={handleCheckInSuccess}
                   >
                     <Button
                       variant="default"
@@ -803,7 +819,11 @@ const ActivityPage = () => {
                   />
                 </div>
               ) : (
-                <ActivityCheckin activityId={displayData.id} isActivityEnded={status === "ended"} />
+                <ActivityCheckin
+                  activityId={displayData.id}
+                  isActivityEnded={status === "ended"}
+                  onCheckInSuccess={handleCheckInSuccess}
+                />
               )}
             </TabsContent>
 

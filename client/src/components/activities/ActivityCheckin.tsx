@@ -35,9 +35,15 @@ import { format } from "date-fns";
 interface ActivityCheckinProps {
   activityId: string;
   isActivityEnded?: boolean;
+  /** Called after a successful check-in so the parent can revalidate activity data (queries, leaderboard, etc.) */
+  onCheckInSuccess?: () => void;
 }
 
-const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivityEnded = false }) => {
+const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
+  activityId,
+  isActivityEnded = false,
+  onCheckInSuccess,
+}) => {
   console.log(
     "🎯 ActivityCheckin component rendered with activityId:",
     activityId
@@ -519,6 +525,15 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivit
                           isCheckedIn={period.isCheckedIn}
                           activity={currentActivity}
                           checkIns={period.checkIns}
+                          onCheckInComplete={
+                            currentActivity
+                              ? () => {
+                                  onCheckInSuccess?.();
+                                  refreshActivityData(currentActivity._id);
+                                  refetchUserProgress();
+                                }
+                              : undefined
+                          }
                         />
                       )
                   )}
@@ -539,10 +554,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivit
                     <CheckInDialog
                       activity={currentActivity}
                       onCheckInComplete={() => {
-                        // Refresh all data from backend after successful check-in
-                        console.log(
-                          "🔄 Refreshing data after check-in completion"
-                        );
+                        onCheckInSuccess?.();
                         refreshActivityData(currentActivity._id);
                         refetchUserProgress();
                       }}
@@ -685,10 +697,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivit
                   <CheckInDialog
                     activity={currentActivity}
                     onCheckInComplete={() => {
-                      // Refresh all data from backend after successful check-in
-                      console.log(
-                        "🔄 Refreshing data after check-in completion"
-                      );
+                      onCheckInSuccess?.();
                       refreshActivityData(currentActivity._id);
                       refetchUserProgress();
                     }}

@@ -88,9 +88,20 @@ const Dashboard = () => {
         const allActivities = activitiesResponse.data || [];
 
         // Filter suggested activities: only active or about to start, never ended
-        // Limit to maximum 3 activities
+        // Exclude private activities unless user is participant or admin
+        const userId = user._id;
+        const isParticipantOrAdmin = (activity) =>
+          activity.participants?.some(
+            (p) => p._id === userId || p.id === userId
+          ) ||
+          activity.admin?._id === userId ||
+          activity.admin?.id === userId;
         const filteredSuggested = allActivities
           .filter((activity) => !isActivityEnded(activity))
+          .filter(
+            (activity) =>
+              activity.type !== "private" || isParticipantOrAdmin(activity)
+          )
           .slice(0, 3);
         setSuggestedActivities(filteredSuggested);
 
@@ -430,7 +441,7 @@ const Dashboard = () => {
                       <Flame className="h-5 w-5 text-buddy-orange" />
                     </div>
                     <div>
-                      <p className="text-sm text-buddy-gray-600">Streak</p>
+                      <p className="text-sm text-buddy-gray-600">Longest Streak</p>
                       <p className="text-xl font-bold text-buddy-orange">
                         {isLoading ? (
                           <div className="flex items-center justify-center">
@@ -509,7 +520,7 @@ const Dashboard = () => {
                 <Button
                   variant="ghost"
                   size="small"
-                  onClick={() => navigate("/activities")}
+                  onClick={() => navigate("/activities?tab=my")}
                   className="hover:bg-buddy-purple/5 text-buddy-purple rounded-full"
                 >
                   View All

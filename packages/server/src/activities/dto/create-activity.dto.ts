@@ -12,7 +12,7 @@ import {
   IsNotEmpty,
   IsEmail,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   ActivityType,
   CheckinFrequencyUnit,
@@ -22,6 +22,10 @@ import {
 import { InterestCategory } from '../../users/enums/interests.enum';
 
 class ActivityRuleDto {
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
   @IsString()
   title: string;
 
@@ -79,6 +83,9 @@ export class CreateActivityDto {
   @IsNotEmpty()
   category: InterestCategory;
 
+  @Transform(({ value }) =>
+    typeof value === 'string' ? (value.toLowerCase() as ActivityType) : value,
+  )
   @IsEnum(ActivityType)
   type: ActivityType;
 

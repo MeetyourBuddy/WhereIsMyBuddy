@@ -15,6 +15,7 @@ import { UpdateActivityDto } from './dto/update-activity.dto';
 import { PopulatedActivity } from './entities/activity.entities';
 import { ActivityResponseDto } from './dto/activity-response.dto';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { CheckInService } from './checkin.service';
 
 @Injectable()
 export class ActivityService {
@@ -22,6 +23,7 @@ export class ActivityService {
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
     @InjectModel(CheckIn.name) private checkInModel: Model<CheckInDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private checkInService: CheckInService,
   ) {}
 
   async create(
@@ -88,12 +90,12 @@ export class ActivityService {
         .populate({
           path: 'admin',
           select:
-            '_id name email avatar country preferredLanguage profileLink profileQR',
+            '_id name avatar country preferredLanguage profileLink profileQR',
         })
         .populate({
           path: 'participants',
           select:
-            '_id name email avatar country preferredLanguage profileLink profileQR',
+            '_id name avatar country preferredLanguage profileLink profileQR',
         })
         .lean<PopulatedActivity>()
         .exec();
@@ -319,7 +321,7 @@ export class ActivityService {
       // Get all check-ins for this activity
       const checkIns = await this.checkInModel
         .find({ activity: activityId, isDeleted: false })
-        .populate('user', 'name email')
+        .populate('user', 'name avatar picture')
         .exec();
 
       const totalCheckIns = checkIns.length;
@@ -352,34 +354,12 @@ export class ActivityService {
         totalProgress += progress;
         participantCount++;
 
-        // Calculate streak for this participant
-        if (participantCheckIns.length > 0) {
-          const sortedCheckIns = participantCheckIns.sort(
-            (a, b) =>
-              new Date(a.scheduledDate).getTime() -
-              new Date(b.scheduledDate).getTime(),
-          );
-
-          let currentStreak = 0;
-          let tempStreak = 0;
-
-          for (let i = 0; i < sortedCheckIns.length; i++) {
-            if (
-              i === 0 ||
-              this.isConsecutiveDay(
-                sortedCheckIns[i - 1].scheduledDate,
-                sortedCheckIns[i].scheduledDate,
-              )
-            ) {
-              tempStreak++;
-              currentStreak = Math.max(currentStreak, tempStreak);
-            } else {
-              tempStreak = 1;
-            }
-          }
-
-          longestStreak = Math.max(longestStreak, currentStreak);
-        }
+        // Use schedule-aware streak (same as leaderboard / check-in tab)
+        const participantLongest = this.checkInService.getLongestStreak(
+          activity,
+          participantCheckIns,
+        );
+        longestStreak = Math.max(longestStreak, participantLongest);
       }
 
       const averageProgress =
@@ -437,7 +417,6 @@ export class ActivityService {
     participants: Array<{
       id: string;
       name: string;
-      email: string;
       avatar?: string;
       checkIns: number;
       streak: number;
@@ -450,8 +429,8 @@ export class ActivityService {
     try {
       const activity = await this.activityModel
         .findById(activityId)
-        .populate('participants', 'name email avatar picture')
-        .populate('admin', 'name email avatar picture')
+        .populate('participants', 'name avatar picture')
+        .populate('admin', 'name avatar picture')
         .exec();
 
       if (!activity) {
@@ -461,7 +440,7 @@ export class ActivityService {
       // Get all check-ins for this activity
       const checkIns = await this.checkInModel
         .find({ activity: activityId, isDeleted: false })
-        .populate('user', 'name email avatar picture')
+        .populate('user', 'name avatar picture')
         .sort({ checkInDate: -1 })
         .exec();
 
@@ -487,51 +466,11 @@ export class ActivityService {
           (ci) => ci.user._id.toString() === participantId,
         );
 
-        // Calculate streak using the same logic as CheckInService
-        let streak = 0;
-        if (participantCheckIns.length > 0) {
-          // Sort check-ins by checkInDate (not scheduledDate) for consistency
-          const sortedCheckIns = participantCheckIns.sort(
-            (a, b) =>
-              new Date(b.checkInDate).getTime() -
-              new Date(a.checkInDate).getTime(),
-          );
-
-          // Group check-ins by date to avoid counting multiple check-ins on same day
-          const checkInsByDate = new Map<string, any[]>();
-          sortedCheckIns.forEach((checkIn) => {
-            const dateKey = new Date(checkIn.checkInDate).toDateString();
-            if (!checkInsByDate.has(dateKey)) {
-              checkInsByDate.set(dateKey, []);
-            }
-            checkInsByDate.get(dateKey)!.push(checkIn);
-          });
-
-          // Calculate current streak from the most recent date
-          const sortedDates = Array.from(checkInsByDate.keys()).sort(
-            (a, b) => new Date(b).getTime() - new Date(a).getTime(),
-          );
-
-          let currentStreak = 0;
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-
-          for (let i = 0; i < sortedDates.length; i++) {
-            const checkInDate = new Date(sortedDates[i]);
-            checkInDate.setHours(0, 0, 0, 0);
-
-            const expectedDate = new Date(today);
-            expectedDate.setDate(today.getDate() - i);
-
-            if (checkInDate.getTime() === expectedDate.getTime()) {
-              currentStreak++;
-            } else {
-              break;
-            }
-          }
-
-          streak = currentStreak;
-        }
+        // Use schedule-aware streak from CheckInService (same as check-in tab / progress)
+        const streak = this.checkInService.getUserStreak(
+          activity,
+          participantCheckIns,
+        );
 
         // Calculate points (simple formula: check-ins * 10 + streak * 5)
         const points = participantCheckIns.length * 10 + streak * 5;
@@ -543,7 +482,6 @@ export class ActivityService {
         participants.push({
           id: participantId,
           name: (participant as any).name || 'Unknown User',
-          email: (participant as any).email || '',
           avatar: (participant as any).avatar || (participant as any).picture,
           checkIns: participantCheckIns.length,
           streak,
@@ -645,8 +583,8 @@ export class ActivityService {
     try {
       const activity = await this.activityModel
         .findById(activityId)
-        .populate('participants', 'name email avatar picture')
-        .populate('admin', 'name email avatar picture')
+        .populate('participants', 'name avatar picture')
+        .populate('admin', 'name avatar picture')
         .exec();
 
       if (!activity) {
@@ -659,7 +597,7 @@ export class ActivityService {
           activity: activityId,
           isDeleted: false,
         })
-        .populate('user', 'name email avatar picture')
+        .populate('user', 'name avatar picture')
         .exec();
 
       // Debug: Log all check-ins for the specific user
@@ -730,51 +668,11 @@ export class ActivityService {
           });
         }
 
-        // Calculate streak using the EXACT same logic as leaderboard
-        let streak = 0;
-        if (participantCheckIns.length > 0) {
-          // Sort check-ins by checkInDate (not scheduledDate) for consistency
-          const sortedCheckIns = participantCheckIns.sort(
-            (a, b) =>
-              new Date(b.checkInDate).getTime() -
-              new Date(a.checkInDate).getTime(),
-          );
-
-          // Group check-ins by date to avoid counting multiple check-ins on same day
-          const checkInsByDate = new Map<string, any[]>();
-          sortedCheckIns.forEach((checkIn) => {
-            const dateKey = new Date(checkIn.checkInDate).toDateString();
-            if (!checkInsByDate.has(dateKey)) {
-              checkInsByDate.set(dateKey, []);
-            }
-            checkInsByDate.get(dateKey)!.push(checkIn);
-          });
-
-          // Calculate current streak from the most recent date
-          const sortedDates = Array.from(checkInsByDate.keys()).sort(
-            (a, b) => new Date(b).getTime() - new Date(a).getTime(),
-          );
-
-          let currentStreak = 0;
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-
-          for (let i = 0; i < sortedDates.length; i++) {
-            const checkInDate = new Date(sortedDates[i]);
-            checkInDate.setHours(0, 0, 0, 0);
-
-            const expectedDate = new Date(today);
-            expectedDate.setDate(today.getDate() - i);
-
-            if (checkInDate.getTime() === expectedDate.getTime()) {
-              currentStreak++;
-            } else {
-              break;
-            }
-          }
-
-          streak = currentStreak;
-        }
+        // Use schedule-aware streak from CheckInService (same as leaderboard / check-in tab)
+        const streak = this.checkInService.getUserStreak(
+          activity,
+          participantCheckIns,
+        );
 
         // Create last 7 days data for this participant (using ALL check-ins for accuracy)
         const participantLast7Days = last7Days.map((day) => {

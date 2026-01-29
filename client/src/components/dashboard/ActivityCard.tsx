@@ -299,11 +299,16 @@ const ActivityCard = ({
         </div>
 
         <div className="p-6 pb-4 flex-1 flex flex-col">
-          <div className="flex items-center mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <h3 className="text-xl font-semibold text-buddy-gray-900">
               {title}
             </h3>
-            {isPrivate && <LockKeyhole className="w-5 h-5 ml-2 text-buddy-gray-600" />}
+            {isPrivate && (
+              <Badge variant="secondary" className="gap-1 text-xs font-medium">
+                <LockKeyhole className="w-3.5 h-3.5" />
+                Private
+              </Badge>
+            )}
           </div>
           <p className="text-buddy-gray-600 text-sm mb-4 line-clamp-2">
             {description}

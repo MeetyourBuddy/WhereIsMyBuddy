@@ -113,15 +113,18 @@ export const useActivityStore = create<ActivityState>()(
             id,
             activityData
           );
+          const updated = response?.data;
           set((state) => ({
             activities: state.activities.map((activity) =>
-              activity.id === id ? response.data : activity
+              (activity.id === id || activity._id === id) ? (updated ?? activity) : activity
             ),
-            currentActivity: response.data,
+            currentActivity: updated ?? state.currentActivity,
           }));
+          return response;
         } catch (error: unknown) {
           const apiError = error as ApiError;
           set({ error: apiError.message || "Failed to update activity" });
+          return { success: false, message: apiError.message };
         } finally {
           set({ isLoading: false });
         }

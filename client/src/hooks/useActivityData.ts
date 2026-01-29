@@ -271,7 +271,7 @@ export const useActivityData = (activityId?: string) => {
     },
   });
 
-  // Utility function to refresh all data for an activity
+  // Utility function to refresh all data for an activity (e.g. after check-in)
   const refreshActivity = async (id: string) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: activityQueryKeys.detail(id) }),
@@ -283,6 +283,7 @@ export const useActivityData = (activityId?: string) => {
       queryClient.invalidateQueries({
         queryKey: activityQueryKeys.participants(id),
       }),
+      queryClient.invalidateQueries({ queryKey: activityQueryKeys.lists() }),
       refreshActivityData(id), // Also refresh check-in store data
     ]);
   };

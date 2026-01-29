@@ -340,9 +340,6 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId, isActiv
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-sm text-gray-600">
-                                  {partner.email}
-                                </p>
                                 <p className="text-xs text-gray-500 mt-1">
                                   Last check-in:{" "}
                                   {partner.lastCheckIn || "Never"}
