@@ -191,6 +191,16 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivit
       fetchUserProgress();
     }, [activityId, user?._id]);
 
+    const refetchUserProgress = async () => {
+      if (!activityId || !user?._id) return;
+      try {
+        const response = await CheckInService.getUserProgress(activityId);
+        setUserProgress(response.data);
+      } catch {
+        // Non-blocking
+      }
+    };
+
     // Use real data from backend
     const realStreakCount = stats?.currentStreak || 0;
     const realTotalCheckIns = stats?.totalCheckIns || 0;
@@ -534,6 +544,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivit
                           "🔄 Refreshing data after check-in completion"
                         );
                         refreshActivityData(currentActivity._id);
+                        refetchUserProgress();
                       }}
                     >
                       <Button
@@ -679,6 +690,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({ activityId, isActivit
                         "🔄 Refreshing data after check-in completion"
                       );
                       refreshActivityData(currentActivity._id);
+                      refetchUserProgress();
                     }}
                   >
                     <Button

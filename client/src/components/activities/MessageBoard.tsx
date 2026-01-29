@@ -49,12 +49,15 @@ interface Message {
 interface MessageBoardProps {
   activityId: string;
   isActivityEnded?: boolean;
+  currentActivity?: { participants?: Array<{ _id?: string; id?: string }>; admin?: { _id?: string; id?: string } };
 }
 
-const MessageBoard: React.FC<MessageBoardProps> = ({ activityId, isActivityEnded = false }) => {
+const MessageBoard: React.FC<MessageBoardProps> = ({ activityId, isActivityEnded = false, currentActivity: currentActivityProp }) => {
   const { user } = useAuth();
-  const { currentActivity } = useActivityStore();
+  const { currentActivity: currentActivityFromStore } = useActivityStore();
   const { toast } = useToast();
+
+  const currentActivity = currentActivityProp ?? currentActivityFromStore;
 
   // Check if user is a participant or admin
   const userId = user?._id || user?.id;

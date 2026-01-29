@@ -261,7 +261,7 @@ const EditActivityDialog = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] bg-gradient-to-br from-white/95 to-buddy-purple/5 backdrop-blur-sm border-2 border-white/20 flex flex-col p-0">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-[700px] max-h-[min(90vh,90dvh)] overflow-hidden bg-gradient-to-br from-white/95 to-buddy-purple/5 backdrop-blur-sm border-2 border-white/20 flex flex-col p-0">
         <DialogHeader className="pb-6 px-6 pt-6 flex-shrink-0">
           <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
             Edit Your Activity
@@ -272,7 +272,7 @@ const EditActivityDialog = ({
         </DialogHeader>
 
         {/* Scrollable Form Content */}
-        <div className="flex-1 overflow-y-auto px-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-6">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}

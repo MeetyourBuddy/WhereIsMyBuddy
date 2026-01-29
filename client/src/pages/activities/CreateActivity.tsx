@@ -32,6 +32,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+
+/** Short-lived validation toast so it doesn't cover the Continue button */
+const validationToast = (message: string) =>
+  toast.error(message, { duration: 3000, position: "top-center" });
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -334,26 +338,26 @@ const CreateActivity = () => {
     switch (currentStep) {
       case 0: // Basic Information
         if (!formData.name.trim()) {
-          toast.error("Activity name is required");
+          validationToast("Activity name is required");
           return false;
         }
         if (!formData.category) {
-          toast.error("Please select a category");
+          validationToast("Please select a category");
           return false;
         }
 
         if (!formData.tags.length) {
-          toast.error("Please select at least one tag");
+          validationToast("Please select at least one tag");
           return false;
         }
 
         if (!formData.description.trim()) {
-          toast.error("Please provide a description");
+          validationToast("Please provide a description");
           return false;
         }
 
         if (!formData.bannerImage) {
-          toast.error("Please select a banner image for your activity");
+          validationToast("Please select a banner image for your activity");
           return false;
         }
 
@@ -361,17 +365,17 @@ const CreateActivity = () => {
 
       case 1: // Schedule
         if (!formData.startDate) {
-          toast.error("Start date is required");
+          validationToast("Start date is required");
           return false;
         }
 
         if (formData.duration === "0") {
-          toast.error("Please select a duration for your activity");
+          validationToast("Please select a duration for your activity");
           return false;
         }
 
         if (formData.maxParticipants === 0) {
-          toast.error("Please select a maximum number of participants");
+          validationToast("Please select a maximum number of participants");
           return false;
         }
 
@@ -379,28 +383,28 @@ const CreateActivity = () => {
           formData.frequency === "weekly" &&
           formData.daysOfWeek.length === 0
         ) {
-          toast.error("Please select at least one day for weekly check-ins");
+          validationToast("Please select at least one day for weekly check-ins");
           return false;
         }
         if (
           formData.frequency === "monthly" &&
           formData.checkinDatesOfMonth.length === 0
         ) {
-          toast.error("Please select at least one date for monthly check-ins");
+          validationToast("Please select at least one date for monthly check-ins");
           return false;
         }
         return true;
 
       case 2: // Visibility
         if (!formData.visibility) {
-          toast.error("Please select activity visibility");
+          validationToast("Please select activity visibility");
           return false;
         }
         return true;
 
       case 3: // Goals
         if (formData.goals.length === 0) {
-          toast.error("Please add at least one goal");
+          validationToast("Please add at least one goal");
           return false;
         }
         return true;

@@ -150,7 +150,12 @@ const BasicInfo = () => {
                         <SelectValue placeholder="Select your country" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent className="rounded-2xl border-2 border-buddy-purple/20">
+                    <SelectContent
+                      className="rounded-2xl border-2 border-buddy-purple/20 max-h-[min(280px,var(--radix-select-content-available-height))]"
+                      position="popper"
+                      sideOffset={4}
+                      collisionPadding={16}
+                    >
                       {countries.map((country) => (
                         <SelectItem
                           key={country.id}

@@ -40,11 +40,12 @@ import {
 interface ActivityPartnersProps {
   activityId: string;
   isActivityEnded?: boolean;
+  currentActivity?: { participants?: Array<{ _id?: string; id?: string }>; admin?: { _id?: string; id?: string } };
 }
 
 // Remove local interfaces - using imported ones from service
 
-const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId, isActivityEnded = false }) => {
+const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId, isActivityEnded = false, currentActivity: currentActivityProp }) => {
   const [activeTab, setActiveTab] = useState("partners");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [invitations, setInvitations] = useState<PartnerInvitation[]>([]);
@@ -52,7 +53,9 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId, isActiv
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { currentActivity } = useActivityStore();
+  const { currentActivity: currentActivityFromStore } = useActivityStore();
+
+  const currentActivity = currentActivityProp ?? currentActivityFromStore;
 
   // Check if user is a participant or admin
   const userId = user?._id || user?.id;

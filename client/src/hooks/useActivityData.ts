@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useActivityStore } from "@/store/activity.store";
 import { useCheckInStore } from "@/store/checkin.store";
@@ -117,6 +118,16 @@ export const useActivityData = (activityId?: string) => {
     staleTime: 1 * 60 * 1000, // 1 minute
     gcTime: 3 * 60 * 1000, // 3 minutes
   });
+
+  // Keep store in sync with activity query so MessageBoard/ActivityPartners have currentActivity when tabs mount
+  useEffect(() => {
+    const data = activityQuery.data;
+    if (!data || !activityId) return;
+    const id = (data as IActivityResult)._id || (data as IActivityResult).id;
+    if (id && String(id) === String(activityId)) {
+      setCurrentActivity(data as IActivityResult);
+    }
+  }, [activityId, activityQuery.data, setCurrentActivity]);
 
   // Mutations for activity operations
   const createActivityMutation = useMutation({

@@ -382,6 +382,14 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         await fetchCheckInStats(activity._id);
         await fetchUserBadges(activity._id);
 
+        // Refetch user progress so "Your Progress" updates immediately
+        try {
+          const response = await CheckInService.getUserProgress(activity._id);
+          setUserProgress(response.data);
+        } catch {
+          // Non-blocking; progress will update on next open
+        }
+
         if (onCheckInComplete) {
           onCheckInComplete();
         }

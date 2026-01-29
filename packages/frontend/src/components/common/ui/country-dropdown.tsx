@@ -99,17 +99,20 @@ export const CountryDropdown = React.forwardRef<HTMLButtonElement, CountryDropdo
           <ChevronDown size={16} />
         </PopoverTrigger>
         <PopoverContent
-          collisionPadding={10}
+          collisionPadding={16}
+          sideOffset={4}
+          align="start"
           side="bottom"
-          className="min-w-[--radix-popper-anchor-width] p-0"
+          className="min-w-[--radix-popper-anchor-width] p-0 overflow-hidden"
+          avoidCollisions
         >
-          <Command className="max-h-[200px] w-full sm:max-h-[270px]">
-            <CommandList>
-              <div className="sticky top-0 z-10 bg-popover">
+          <Command className="max-h-[280px] w-full sm:max-h-[320px]">
+            <CommandList className="max-h-[240px] sm:max-h-[280px] py-1">
+              <div className="sticky top-0 z-10 bg-popover px-1 pt-1 pb-1.5 shrink-0">
                 <CommandInput placeholder="Search country..." />
               </div>
               <CommandEmpty>No country found.</CommandEmpty>
-              <CommandGroup>
+              <CommandGroup className="p-1 pt-0">
                 {countries.all
                   .filter((x) => x.name)
                   .map((option, key: number) => (

@@ -95,6 +95,7 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
           title: "Invalid file type",
           description: "Please select an image file (JPG, PNG, GIF, etc.)",
           variant: "destructive",
+          duration: 3000,
         });
         return;
       }
@@ -105,6 +106,7 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
           title: "File too large",
           description: "Please select an image smaller than 5MB",
           variant: "destructive",
+          duration: 3000,
         });
         return;
       }
@@ -124,6 +126,7 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
         title: "No banner selected",
         description: "Please select a banner or upload your own image",
         variant: "destructive",
+        duration: 3000,
       });
       return;
     }
@@ -142,6 +145,7 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
         description:
           "There was an error updating your banner. Please try again.",
         variant: "destructive",
+        duration: 3000,
       });
     } finally {
       setIsLoading(false);
@@ -157,14 +161,15 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl bg-gradient-to-br from-white/95 to-buddy-purple/5 backdrop-blur-sm border-2 border-white/20">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[min(90vh,90dvh)] overflow-hidden flex flex-col p-0 bg-gradient-to-br from-white/95 to-buddy-purple/5 backdrop-blur-sm border-2 border-white/20">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-center bg-gradient-to-r from-buddy-purple to-buddy-blue bg-clip-text text-transparent">
             Edit Activity Banner
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-6">
+          <div className="space-y-6 pb-4">
           {/* Current Banner Preview */}
           <div>
             <Label className="text-buddy-gray-700 font-semibold text-base mb-3 block">
@@ -282,26 +287,27 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
               </div>
             )}
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-4 pt-4 border-t border-buddy-gray-200/50">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1 rounded-full border-2 border-buddy-gray-300 text-buddy-gray-700 hover:bg-buddy-gray-50 hover:border-buddy-gray-400 transition-all duration-300 h-10 text-sm font-medium"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={isLoading}
-              className="flex-1 rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 h-10 text-sm font-semibold"
-            >
-              {isLoading ? "Saving..." : "Save Banner"}
-            </Button>
           </div>
+        </div>
+
+        {/* Fixed footer */}
+        <div className="flex-shrink-0 flex gap-4 p-6 pt-4 border-t border-buddy-gray-200/50">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            className="flex-1 rounded-full border-2 border-buddy-gray-300 text-buddy-gray-700 hover:bg-buddy-gray-50 hover:border-buddy-gray-400 transition-all duration-300 h-10 text-sm font-medium"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={isLoading}
+            className="flex-1 rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 h-10 text-sm font-semibold"
+          >
+            {isLoading ? "Saving..." : "Save Banner"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -59,6 +59,7 @@ const Dashboard = () => {
   const [suggestedActivities, setSuggestedActivities] = useState([]);
   const [connectedBuddies, setConnectedBuddies] = useState([]);
   const [suggestedBuddies, setSuggestedBuddies] = useState([]);
+  const [userProgressByActivity, setUserProgressByActivity] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   console.log("API URL Dashboard:", import.meta.env.VITE_API_URL);
@@ -198,9 +199,11 @@ const Dashboard = () => {
           setSuggestedBuddies([]);
         }
 
-        // Get user's progress across all activities to calculate overall streak
+        // Get user's progress across all activities to calculate overall streak and progress %
         let overallStreak = 0;
-        if (activeActivitiesData.length > 0) {
+        if (activeActivitiesData.length === 0) {
+          setUserProgressByActivity({});
+        } else {
           try {
             const activityIds = activeActivitiesData.map(
               (activity) => activity._id || activity.id
@@ -210,6 +213,9 @@ const Dashboard = () => {
 
             // Extract the actual data from the response
             const userProgressData = userProgressResponse.data;
+
+            // Store per-activity progress so "Your Progress" uses real check-in data
+            setUserProgressByActivity(userProgressData || {});
 
             // Calculate overall streak - find the maximum streak across all activities
             const streaks = Object.values(userProgressData).map(
@@ -239,9 +245,8 @@ const Dashboard = () => {
               error
             );
             overallStreak = 0;
+            setUserProgressByActivity({});
           }
-        } else {
-          console.log("🎯 No active activities found, streak set to 0");
         }
 
         // Calculate user stats
@@ -301,8 +306,15 @@ const Dashboard = () => {
   };
 
   const getActivityProgress = (activity) => {
-    if (!activity.checkIns || !activity.totalCheckIns) return 0;
-    return Math.round((activity.checkIns / activity.totalCheckIns) * 100);
+    const activityId = activity._id || activity.id;
+    const progressData = userProgressByActivity[activityId];
+    if (progressData != null && typeof progressData.progress === "number") {
+      return progressData.progress;
+    }
+    if (activity.checkIns != null && activity.totalCheckIns != null && activity.totalCheckIns > 0) {
+      return Math.round((activity.checkIns / activity.totalCheckIns) * 100);
+    }
+    return 0;
   };
 
   // Filter active activities to only show non-ended ones
