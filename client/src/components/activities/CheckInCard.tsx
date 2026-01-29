@@ -237,18 +237,15 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
         </div>
 
         <div className="px-4 py-3 flex justify-between items-center border-t border-buddy-gray-100 bg-gradient-to-r from-buddy-gray-50/50 to-white">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center text-sm text-buddy-gray-600">
-              <UserCheck className="w-4 h-4 mr-2 text-buddy-purple" />
-              <span className="font-medium">
-                {checkedInParticipants} checked in
-              </span>
-            </div>
-            <div className="flex items-center text-sm text-buddy-gray-600">
-              <MessageCircle className="w-4 h-4 mr-2 text-buddy-blue" />
-              <span className="font-medium">{checkIns.length} comments</span>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={toggleThread}
+            className="flex items-center text-sm text-buddy-gray-600 hover:text-buddy-blue cursor-pointer transition-colors rounded-md px-2 py-1.5 -mx-2 hover:bg-buddy-blue/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-buddy-blue/50 focus-visible:ring-offset-1"
+            aria-label={`View check-ins and comments (${checkIns.length})`}
+          >
+            <MessageCircle className="w-4 h-4 mr-2 text-buddy-blue shrink-0" />
+            <span className="font-medium">View check-ins &amp; comments ({checkIns.length})</span>
+          </button>
 
           {!isCheckedIn && canAccessCheckIn && (
             <CheckInDialog activity={activity}>

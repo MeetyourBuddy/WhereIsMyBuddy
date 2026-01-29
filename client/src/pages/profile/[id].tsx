@@ -187,7 +187,13 @@ const ProfilePage = () => {
             Back
           </Button>
         )}
-        <ProfileCard {...profile} showJoinButton={true} />
+        <ProfileCard
+          {...profile}
+          showJoinButton={true}
+          isOwnProfile={
+            id === currentUser?._id || id === (currentUser as any)?.id
+          }
+        />
       </div>
     </div>
   );

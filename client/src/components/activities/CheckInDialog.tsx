@@ -17,6 +17,7 @@ import {
   Upload,
   X,
   Image as ImageIcon,
+  Info,
 } from "lucide-react";
 import {
   Dialog,
@@ -33,6 +34,11 @@ import { toast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
 import { Progress } from "../ui/progress";
 import { Badge } from "../ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { IActivityResult } from "@/types/activity-types";
 import { useCheckInStore } from "@/store/checkin.store";
 import { useBadgeStore } from "@/store/badge.store";
@@ -450,13 +456,25 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
                 </div>
                 <p className="text-xs text-white/80">Activity Progress</p>
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-1 mb-1">
-                  <Zap className="w-4 h-4" />
-                  <span className="font-semibold">{pointsEarned}</span>
-                </div>
-                <p className="text-xs text-white/80">Points Earned</p>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-center cursor-help">
+                    <div className="flex items-center justify-center space-x-1 mb-1">
+                      <Zap className="w-4 h-4" />
+                      <span className="font-semibold">{pointsEarned}</span>
+                      <Info className="w-3 h-3 text-white/70" />
+                    </div>
+                    <p className="text-xs text-white/80">Points Earned</p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[240px] text-sm">
+                  <p className="font-medium mb-1">How points work</p>
+                  <p className="text-muted-foreground">
+                    You earn 10 points per check-in plus 5 points per day of your
+                    current streak. Keep checking in to grow your score!
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </DialogHeader>
         </div>

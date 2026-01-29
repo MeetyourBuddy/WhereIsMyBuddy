@@ -30,6 +30,7 @@ import {
   Compass,
   Globe,
   Smartphone,
+  Settings,
 } from "lucide-react";
 import {
   Sheet,
@@ -62,6 +63,7 @@ interface ProfileCardProps {
     icon?: string;
   }[];
   showJoinButton?: boolean;
+  isOwnProfile?: boolean;
 }
 
 // Array of beautiful header background images
@@ -91,6 +93,7 @@ const ProfileCard = ({
   buddyCount,
   achievements = [],
   showJoinButton = false,
+  isOwnProfile = false,
 }: ProfileCardProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -207,6 +210,15 @@ const ProfileCard = ({
                     Sign in to connect
                   </Button>
                 </>
+              ) : isOwnProfile ? (
+                <Button
+                  size="sm"
+                  className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
+                  onClick={() => navigate("/settings")}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
               ) : (
                 <>
                   <Button

@@ -619,7 +619,16 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
               <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
             )} */}
             {isProfileComplete && (
-              <CheckCircle className="w-5 h-5 text-white bg-green-500 rounded-full" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <CheckCircle className="w-5 h-5 text-white bg-green-500 rounded-full" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-sm">
+                  <p>Profile complete</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
 
@@ -706,7 +715,7 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
             <div className="flex gap-3 text-sm text-buddy-gray-600">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-help">
+                  <div className="flex items-center gap-1 cursor-pointer">
                     <Activity className="w-4 h-4 flex-shrink-0 text-buddy-gray-400" />
                     <span className="font-medium text-2xl text-buddy-gray-900">{activityStats.active}</span>
                   </div>
@@ -722,7 +731,7 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-help">
+                  <div className="flex items-center gap-1 cursor-pointer">
                     <CheckCircle className="w-4 h-4 flex-shrink-0 text-buddy-gray-400" />
                     <span className="font-medium text-2xl text-buddy-gray-900">{activityStats.completed}</span>
                   </div>
