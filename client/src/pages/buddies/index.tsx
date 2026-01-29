@@ -4,7 +4,6 @@ import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import { Button as ShadcnButton } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Pagination from "@/components/ui/pagination";

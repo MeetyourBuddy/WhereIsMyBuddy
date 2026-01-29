@@ -142,7 +142,13 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <div className="cursor-pointer">
-                      <Avatar size="md" status="online" />
+                      <Avatar
+                        src={user?.avatar}
+                        alt={user?.name ?? "User"}
+                        initials={user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                        size="md"
+                        status="online"
+                      />
                     </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
@@ -314,7 +320,12 @@ const Header = ({ isLoggedIn = false, className }: HeaderProps) => {
                     className="flex items-center space-x-3 p-3 rounded-lg text-buddy-purple hover:bg-buddy-purple/10 transition-colors"
                     onClick={toggleMenu}
                   >
-                    <Avatar size="sm" />
+                    <Avatar
+                      src={user?.avatar}
+                      alt={user?.name ?? "User"}
+                      initials={user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                      size="sm"
+                    />
                     <div className="flex flex-col">
                       <span className="font-medium">
                         {user?.name || "Profile"}

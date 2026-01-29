@@ -5,11 +5,13 @@ import { cn } from "@/lib/utils";
 interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;
   alt?: string;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "card";
   status?: "online" | "offline" | "busy" | "away" | "none";
   initials?: string;
   isGroup?: boolean;
   groupImages?: string[];
+  /** Applied to the inner container when showing initials (no src) */
+  fallbackClassName?: string;
 }
 
 const Avatar = ({
@@ -21,6 +23,7 @@ const Avatar = ({
   isGroup = false,
   groupImages = [],
   className,
+  fallbackClassName,
   ...props
 }: AvatarProps) => {
   const sizeClasses = {
@@ -29,6 +32,7 @@ const Avatar = ({
     md: "w-10 h-10 text-base",
     lg: "w-12 h-12 text-lg",
     xl: "w-16 h-16 text-xl",
+    card: "w-full h-48 text-6xl rounded-sm",
   };
 
   const statusColorClasses = {
@@ -45,6 +49,7 @@ const Avatar = ({
     md: "w-3 h-3 right-0 bottom-0",
     lg: "w-3.5 h-3.5 right-0 bottom-0",
     xl: "w-4 h-4 right-0.5 bottom-0.5",
+    card: "w-3 h-3 right-0 bottom-0",
   };
 
   if (isGroup && groupImages.length > 0) {
@@ -84,11 +89,14 @@ const Avatar = ({
     );
   }
 
+  const isCardSize = size === "card";
   return (
-    <div className={cn("relative inline-block", className)} {...props}>
+    <div className={cn(isCardSize ? "block w-full" : "relative inline-block", className)} {...props}>
       <div
         className={cn(
-          "relative flex items-center justify-center rounded-full overflow-hidden bg-buddy-gray-200 text-buddy-gray-700 font-medium",
+          "relative flex items-center justify-center overflow-hidden text-buddy-gray-700 font-medium",
+          isCardSize ? "rounded-sm" : "rounded-full",
+          !src && fallbackClassName ? fallbackClassName : "bg-buddy-gray-200",
           sizeClasses[size]
         )}
       >

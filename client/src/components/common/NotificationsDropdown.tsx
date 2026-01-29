@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import Avatar from "@/components/common/Avatar";
 import { NotificationService, NotificationData } from "@/services/api/notification.service";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/store/auth.store";
@@ -224,12 +224,12 @@ const NotificationsDropdown: React.FC = () => {
                 >
                   <div className="flex items-start gap-3">
                     {notification.sender ? (
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={notification.sender.avatar} />
-                        <AvatarFallback>
-                          {notification.sender.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <Avatar
+                        src={notification.sender.avatar}
+                        alt={notification.sender.name}
+                        initials={notification.sender.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                        size="md"
+                      />
                     ) : (
                       <div className="h-10 w-10 rounded-full bg-buddy-purple/10 flex items-center justify-center">
                         {getNotificationIcon(notification.type)}

@@ -22,7 +22,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Avatar from "@/components/common/Avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/store/auth.store";
 import { useActivityStore } from "@/store/activity.store";
@@ -311,18 +311,12 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId, isActiv
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div className="flex items-center gap-3">
-                              <Avatar className="w-12 h-12">
-                                <AvatarImage
-                                  src={partner.avatar}
-                                  alt={partner.name}
-                                />
-                                <AvatarFallback className="bg-buddy-purple/10 text-buddy-purple">
-                                  {partner.name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
-                                </AvatarFallback>
-                              </Avatar>
+                              <Avatar
+                                src={partner.avatar}
+                                alt={partner.name}
+                                initials={partner.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                                size="lg"
+                              />
 
                               <div>
                                 <div className="flex items-center gap-2">
@@ -436,18 +430,12 @@ const ActivityPartners: React.FC<ActivityPartnersProps> = ({ activityId, isActiv
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10">
-                                <AvatarImage
-                                  src={invitation.fromUser.avatar}
-                                  alt={invitation.fromUser.name}
-                                />
-                                <AvatarFallback className="bg-buddy-purple/10 text-buddy-purple">
-                                  {invitation.fromUser.name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
-                                </AvatarFallback>
-                              </Avatar>
+                              <Avatar
+                                src={invitation.fromUser.avatar}
+                                alt={invitation.fromUser.name}
+                                initials={invitation.fromUser.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                                size="md"
+                              />
 
                               <div>
                                 <p className="font-medium">

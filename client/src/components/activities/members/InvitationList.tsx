@@ -119,6 +119,7 @@ const InvitationList: React.FC<InvitationListProps> = ({
                   <Avatar
                     src={invitation.toUser.avatar}
                     alt={invitation.toUser.name}
+                    initials={invitation.toUser.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                     size="sm"
                     className="rounded-full"
                   />

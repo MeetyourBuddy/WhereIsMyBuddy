@@ -940,6 +940,7 @@ const Dashboard = () => {
                             <Avatar
                               src={buddy.avatar || buddy.profileImage}
                               alt={buddy.name}
+                              initials={buddy.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                               size="sm"
                               className="border-2 border-buddy-purple/20 rounded-full"
                             />
@@ -1057,6 +1058,7 @@ const Dashboard = () => {
                             <Avatar
                               src={buddy.avatar || buddy.profileImage}
                               alt={buddy.name}
+                              initials={buddy.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                               size="sm"
                               className="border-2 border-buddy-blue/20 rounded-full"
                             />

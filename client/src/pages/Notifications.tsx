@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import Avatar from "@/components/common/Avatar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import Container from "@/components/ui/layout/Container";
 import { Badge } from "@/components/ui/badge";
@@ -706,15 +706,13 @@ const Notifications: React.FC = () => {
                       <Card.Content className="p-6">
                         <div className="flex">
                           {notification.sender ? (
-                            <Avatar className="h-12 w-12 mr-4 ring-2 ring-buddy-purple/20">
-                              <AvatarImage
-                                src={notification.sender.avatar}
-                                alt={notification.sender.name}
-                              />
-                              <AvatarFallback className="bg-gradient-to-br from-buddy-purple to-buddy-blue text-white font-semibold">
-                                {notification.sender.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
+                            <Avatar
+                              src={notification.sender.avatar}
+                              alt={notification.sender.name}
+                              initials={notification.sender.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                              size="lg"
+                              className="mr-4 ring-2 ring-buddy-purple/20"
+                            />
                           ) : (
                             <div
                               className={`h-12 w-12 rounded-full flex items-center justify-center mr-4 shadow-lg ${getNotificationColor(notification.type)}`}

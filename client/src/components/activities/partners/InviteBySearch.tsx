@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Avatar from "@/components/common/Avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/store/auth.store";
 import { partnerService, User } from "@/services/api/activity/partner.service";
@@ -125,15 +125,12 @@ const InviteBySearch: React.FC<InviteBySearchProps> = ({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className="bg-buddy-purple/10 text-buddy-purple">
-                          {user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
+                      <Avatar
+                        src={user.avatar}
+                        alt={user.name}
+                        initials={user.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                        size="md"
+                      />
 
                       <div>
                         <div className="flex items-center gap-2">

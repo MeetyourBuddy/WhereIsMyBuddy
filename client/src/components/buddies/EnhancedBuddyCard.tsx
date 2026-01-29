@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/common/Card";
+import Avatar from "@/components/common/Avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -571,21 +572,22 @@ const EnhancedBuddyCard: React.FC<EnhancedBuddyCardProps> = ({
         {/* Profile Image Section with Padding */}
         <div className="p-3 pb-0">
           <div className="relative w-full h-48 overflow-hidden rounded-sm">
-            {profileImage ? (
-              <img
-                src={profileImage}
-                alt={user.name || "User"}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div
-                className={`w-full h-full flex items-center justify-center ${getPastelColorClass(userId)}`}
-              >
-                <span className="text-7xl font-bold text-white drop-shadow-md">
-                  {getUserInitial()}
-                </span>
-              </div>
-            )}
+            <Avatar
+              src={profileImage ?? undefined}
+              alt={user.name || "User"}
+              initials={
+                user.name
+                  ? user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2) || getUserInitial()
+                  : getUserInitial()
+              }
+              size="card"
+              fallbackClassName={!profileImage ? `${getPastelColorClass(userId)} text-white` : undefined}
+            />
 
             {/* Boost Button - Top Right */}
             <Tooltip>
