@@ -150,67 +150,96 @@ const Dashboard = () => {
         
         setConnectedBuddies(buddyUsers);
 
-        // Fetch all users to find perfect matches
-        // Filter out existing buddies and calculate interest match
+        // Fetch all users to find perfect matches by distance, interests, and activity engagement
         try {
           const { UserSearchService } = await import("@/services/api/user/user-search.service");
           const allUsersResponse = await UserSearchService.searchUsers({
-            limit: 100, // Get a good sample
+            limit: 100,
             offset: 0,
           });
-          
-          const allUsers = allUsersResponse.data?.data || [];
-          
-          // Get IDs of existing buddies
+          // Backend returns { data: User[], metadata }; apiMethods.get returns that body
+          const allUsers = Array.isArray(allUsersResponse?.data) ? allUsersResponse.data : [];
+
           const buddyIds = new Set(
             connections.map((conn) => {
               const isRequester = conn.requester.id === user._id;
               return isRequester ? conn.recipient.id : conn.requester.id;
             })
           );
-          
-          // Filter out current user and existing buddies
           const potentialMatches = allUsers.filter(
             (u) => u._id !== user._id && !buddyIds.has(u._id || u.id)
           );
-          
-          // Calculate interest match percentage for each user
+
+          // Build activity joined count per user (from all activities)
+          const activityCountByUserId = new Map();
+          for (const activity of allActivities) {
+            const participants = activity.participants || [];
+            for (const p of participants) {
+              const pid = p._id ?? p.id ?? p;
+              const id = typeof pid === "string" ? pid : pid?.toString?.() ?? "";
+              if (id) {
+                activityCountByUserId.set(id, (activityCountByUserId.get(id) ?? 0) + 1);
+              }
+            }
+          }
+          const maxActivityCount = Math.max(1, ...activityCountByUserId.values());
+
+          // Normalize country for comparison (string or object with code/name)
+          const getCountryKey = (u) => {
+            if (!u?.country) return "";
+            if (typeof u.country === "string") return u.country.trim().toLowerCase();
+            return String(u.country?.code ?? u.country?.name ?? "").trim().toLowerCase();
+          };
+          const getCityKey = (u) => String(u?.city ?? "").trim().toLowerCase();
+          const currentCountry = getCountryKey(user);
+          const currentCity = getCityKey(user);
+
           const userInterests = user.interestsCommodities || [];
           const matchesWithScores = potentialMatches
             .map((match) => {
               const matchInterests = match.interestsCommodities || [];
-              
-              // Calculate match percentage based on common interests
-              let matchCount = 0;
+              let interestScore = 0;
+              let commonInterests = 0;
               if (userInterests.length > 0 && matchInterests.length > 0) {
                 const userInterestSet = new Set(
                   userInterests.map((i) => i.toString().toLowerCase())
                 );
-                matchCount = matchInterests.filter((i) =>
+                commonInterests = matchInterests.filter((i) =>
                   userInterestSet.has(i.toString().toLowerCase())
                 ).length;
-                
-                // Calculate percentage: common interests / max interests
                 const maxInterests = Math.max(userInterests.length, matchInterests.length);
-                const matchPercentage = Math.round((matchCount / maxInterests) * 100);
-                
-                return {
-                  ...match,
-                  matchPercentage,
-                  commonInterests: matchCount,
-                };
+                interestScore = Math.round((commonInterests / maxInterests) * 100);
               }
-              
+
+              const matchCountry = getCountryKey(match);
+              const matchCity = getCityKey(match);
+              const locationScore =
+                currentCountry && matchCountry && currentCountry === matchCountry
+                  ? currentCity && matchCity && currentCity === matchCity
+                    ? 100
+                    : 80
+                  : 0;
+
+              const joinedCount = activityCountByUserId.get(match._id ?? match.id) ?? 0;
+              const activityScore = Math.round((joinedCount / maxActivityCount) * 100);
+
+              const compositeScore = Math.round(
+                0.4 * interestScore + 0.35 * locationScore + 0.25 * activityScore
+              );
+
               return {
                 ...match,
-                matchPercentage: 0,
-                commonInterests: 0,
+                matchPercentage: compositeScore,
+                commonInterests,
+                interestScore,
+                locationScore,
+                activityScore,
+                activityJoinedCount: joinedCount,
               };
             })
-            .filter((match) => match.matchPercentage > 0) // Only show users with some match
-            .sort((a, b) => b.matchPercentage - a.matchPercentage) // Sort by match percentage
-            .slice(0, 5); // Limit to 5 best matches
-          
+            .sort((a, b) => b.matchPercentage - a.matchPercentage)
+            .slice(0, 5);
+
           setSuggestedBuddies(matchesWithScores);
         } catch (error) {
           console.error("Failed to fetch perfect matches:", error);
@@ -754,7 +783,7 @@ const Dashboard = () => {
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-buddy-purple/5 to-buddy-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="relative w-full z-10 flex flex-col md:flex-row">
-                          <div className="relative max-w-[150px] overflow-hidden h-48 md:h-auto">
+                          <div className="relative w-full md:w-[150px] md:min-w-[150px] h-40 flex-shrink-0 overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-br from-buddy-purple/30 to-buddy-blue/30 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <img
                               src={
@@ -1071,27 +1100,31 @@ const Dashboard = () => {
                               <h3 className="font-medium text-buddy-gray-900 text-sm truncate">
                                 {buddy.name}
                               </h3>
-                              <span className="text-xs bg-buddy-blue/10 text-buddy-blue px-1.5 py-0.5 rounded-full font-medium">
-                                {buddy.matchPercentage || 85}%
-                              </span>
+                              {/* <span className="text-xs bg-buddy-blue/10 text-buddy-blue px-1.5 py-0.5 rounded-full font-medium">
+                                {buddy.matchPercentage ?? 0}%
+                              </span> */}
                             </div>
-                            <div className="flex flex-wrap gap-1">
-                              {buddy.interests
-                                ?.slice(0, 2)
-                                .map((interest, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-xs bg-buddy-blue/10 text-buddy-blue px-1.5 py-0.5 rounded-full"
-                                  >
-                                    {interest}
+                            {(buddy.interestsCommodities?.length > 0 || buddy.interests?.length > 0) && (
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {(buddy.interestsCommodities ?? buddy.interests ?? [])
+                                    .slice(0, 2)
+                                    .map((interest, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-xs bg-buddy-blue/10 text-buddy-blue px-2 py-0.5 rounded-full font-medium"
+                                      >
+                                        {typeof interest === "string" ? interest : (interest?.name ?? String(interest))}
+                                      </span>
+                                    ))}
+                                </div>
+                                {(buddy.interestsCommodities ?? buddy.interests ?? []).length > 2 && (
+                                  <span className="text-xs text-buddy-gray-500 font-medium flex-shrink-0 border border-buddy-blue/20 rounded-full px-2 pt-0.5 items-center justify-center">
+                                    +{(buddy.interestsCommodities ?? buddy.interests).length - 2}
                                   </span>
-                                ))}
-                              {buddy.interests && buddy.interests.length > 2 && (
-                                <span className="text-xs text-buddy-gray-500">
-                                  +{buddy.interests.length - 2}
-                                </span>
-                              )}
-                            </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <Button
                             variant="ghost"

@@ -187,15 +187,15 @@ const Index = () => {
               </button>
               <button
                 className={`text-buddy-gray-700 hover:text-buddy-purple transition-colors ${scrolled ? "py-2" : "py-1"}`}
-                onClick={() => scrollToSection(communityRef)}
-              >
-                Community
-              </button>
-              <button
-                className={`text-buddy-gray-700 hover:text-buddy-purple transition-colors ${scrolled ? "py-2" : "py-1"}`}
                 onClick={() => scrollToSection(activitiesRef)}
               >
                 Activities
+              </button>
+              <button
+                className={`text-buddy-gray-700 hover:text-buddy-purple transition-colors ${scrolled ? "py-2" : "py-1"}`}
+                onClick={() => scrollToSection(communityRef)}
+              >
+                Community
               </button>
             </nav>
 
@@ -239,15 +239,15 @@ const Index = () => {
                 </button>
                 <button
                   className="py-2 px-4 text-left hover:bg-buddy-purple-50 rounded-md transition-colors"
-                  onClick={() => scrollToSection(communityRef)}
-                >
-                  Community
-                </button>
-                <button
-                  className="py-2 px-4 text-left hover:bg-buddy-purple-50 rounded-md transition-colors"
                   onClick={() => scrollToSection(activitiesRef)}
                 >
                   Activities
+                </button>
+                <button
+                  className="py-2 px-4 text-left hover:bg-buddy-purple-50 rounded-md transition-colors"
+                  onClick={() => scrollToSection(communityRef)}
+                >
+                  Community
                 </button>
               </div>
             </div>
@@ -551,6 +551,97 @@ const Index = () => {
       </section>
 
       <section
+        ref={activitiesRef}
+        className="py-16 md:py-24 bg-gradient-to-br from-buddy-green/5 via-white to-buddy-blue/5 relative overflow-hidden"
+      >
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-buddy-green/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-buddy-blue/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <Container>
+          <div className="text-center mb-16 relative z-10">
+            <span className="inline-block bg-buddy-green/10 text-buddy-green px-6 py-2 rounded-full text-sm font-semibold mb-6">
+              Activities
+            </span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-buddy-gray-900">
+              Join Epic Challenges & Activities! 🎯
+            </h2>
+            <p className="text-buddy-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
+              Ready to level up your life? Join thousands of people in exciting
+              challenges that will push you to be your best self. From fitness
+              goals to learning new skills - we've got something for
+              everyone! 🚀
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 relative z-10">
+            {activities.map((activity, index) => (
+              <motion.div
+                key={index}
+                initial={{ y: 30, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="group"
+              >
+                <Card className="h-full overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-buddy-gray-200/50 hover:border-buddy-green/40 bg-white/90 backdrop-blur-sm rounded-2xl">
+                  <div className="relative h-56 overflow-hidden">
+                    <img
+                      src={activity.image}
+                      alt={activity.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-6 text-white">
+                      <span className="inline-block bg-gradient-to-r from-buddy-green to-buddy-green-dark px-3 py-1 rounded-full text-xs font-bold mb-3">
+                        {activity.category}
+                      </span>
+                      <h3 className="text-xl font-bold mb-2">
+                        {activity.title}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-buddy-gray-600 mb-4 text-sm leading-relaxed">
+                      {activity.description}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-buddy-gray-500 flex items-center font-medium">
+                        <Users className="w-4 h-4 mr-2 text-buddy-blue" />
+                        {activity.participants} participants
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => navigate("/activities?tab=popular")}
+                        className="rounded-full text-buddy-green hover:bg-buddy-green/10 font-medium"
+                      >
+                        View Details →
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="text-center relative z-10">
+            <Link to="/activities">
+              <Button 
+                variant="outline"
+                className="rounded-full border-2 border-buddy-green text-buddy-green hover:bg-buddy-green hover:text-white transition-all duration-300 px-8 py-3 text-lg font-semibold"
+              >
+                Explore All Activities
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
+        </Container>
+      </section>
+
+      <section
         ref={communityRef}
         className="py-16 md:py-24 bg-gradient-to-br from-buddy-purple/5 via-white to-buddy-blue/5 relative overflow-hidden"
       >
@@ -647,97 +738,6 @@ const Index = () => {
                 className="rounded-full border-2 border-buddy-purple text-buddy-purple hover:bg-buddy-purple hover:text-white transition-all duration-300 px-8 py-3 text-lg font-semibold"
               >
                 Browse All Buddies
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
-          </div>
-        </Container>
-      </section>
-
-      <section
-        ref={activitiesRef}
-        className="py-16 md:py-24 bg-gradient-to-br from-buddy-green/5 via-white to-buddy-blue/5 relative overflow-hidden"
-      >
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-buddy-green/10 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-buddy-blue/10 rounded-full blur-3xl"></div>
-        </div>
-
-        <Container>
-          <div className="text-center mb-16 relative z-10">
-            <span className="inline-block bg-buddy-green/10 text-buddy-green px-6 py-2 rounded-full text-sm font-semibold mb-6">
-              Activities
-            </span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-buddy-gray-900">
-              Join Epic Challenges & Activities! 🎯
-            </h2>
-            <p className="text-buddy-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
-              Ready to level up your life? Join thousands of people in exciting
-              challenges that will push you to be your best self. From fitness
-              goals to learning new skills - we've got something for
-              everyone! 🚀
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 relative z-10">
-            {activities.map((activity, index) => (
-              <motion.div
-                key={index}
-                initial={{ y: 30, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="group"
-              >
-                <Card className="h-full overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-buddy-gray-200/50 hover:border-buddy-green/40 bg-white/90 backdrop-blur-sm rounded-2xl">
-                  <div className="relative h-56 overflow-hidden">
-                    <img
-                      src={activity.image}
-                      alt={activity.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 p-6 text-white">
-                      <span className="inline-block bg-gradient-to-r from-buddy-green to-buddy-green-dark px-3 py-1 rounded-full text-xs font-bold mb-3">
-                        {activity.category}
-                      </span>
-                      <h3 className="text-xl font-bold mb-2">
-                        {activity.title}
-                      </h3>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <p className="text-buddy-gray-600 mb-4 text-sm leading-relaxed">
-                      {activity.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-buddy-gray-500 flex items-center font-medium">
-                        <Users className="w-4 h-4 mr-2 text-buddy-blue" />
-                        {activity.participants} participants
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => navigate("/activities?tab=popular")}
-                        className="rounded-full text-buddy-green hover:bg-buddy-green/10 font-medium"
-                      >
-                        View Details →
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="text-center relative z-10">
-            <Link to="/activities">
-              <Button 
-                variant="outline"
-                className="rounded-full border-2 border-buddy-green text-buddy-green hover:bg-buddy-green hover:text-white transition-all duration-300 px-8 py-3 text-lg font-semibold"
-              >
-                Explore All Activities
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
