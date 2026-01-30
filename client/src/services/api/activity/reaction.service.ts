@@ -23,6 +23,11 @@ export type ReactionType =
   | "star"
   | "rocket";
 
+export interface ReactionWithUser {
+  type: string;
+  user: { _id: string; name: string; avatar?: string };
+}
+
 export const ReactionService = {
   addReaction: (checkInId: string, reactionType: ReactionType) =>
     apiMethods.post<ReactionStats>(`/reactions/checkin/${checkInId}`, {
@@ -37,6 +42,11 @@ export const ReactionService = {
 
   getUserReaction: (checkInId: string) =>
     apiMethods.get<UserReaction | null>(`/reactions/checkin/${checkInId}/user`),
+
+  getReactionsForCheckIn: (checkInId: string) =>
+    apiMethods.get<ReactionWithUser[]>(
+      `/reactions/checkin/${checkInId}/list`
+    ),
 };
 
 export const CheckInService = {

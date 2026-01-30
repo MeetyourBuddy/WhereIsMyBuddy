@@ -52,4 +52,21 @@ export class ReactionController {
   ): Promise<UserReaction | null> {
     return this.reactionService.getUserReaction(checkInId, userId);
   }
+
+  @Get('checkin/:checkInId/list')
+  async getReactionsForCheckIn(
+    @Param('checkInId') checkInId: string,
+  ): Promise<Array<{ type: string; user: { _id: string; name: string; avatar?: string } }>> {
+    const reactions = await this.reactionService.getReactionsForCheckIn(checkInId);
+    return reactions.map((r) => ({
+      type: r.type,
+      user: r.user && typeof r.user === 'object' && 'name' in r.user
+        ? {
+            _id: String((r.user as any)._id ?? (r.user as any).id),
+            name: (r.user as any).name ?? 'Unknown',
+            avatar: (r.user as any).avatar,
+          }
+        : { _id: String(r.user), name: 'Unknown', avatar: undefined },
+    }));
+  }
 }
