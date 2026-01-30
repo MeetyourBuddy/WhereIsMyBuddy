@@ -4,9 +4,10 @@ import {
   ChevronRight,
   Calendar,
   Clock,
-  CheckCircle,
 } from "lucide-react";
 import { CheckInService } from "@/services/api/checkin/checkin-service";
+import { useAuth } from "@/store/auth.store";
+import Avatar from "@/components/common/Avatar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,11 +52,27 @@ const ActivityCalendarGrid: React.FC<ActivityCalendarGridProps> = ({
   weeklyData = [],
   className = "",
 }) => {
+  const { user: currentUser } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<"month" | "week">("month");
+  const [viewMode, setViewMode] = useState<"month" | "week">("week");
   const [calendarData, setCalendarData] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [allCheckIns, setAllCheckIns] = useState<any[]>([]);
+
+  // Dates where the currently logged-in user checked in (for avatar indicator)
+  const currentUserCheckInDates = useMemo(() => {
+    const set = new Set<string>();
+    if (!currentUser?._id && !currentUser?.id) return set;
+    const uid = currentUser._id ?? currentUser.id;
+    allCheckIns.forEach((checkIn) => {
+      const userId = checkIn.user?._id ?? checkIn.user?.id ?? checkIn.userId;
+      if (userId === uid) {
+        const dateKey = format(new Date(checkIn.checkInDate), "yyyy-MM-dd");
+        set.add(dateKey);
+      }
+    });
+    return set;
+  }, [allCheckIns, currentUser?._id, currentUser?.id]);
 
   // Fetch all check-ins for the activity
   useEffect(() => {
@@ -317,11 +334,15 @@ const ActivityCalendarGrid: React.FC<ActivityCalendarGridProps> = ({
                         </span>
                       </div>
 
-                      {/* Check-in Indicator */}
-                      {checkins > 0 && (
-                        <div className="absolute top-1 right-1">
-                          <CheckCircle className="w-3 h-3 text-white drop-shadow-sm" />
-                        </div>
+                      {/* Current user's check-in: show their avatar in top-right */}
+                      {currentUserCheckInDates.has(dateKey) && (
+                        <Avatar
+                          src={currentUser?.avatar ?? currentUser?.profileImage}
+                          alt={currentUser?.name ?? "You"}
+                          initials={currentUser?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                          size="xs"
+                          className="absolute top-0.5 right-0.5 rounded-full border-2 border-white shadow-sm overflow-hidden"
+                        />
                       )}
                     </div>
                   </TooltipTrigger>
@@ -337,11 +358,11 @@ const ActivityCalendarGrid: React.FC<ActivityCalendarGridProps> = ({
                         {checkins === 0
                           ? "No check-ins"
                           : `${checkins} check-in${checkins > 1 ? "s" : ""}`}
-                        {/* {allCheckIns.length > 0 && (
-                          <div className="text-xs text-gray-400 mt-1">
-                            (All-time data)
+                        {currentUserCheckInDates.has(dateKey) && (
+                          <div className="text-xs text-blue-200 mt-1">
+                            You checked in
                           </div>
-                        )} */}
+                        )}
                       </div>
                     </div>
                   </TooltipContent>
