@@ -1103,6 +1103,12 @@ const Activities = () => {
                   </div>
                 )}
               </>
+            ) : isGuest ? (
+              <AuthWall
+                title="Sign in to see new activities"
+                description="Create an account or sign in to create activities and see the latest ones."
+                returnTo="/activities?tab=new"
+              />
             ) : (
               <EmptyState
                 title="No new activities"
@@ -1155,6 +1161,12 @@ const Activities = () => {
                   </div>
                 )}
               </>
+            ) : isGuest ? (
+              <AuthWall
+                title="Sign in to see upcoming activities"
+                description="Create an account or sign in to create activities and see what’s starting soon."
+                returnTo="/activities?tab=soon"
+              />
             ) : (
               <EmptyState
                 title="No upcoming activities"
