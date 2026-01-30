@@ -45,6 +45,8 @@ interface CheckInCardProps {
   isCheckedIn?: boolean;
   activity: IActivityResult;
   checkIns: any[]; // Real check-in data from backend
+  /** When true, this card is for a past period; hide "Check In Now" and "Add Your Check-in" */
+  isPeriodPassed?: boolean;
   /** Called after a successful check-in so the parent can revalidate activity data */
   onCheckInComplete?: () => void;
 }
@@ -104,6 +106,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
   isCheckedIn = false,
   activity,
   checkIns,
+  isPeriodPassed = false,
   onCheckInComplete,
 }) => {
   const [showComments, setShowComments] = useState(false);
@@ -250,7 +253,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
             <span className="font-medium">View check-ins &amp; comments ({checkIns.length})</span>
           </button>
 
-          {!isCheckedIn && canAccessCheckIn && (
+          {!isPeriodPassed && !isCheckedIn && canAccessCheckIn && (
             <CheckInDialog activity={activity} onCheckInComplete={onCheckInComplete}>
               <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                 <Zap className="w-4 h-4 mr-2" />
@@ -298,7 +301,7 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
               )}
             </div>
 
-            {!isCheckedIn && canAccessCheckIn && (
+            {!isPeriodPassed && !isCheckedIn && canAccessCheckIn && (
               <div className="mt-4 flex justify-center">
                 <CheckInDialog activity={activity} onCheckInComplete={onCheckInComplete}>
                   <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">

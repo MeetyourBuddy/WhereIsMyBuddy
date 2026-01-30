@@ -30,7 +30,7 @@ import {
   isActivityParticipant,
   isActivityCreator,
 } from "@/types/activity-types";
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 
 interface ActivityCheckinProps {
   activityId: string;
@@ -525,6 +525,10 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
                           isCheckedIn={period.isCheckedIn}
                           activity={currentActivity}
                           checkIns={period.checkIns}
+                          isPeriodPassed={isBefore(
+                            startOfDay(period.date),
+                            startOfDay(new Date())
+                          )}
                           onCheckInComplete={
                             currentActivity
                               ? () => {
