@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from "react";
 import {
   CheckCircle,
-  Camera,
   Type,
   Flame,
   Trophy,
   Target,
-  Calendar,
-  Clock,
-  Star,
   Zap,
   Heart,
   TrendingUp,
-  Award,
-  Sparkles,
   Upload,
   X,
   Image as ImageIcon,
   Info,
+  LucideAlarmClockCheck,
 } from "lucide-react";
 import {
   Dialog,
@@ -44,7 +39,6 @@ import { useCheckInStore } from "@/store/checkin.store";
 import { useBadgeStore } from "@/store/badge.store";
 import { UploadService } from "@/services/api/upload/upload-service";
 import { CheckInService } from "@/services/api/activity/reaction.service";
-import { ActivityService } from "@/services/api/activity/activity-service";
 import { useAuthStore } from "@/store/auth.store";
 import { useQueryClient } from "@tanstack/react-query";
 import { activityQueryKeys } from "@/hooks/useActivityData";
@@ -75,109 +69,43 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
   } | null>(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
-  const { stats, createCheckIn, fetchCheckInStats, isLoading } =
-    useCheckInStore();
+  const { stats, createCheckIn, fetchCheckInStats } = useCheckInStore();
   const { fetchUserBadges } = useBadgeStore();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const [overallStreak, setOverallStreak] = useState(0);
 
-  // Fetch user progress when dialog opens
+  // Fetch user progress and activity-specific stats when dialog opens
   useEffect(() => {
-    const fetchUserProgress = async () => {
-      if (!user?._id || !activity._id || !open) return;
+    if (!user?._id || !activity._id || !open) return;
 
+    const activityId = activity._id ?? activity.id;
+
+    const loadDialogData = async () => {
       setIsLoadingProgress(true);
       try {
-        const response = await CheckInService.getUserProgress(activity._id);
-        setUserProgress(response.data);
-        console.log("🎯 CheckInDialog user progress:", response.data);
+        const [progressRes] = await Promise.all([
+          CheckInService.getUserProgress(activityId),
+          fetchCheckInStats(activityId),
+        ]);
+        setUserProgress(progressRes.data);
       } catch (error) {
-        console.error(
-          "❌ Failed to fetch user progress in CheckInDialog:",
-          error
-        );
+        console.error("CheckInDialog: failed to load progress/stats", error);
       } finally {
         setIsLoadingProgress(false);
       }
     };
 
-    fetchUserProgress();
-  }, [activity._id, user?._id, open]);
+    loadDialogData();
+  }, [activity._id, activity.id, user?._id, open, fetchCheckInStats]);
 
-  // Fetch overall user streak across all activities
-  useEffect(() => {
-    const fetchOverallStreak = async () => {
-      if (!user?._id || !open) return;
-
-      try {
-        // Get all user's activities
-        const activitiesResponse = await ActivityService.getActivities();
-        const allActivities = activitiesResponse.data || [];
-
-        // Filter to user's active activities (joined activities)
-        const activeActivities = allActivities.filter((act) =>
-          act.participants?.some((p) => p._id === user._id || p.id === user._id)
-        );
-
-        if (activeActivities.length > 0) {
-          const activityIds = activeActivities.map((act) => act._id || act.id);
-          const userProgressResponse =
-            await CheckInService.getUserProgressForActivities(activityIds);
-
-          // Extract the actual data from the response
-          const userProgressData = userProgressResponse.data;
-
-          // Calculate overall streak - find the maximum streak across all activities
-          const streaks = Object.values(userProgressData).map(
-            (progress) => progress.currentStreak || 0
-          );
-          const maxStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
-
-          setOverallStreak(maxStreak);
-
-          console.log("🎯 CheckInDialog overall streak calculation:", {
-            activityIds,
-            userProgressData,
-            streaks,
-            maxStreak,
-            user: user?.name || user?._id,
-          });
-        } else {
-          setOverallStreak(0);
-        }
-      } catch (error) {
-        console.error("Failed to fetch overall streak:", error);
-        setOverallStreak(0);
-      }
-    };
-
-    fetchOverallStreak();
-  }, [user?._id, open]);
-
-  // Real data from backend
-  const userStreak = overallStreak; // Use overall streak instead of activity-specific streak
-  const totalCheckIns = stats?.totalCheckIns || 0;
-  const activityProgress = userProgress?.progress || 0; // Use userProgress.progress instead of stats.onTimePercentage
-
-  // Use the same data source as ActivityCard - userProgress from getUserProgress
-  const completedCheckIns = userProgress?.completedCheckIns || 0;
-  const totalAvailableCheckIns = userProgress?.totalAvailableCheckIns || 0;
-  const nextMilestone = totalAvailableCheckIns; // Use actual total from backend
-  const activityStreak = stats?.currentStreak || 0; // Use activity-specific streak for points calculation
-  const pointsEarned = completedCheckIns * 10 + activityStreak * 5; // Same formula as leaderboard: check-ins * 10 + streak * 5
-  const isOnTime = true; // Will be determined by backend
-
-  // Debug: Log the milestone calculation
-  console.log("🎯 CheckInDialog milestone calculation:", {
-    userProgress,
-    completedCheckIns,
-    totalAvailableCheckIns,
-    nextMilestone,
-    activityStreak,
-    pointsEarned,
-    activityTitle: activity?.title,
-  });
+  // All metrics are for this activity only (from userProgress + stats fetched when dialog opens)
+  const completedCheckIns = userProgress?.completedCheckIns ?? 0;
+  const totalAvailableCheckIns = userProgress?.totalAvailableCheckIns ?? 0;
+  const activityProgress = userProgress?.progress ?? 0;
+  const activityStreak = stats?.currentStreak ?? 0;
+  const nextMilestone = totalAvailableCheckIns;
+  const pointsEarned = completedCheckIns * 10 + activityStreak * 5;
+  const userStreak = activityStreak;
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -435,7 +363,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] bg-white rounded-2xl border shadow-2xl p-0 flex flex-col">
         {/* Motivational Header */}
-        <div className="bg-gradient-to-r from-buddy-purple via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden flex-shrink-0">
+        <div className="bg-gradient-to-r from-buddy-purple rounded-t-xl via-buddy-blue to-buddy-green p-6 text-white relative overflow-hidden flex-shrink-0">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
 
@@ -443,7 +371,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/20 rounded-full">
-                  <Sparkles className="w-6 h-6" />
+                  <LucideAlarmClockCheck className="w-6 h-6" />
                 </div>
                 <div>
                   <DialogTitle className="text-2xl font-bold">
@@ -455,11 +383,11 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
                 </div>
               </div>
               <div className="text-right">
-                <div className="flex items-center space-x-1 text-yellow-300">
+                <div className="flex items-center justify-center space-x-1 text-yellow-300">
                   <Flame className="w-5 h-5" />
                   <span className="font-bold text-lg">{userStreak}</span>
                 </div>
-                <p className="text-xs text-white/80">Day Streak</p>
+                <p className="text-xs text-white/80">Current streak</p>
               </div>
             </div>
 
@@ -481,7 +409,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="text-center cursor-help">
+                  <div className="text-center cursor-pointer">
                     <div className="flex items-center justify-center space-x-1 mb-1">
                       <Zap className="w-4 h-4" />
                       <span className="font-semibold">{pointsEarned}</span>
@@ -534,7 +462,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
               htmlFor="checkin-message"
               className="block mb-2 text-buddy-gray-700 font-medium"
             >
-              What did you accomplish today? 💭
+              What did you accomplish today?
             </Label>
             <Textarea
               id="checkin-message"
@@ -551,7 +479,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
           {/* Optional Image Upload */}
           <div className="mb-6">
             <Label className="block mb-2 text-buddy-gray-700 font-medium">
-              Add a photo (optional) 📸
+              Add a photo (optional)
             </Label>
             <div className="space-y-4">
               <input

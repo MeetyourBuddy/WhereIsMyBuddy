@@ -520,9 +520,10 @@ const InfoModal = ({ card, isOpen, onClose, isDarkMode, userCardData }) => {
                         </div>
                       </div>
                       <div className="flex items-center gap-6">
-                        <div className="text-center">
+                        <div className="flex flex-col items-center text-center">
                           <div className="flex items-center space-x-1">
-                            <Send className="w-4 h-4 text-blue-500" />
+                          <Send className="w-4 h-4 text-blue-500" />
+                            
                             <span className="text-lg font-bold text-blue-600">
                               {interaction.sentCount}
                             </span>
@@ -532,12 +533,12 @@ const InfoModal = ({ card, isOpen, onClose, isDarkMode, userCardData }) => {
                               isDarkMode ? "text-gray-400" : "text-gray-500"
                             }`}
                           >
-                            Sent to you
+                            You sent
                           </div>
                         </div>
-                        <div className="text-center">
+                        <div className="flex flex-col items-center text-center">
                           <div className="flex items-center space-x-1">
-                            <Heart className="w-4 h-4 text-pink-500" />
+                          <Heart className="w-4 h-4 text-pink-500" />
                             <span className="text-lg font-bold text-pink-600">
                               {interaction.receivedCount}
                             </span>
@@ -547,7 +548,7 @@ const InfoModal = ({ card, isOpen, onClose, isDarkMode, userCardData }) => {
                               isDarkMode ? "text-gray-400" : "text-gray-500"
                             }`}
                           >
-                            You sent
+                            You received
                           </div>
                         </div>
                       </div>
