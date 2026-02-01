@@ -15,6 +15,7 @@ import { ActivityJoinRequestService } from './activity-join-request.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../users/auth/guards/optional-jwt-auth.guard';
 import { Activity } from './schemas/activity.schema';
 import { GetUser } from '@/users/decorators/get-user.decorator';
 import { GetOptionalUser } from '@/users/decorators/get-optional-user.decorator';
@@ -42,6 +43,7 @@ export class ActivityController {
   }
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   async findAll(
     @GetOptionalUser('userId') userId?: string,
   ): Promise<Activity[]> {
@@ -64,6 +66,7 @@ export class ActivityController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   async findOne(
     @Param('id') id: string,
     @GetOptionalUser('userId') userId?: string,

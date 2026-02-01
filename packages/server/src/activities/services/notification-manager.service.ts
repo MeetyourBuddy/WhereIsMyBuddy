@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   Notification,
   NotificationDocument,
@@ -61,9 +61,20 @@ export class NotificationManagerService {
     private buddyConnectionModel: Model<BuddyConnectionDocument>,
   ) {}
 
+  /**
+   * Always creates a new notification entry. Never finds or updates an existing one.
+   * Each call produces a distinct document so similar events (e.g. second "join request declined")
+   * appear as separate entries in the feed.
+   */
   async createNotification(
     dto: CreateNotificationDto,
   ): Promise<NotificationResponse> {
+    const eventId = new Types.ObjectId().toString();
+    const metadata = {
+      ...(dto.metadata || {}),
+      eventId,
+    };
+
     const notification = new this.notificationModel({
       recipient: dto.recipientId,
       sender: dto.senderId,
@@ -74,7 +85,7 @@ export class NotificationManagerService {
       activityId: dto.activityId,
       checkInId: dto.checkInId,
       buddyConnectionId: dto.buddyConnectionId,
-      metadata: dto.metadata,
+      metadata,
     });
 
     const savedNotification = await notification.save();

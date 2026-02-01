@@ -62,6 +62,7 @@ export function RequestToJoinModal({
   const queryClient = useQueryClient();
 
   const activityId = activity._id ?? activity.id;
+  const isPending = activity?.currentUserJoinRequestStatus === "pending";
   const description = activity.description ?? "";
   const aboutLines = description.split(/\n/).slice(0, 3).join("\n");
   const rulesDisplay = getRulesForDisplay(activity.rules as IActivityRule[] | undefined);
@@ -232,7 +233,8 @@ export function RequestToJoinModal({
               </div>
             </div>
 
-            {/* Request notes */}
+            {/* Request notes - hide when already pending */}
+            {!isPending && (
             <div>
               <label className="text-sm font-medium text-buddy-gray-800 block mb-1.5">
                 Add a note (optional)
@@ -246,6 +248,12 @@ export function RequestToJoinModal({
               />
               <p className="text-xs text-buddy-gray-400 mt-1">{notes.length}/500</p>
             </div>
+            )}
+            {isPending && (
+              <p className="text-sm text-amber-600 font-medium">
+                Your request is pending. The activity creator will review it.
+              </p>
+            )}
           </div>
           </div>
         </div>
@@ -262,10 +270,14 @@ export function RequestToJoinModal({
           </DialogClose>
           <Button
             onClick={handleSendRequest}
-            disabled={isSubmitting}
-            className="w-full rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white sm:w-auto"
+            disabled={isSubmitting || isPending}
+            className={
+              isPending
+                ? "w-full rounded-full border-amber-500 bg-amber-50 text-amber-700 cursor-not-allowed sm:w-auto"
+                : "w-full rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white sm:w-auto"
+            }
           >
-            {isSubmitting ? "Sending..." : "Send request"}
+            {isPending ? "Pending" : isSubmitting ? "Sending..." : "Send request"}
           </Button>
         </DialogFooter>
       </DialogContent>
