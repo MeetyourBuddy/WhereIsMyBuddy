@@ -121,6 +121,8 @@ export interface IActivityResult extends IActivity {
   startDate: string;
   endDate?: string;
   maxParticipants: number;
+  /** Set when current user has an accepted join request for this activity (from list API). */
+  currentUserJoinRequestStatus?: "pending" | "accepted";
 }
 
 // Helper function to check if a user is the creator of an activity

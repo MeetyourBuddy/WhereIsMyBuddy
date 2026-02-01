@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ActivityService } from './activity.service';
 import { ActivityInvitationService } from './activity-invitation.service';
+import { ActivityJoinRequestService } from './activity-join-request.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../users/auth/guards/jwt-auth.guard';
@@ -27,6 +28,7 @@ export class ActivityController {
   constructor(
     private readonly activityService: ActivityService,
     private readonly activityInvitationService: ActivityInvitationService,
+    private readonly activityJoinRequestService: ActivityJoinRequestService,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
@@ -43,7 +45,22 @@ export class ActivityController {
   async findAll(
     @GetOptionalUser('userId') userId?: string,
   ): Promise<Activity[]> {
-    return await this.activityService.findAll();
+    const activities = await this.activityService.findAll();
+    if (userId) {
+      const statusByActivity =
+        await this.activityJoinRequestService.getJoinRequestStatusByActivityForUser(
+          userId,
+        );
+      // Return plain objects so currentUserJoinRequestStatus is included (Mongoose toJSON strips non-schema fields)
+      return activities.map((a) => {
+        const id = (a as any)._id?.toString();
+        const status = id ? statusByActivity.get(id) : undefined;
+        return Object.assign({}, (a as any).toObject?.() ?? a, {
+          currentUserJoinRequestStatus: status,
+        });
+      });
+    }
+    return activities;
   }
 
   @Get(':id')
@@ -167,13 +184,21 @@ export class ActivityController {
         }
         
         if (!invitation) {
-          throw new ForbiddenException(
-            'This is a private activity. You need an invitation to join.',
-          );
+          // Allow join if user has an accepted join request
+          const hasAcceptedRequest =
+            await this.activityJoinRequestService.hasAcceptedJoinRequest(
+              id,
+              userId,
+            );
+          if (!hasAcceptedRequest) {
+            throw new ForbiddenException(
+              'This is a private activity. You need an invitation or an accepted join request to join.',
+            );
+          }
         }
       }
     }
-    
+
     return await this.activityService.joinActivity(id, userId);
   }
 

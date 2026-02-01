@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Container from "@/components/ui/layout/Container";
 import { Card } from "@/components/common/Card";
@@ -47,6 +47,19 @@ import { activityInvitationService } from "@/services/api/activity/activity-invi
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays } from "date-fns";
 
+const ACTIVITIES_FILTERS_STORAGE_KEY = "activities-page-filters";
+
+interface PersistedFilters {
+  searchQuery: string;
+  activeFilters: string[];
+  sortOption: string;
+  includeActive: boolean;
+  includeEnded: boolean;
+  includePublic: boolean;
+  includePrivate: boolean;
+  activeTab: string;
+}
+
 const Activities = () => {
   useScrollToTopImmediate();
   const location = useLocation();
@@ -73,6 +86,7 @@ const Activities = () => {
   // Visibility filter: Public / Private (default: show public only)
   const [includePublic, setIncludePublic] = useState(true);
   const [includePrivate, setIncludePrivate] = useState(false);
+  const hasLoadedFiltersFromStorage = useRef(false);
 
   // Sort options for activities
   const sortOptions = [
@@ -100,6 +114,47 @@ const Activities = () => {
       setActiveTab(tabFromUrl);
     }
   }, [location.search]);
+
+  // Load persisted filters from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(ACTIVITIES_FILTERS_STORAGE_KEY);
+      if (!raw) {
+        hasLoadedFiltersFromStorage.current = true;
+        return;
+      }
+      const data = JSON.parse(raw) as PersistedFilters;
+      if (data && typeof data === "object") {
+        if (typeof data.searchQuery === "string") setSearchQuery(data.searchQuery);
+        if (Array.isArray(data.activeFilters)) setActiveFilters(data.activeFilters);
+        if (typeof data.sortOption === "string" && data.sortOption) setSortOption(data.sortOption);
+        if (typeof data.includeActive === "boolean") setIncludeActive(data.includeActive);
+        if (typeof data.includeEnded === "boolean") setIncludeEnded(data.includeEnded);
+        if (typeof data.includePublic === "boolean") setIncludePublic(data.includePublic);
+        if (typeof data.includePrivate === "boolean") setIncludePrivate(data.includePrivate);
+        if (typeof data.activeTab === "string" && ["all", "my", "popular"].includes(data.activeTab)) setActiveTab(data.activeTab);
+      }
+    } catch {
+      // ignore invalid stored data
+    }
+    hasLoadedFiltersFromStorage.current = true;
+  }, []);
+
+  // Persist filters to sessionStorage when they change (after initial load)
+  useEffect(() => {
+    if (!hasLoadedFiltersFromStorage.current) return;
+    const payload: PersistedFilters = {
+      searchQuery,
+      activeFilters,
+      sortOption,
+      includeActive,
+      includeEnded,
+      includePublic,
+      includePrivate,
+      activeTab,
+    };
+    sessionStorage.setItem(ACTIVITIES_FILTERS_STORAGE_KEY, JSON.stringify(payload));
+  }, [searchQuery, activeFilters, sortOption, includeActive, includeEnded, includePublic, includePrivate, activeTab]);
 
   const {
     activitiesQuery,
@@ -639,6 +694,7 @@ const Activities = () => {
     setIncludeEnded(false);
     setIncludePublic(true);
     setIncludePrivate(false);
+    sessionStorage.removeItem(ACTIVITIES_FILTERS_STORAGE_KEY);
   };
 
   return (
@@ -903,6 +959,9 @@ const Activities = () => {
                         admin={activity.admin}
                         type={activity.type}
                         hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        hasAcceptedJoinRequest={activity?.currentUserJoinRequestStatus === "accepted"}
+                        hasPendingJoinRequest={activity?.currentUserJoinRequestStatus === "pending"}
+                        activity={activity}
                         onClick={() =>
                           navigate(`/activities/${activityId}`)
                         }
@@ -967,6 +1026,9 @@ const Activities = () => {
                         showProgress={true}
                         userProgress={progressData}
                         hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        hasAcceptedJoinRequest={activity?.currentUserJoinRequestStatus === "accepted"}
+                        hasPendingJoinRequest={activity?.currentUserJoinRequestStatus === "pending"}
+                        activity={activity}
                         onClick={() => navigate(`/activities/${activityId}`)}
                       />
                     );
@@ -1031,6 +1093,9 @@ const Activities = () => {
                         admin={activity.admin}
                         type={activity.type}
                         hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        hasAcceptedJoinRequest={activity?.currentUserJoinRequestStatus === "accepted"}
+                        hasPendingJoinRequest={activity?.currentUserJoinRequestStatus === "pending"}
+                        activity={activity}
                         onClick={() =>
                           navigate(`/activities/${activityId}`)
                         }
@@ -1083,6 +1148,9 @@ const Activities = () => {
                         admin={activity.admin}
                         type={activity.type}
                         hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        hasAcceptedJoinRequest={activity?.currentUserJoinRequestStatus === "accepted"}
+                        hasPendingJoinRequest={activity?.currentUserJoinRequestStatus === "pending"}
+                        activity={activity}
                         onClick={() =>
                           navigate(`/activities/${activityId}`)
                         }
@@ -1141,6 +1209,9 @@ const Activities = () => {
                         admin={activity.admin}
                         type={activity.type}
                         hasPendingInvitation={activityInvitationMap.get(activityId) || false}
+                        hasAcceptedJoinRequest={activity?.currentUserJoinRequestStatus === "accepted"}
+                        hasPendingJoinRequest={activity?.currentUserJoinRequestStatus === "pending"}
+                        activity={activity}
                         onClick={() =>
                           navigate(`/activities/${activityId}`)
                         }

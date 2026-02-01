@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCircle, XCircle, Eye, Loader2, Mail, Zap } from "lucide-react";
 import {
   DropdownMenu,
@@ -15,10 +16,12 @@ import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/store/auth.store";
 import { useBuddyConnectionStore } from "@/store/buddy-connection.store";
 import { useToast } from "@/hooks/use-toast";
+import { activityQueryKeys } from "@/hooks/useActivityData";
 
 const NotificationsDropdown: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { respondToBuddyRequest } = useBuddyConnectionStore();
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
@@ -37,8 +40,13 @@ const NotificationsDropdown: React.FC = () => {
         NotificationService.getUnreadCount(),
       ]);
 
-      setNotifications(notificationsResponse.data.notifications || []);
+      const list = notificationsResponse.data.notifications || [];
+      setNotifications(list);
       setUnreadCount(unreadResponse.data.unreadCount || 0);
+      // If any join-request-declined notification exists, revalidate activities so button shows Request again
+      if (list.some((n: NotificationData) => n.type === "activity_join_request_declined")) {
+        queryClient.invalidateQueries({ queryKey: activityQueryKeys.lists() });
+      }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
     } finally {
@@ -136,11 +144,22 @@ const NotificationsDropdown: React.FC = () => {
     await handleMarkAsRead(notification.id);
     setIsOpen(false); // Close dropdown before navigating
 
+    if (notification.type === "activity_join_request_declined") {
+      queryClient.invalidateQueries({ queryKey: activityQueryKeys.lists() });
+      toast({
+        title: "Join request declined",
+        description: notification.message || "Your request to join was declined.",
+        variant: "default",
+      });
+    }
+
     // Navigate based on notification type
     if (notification.type === "boost") {
       navigate("/boost-wall");
     } else if (notification.type === "activity_invite" && notification.activity?.id) {
       navigate(`/activities/${notification.activity.id}`);
+    } else if (notification.type === "activity_join_request_declined" && notification.metadata?.activityId) {
+      navigate("/activities");
     } else if (notification.type === "buddy_request") {
       // Already handled by accept/decline buttons, but navigate to notifications page
       navigate("/notifications");
@@ -162,6 +181,8 @@ const NotificationsDropdown: React.FC = () => {
       case "activity_invite":
       case "activity_invitation":
         return <Bell className="w-4 h-4 text-buddy-purple" />;
+      case "activity_join_request_declined":
+        return <XCircle className="w-4 h-4 text-amber-500" />;
       default:
         return <Bell className="w-4 h-4 text-buddy-gray-500" />;
     }

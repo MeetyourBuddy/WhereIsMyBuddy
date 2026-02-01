@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Mail, X } from "lucide-react";
+import { Mail, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -10,7 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import InviteByEmail from "./InviteByEmail";
 import InvitationList from "./InvitationList";
+import { JoinRequestList } from "./JoinRequestList";
 import { activityInvitationService } from "@/services/api/activity/activity-invitation.service";
+import { activityJoinRequestService, ActivityJoinRequest } from "@/services/api/activity/activity-join-request.service";
 import { useToast } from "@/hooks/use-toast";
 
 interface InviteMembersModalProps {
@@ -28,15 +30,34 @@ const InviteMembersModal: React.FC<InviteMembersModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("email");
   const [invitations, setInvitations] = useState<any[]>([]);
+  const [joinRequests, setJoinRequests] = useState<ActivityJoinRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
   const { toast } = useToast();
 
   // Fetch invitations when modal opens
   useEffect(() => {
     if (isOpen && activityId) {
       fetchInvitations();
+      fetchJoinRequests();
     }
   }, [isOpen, activityId]);
+
+  const fetchJoinRequests = async () => {
+    try {
+      setIsLoadingRequests(true);
+      const res = await activityJoinRequestService.getRequests(activityId);
+      if (res.success && Array.isArray(res.data)) {
+        setJoinRequests(res.data);
+      } else {
+        setJoinRequests([]);
+      }
+    } catch {
+      setJoinRequests([]);
+    } finally {
+      setIsLoadingRequests(false);
+    }
+  };
 
   const fetchInvitations = async () => {
     try {
@@ -89,7 +110,7 @@ const InviteMembersModal: React.FC<InviteMembersModalProps> = ({
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2 rounded-full bg-gray-100 p-1 mb-6">
+            <TabsList className="grid w-full grid-cols-3 rounded-full bg-gray-100 p-1 mb-6">
               <TabsTrigger
                 value="email"
                 className="rounded-full data-[state=active]:bg-buddy-purple data-[state=active]:text-white"
@@ -102,6 +123,13 @@ const InviteMembersModal: React.FC<InviteMembersModalProps> = ({
                 className="rounded-full data-[state=active]:bg-buddy-purple data-[state=active]:text-white"
               >
                 Invitations ({invitations.length})
+              </TabsTrigger>
+              <TabsTrigger
+                value="requests"
+                className="rounded-full data-[state=active]:bg-buddy-purple data-[state=active]:text-white"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Join requests ({joinRequests.filter((r) => r.status === "pending").length})
               </TabsTrigger>
             </TabsList>
 
@@ -118,6 +146,15 @@ const InviteMembersModal: React.FC<InviteMembersModalProps> = ({
                 isLoading={isLoading}
                 onDelete={handleDeleteInvitation}
                 onRefresh={fetchInvitations}
+              />
+            </TabsContent>
+
+            <TabsContent value="requests" className="space-y-6">
+              <JoinRequestList
+                activityId={activityId}
+                requests={joinRequests}
+                isLoading={isLoadingRequests}
+                onRefresh={fetchJoinRequests}
               />
             </TabsContent>
           </Tabs>

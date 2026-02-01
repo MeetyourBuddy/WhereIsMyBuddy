@@ -91,7 +91,7 @@ const Avatar = ({
 
   const isCardSize = size === "card";
   return (
-    <div className={cn(isCardSize ? "block w-full" : "relative inline-block", className)} {...props}>
+    <div className={cn(isCardSize ? "block w-full" : "relative inline-block", !isCardSize && "rounded-full", className)} {...props}>
       <div
         className={cn(
           "relative flex items-center justify-center overflow-hidden text-buddy-gray-700 font-medium",

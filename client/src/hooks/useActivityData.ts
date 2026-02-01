@@ -40,7 +40,7 @@ export const useActivityData = (activityId?: string) => {
   // Get check-in store methods
   const { refreshActivityData } = useCheckInStore();
 
-  // Query for all activities
+  // Query for all activities (refetch on window focus so join/request status updates without manual refresh)
   const activitiesQuery = useQuery({
     queryKey: activityQueryKeys.lists(),
     queryFn: async () => {
@@ -49,7 +49,15 @@ export const useActivityData = (activityId?: string) => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
   });
+
+  // Keep store in sync with query so activities list (including currentUserJoinRequestStatus) is consistent
+  useEffect(() => {
+    if (activitiesQuery.data) {
+      setActivities(activitiesQuery.data);
+    }
+  }, [activitiesQuery.data, setActivities]);
 
   // Query for specific activity details
   const activityQuery = useQuery({

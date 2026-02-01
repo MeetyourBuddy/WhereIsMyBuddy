@@ -58,6 +58,10 @@ import {
   ActivityInvitationSchema,
 } from './schemas/activity-invitation.schema';
 import {
+  ActivityJoinRequest,
+  ActivityJoinRequestSchema,
+} from './schemas/activity-join-request.schema';
+import {
   BuddyConnection,
   BuddyConnectionSchema,
 } from '../users/schemas/buddy-connection.schema';
@@ -69,6 +73,8 @@ import {
   ActivityInvitePublicController,
 } from './activity-invitation.controller';
 import { ActivityInvitationService } from './activity-invitation.service';
+import { ActivityJoinRequestController } from './activity-join-request.controller';
+import { ActivityJoinRequestService } from './activity-join-request.service';
 
 @Module({
   imports: [
@@ -86,6 +92,7 @@ import { ActivityInvitationService } from './activity-invitation.service';
       { name: Partner.name, schema: PartnerSchema },
       { name: PartnerInvitation.name, schema: PartnerInvitationSchema },
       { name: ActivityInvitation.name, schema: ActivityInvitationSchema },
+      { name: ActivityJoinRequest.name, schema: ActivityJoinRequestSchema },
       { name: BuddyConnection.name, schema: BuddyConnectionSchema },
       { name: User.name, schema: UserSchema },
     ]),
@@ -98,6 +105,7 @@ import { ActivityInvitationService } from './activity-invitation.service';
     ActivityInvitationController,
     ActivityInvitationUserController,
     ActivityInvitePublicController,
+    ActivityJoinRequestController,
     ActivityMessageController,
     // General routes last
     ActivityController,
@@ -121,6 +129,7 @@ import { ActivityInvitationService } from './activity-invitation.service';
     ActivityMessageService,
     PartnerService,
     ActivityInvitationService,
+    ActivityJoinRequestService,
     // NotificationService, // Removed - using NotificationManagerService instead
     NotificationManagerService,
   ],
@@ -135,6 +144,7 @@ import { ActivityInvitationService } from './activity-invitation.service';
     ActivityMessageService,
     PartnerService,
     ActivityInvitationService,
+    ActivityJoinRequestService,
     // NotificationService, // Removed - using NotificationManagerService instead
     NotificationManagerService,
   ],

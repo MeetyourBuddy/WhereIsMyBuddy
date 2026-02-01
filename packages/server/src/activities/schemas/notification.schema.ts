@@ -8,6 +8,8 @@ export enum NotificationType {
   BUDDY_ACCEPTED = 'buddy_accepted',
   BUDDY_DECLINED = 'buddy_declined',
   ACTIVITY_INVITE = 'activity_invite',
+  ACTIVITY_JOIN_REQUEST = 'activity_join_request',
+  ACTIVITY_JOIN_REQUEST_DECLINED = 'activity_join_request_declined',
   ACTIVITY_COMMENT = 'activity_comment',
   CHECKIN_COMMENT = 'checkin_comment',
   MILESTONE_ACHIEVED = 'milestone_achieved',

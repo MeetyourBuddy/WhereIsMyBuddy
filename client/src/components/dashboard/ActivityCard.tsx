@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Card } from "@/components/common/Card";
 import Avatar from "@/components/common/Avatar";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,9 @@ import {
   isActivityCreator,
   isActivityParticipant,
   ActivityType,
+  IActivityResult,
 } from "@/types/activity-types";
+import { RequestToJoinModal } from "@/components/activities/RequestToJoinModal";
 
 interface ActivityCardProps {
   id?: string;
@@ -64,6 +66,12 @@ interface ActivityCardProps {
     lastCheckInDate?: string;
   };
   hasPendingInvitation?: boolean; // Whether user has a pending invitation to this activity
+  /** User's join request was accepted (show Quit, not Request) even before participants list refetches */
+  hasAcceptedJoinRequest?: boolean;
+  /** User has a pending join request (show disabled Pending button) */
+  hasPendingJoinRequest?: boolean;
+  /** Full activity object for private "Request to join" modal; required to show Request flow */
+  activity?: IActivityResult;
 }
 
 const ActivityCard = ({
@@ -83,12 +91,17 @@ const ActivityCard = ({
   showProgress = false,
   userProgress,
   hasPendingInvitation = false,
+  hasAcceptedJoinRequest = false,
+  hasPendingJoinRequest = false,
+  activity: activityProp,
 }: ActivityCardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { joinActivityMutation, quitActivityMutation } = useActivityData();
   const [isJoining, setIsJoining] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const requestModalJustClosedRef = useRef(false);
 
   // Check if user is a participant and creator using helper functions
   // Use both _id and id fields to handle different API responses
@@ -105,8 +118,10 @@ const ActivityCard = ({
   // Check if activity is private
   const isPrivate = type === ActivityType.PRIVATE || type === "private";
 
-  // Check if user can access private activity (admin, participant, or has pending invitation)
-  const canAccessPrivate = isPrivate && (isCreator || isParticipant || hasPendingInvitation);
+  // Treat accepted join request as participant for UI (Quit button)
+  const effectiveParticipant = isParticipant || hasAcceptedJoinRequest;
+  // Check if user can access private activity (admin, participant, pending invite, or accepted request)
+  const canAccessPrivate = isPrivate && (isCreator || isParticipant || hasPendingInvitation || hasAcceptedJoinRequest);
 
   const handleJoinQuit = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -139,8 +154,8 @@ const ActivityCard = ({
       return;
     }
 
-    // If user is a participant, show confirmation modal
-    if (isParticipant) {
+    // If user is a participant (or has accepted join request), show quit confirmation modal
+    if (effectiveParticipant) {
       setShowQuitModal(true);
       return;
     }
@@ -244,14 +259,28 @@ const ActivityCard = ({
     }
   };
 
-  // Handle card click - disable for private activities unless user has access
+  // Handle card click - for private without access, open Request modal if activity provided; else toast
   const handleCardClick = () => {
+    if (requestModalJustClosedRef.current) {
+      requestModalJustClosedRef.current = false;
+      return;
+    }
     if (isPrivate && !canAccessPrivate) {
-      toast({
-        title: "Private Activity",
-        description: "This activity is private. Only invited members can view it.",
-        variant: "default",
-      });
+      if (activityProp && user) {
+        setShowRequestModal(true);
+      } else if (!user) {
+        toast({
+          title: "Please sign in",
+          description: "You need to sign in to request to join.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Private Activity",
+          description: "This activity is private. Only invited members can view it.",
+          variant: "default",
+        });
+      }
       return;
     }
     onClick && onClick();
@@ -403,6 +432,26 @@ const ActivityCard = ({
                     <Shield className="w-4 h-4" />
                     CREATOR
                   </div>
+                ) : isPrivate && !canAccessPrivate && hasPendingJoinRequest ? (
+                  <Button
+                    variant="outline"
+                    disabled
+                    className="h-9 rounded-full border-amber-400 bg-amber-50 text-amber-800 cursor-not-allowed hover:bg-amber-50 hover:text-amber-800"
+                  >
+                    Pending
+                  </Button>
+                ) : isPrivate && !canAccessPrivate && activityProp && user && !hasAcceptedJoinRequest ? (
+                  <Button
+                    variant="default"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowRequestModal(true);
+                    }}
+                    className="h-9 rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white"
+                  >
+                    <UserPlus className="w-4 h-4 mr-1" />
+                    Request
+                  </Button>
                 ) : isPrivate && !canAccessPrivate ? (
                   <Badge
                     variant="secondary"
@@ -421,12 +470,12 @@ const ActivityCard = ({
                       quitActivityMutation.isPending
                     }
                     className={`h-9 rounded-full ${
-                      isParticipant
+                      effectiveParticipant
                         ? "bg-red-500 hover:bg-red-600 text-white"
                         : ""
                     }`}
                   >
-                    {isParticipant ? (
+                    {effectiveParticipant ? (
                       <>
                         <UserMinus className="w-4 h-4" />
                         {isJoining ? "Leaving..." : "Quit"}
@@ -457,6 +506,26 @@ const ActivityCard = ({
           </div>
         </div>
       </Card.Content>
+
+      {/* Request to join (private activity) modal */}
+      {activityProp && (
+        <RequestToJoinModal
+          activity={activityProp}
+          open={showRequestModal}
+          onOpenChange={(open) => {
+            if (!open) requestModalJustClosedRef.current = true;
+            setShowRequestModal(open);
+            if (!open) {
+              setTimeout(() => {
+                requestModalJustClosedRef.current = false;
+              }, 300);
+            }
+          }}
+          onRequestSent={() => {
+            setShowRequestModal(false);
+          }}
+        />
+      )}
 
       {/* Quit Activity Confirmation Modal */}
       <Dialog open={showQuitModal} onOpenChange={setShowQuitModal}>

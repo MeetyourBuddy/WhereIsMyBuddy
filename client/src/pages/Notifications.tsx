@@ -56,6 +56,10 @@ const Notifications: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
+  /** Local state: buddy request notifications that were accepted/declined on this page */
+  const [respondedBuddyRequests, setRespondedBuddyRequests] = useState<
+    Record<string, "accepted" | "declined">
+  >({});
 
   // Fetch notifications from backend
   const fetchNotifications = async (
@@ -198,9 +202,10 @@ const Notifications: React.FC = () => {
             return;
           }
 
+          setRespondedBuddyRequests((prev) => ({ ...prev, [notification.id]: "accepted" }));
           await respondToBuddyRequest(connectionId, { status: "accepted" });
           await handleMarkAsRead(notification.id);
-          await fetchNotifications(1, true); // Refresh notifications
+          await fetchNotifications(1, true);
 
           toast({
             title: "Buddy request accepted",
@@ -241,9 +246,10 @@ const Notifications: React.FC = () => {
             return;
           }
 
+          setRespondedBuddyRequests((prev) => ({ ...prev, [notification.id]: "declined" }));
           await respondToBuddyRequest(connectionId, { status: "declined" });
           await handleMarkAsRead(notification.id);
-          await fetchNotifications(1, true); // Refresh notifications
+          await fetchNotifications(1, true);
 
           toast({
             title: "Buddy request declined",
@@ -704,14 +710,14 @@ const Notifications: React.FC = () => {
                       }`}
                     >
                       <Card.Content className="p-6">
-                        <div className="flex">
+                        <div className="flex items-start">
                           {notification.sender ? (
                             <Avatar
                               src={notification.sender.avatar}
                               alt={notification.sender.name}
                               initials={notification.sender.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                               size="lg"
-                              className="mr-4 ring-2 ring-buddy-purple/20"
+                              className="self-start mr-4 rounded-full ring-2 ring-buddy-purple/20 overflow-hidden"
                             />
                           ) : (
                             <div
@@ -766,58 +772,74 @@ const Notifications: React.FC = () => {
                             {/* Render progress information for progress-related notifications */}
                             {renderProgressInfo(notification)}
 
-                            {getNotificationActions(notification.type).length >
-                              0 && (
-                              <div className="mt-4 flex space-x-3">
-                                {getNotificationActions(
-                                  notification.type
-                                ).includes("accept") && (
-                                  <Button
-                                    size="sm"
-                                    className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 px-6"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleAction(notification, "accept");
-                                    }}
-                                  >
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    Accept
-                                  </Button>
-                                )}
-                                {getNotificationActions(
-                                  notification.type
-                                ).includes("decline") && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-full border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-300 px-6"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleAction(notification, "decline");
-                                    }}
-                                  >
-                                    <XCircle className="w-4 h-4 mr-2" />
-                                    Decline
-                                  </Button>
-                                )}
-                                {getNotificationActions(
-                                  notification.type
-                                ).includes("view") && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="rounded-full text-buddy-purple hover:bg-buddy-purple/10 transition-all duration-300 px-6"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleAction(notification, "view");
-                                    }}
-                                  >
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    View Details
-                                    <ChevronRight className="w-4 h-4 ml-1" />
-                                  </Button>
+                            {notification.type === "buddy_request" &&
+                              respondedBuddyRequests[notification.id] ? (
+                              <div className="mt-4 flex items-center gap-2 text-sm font-medium">
+                                {respondedBuddyRequests[notification.id] === "accepted" ? (
+                                  <span className="text-green-600 flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4" />
+                                    You accepted this request
+                                  </span>
+                                ) : (
+                                  <span className="text-buddy-gray-600 flex items-center gap-2">
+                                    <XCircle className="w-4 h-4" />
+                                    You declined this request
+                                  </span>
                                 )}
                               </div>
+                            ) : (
+                              getNotificationActions(notification.type).length > 0 && (
+                                <div className="mt-4 flex space-x-3">
+                                  {getNotificationActions(
+                                    notification.type
+                                  ).includes("accept") && (
+                                    <Button
+                                      size="sm"
+                                      className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 px-6"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAction(notification, "accept");
+                                      }}
+                                    >
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      Accept
+                                    </Button>
+                                  )}
+                                  {getNotificationActions(
+                                    notification.type
+                                  ).includes("decline") && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="rounded-full border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-all duration-300 px-6"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAction(notification, "decline");
+                                      }}
+                                    >
+                                      <XCircle className="w-4 h-4 mr-2" />
+                                      Decline
+                                    </Button>
+                                  )}
+                                  {getNotificationActions(
+                                    notification.type
+                                  ).includes("view") && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="rounded-full text-buddy-purple hover:bg-buddy-purple/10 transition-all duration-300 px-6"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAction(notification, "view");
+                                      }}
+                                    >
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      View Details
+                                      <ChevronRight className="w-4 h-4 ml-1" />
+                                    </Button>
+                                  )}
+                                </div>
+                              )
                             )}
                           </div>
                         </div>
