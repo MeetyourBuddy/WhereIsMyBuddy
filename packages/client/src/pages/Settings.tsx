@@ -987,7 +987,7 @@ const Settings: React.FC = () => {
                               className="flex items-center space-x-2"
                             >
                               <User className="h-4 w-4 text-buddy-purple" />
-                              <span>Full Name</span>
+                              <span>Name</span>
                             </Label>
                             <Input
                               id="name"

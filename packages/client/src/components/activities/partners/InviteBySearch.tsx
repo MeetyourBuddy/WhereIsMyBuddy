@@ -211,7 +211,7 @@ const InviteBySearch: React.FC<InviteBySearchProps> = ({
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
           <h5 className="font-medium text-blue-900 mb-2">Search Tips</h5>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Search by full name or email address</li>
+            <li>• Search by name or email address</li>
             <li>• Partners can be from any activity, not just this one</li>
             <li>• You can have multiple accountability partners</li>
           </ul>

@@ -318,7 +318,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
       const newCheckIn = await createCheckIn(checkInData);
 
       if (newCheckIn) {
-        // Reset form
+        // Reset form and close so the flow feels immediate
         setMessage("");
         setSelectedFile(null);
         setPreviewUrl(null);
@@ -326,26 +326,21 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
         setUploadedImageUrl(null);
         setOpen(false);
 
-        // Refresh stats and badges (use same activityId as check-in)
-        await fetchCheckInStats(activityId);
-        await fetchUserBadges(activityId);
-
-        // Invalidate React Query so activity page / dashboard refetch stats & progress
+        // Single source of truth: invalidate all activity-related queries once so UI updates everywhere
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: activityQueryKeys.stats(activityId) }),
           queryClient.invalidateQueries({ queryKey: activityQueryKeys.progress(activityId) }),
           queryClient.invalidateQueries({ queryKey: activityQueryKeys.detail(activityId) }),
+          queryClient.invalidateQueries({ queryKey: activityQueryKeys.weekly(activityId) }),
           queryClient.invalidateQueries({ queryKey: activityQueryKeys.participants(activityId) }),
           queryClient.invalidateQueries({ queryKey: activityQueryKeys.lists() }),
         ]);
 
-        // Refetch user progress so "Your Progress" updates immediately
-        try {
-          const response = await CheckInService.getUserProgress(activityId);
-          setUserProgress(response.data);
-        } catch {
-          // Non-blocking; progress will update on next open
-        }
+        // Badges and local progress (non-blocking)
+        fetchUserBadges(activityId).catch(() => {});
+        CheckInService.getUserProgress(activityId)
+          .then((res) => setUserProgress(res.data))
+          .catch(() => {});
 
         if (onCheckInComplete) {
           onCheckInComplete();

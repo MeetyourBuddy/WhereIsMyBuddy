@@ -126,7 +126,7 @@ const SignUp = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-buddy-gray-700 font-medium">
-                        Full Name 👤
+                        Name 👤
                       </FormLabel>
                       <FormControl>
                         <div className="relative">

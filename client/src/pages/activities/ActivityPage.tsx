@@ -151,13 +151,12 @@ const ActivityPage = () => {
     loadUserBadges();
   }, [activityId, navigate, fetchUserBadges]);
 
-  // Revalidate all activity data after check-in (queries + leaderboard + period status)
+  // Update local UI state after check-in; queries are invalidated once in CheckInDialog
   const handleCheckInSuccess = React.useCallback(() => {
     if (!activityId) return;
     setHasCheckedInCurrentPeriod(true);
     setRefreshDependency((r) => r + 1);
-    refreshActivity(activityId);
-  }, [activityId, refreshActivity]);
+  }, [activityId]);
 
   // Check if user has checked in for current period
   useEffect(() => {
@@ -765,13 +764,14 @@ const ActivityPage = () => {
                   <span className="hidden sm:inline">Check-in</span>
                 </TabsTrigger>
 
-                <TabsTrigger
+                {/* TODO: Re-enable partners tab after MVP launch */}
+                {/* <TabsTrigger
                   value="partners"
                   className="flex-1 py-3 md:py-4 px-2 md:px-3 lg:px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-buddy-purple data-[state=active]:text-buddy-purple data-[state=active]:bg-transparent focus:bg-buddy-gray-100/50 whitespace-nowrap"
                 >
                   <Users className="mr-1 md:mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">Partners</span>
-                </TabsTrigger>
+                </TabsTrigger> */}
 
                 <TabsTrigger
                   value="messages"

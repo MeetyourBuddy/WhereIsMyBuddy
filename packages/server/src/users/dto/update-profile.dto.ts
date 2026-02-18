@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 
 export class UpdateProfileDto {
-  @ApiPropertyOptional({ description: 'User full name' })
+  @ApiPropertyOptional({ description: 'User name' })
   @IsOptional()
   @IsString()
   name?: string;

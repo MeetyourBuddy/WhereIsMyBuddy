@@ -245,7 +245,10 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
         <div className="px-4 py-3 flex justify-between items-center border-t border-buddy-gray-100 bg-gradient-to-r from-buddy-gray-50/50 to-white">
           <button
             type="button"
-            onClick={toggleThread}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleThread();
+            }}
             className="flex items-center text-sm text-buddy-gray-600 hover:text-buddy-blue cursor-pointer transition-colors rounded-md px-2 py-1.5 -mx-2 hover:bg-buddy-blue/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-buddy-blue/50 focus-visible:ring-offset-1"
             aria-label={`View check-ins and comments (${checkIns.length})`}
           >
@@ -255,7 +258,10 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
 
           {!isPeriodPassed && !isCheckedIn && canAccessCheckIn && (
             <CheckInDialog activity={activity} onCheckInComplete={onCheckInComplete}>
-              <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <Button
+                type="button"
+                className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
                 <Zap className="w-4 h-4 mr-2" />
                 Check In Now
               </Button>
@@ -304,7 +310,10 @@ const CheckInCard: React.FC<CheckInCardProps> = ({
             {!isPeriodPassed && !isCheckedIn && canAccessCheckIn && (
               <div className="mt-4 flex justify-center">
                 <CheckInDialog activity={activity} onCheckInComplete={onCheckInComplete}>
-                  <Button className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <Button
+                    type="button"
+                    className="bg-gradient-to-r from-buddy-purple to-buddy-blue text-white rounded-full px-6 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                  >
                     <Zap className="w-4 h-4 mr-2" />
                     Add Your Check-in
                   </Button>

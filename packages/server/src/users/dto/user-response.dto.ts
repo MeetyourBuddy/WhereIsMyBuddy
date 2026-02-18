@@ -23,7 +23,7 @@ export class UserResponseDto {
   email: string;
 
   /**
-   * User's full name
+   * User's name
    * @example "John Doe"
    */
   @Expose()

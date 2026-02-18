@@ -11,7 +11,7 @@ export class BaseUserDto {
   email: string;
 
   /**
-   * User's full name
+   * User's name
    * @example John Doe
    * @minLength 2
    */
