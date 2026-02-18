@@ -109,6 +109,10 @@ const Dashboard = () => {
             (activity) =>
               activity.type !== "private" || isParticipantOrAdmin(activity)
           )
+          .filter(
+            (activity) =>
+              !isParticipantOrAdmin(activity)
+          )
           .slice(0, 3);
         setSuggestedActivities(filteredSuggested);
 

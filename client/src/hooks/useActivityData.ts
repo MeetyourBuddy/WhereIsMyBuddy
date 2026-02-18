@@ -232,9 +232,15 @@ export const useActivityData = (activityId?: string) => {
       });
     },
     onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ?? error?.message ?? "";
+      const isFull =
+        /full|capacity|maximum.*participant/i.test(String(message));
       toast({
         title: "Join Failed",
-        description: error.message || "Failed to join activity",
+        description: isFull
+          ? "This activity has reached its maximum number of participants. Try another activity!"
+          : message || "Failed to join activity",
         variant: "destructive",
       });
     },

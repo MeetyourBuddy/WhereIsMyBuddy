@@ -53,7 +53,7 @@ const OnboardingWelcome = () => {
                   Find accountability partners
                 </p>
                 <p className="text-sm text-buddy-gray-600">
-                  Connect with people who share your goals and keep each other motivated
+                  Get support from others and keep each other motivated
                 </p>
               </div>
             </div>

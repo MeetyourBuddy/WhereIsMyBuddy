@@ -123,6 +123,9 @@ const ActivityCard = ({
   // Check if user can access private activity (admin, participant, pending invite, or accepted request)
   const canAccessPrivate = isPrivate && (isCreator || isParticipant || hasPendingInvitation || hasAcceptedJoinRequest);
 
+  const participantCount = participants?.length ?? 0;
+  const isFull = maxParticipants != null && maxParticipants > 0 && participantCount >= maxParticipants;
+
   const handleJoinQuit = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
@@ -165,9 +168,15 @@ const ActivityCard = ({
     try {
       await joinActivityMutation.mutateAsync(id);
     } catch (error: any) {
+      const message =
+        error?.response?.data?.message ?? error?.message ?? "";
+      const isFull =
+        /full|capacity|maximum.*participant/i.test(String(message));
       toast({
-        title: "Error",
-        description: error.message || "Failed to join activity",
+        title: "Join Failed",
+        description: isFull
+          ? "This activity has reached its maximum number of participants. Try another activity!"
+          : message || "Failed to join activity",
         variant: "destructive",
       });
     } finally {
@@ -266,8 +275,14 @@ const ActivityCard = ({
       return;
     }
     if (isPrivate && !canAccessPrivate) {
-      if (activityProp && user) {
+      if (activityProp && user && !isFull) {
         setShowRequestModal(true);
+      } else if (activityProp && user && isFull) {
+        toast({
+          title: "Activity full",
+          description: "This activity has reached its maximum number of participants.",
+          variant: "default",
+        });
       } else if (!user) {
         toast({
           title: "Please sign in",
@@ -320,9 +335,14 @@ const ActivityCard = ({
               </span>
             )}
           </div>
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+            {isFull && (
+              <Badge className="bg-amber-500/90 hover:bg-amber-500/90 text-white border-0 text-xs font-medium">
+                Full
+              </Badge>
+            )}
             <span className="bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
-              {participants.length}/{maxParticipants} buddies
+              {participantCount}/{maxParticipants} buddies
             </span>
           </div>
         </div>
@@ -440,6 +460,15 @@ const ActivityCard = ({
                   >
                     Pending
                   </Button>
+                ) : isPrivate && !canAccessPrivate && activityProp && user && !hasAcceptedJoinRequest && isFull ? (
+                  <Button
+                    variant="outline"
+                    disabled
+                    className="h-9 rounded-full opacity-70 cursor-not-allowed border-buddy-gray-300 bg-buddy-gray-100 text-buddy-gray-600"
+                  >
+                    <UserPlus className="w-4 h-4 mr-1" />
+                    Full
+                  </Button>
                 ) : isPrivate && !canAccessPrivate && activityProp && user && !hasAcceptedJoinRequest ? (
                   <Button
                     variant="default"
@@ -465,6 +494,7 @@ const ActivityCard = ({
                     variant="default"
                     onClick={handleJoinQuit}
                     disabled={
+                      isFull ||
                       isJoining ||
                       joinActivityMutation.isPending ||
                       quitActivityMutation.isPending
@@ -472,13 +502,20 @@ const ActivityCard = ({
                     className={`h-9 rounded-full ${
                       effectiveParticipant
                         ? "bg-red-500 hover:bg-red-600 text-white"
-                        : ""
+                        : isFull
+                          ? "opacity-70 cursor-not-allowed"
+                          : ""
                     }`}
                   >
                     {effectiveParticipant ? (
                       <>
                         <UserMinus className="w-4 h-4" />
                         {isJoining ? "Leaving..." : "Quit"}
+                      </>
+                    ) : isFull ? (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        Full
                       </>
                     ) : (
                       <>

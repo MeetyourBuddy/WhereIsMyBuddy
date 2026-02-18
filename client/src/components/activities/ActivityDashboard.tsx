@@ -383,6 +383,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
               tags={activity.tags || []}
               goals={activity.goals || []}
               participants={activity.participants || []}
+              maxParticipants={activity.maxParticipants}
               admin={activity.admin}
               rules={activity.rules || []}
               isActivityEnded={isActivityEnded}

@@ -47,6 +47,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/store/auth.store";
 import { postAuthIntent } from "@/lib/post-auth-intent";
 import { useNavigate } from "react-router-dom";
+import { BuddyConnectionService } from "@/services/api/buddy/buddy-connection.service";
 interface ProfileCardProps {
   id: string;
   name: string;
@@ -102,7 +103,51 @@ const ProfileCard = ({
   const [copied, setCopied] = useState(false);
   const [headerImage, setHeaderImage] = useState("");
   const [activeTab, setActiveTab] = useState("qr");
+  const [connectionStatus, setConnectionStatus] = useState<
+    "pending" | "accepted" | "declined" | "blocked" | null
+  >(null);
+  const [addBuddyLoading, setAddBuddyLoading] = useState(false);
   const profileUrl = `${window.location.origin}/profile/${id}`;
+
+  // Fetch connection status when viewing another user's profile
+  useEffect(() => {
+    if (!id || isOwnProfile || !isAuthenticated) return;
+    BuddyConnectionService.checkConnectionStatus(id)
+      .then((res) => setConnectionStatus(res.status))
+      .catch(() => setConnectionStatus(null));
+  }, [id, isOwnProfile, isAuthenticated]);
+
+  const handleAddBuddy = async () => {
+    if (!id || addBuddyLoading || connectionStatus === "pending" || connectionStatus === "accepted")
+      return;
+    setAddBuddyLoading(true);
+    try {
+      await BuddyConnectionService.sendBuddyRequest({ recipientId: id });
+      setConnectionStatus("pending");
+      toast({
+        title: "Request sent",
+        description: `Buddy request sent to ${name}. They'll be notified.`,
+      });
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to send buddy request.";
+      toast({
+        title: "Couldn't send request",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setAddBuddyLoading(false);
+    }
+  };
+
+  const handleMessage = () => {
+    toast({
+      title: "Coming soon",
+      description: "Direct messaging is coming soon. Stay tuned!",
+    });
+  };
 
   // Generate random header image on component mount
   useEffect(() => {
@@ -225,6 +270,7 @@ const ProfileCard = ({
                     variant="outline"
                     size="sm"
                     className="rounded-full border-2 border-buddy-purple/30 hover:bg-buddy-purple/30 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold shadow-lg hover:shadow-xl"
+                    onClick={handleMessage}
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Message
@@ -233,9 +279,21 @@ const ProfileCard = ({
                   <Button
                     size="sm"
                     className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] font-semibold"
+                    onClick={handleAddBuddy}
+                    disabled={
+                      addBuddyLoading ||
+                      connectionStatus === "pending" ||
+                      connectionStatus === "accepted"
+                    }
                   >
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Add Buddy
+                    {addBuddyLoading
+                      ? "Sending..."
+                      : connectionStatus === "accepted"
+                        ? "Buddies"
+                        : connectionStatus === "pending"
+                          ? "Request sent"
+                          : "Add Buddy"}
                   </Button>
                 </>
               )}

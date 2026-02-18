@@ -369,15 +369,22 @@ const Settings: React.FC = () => {
       }
     } catch (error: unknown) {
       console.error("Failed to update profile:", error);
-      const message =
-        error && typeof error === "object" && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-              ?.data?.message
-          : null;
+      const err = error as {
+        response?: { data?: { message?: string }; status?: number };
+        message?: string;
+      };
+      const message = err?.response?.data?.message ?? err?.message ?? null;
+      const status = err?.response?.status;
+      const isPayloadOrSizeError =
+        status === 413 ||
+        /payload|entity too large|too large|size|limit exceeded/i.test(
+          String(message ?? "")
+        );
       toast({
         title: "Error",
-        description:
-          message || "Failed to update profile. Please try again.",
+        description: isPayloadOrSizeError
+          ? "Profile photo is too large. Please use an image under 5MB and try again."
+          : message || "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {

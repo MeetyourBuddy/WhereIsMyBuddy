@@ -63,6 +63,9 @@ export function RequestToJoinModal({
 
   const activityId = activity._id ?? activity.id;
   const isPending = activity?.currentUserJoinRequestStatus === "pending";
+  const isFull =
+    ((activity.participants?.length ?? 0) >= (activity.maxParticipants ?? 0)) &&
+    (activity.maxParticipants ?? 0) > 0;
   const description = activity.description ?? "";
   const aboutLines = description.split(/\n/).slice(0, 3).join("\n");
   const rulesDisplay = getRulesForDisplay(activity.rules as IActivityRule[] | undefined);
@@ -87,6 +90,7 @@ export function RequestToJoinModal({
 
   const handleSendRequest = async () => {
     if (!activityId) return;
+    if (isFull) return;
     setIsSubmitting(true);
     try {
       const res = await activityJoinRequestService.createRequest(activityId, {
@@ -249,7 +253,12 @@ export function RequestToJoinModal({
               <p className="text-xs text-buddy-gray-400 mt-1">{notes.length}/500</p>
             </div>
             )}
-            {isPending && (
+            {isFull && (
+              <p className="text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                This activity has reached its maximum number of participants. You cannot send a request at this time.
+              </p>
+            )}
+            {isPending && !isFull && (
               <p className="text-sm text-amber-600 font-medium">
                 Your request is pending. The activity creator will review it.
               </p>
@@ -270,14 +279,14 @@ export function RequestToJoinModal({
           </DialogClose>
           <Button
             onClick={handleSendRequest}
-            disabled={isSubmitting || isPending}
+            disabled={isSubmitting || isPending || isFull}
             className={
-              isPending
+              isPending || isFull
                 ? "w-full rounded-full border-amber-500 bg-amber-50 text-amber-700 cursor-not-allowed sm:w-auto"
                 : "w-full rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white sm:w-auto"
             }
           >
-            {isPending ? "Pending" : isSubmitting ? "Sending..." : "Send request"}
+            {isPending ? "Pending" : isFull ? "Activity Full" : isSubmitting ? "Sending..." : "Send request"}
           </Button>
         </DialogFooter>
       </DialogContent>

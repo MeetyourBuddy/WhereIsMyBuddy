@@ -54,6 +54,7 @@ interface ActivityInfoProps {
   tags?: string[];
   goals?: string[];
   participants?: any[];
+  maxParticipants?: number;
   admin?: {
     _id: string;
     id?: string; // Some APIs use 'id' instead of '_id'
@@ -83,6 +84,7 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
   tags,
   goals,
   participants = [],
+  maxParticipants,
   admin,
   rules,
   isActivityEnded = false,
@@ -92,6 +94,10 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
   const { joinActivityMutation, quitActivityMutation } = useActivityData(id);
   const [isJoining, setIsJoining] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
+
+  const isFull =
+    (participants?.length ?? 0) >= (maxParticipants ?? 0) &&
+    (maxParticipants ?? 0) > 0;
   
   // Check if either mutation is pending
   const isLoading = joinActivityMutation.isPending || quitActivityMutation.isPending;
@@ -202,17 +208,28 @@ const ActivityInfo: React.FC<ActivityInfoProps> = ({
             ) : (
               <Button
                 onClick={handleJoinQuit}
-                disabled={isJoining || isLoading}
+                disabled={
+                  isJoining ||
+                  isLoading ||
+                  (isFull && !isParticipant)
+                }
                 className={`w-full rounded-full ${
                   isParticipant
                     ? "bg-red-500 hover:bg-red-600 text-white"
-                    : "bg-buddy-purple hover:bg-buddy-purple/90 text-white"
+                    : isFull
+                      ? "opacity-70 cursor-not-allowed bg-buddy-gray-400 text-white"
+                      : "bg-buddy-purple hover:bg-buddy-purple/90 text-white"
                 }`}
               >
                 {isParticipant ? (
                   <>
                     <UserMinus className="w-4 h-4 mr-2" />
                     {isJoining ? "Leaving..." : "Quit Activity"}
+                  </>
+                ) : isFull ? (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Activity Full
                   </>
                 ) : (
                   <>
