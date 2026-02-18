@@ -133,25 +133,24 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
       fetchCheckInStats,
     ]);
 
+    const refreshCurrentPeriodStatus = React.useCallback(async () => {
+      if (!user?._id || !activityId) return;
+
+      setIsLoadingPeriodStatus(true);
+      try {
+        const response = await CheckInService.getCurrentPeriodStatus(activityId);
+        setHasCheckedInCurrentPeriod(response.data.hasCheckedIn);
+      } catch (error) {
+        console.error("Failed to check period status:", error);
+      } finally {
+        setIsLoadingPeriodStatus(false);
+      }
+    }, [activityId, user?._id]);
+
     // Check current period status
     useEffect(() => {
-      const checkPeriodStatus = async () => {
-        if (!user?._id || !activityId) return;
-
-        setIsLoadingPeriodStatus(true);
-        try {
-          const response =
-            await CheckInService.getCurrentPeriodStatus(activityId);
-          setHasCheckedInCurrentPeriod(response.data.hasCheckedIn);
-        } catch (error) {
-          console.error("Failed to check period status:", error);
-        } finally {
-          setIsLoadingPeriodStatus(false);
-        }
-      };
-
-      checkPeriodStatus();
-    }, [activityId, user?._id]);
+      refreshCurrentPeriodStatus();
+    }, [refreshCurrentPeriodStatus]);
 
     // Fetch user progress
     useEffect(() => {
@@ -533,8 +532,10 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
                             currentActivity
                               ? () => {
                                   onCheckInSuccess?.();
+                                  setHasCheckedInCurrentPeriod(true);
                                   refreshActivityData(currentActivity._id);
                                   refetchUserProgress();
+                                  refreshCurrentPeriodStatus();
                                 }
                               : undefined
                           }
@@ -559,8 +560,10 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
                       activity={currentActivity}
                       onCheckInComplete={() => {
                         onCheckInSuccess?.();
+                        setHasCheckedInCurrentPeriod(true);
                         refreshActivityData(currentActivity._id);
                         refetchUserProgress();
+                        refreshCurrentPeriodStatus();
                       }}
                     >
                       <Button
@@ -702,8 +705,10 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
                     activity={currentActivity}
                     onCheckInComplete={() => {
                       onCheckInSuccess?.();
+                      setHasCheckedInCurrentPeriod(true);
                       refreshActivityData(currentActivity._id);
                       refetchUserProgress();
+                      refreshCurrentPeriodStatus();
                     }}
                   >
                     <Button

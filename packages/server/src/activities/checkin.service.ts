@@ -757,6 +757,11 @@ export class CheckInService {
   /**
    * Calculate current streak: consecutive check-in *periods* (per activity schedule)
    * that have at least one check-in. Missing a required period breaks the streak.
+   *
+   * Carry-until-deadline behavior:
+   * - If the user has not checked in during the current period yet, we keep showing
+   *   the streak from the previous completed period (it is "at risk" but not broken
+   *   until the current period deadline passes).
    */
   private calculateUserStreak(activity: any, checkIns: any[]): number {
     if (!activity || checkIns.length === 0) return 0;
@@ -780,7 +785,9 @@ export class CheckInService {
       periodsWithCheckIn.add(period.start.getTime());
     }
 
-    // Walk backwards from current period, count consecutive periods with a check-in
+    // Walk backwards from an anchor period, count consecutive periods with a check-in.
+    // Anchor to current period if checked-in; otherwise anchor to previous period so
+    // the streak carries through the active period until its deadline passes.
     let streak = 0;
     const { checkinFrequency, checkinFrequencyUnit } = activity;
     let periodDurationMs: number;
@@ -798,8 +805,15 @@ export class CheckInService {
         periodDurationMs = 24 * 60 * 60 * 1000;
     }
     const periodLengthMs = periodDurationMs * (checkinFrequency || 1);
+    const currentPeriodStart = this.calculateCheckInPeriod(
+      activity,
+      now,
+    ).start.getTime();
+    const anchorPeriodStart = periodsWithCheckIn.has(currentPeriodStart)
+      ? currentPeriodStart
+      : currentPeriodStart - periodLengthMs;
 
-    let periodStart = this.calculateCheckInPeriod(activity, now).start.getTime();
+    let periodStart = anchorPeriodStart;
     while (periodStart >= activityStart.getTime() && periodStart <= endDate.getTime()) {
       if (periodsWithCheckIn.has(periodStart)) {
         streak++;

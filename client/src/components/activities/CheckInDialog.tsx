@@ -69,7 +69,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
   } | null>(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
-  const { stats, createCheckIn, fetchCheckInStats } = useCheckInStore();
+  const { stats, createCheckIn } = useCheckInStore();
   const { fetchUserBadges } = useBadgeStore();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -85,7 +85,6 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
       try {
         const [progressRes] = await Promise.all([
           CheckInService.getUserProgress(activityId),
-          fetchCheckInStats(activityId),
         ]);
         setUserProgress(progressRes.data);
       } catch (error) {
@@ -96,7 +95,7 @@ const CheckInDialog: React.FC<CheckInDialogProps> = ({
     };
 
     loadDialogData();
-  }, [activity._id, activity.id, user?._id, open, fetchCheckInStats]);
+  }, [activity._id, activity.id, user?._id, open]);
 
   // All metrics are for this activity only (from userProgress + stats fetched when dialog opens)
   const completedCheckIns = userProgress?.completedCheckIns ?? 0;
