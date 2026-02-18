@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Calendar,
   CheckCircle,
@@ -22,6 +22,7 @@ import { IActivityResult } from "@/types/activity-types";
 import { useActivityData } from "@/hooks/useActivityData";
 import { CheckInService } from "@/services/api/activity/reaction.service";
 import { CheckInService as CheckInDataService } from "@/services/api/checkin/checkin-service";
+import TablePaginationControls from "./TablePaginationControls";
 interface ActivityDashboardProps {
   activity: IActivityResult;
   onViewAllMembers?: () => void;
@@ -30,6 +31,8 @@ interface ActivityDashboardProps {
 const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
   const activityId = activity._id || activity.id;
   const { weeklyQuery, participantsQuery } = useActivityData(activityId);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   
   // Check if activity has ended
   const isActivityEnded = activity.endDate 
@@ -164,7 +167,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
   };
 
   const participants =
-    participantsQuery.data?.participants?.slice(0, 5).map((p, index) => ({
+    participantsQuery.data?.participants?.map((p, index) => ({
       id: p.id,
       name: p.name,
       avatar: p.avatar,
@@ -174,6 +177,20 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
       last7Days:
         allCheckIns.length > 0 ? calculateLast7Days(p.id) : p.last7Days,
     })) || [];
+
+  const totalParticipants = participants.length;
+  const totalPages = Math.max(1, Math.ceil(totalParticipants / rowsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedParticipants = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    return participants.slice(startIndex, startIndex + rowsPerPage);
+  }, [participants, currentPage, rowsPerPage]);
 
   // Log calculated last 7 days data
   useEffect(() => {
@@ -243,7 +260,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {participants.map((participant) => (
+                  {paginatedParticipants.map((participant) => (
                     <tr
                       key={participant.id}
                       className="border-b border-buddy-gray-200/50 hover:bg-buddy-gray-50/50 transition-colors duration-150"
@@ -360,6 +377,18 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
                 </tbody>
               </table>
             </div>
+            {totalParticipants > 0 && (
+              <TablePaginationControls
+                totalItems={totalParticipants}
+                currentPage={currentPage}
+                rowsPerPage={rowsPerPage}
+                onPageChange={setCurrentPage}
+                onRowsPerPageChange={(rows) => {
+                  setRowsPerPage(rows);
+                  setCurrentPage(1);
+                }}
+              />
+            )}
           </Card>
         </div>
 

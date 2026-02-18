@@ -44,6 +44,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { CheckInService } from "@/services/api/activity/reaction.service";
+import TablePaginationControls from "./TablePaginationControls";
 
 // Mock data for the leaderboard
 const mockLeaderboardData = [
@@ -137,8 +138,7 @@ const ActivityLeaderboard = ({
   const [actionType, setActionType] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 10;
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortField, setSortField] = useState<SortField>("position");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -157,23 +157,10 @@ const ActivityLeaderboard = ({
               ...participant,
               position: index + 1,
               image: participant.avatar, // Map avatar to image for compatibility
+              joinDate: new Date(participant.joinDate),
             })
           );
-
-          // Calculate pagination
-          const totalItems = participantsWithPosition.length;
-          const totalPages = Math.ceil(totalItems / itemsPerPage);
-          setTotalPages(totalPages);
-
-          // Get current page data
-          const startIndex = (currentPage - 1) * itemsPerPage;
-          const endIndex = startIndex + itemsPerPage;
-          const currentPageData = participantsWithPosition.slice(
-            startIndex,
-            endIndex
-          );
-
-          setLeaderboardData(currentPageData);
+          setLeaderboardData(participantsWithPosition);
         }
       } catch (error) {
         console.error("Failed to fetch leaderboard data:", error);
@@ -184,7 +171,7 @@ const ActivityLeaderboard = ({
     };
 
     fetchLeaderboardData();
-  }, [activityId, currentPage]);
+  }, [activityId]);
 
   const canPerformActions = userRole === "admin";
   const canPerformActionOnParticipant = (participant: any) => {
@@ -338,6 +325,20 @@ const ActivityLeaderboard = ({
       return sortDirection === "asc" ? comparison : -comparison;
     });
   }, [leaderboardData, sortField, sortDirection]);
+
+  const totalItems = sortedData.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    return sortedData.slice(startIndex, startIndex + rowsPerPage);
+  }, [sortedData, currentPage, rowsPerPage]);
 
   // Extract top 3 participants
   const topParticipants = useMemo(() => {
@@ -557,7 +558,7 @@ const ActivityLeaderboard = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedData.map((participant) => (
+                {paginatedData.map((participant) => (
                   <TableRow key={participant.id}>
                     <TableCell>
                       <div className="flex justify-center items-center">
@@ -693,78 +694,16 @@ const ActivityLeaderboard = ({
           </div>
         </div>
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 border-t border-buddy-gray-200 gap-2 sm:gap-3 md:gap-0">
-            <div className="text-xs sm:text-sm text-buddy-gray-600 text-center sm:text-left">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, leaderboardData.length)} of{" "}
-              {leaderboardData.length} participants
-            </div>
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="rounded-full text-xs px-2 sm:px-3"
-              >
-                <span className="hidden sm:inline">Previous</span>
-                <span className="sm:hidden">Prev</span>
-              </Button>
-              <div className="flex items-center space-x-1">
-                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={currentPage === pageNum ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`rounded-full w-6 h-6 sm:w-8 sm:h-8 p-0 text-xs ${
-                        currentPage === pageNum
-                          ? "bg-buddy-purple hover:bg-buddy-purple/90"
-                          : ""
-                      }`}
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
-                {totalPages > 3 && (
-                  <>
-                    <span className="text-buddy-gray-400 text-xs">...</span>
-                    <Button
-                      variant={
-                        currentPage === totalPages ? "default" : "outline"
-                      }
-                      size="sm"
-                      onClick={() => setCurrentPage(totalPages)}
-                      className={`rounded-full w-6 h-6 sm:w-8 sm:h-8 p-0 text-xs ${
-                        currentPage === totalPages
-                          ? "bg-buddy-purple hover:bg-buddy-purple/90"
-                          : ""
-                      }`}
-                    >
-                      {totalPages}
-                    </Button>
-                  </>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="rounded-full text-xs px-2 sm:px-3"
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
+        <TablePaginationControls
+          totalItems={totalItems}
+          currentPage={currentPage}
+          rowsPerPage={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onRowsPerPageChange={(rows) => {
+            setRowsPerPage(rows);
+            setCurrentPage(1);
+          }}
+        />
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
