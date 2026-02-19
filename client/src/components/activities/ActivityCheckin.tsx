@@ -37,12 +37,15 @@ interface ActivityCheckinProps {
   isActivityEnded?: boolean;
   /** Called after a successful check-in so the parent can revalidate activity data (queries, leaderboard, etc.) */
   onCheckInSuccess?: () => void;
+  /** Bump when a check-in happens elsewhere (e.g. header) so period status and UI stay in sync. */
+  refreshDependency?: number;
 }
 
 const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
   activityId,
   isActivityEnded = false,
   onCheckInSuccess,
+  refreshDependency,
 }) => {
   console.log(
     "🎯 ActivityCheckin component rendered with activityId:",
@@ -150,7 +153,7 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
     // Check current period status
     useEffect(() => {
       refreshCurrentPeriodStatus();
-    }, [refreshCurrentPeriodStatus]);
+    }, [refreshCurrentPeriodStatus, refreshDependency]);
 
     // Fetch user progress
     useEffect(() => {

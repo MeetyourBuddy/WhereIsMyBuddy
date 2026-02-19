@@ -115,6 +115,8 @@ interface ActivityLeaderboardProps {
   activityId: string;
   userRole?: string; // 'admin', 'moderator', or 'member'
   currentUserId?: string; // Current user's ID to prevent self-actions
+  /** Bump when activity data (e.g. check-ins) changes so leaderboard refetches. */
+  refreshDependency?: number;
 }
 
 type SortField =
@@ -131,6 +133,7 @@ const ActivityLeaderboard = ({
   activityId,
   userRole = "admin",
   currentUserId,
+  refreshDependency,
 }: ActivityLeaderboardProps) => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,7 +174,7 @@ const ActivityLeaderboard = ({
     };
 
     fetchLeaderboardData();
-  }, [activityId]);
+  }, [activityId, refreshDependency]);
 
   const canPerformActions = userRole === "admin";
   const canPerformActionOnParticipant = (participant: any) => {

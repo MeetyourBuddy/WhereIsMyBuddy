@@ -26,9 +26,14 @@ import TablePaginationControls from "./TablePaginationControls";
 interface ActivityDashboardProps {
   activity: IActivityResult;
   onViewAllMembers?: () => void;
+  /** Bump when activity data (e.g. check-ins) changes so dashboard refetches. */
+  refreshDependency?: number;
 }
 
-const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
+const ActivityDashboard: React.FC<ActivityDashboardProps> = ({
+  activity,
+  refreshDependency,
+}) => {
   const activityId = activity._id || activity.id;
   const { weeklyQuery, participantsQuery } = useActivityData(activityId);
   const [currentPage, setCurrentPage] = useState(1);
@@ -84,7 +89,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
     };
 
     fetchLeaderboardData();
-  }, [activityId]);
+  }, [activityId, refreshDependency]);
 
   // Fetch all check-ins for accurate last 7 days calculation
   useEffect(() => {
@@ -118,7 +123,7 @@ const ActivityDashboard: React.FC<ActivityDashboardProps> = ({ activity }) => {
     };
 
     fetchAllCheckIns();
-  }, [activityId]);
+  }, [activityId, refreshDependency]);
 
   // Extract data from queries
   const checkInData = weeklyQuery.data?.weeklyData || [

@@ -336,14 +336,14 @@ const ActivityCard = ({
             )}
           </div>
           <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+            <span className="bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
+              {participantCount}/{maxParticipants} buddies
+            </span>
             {isFull && (
               <Badge className="bg-amber-500/90 hover:bg-amber-500/90 text-white border-0 text-xs font-medium">
                 Full
               </Badge>
             )}
-            <span className="bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium">
-              {participantCount}/{maxParticipants} buddies
-            </span>
           </div>
         </div>
 

@@ -811,7 +811,10 @@ const ActivityPage = () => {
                   />
                 </div>
               ) : (
-                <ActivityDashboard activity={currentActivity} />
+                <ActivityDashboard
+                  activity={currentActivity}
+                  refreshDependency={refreshDependency}
+                />
               )}
             </TabsContent>
 
@@ -832,6 +835,7 @@ const ActivityPage = () => {
                   activityId={displayData.id}
                   userRole={isUserAdmin ? "admin" : "member"}
                   currentUserId={userId}
+                  refreshDependency={refreshDependency}
                 />
               )}
             </TabsContent>
@@ -880,6 +884,7 @@ const ActivityPage = () => {
                   activityId={displayData.id}
                   isActivityEnded={status === "ended"}
                   onCheckInSuccess={handleCheckInSuccess}
+                  refreshDependency={refreshDependency}
                 />
               )}
             </TabsContent>
