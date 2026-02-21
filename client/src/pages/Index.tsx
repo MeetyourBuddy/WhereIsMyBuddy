@@ -61,27 +61,27 @@ const Index = () => {
   const features = [
     {
       icon: <Users className="w-8 h-8 text-buddy-purple" />,
-      title: "Find Your Accountability Partner",
+      title: "Find Your Buddies",
       description:
-        "Connect with motivated people who share your goals and will cheer you on every step of the way! 🎯",
+        "Connect with motivated people who share your goals and will cheer you on every step of the way!",
     },
     {
       icon: <Calendar className="w-8 h-8 text-buddy-blue" />,
       title: "Stay Consistent Together",
       description:
-        "Never miss a workout, study session, or goal again! Your buddy will keep you accountable and motivated. 💪",
+        "Never miss a workout, study session, or goal again! Your buddy will keep you accountable and motivated.",
     },
     {
       icon: <TrendingUp className="w-8 h-8 text-buddy-green" />,
       title: "Join Epic Challenges",
       description:
-        "Take on exciting group challenges and watch your progress soar with the power of community! 🚀",
+        "Take on exciting group challenges and watch your progress soar with the power of community!",
     },
     {
       icon: <Heart className="w-8 h-8 text-rose-500" />,
       title: "Celebrate Every Win",
       description:
-        "Track your achievements and celebrate milestones together. Every small victory counts! 🎉",
+        "Track your achievements and celebrate milestones together. Every small victory counts!",
     },
   ];
 
@@ -302,9 +302,8 @@ const Index = () => {
                 transition={{ duration: 0.75, delay: 0.5 }}
                 className="text-buddy-gray-600 text-lg md:text-xl mb-8 max-w-2xl leading-relaxed"
               >
-                Stop going it alone! Join thousands of people who are crushing
-                their goals with the power of accountability. Find your perfect
-                partner and turn your dreams into reality together! ✨
+                Stop going at it alone! Join thousands of people who are crushing
+                their goals with the power of accountability. Find your Buddies and turn your dreams into reality together!
               </motion.p>
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
@@ -317,7 +316,7 @@ const Index = () => {
                     size="lg"
                     className="rounded-full bg-gradient-to-r from-buddy-purple to-buddy-blue text-white hover:shadow-lg transition-all duration-300 hover:scale-105 px-8 py-4 text-lg font-semibold"
                   >
-                    Start Your Journey! 🚀
+                    Start Your Journey!
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
@@ -458,7 +457,7 @@ const Index = () => {
             <p className="text-buddy-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
               Ready to transform your life? It's easier than you think! Just
               follow these three simple steps and you'll be crushing your goals
-              with your new accountability buddy in no time. Let's do this! 💪
+              with your new accountability buddy in no time. Let's do this! 
             </p>
           </div>
 
@@ -485,7 +484,7 @@ const Index = () => {
                   <p className="text-buddy-gray-600 text-base leading-relaxed">
                     Tell us about your goals, interests, and the type of
                     accountability partner you're looking for. The more we know,
-                    the better we can match you! 🎯
+                    the better we can match you! 
                   </p>
                 </div>
               </Card>
@@ -513,7 +512,7 @@ const Index = () => {
                   <p className="text-buddy-gray-600 text-base leading-relaxed">
                     Browse our supportive community of like-minded individuals and
                     connect with those who share your goals and interests. Finding
-                    your accountability partner has never been easier! 💫
+                    your accountability partner has never been easier! 
                   </p>
                 </div>
               </Card>
@@ -541,7 +540,7 @@ const Index = () => {
                   <p className="text-buddy-gray-600 text-base leading-relaxed">
                     Set goals, create activities, and track your progress
                     together. Stay motivated and celebrate your successes!
-                    You've got this! 🚀
+                    You've got this! 
                   </p>
                 </div>
               </Card>
@@ -572,7 +571,7 @@ const Index = () => {
               Ready to level up your life? Join thousands of people in exciting
               challenges that will push you to be your best self. From fitness
               goals to learning new skills - we've got something for
-              everyone! 🚀
+              everyone! 
             </p>
           </div>
 
@@ -657,12 +656,12 @@ const Index = () => {
               Community
             </span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-buddy-gray-900">
-              Meet Your Future Accountability Partners! 👥
+              Meet Your Future Accountability Partners! 🤝
             </h2>
             <p className="text-buddy-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
               Our community is full of motivated people who are just as excited
               about their goals as you are! Find your perfect accountability partner
-              and start building meaningful connections that will change your life. 🌟
+              and start building meaningful connections that will change your life. 
             </p>
           </div>
 
@@ -757,7 +756,7 @@ const Index = () => {
             <p className="text-buddy-gray-600 text-lg md:text-xl mb-10 leading-relaxed">
               Don't wait another day! Join thousands of people who are already
               crushing their goals with the power of accountability. Your future
-              self will thank you for taking this step today! 💪
+              self will thank you for taking this step today! 
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-6">
               <Link to="/signup">
@@ -765,7 +764,7 @@ const Index = () => {
                   size="lg"
                   className="rounded-full w-full sm:w-auto bg-gradient-to-r from-buddy-purple to-buddy-blue hover:from-buddy-purple-dark hover:to-buddy-blue-dark text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
-                  Start Your Journey Now! ✨
+                  Start Your Journey Now! 
                 </Button>
               </Link>
               <Link to="/signin">
