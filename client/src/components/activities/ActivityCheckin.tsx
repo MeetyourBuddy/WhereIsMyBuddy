@@ -25,6 +25,7 @@ import { useCheckInStore } from "@/store/checkin.store";
 import { useBadgeStore } from "@/store/badge.store";
 import { useAuth } from "@/store/auth.store";
 import { CheckInService } from "@/services/api/activity/reaction.service";
+import { UploadService } from "@/services/api/upload/upload-service";
 import {
   IActivityResult,
   isActivityParticipant,
@@ -370,7 +371,10 @@ const ActivityCheckin: React.FC<ActivityCheckinProps> = ({
           date,
           title: `${format(date, "MMM dd")}: Check-in Day`,
           description: `Check-ins from ${checkedInParticipants} participant${checkedInParticipants !== 1 ? "s" : ""}`,
-          image: firstCheckIn?.imageUrl || undefined,
+          image:
+            firstCheckIn?.fileId
+              ? UploadService.getImageUrl(firstCheckIn.fileId)
+              : firstCheckIn?.imageUrl || undefined,
           totalParticipants,
           checkedInParticipants,
           comments: getComments(firstCheckIn._id).length, // Real comment count

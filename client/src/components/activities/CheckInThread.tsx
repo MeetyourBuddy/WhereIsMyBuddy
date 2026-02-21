@@ -3,6 +3,7 @@ import { Card } from "@/components/common/Card";
 import { Clock } from "lucide-react";
 import Avatar from "@/components/common/Avatar";
 import ReactionButton from "./ReactionButton";
+import { UploadService } from "@/services/api/upload/upload-service";
 
 interface CheckInThreadProps {
   checkIn: {
@@ -23,18 +24,10 @@ interface CheckInThreadProps {
 }
 
 const CheckInThread: React.FC<CheckInThreadProps> = ({ checkIn }) => {
-  // Debug: Log the check-in data to see what's being received
-  console.log("🖼️ CheckInThread received checkIn:", {
-    id: checkIn._id,
-    content: checkIn.content,
-    imageUrl: checkIn.imageUrl,
-    fileId: checkIn.fileId,
-    type: checkIn.type || "unknown",
-    hasImageUrl: !!checkIn.imageUrl,
-    hasFileId: !!checkIn.fileId,
-    imageUrlLength: checkIn.imageUrl?.length || 0,
-    fullCheckInObject: checkIn,
-  });
+  const displayImageUrl =
+    checkIn.fileId
+      ? UploadService.getImageUrl(checkIn.fileId)
+      : checkIn.imageUrl;
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-all duration-300 rounded-lg border border-buddy-gray-200">
@@ -66,23 +59,14 @@ const CheckInThread: React.FC<CheckInThreadProps> = ({ checkIn }) => {
           {checkIn.content}
         </p>
 
-        {checkIn.imageUrl && (
+        {displayImageUrl && (
           <div className="mb-2 rounded-md overflow-hidden">
             <img
-              src={checkIn.imageUrl}
+              src={displayImageUrl}
               alt="Check-in media"
               className="w-full h-[300px] object-cover"
               onError={(e) => {
-                console.error("❌ Image failed to load:", {
-                  imageUrl: checkIn.imageUrl,
-                  fileId: checkIn.fileId,
-                  error: e,
-                });
-                // Hide the image container on error
                 (e.target as HTMLImageElement).style.display = "none";
-              }}
-              onLoad={() => {
-                console.log("✅ Image loaded successfully:", checkIn.imageUrl);
               }}
             />
           </div>

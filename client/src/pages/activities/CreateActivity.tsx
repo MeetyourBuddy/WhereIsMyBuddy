@@ -62,6 +62,7 @@ import { ApiResponse } from "@/types";
 import { useScrollToTopImmediate } from "@/hooks/use-scroll-to-top";
 import { useQueryClient } from "@tanstack/react-query";
 import { activityQueryKeys } from "@/hooks/useActivityData";
+import { UploadService } from "@/services/api/upload/upload-service";
 
 const STEPS = [
   {
@@ -359,7 +360,7 @@ const CreateActivity = () => {
           return false;
         }
 
-        if (!formData.bannerImage) {
+        if (!formData.bannerImage && !formData.bannerImageFile) {
           validationToast("Please select a banner image for your activity");
           return false;
         }
@@ -461,6 +462,14 @@ const CreateActivity = () => {
         return;
       }
 
+      let bannerImageUrl = formData.bannerImage;
+      if (formData.useBannerUpload && formData.bannerImageFile) {
+        const uploadResponse = await UploadService.uploadImage(
+          formData.bannerImageFile
+        );
+        bannerImageUrl = UploadService.getImageUrl(uploadResponse.fileId);
+      }
+
       const checkinConfig = getCheckinConfig();
 
       const activityData = {
@@ -479,7 +488,7 @@ const CreateActivity = () => {
         startDate: formData.startDate,
         ...checkinConfig,
         allowedCheckInTypes: formData.allowedCheckInTypes,
-        bannerImage: formData.bannerImage,
+        bannerImage: bannerImageUrl,
         maxParticipants: Number(formData.maxParticipants),
         inviteEmails: formData.inviteEmails,
       };

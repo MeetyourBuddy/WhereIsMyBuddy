@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Upload, X, Check, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { UploadService } from "@/services/api/upload/upload-service";
 
 interface BannerEditModalProps {
   isOpen: boolean;
@@ -133,7 +134,14 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
 
     setIsLoading(true);
     try {
-      await onBannerUpdate(selectedBanner, bannerFile || undefined);
+      let urlToSave = selectedBanner;
+
+      if (useCustomUpload && bannerFile) {
+        const uploadResponse = await UploadService.uploadImage(bannerFile);
+        urlToSave = UploadService.getImageUrl(uploadResponse.fileId);
+      }
+
+      await onBannerUpdate(urlToSave);
       toast({
         title: "Banner updated successfully",
         description: "Your activity banner has been updated",

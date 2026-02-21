@@ -90,6 +90,7 @@ import {
   UpdateAccountData,
   ChangePasswordData,
 } from "@/services/api/settings/settings.service";
+import { UploadService } from "@/services/api/upload/upload-service";
 
 // Avatar options (same as onboarding)
 const avatarOptions = [
@@ -690,31 +691,45 @@ const Settings: React.FC = () => {
     });
   };
 
-  // Handle image upload
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle image upload: upload to server and set permanent URL (no data URL in DB)
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
-        toast({
-          title: "File too large",
-          description: "Please select an image smaller than 5MB.",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setUploadedImage(result);
-        setCurrentAvatar(result);
-        toast({
-          title: "Image uploaded",
-          description: "Your custom image has been uploaded successfully.",
-        });
-      };
-      reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setUploadedImage(previewUrl);
+    setCurrentAvatar(previewUrl);
+
+    try {
+      const response = await UploadService.uploadImage(file);
+      const imageUrl = UploadService.getImageUrl(response.fileId);
+      setUploadedImage(imageUrl);
+      setCurrentAvatar(imageUrl);
+      toast({
+        title: "Image uploaded",
+        description: "Your custom image has been uploaded successfully.",
+      });
+    } catch {
+      setUploadedImage(null);
+      setCurrentAvatar(avatarOptions[0].url);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      URL.revokeObjectURL(previewUrl);
     }
   };
 

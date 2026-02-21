@@ -1,4 +1,5 @@
 import { apiMethods } from "@/services/api-methods";
+import { API_CONFIG } from "@/services/api/config";
 
 export interface UploadResponse {
   success: boolean;
@@ -7,18 +8,17 @@ export interface UploadResponse {
 }
 
 export const UploadService = {
-  uploadImage: (file: File): Promise<UploadResponse> => {
+  uploadImage: async (file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append("file", file);
 
-    // Don't set Content-Type header - let the browser set it with proper boundary
-    return apiMethods.post<UploadResponse>("/uploads", formData);
+    const response = await apiMethods.post<UploadResponse>("/uploads", formData);
+    return (response as unknown as UploadResponse);
   },
 
   getImageUrl: (fileId: string): string => {
     const baseUrl =
-      import.meta.env.VITE_API_BASE_URL || "";
-    // Ensure we don't double the /api path
+      import.meta.env.VITE_API_BASE_URL || API_CONFIG.baseURL;
     const cleanBaseUrl = baseUrl.endsWith("/api")
       ? baseUrl.slice(0, -4)
       : baseUrl;

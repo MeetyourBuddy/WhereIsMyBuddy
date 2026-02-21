@@ -126,8 +126,13 @@ const UpdateProfilePage = () => {
 
       const { bannerUrl } = await response.json();
 
-      // Update profile with new banner URL
-      // add logic here
+      if (bannerUrl && user?.id) {
+        await updateProfile({
+          id: user.id,
+          updates: { bannerImage: bannerUrl }
+        });
+        setProfile({ ...profile, bannerImage: bannerUrl } as IUserData);
+      }
 
       toast({
         title: 'Success',
