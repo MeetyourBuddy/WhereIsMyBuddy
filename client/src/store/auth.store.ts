@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { authService } from "@/services/api/auth/auth-service";
 import { SignInCredentials, SignUpData, User } from "@/types/auth-types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { tokenService } from "@/services/token/token-service";
 import { userService } from "@/services/api/user/user-service";

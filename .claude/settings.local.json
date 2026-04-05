@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/**)",
+      "Bash(ls -la /c/Users/Jay*/Desktop/Desktop/BuddyFinder/WhereIsMyBuddy/packages/)",
+      "Bash(find /c/Users/Jay*/Desktop/Desktop/BuddyFinder/WhereIsMyBuddy/packages/frontend -type f -iname \"*auth*\" -o -iname \"*login*\" -o -iname \"*signin*\" -o -iname \"*signup*\")",
+      "Bash(find /c/Users/Jay*/Desktop/Desktop/BuddyFinder/WhereIsMyBuddy/packages/server -type f \\\\\\( -name \"*.ts\" ! -path \"*/node_modules/*\" ! -path \"*/dist/*\" \\\\\\))",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Users/Jay*/Desktop/Desktop/BuddyFinder/WhereIsMyBuddy/packages/frontend -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) ! -path \"*/node_modules/*\")",
+      "Bash(find /c/Users/Jay*/Desktop/Desktop/BuddyFinder/WhereIsMyBuddy/packages/server/src/users -name \"*dto*\" -type f ! -path \"*/dist/*\")",
+      "Bash(find /c/Users/Jay*/Desktop/Desktop/BuddyFinder/WhereIsMyBuddy/packages/server/src -name \"*strategy*\" -type f ! -path \"*/dist/*\")"
+    ]
+  }
+}

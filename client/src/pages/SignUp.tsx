@@ -1,10 +1,8 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Eye, EyeOff, ArrowRight, Mail, Lock, User } from "lucide-react";
-import { toast } from "sonner";
 
 import Container from "@/components/ui/layout/Container";
 import {
@@ -34,7 +32,6 @@ import { config } from "@/config";
 const SignUp = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const { register } = useAuth();
-  const navigate = useNavigate();
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpFormSchema),
@@ -46,22 +43,12 @@ const SignUp = () => {
     },
   });
 
-  const onSubmit = async (data: SignUpFormData) => {
-    try {
-      // Sign up logic would go here
-      console.log("Signing up with:", data);
-
-      await register({
-        username: data.username,
-        email: data.email,
-        password: data.password,
-      });
-      // Navigation is handled centrally in `useAuth()` after successful registration.
-      toast.success("Account created successfully!");
-    } catch (error) {
-      toast.error("Failed to create account. Please try again.");
-      console.error(error);
-    }
+  const onSubmit = (data: SignUpFormData) => {
+    register({
+      username: data.username,
+      email: data.email,
+      password: data.password,
+    });
   };
 
   const handleGoogleSignin = () => {

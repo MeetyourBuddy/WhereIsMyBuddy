@@ -55,8 +55,13 @@ export interface User {
 }
 
 export interface AuthResponse {
-  tokens: TokenPair;
-  user: User;
+  success: boolean;
+  message: string;
+  data: {
+    tokens: TokenPair;
+    user: User;
+  };
+  timestamp: string;
 }
 
 export enum Language {}
@@ -67,16 +72,6 @@ export enum Country {}
 
 export enum InterestCategory {}
 // Add interest category enum values
-
-export interface AuthResponse {
-  success: boolean;
-  message: string;
-  data: {
-    tokens: TokenPair;
-    user: User;
-  };
-  timestamp: string;
-}
 
 export interface LogoutResponse {
   message: string;

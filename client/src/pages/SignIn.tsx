@@ -1,10 +1,8 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Eye, EyeOff, ArrowRight, Mail, Lock } from "lucide-react";
-import { toast } from "sonner";
 
 import Container from "@/components/ui/layout/Container";
 import {
@@ -33,7 +31,6 @@ import { config } from "@/config";
 const SignIn = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const form = useForm<SignInFormData>({
     resolver: zodResolver(signInFormSchema),
@@ -43,20 +40,11 @@ const SignIn = () => {
     },
   });
 
-  const onSubmit = async (data: SignInFormData) => {
-    try {
-      console.log("Signing in with:", data);
-
-      await login({
-        email: data.email,
-        password: data.password,
-      });
-      // Navigation is handled centrally in `useAuth()` after successful login.
-      toast.success("Signed in successfully!");
-    } catch (error) {
-      toast.error("Failed to sign in. Please check your credentials.");
-      console.error(error);
-    }
+  const onSubmit = (data: SignInFormData) => {
+    login({
+      email: data.email,
+      password: data.password,
+    });
   };
 
   const handleGoogleSignin = () => {
