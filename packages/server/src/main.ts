@@ -30,6 +30,7 @@ async function bootstrap() {
       'http://localhost:8080',
       'http://localhost:3000',
       'http://localhost:5173', // Vite default port
+      'http://wmb.vercel.app',
       process.env.FRONTEND_URL,
     ].filter(Boolean), // Remove undefined values
     credentials: true,
